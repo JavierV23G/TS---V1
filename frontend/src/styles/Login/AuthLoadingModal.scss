@@ -1,0 +1,991 @@
+// Variables
+$primary-gradient: linear-gradient(135deg, #0062ff, #00a3ff);
+$success-gradient: linear-gradient(135deg, #10b981, #059669);
+$error-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+$neon-blue: #00c2ff;
+$neon-glow: 0 0 15px rgba(0, 194, 255, 0.6);
+$success-color: #10b981;
+$error-color: #ef4444;
+$glass-bg: rgba(15, 23, 42, 0.85);
+$premium-text: #ffffff;
+$premium-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+
+// Animaciones
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dashOffset {
+  from { stroke-dashoffset: 314; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes floatElement {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes checkmark {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes expandBackground {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.auth-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(10, 15, 30, 0.95);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  
+  &.show {
+    opacity: 1;
+    visibility: visible;
+    
+    .auth-loading-content {
+      animation: expandBackground 0.6s cubic-bezier(0.26, 0.53, 0.74, 1.48) forwards;
+    }
+  }
+  
+  &.animate-bg {
+    background: linear-gradient(135deg, 
+      rgba(10, 25, 41, 0.95), 
+      rgba(20, 40, 70, 0.95), 
+      rgba(10, 25, 41, 0.95)
+    );
+    background-size: 300% 300%;
+    animation: gradientFlow 12s ease infinite;
+  }
+  
+  &.success-bg {
+    background: linear-gradient(135deg, 
+      rgba(16, 185, 129, 0.15),
+      rgba(5, 150, 105, 0.15),
+      rgba(16, 185, 129, 0.15)
+    ), 
+    rgba(10, 25, 41, 0.9);
+    background-size: 300% 300%;
+    animation: gradientFlow 12s ease infinite;
+  }
+  
+  &.error-bg {
+    background: linear-gradient(135deg, 
+      rgba(239, 68, 68, 0.15),
+      rgba(220, 38, 38, 0.15),
+      rgba(239, 68, 68, 0.15)
+    ),
+    rgba(10, 25, 41, 0.9);
+    background-size: 300% 300%;
+    animation: gradientFlow 12s ease infinite;
+  }
+  
+  // Elementos decorativos
+  .auth-decoration {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.03);
+    z-index: 0;
+    
+    &.deco-1 {
+      width: 400px;
+      height: 400px;
+      top: 10%;
+      left: 10%;
+      animation: floatElement 30s ease-in-out infinite;
+      opacity: 0.3;
+      background: radial-gradient(circle, rgba(0, 194, 255, 0.1) 0%, rgba(0, 194, 255, 0) 70%);
+    }
+    
+    &.deco-2 {
+      width: 300px;
+      height: 300px;
+      bottom: 10%;
+      right: 10%;
+      animation: floatElement 25s ease-in-out infinite reverse;
+      opacity: 0.25;
+      background: radial-gradient(circle, rgba(0, 98, 255, 0.1) 0%, rgba(0, 98, 255, 0) 70%);
+    }
+    
+    &.deco-3 {
+      width: 200px;
+      height: 200px;
+      top: 45%;
+      right: 25%;
+      animation: floatElement 20s ease-in-out infinite 3s;
+      opacity: 0.2;
+      background: radial-gradient(circle, rgba(0, 194, 255, 0.12) 0%, rgba(0, 194, 255, 0) 70%);
+    }
+  }
+  
+  .auth-loading-content {
+    text-align: center;
+    max-width: 480px;
+    width: 100%;
+    padding: 3rem;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    
+    // Efecto de brillo
+    .glow-effect {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0, 194, 255, 0.05) 0%,
+        rgba(0, 194, 255, 0) 70%
+      );
+      pointer-events: none;
+      animation: gradientFlow 12s ease-in-out infinite;
+      z-index: -1;
+    }
+    
+    h3 {
+      font-size: 2.2rem;
+      margin: 1.8rem 0 1.5rem;
+      color: $premium-text;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.5px;
+      
+      &.success {
+        color: $success-color;
+        text-shadow: 0 0 20px rgba($success-color, 0.3);
+      }
+      
+      &.error {
+        color: $error-color;
+        text-shadow: 0 0 20px rgba($error-color, 0.3);
+      }
+    }
+    
+    // Spinner circular SVG mejorado
+    .auth-loading-spinner {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto;
+      
+      svg {
+        width: 140px;
+        height: 140px;
+        
+        .circle-bg {
+          fill: none;
+          stroke: rgba(255, 255, 255, 0.05);
+          stroke-width: 6;
+        }
+        
+        .circle-progress {
+          fill: none;
+          stroke: url(#gradient);
+          stroke-width: 6;
+          stroke-linecap: round;
+          stroke-dasharray: 314;
+          transform-origin: center;
+          animation: rotate 3s linear infinite, dashOffset 2.5s ease-in-out infinite alternate;
+          filter: drop-shadow(0 0 10px rgba($neon-blue, 0.6));
+        }
+      }
+      
+      // Anillos de pulso
+      .pulse-rings {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        
+        .pulse-ring {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          border: 2px solid rgba($neon-blue, 0.5);
+          
+          &.ring1 {
+            width: 110%;
+            height: 110%;
+            animation: pulseRing 3s infinite;
+          }
+          
+          &.ring2 {
+            width: 100%;
+            height: 100%;
+            animation: pulseRing 3s infinite 0.5s;
+          }
+          
+          &.ring3 {
+            width: 90%;
+            height: 90%;
+            animation: pulseRing 3s infinite 1s;
+          }
+        }
+      }
+      
+      // Iconos de éxito y error
+      .check-icon, .error-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        
+        &.show {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+        
+        svg {
+          width: 80px;
+          height: 80px;
+          
+          .icon-path {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 100;
+            animation: checkmark 1s ease forwards;
+          }
+          
+          .icon-fill {
+            fill-opacity: 0;
+            animation: fadeIn 0.6s ease 0.5s forwards;
+          }
+        }
+      }
+      
+      .check-icon svg .icon-path,
+      .check-icon svg .icon-fill {
+        stroke: $success-color;
+        fill: $success-color;
+      }
+      
+      .error-icon svg .icon-path,
+      .error-icon svg .icon-fill {
+        stroke: $error-color;
+        fill: $error-color;
+      }
+    }
+    
+    // Barra de progreso
+    .progress-container {
+      display: flex;
+      align-items: center;
+      margin: 2rem 0;
+      
+      .progress-bar {
+        flex: 1;
+        height: 8px;
+        background-color: rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        position: relative;
+        
+        &:before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(90deg, 
+            rgba(255, 255, 255, 0.03) 25%, 
+            rgba(255, 255, 255, 0.08) 50%, 
+            rgba(255, 255, 255, 0.03) 75%
+          );
+          background-size: 200% 100%;
+          animation: shimmer 3s infinite linear;
+          z-index: 1;
+        }
+        
+        .progress-bar-inner {
+          height: 100%;
+          background: $primary-gradient;
+          background-size: 200% 200%;
+          animation: gradientFlow 3s ease infinite;
+          border-radius: 8px;
+          transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 0 12px rgba($neon-blue, 0.5);
+          position: relative;
+          z-index: 2;
+        }
+      }
+      
+      .progress-percentage {
+        min-width: 60px;
+        text-align: right;
+        font-size: 1rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        margin-left: 1.2rem;
+        background: -webkit-linear-gradient(0deg, #fff, $neon-blue);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+    
+    // Mensaje de estado
+    .status-message {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.9);
+      min-height: 2rem;
+      margin-bottom: 1.8rem;
+      animation: fadeIn 0.5s;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      
+      &.success {
+        color: $success-color;
+      }
+      
+      &.error {
+        color: $error-color;
+      }
+    }
+    
+    // Pasos de autenticación
+    .auth-loading-steps {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-top: 2rem;
+      text-align: left;
+      gap: 1rem;
+      width: 100%;
+      
+      .step-indicator {
+        display: flex;
+        align-items: center;
+        opacity: 0.5;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeIn 0.5s forwards;
+        width: 100%;
+        
+        &.current {
+          opacity: 1;
+          animation: slideUp 0.4s ease forwards;
+          
+          .step-dot {
+            border-color: $neon-blue;
+            background-color: rgba($neon-blue, 0.15);
+            transform: scale(1.2);
+            animation: pulse-glow 2s infinite;
+          }
+          
+          .step-name {
+            color: $neon-blue;
+            font-weight: 600;
+            transform: translateX(5px);
+            letter-spacing: 0.3px;
+          }
+        }
+        
+        &.completed {
+          opacity: 0.8;
+          
+          .step-dot {
+            background-color: $success-color;
+            border-color: $success-color;
+            box-shadow: 0 0 10px rgba($success-color, 0.4);
+            
+            i {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          
+          .step-name {
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.7);
+          }
+        }
+        
+        .step-dot {
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-right: 15px;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          flex-shrink: 0;
+          
+          i {
+            font-size: 0.9rem;
+            color: white;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+        }
+        
+        .step-name {
+          font-size: 1rem;
+          color: rgba(255, 255, 255, 0.8);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      }
+    }
+    
+    // Mensaje de bienvenida
+    .auth-user-welcome {
+      margin-top: 2rem;
+      background: rgba(16, 185, 129, 0.1);
+      border-radius: 14px;
+      padding: 1.5rem;
+      animation: slideUp 0.6s ease-out both;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      
+      .welcome-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        font-size: 1.15rem;
+        color: white;
+        
+        i {
+          color: $success-color;
+          font-size: 1.5rem;
+          animation: pulse 2.5s infinite;
+          background: rgba($success-color, 0.15);
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        strong {
+          font-weight: 600;
+          color: $neon-blue;
+          text-shadow: 0 0 10px rgba($neon-blue, 0.4);
+          position: relative;
+          
+          &:after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: $neon-blue;
+            box-shadow: 0 0 8px rgba($neon-blue, 0.6);
+            transform: scaleX(0);
+            transform-origin: left;
+            animation: widthAnimation 1s forwards 0.3s;
+          }
+        }
+      }
+    }
+    
+    // Panel de información de seguridad
+    .security-panel {
+      margin-top: 1.8rem;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: left;
+      font-size: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      animation: slideUp 0.6s ease-out 0.3s both;
+      position: relative;
+      overflow: hidden;
+      
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, 
+          rgba(0, 194, 255, 0.05) 0%, 
+          rgba(0, 98, 255, 0.05) 100%
+        );
+        z-index: -1;
+      }
+      
+      .security-panel-title {
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1.05rem;
+        
+        i {
+          margin-right: 10px;
+          color: $neon-blue;
+          text-shadow: 0 0 8px rgba($neon-blue, 0.4);
+        }
+      }
+      
+      .security-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+        
+        &:last-child {
+          margin-bottom: 0;
+          border-bottom: none;
+        }
+        
+        &:hover {
+          transform: translateX(5px);
+          
+          .security-code {
+            background: rgba($neon-blue, 0.2);
+            box-shadow: 0 0 8px rgba($neon-blue, 0.3);
+          }
+        }
+        
+        i {
+          color: $neon-blue;
+          margin-right: 10px;
+          width: 20px;
+          text-align: center;
+          font-size: 0.9rem;
+        }
+        
+        span {
+          color: rgba(255, 255, 255, 0.85);
+          font-size: 0.9rem;
+        }
+        
+        .security-code {
+          font-family: 'Courier New', monospace;
+          background: rgba(0, 0, 0, 0.2);
+          padding: 3px 8px;
+          border-radius: 4px;
+          margin-left: 8px;
+          font-size: 0.85rem;
+          color: $neon-blue;
+          transition: all 0.3s ease;
+          box-shadow: 0 0 0 rgba($neon-blue, 0);
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+}
+
+// Animación shimmer
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// Pulsación en campos
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 5px rgba(0, 194, 255, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(0, 194, 255, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(0, 194, 255, 0.3); }
+}
+
+// Animación para el width
+@keyframes widthAnimation {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+// Animación slide up
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .auth-loading-overlay .auth-loading-content {
+    width: 90%;
+    max-width: 420px;
+    padding: 2.5rem 2rem;
+    
+    h3 {
+      font-size: 1.9rem;
+      margin: 1.5rem 0 1.2rem;
+    }
+    
+    .auth-loading-spinner {
+      width: 120px;
+      height: 120px;
+      
+      svg {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .check-icon svg, .error-icon svg {
+        width: 70px;
+        height: 70px;
+      }
+    }
+    
+    .security-panel {
+      padding: 1.2rem;
+      
+      .security-panel-title {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-loading-overlay .auth-loading-content {
+    width: 95%;
+    padding: 2rem 1.5rem;
+    
+    h3 {
+      font-size: 1.7rem;
+    }
+    
+    .auth-loading-spinner {
+      width: 100px;
+      height: 100px;
+      
+      svg {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .check-icon svg, .error-icon svg {
+        width: 60px;
+        height: 60px;
+      }
+    }
+    
+    .progress-container {
+      margin: 1.5rem 0;
+      
+      .progress-percentage {
+        font-size: 0.9rem;
+        min-width: 50px;
+      }
+    }
+    
+    .status-message {
+      font-size: 1.1rem;
+    }
+    
+    .auth-loading-steps {
+      gap: 0.8rem;
+      
+      .step-indicator .step-name {
+        font-size: 0.9rem;
+      }
+    }
+    
+    .security-panel {
+      padding: 1rem;
+      margin-top: 1.5rem;
+      
+      .security-item {
+        margin-bottom: 8px;
+        
+        span {
+          font-size: 0.85rem;
+        }
+      }
+    }
+    
+    .auth-user-welcome {
+      padding: 1.2rem;
+      
+      .welcome-message {
+        font-size: 1rem;
+        
+        i {
+          font-size: 1.3rem;
+          width: 35px;
+          height: 35px;
+        }
+      }
+    }
+  }
+}
+
+// Agregar estas mejoras de responsive al final de AuthLoadingModal.scss:
+
+// Responsive más detallado
+@media (max-width: 991px) {
+  .auth-loading-overlay .auth-loading-content {
+    max-width: 450px;
+    padding: 2.8rem 2.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-loading-overlay .auth-loading-content {
+    width: 90%;
+    max-width: 420px;
+    padding: 2.5rem 2rem;
+    
+    h3 {
+      font-size: 1.9rem;
+      margin: 1.5rem 0 1.2rem;
+    }
+    
+    .auth-loading-spinner {
+      width: 120px;
+      height: 120px;
+      
+      svg {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .check-icon svg, .error-icon svg {
+        width: 70px;
+        height: 70px;
+      }
+    }
+    
+    .progress-container {
+      margin: 1.8rem 0;
+      
+      .progress-percentage {
+        min-width: 55px;
+        font-size: 0.95rem;
+      }
+    }
+    
+    .security-panel {
+      padding: 1.2rem;
+      
+      .security-panel-title {
+        font-size: 1rem;
+      }
+      
+      .security-item {
+        margin-bottom: 8px;
+      }
+    }
+    
+    .auth-user-welcome {
+      padding: 1.3rem;
+      
+      .welcome-message {
+        font-size: 1.1rem;
+        
+        i {
+          width: 36px;
+          height: 36px;
+          font-size: 1.4rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .auth-loading-overlay .auth-loading-content {
+    width: 95%;
+    padding: 2rem 1.5rem;
+    
+    h3 {
+      font-size: 1.7rem;
+    }
+    
+    .auth-loading-spinner {
+      width: 100px;
+      height: 100px;
+      
+      svg {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .check-icon svg, .error-icon svg {
+        width: 60px;
+        height: 60px;
+      }
+    }
+    
+    .progress-container {
+      margin: 1.5rem 0;
+      
+      .progress-percentage {
+        font-size: 0.9rem;
+        min-width: 50px;
+      }
+    }
+    
+    .status-message {
+      font-size: 1.1rem;
+    }
+    
+    .auth-loading-steps {
+      gap: 0.8rem;
+      
+      .step-indicator .step-name {
+        font-size: 0.9rem;
+      }
+      
+      .step-indicator .step-dot {
+        width: 22px;
+        height: 22px;
+        margin-right: 12px;
+      }
+    }
+    
+    .security-panel {
+      padding: 1rem;
+      margin-top: 1.5rem;
+      
+      .security-item {
+        margin-bottom: 8px;
+        
+        span {
+          font-size: 0.85rem;
+        }
+      }
+    }
+    
+    .auth-user-welcome {
+      padding: 1.2rem;
+      
+      .welcome-message {
+        font-size: 1rem;
+        
+        i {
+          font-size: 1.3rem;
+          width: 35px;
+          height: 35px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .auth-loading-overlay .auth-loading-content {
+    padding: 1.8rem 1.2rem;
+    
+    h3 {
+      font-size: 1.5rem;
+    }
+    
+    .auth-loading-spinner {
+      width: 90px;
+      height: 90px;
+      
+      svg {
+        width: 90px;
+        height: 90px;
+      }
+    }
+    
+    .progress-container .progress-bar {
+      height: 6px;
+    }
+    
+    .status-message {
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    
+    .auth-loading-steps .step-indicator {
+      .step-dot {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+      }
+      
+      .step-name {
+        font-size: 0.85rem;
+      }
+    }
+    
+    .security-panel {
+      padding: 0.9rem;
+      
+      .security-panel-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.8rem;
+      }
+      
+      .security-item {
+        margin-bottom: 6px;
+        padding: 4px 0;
+        
+        i {
+          font-size: 0.8rem;
+        }
+        
+        span, .security-code {
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+}
