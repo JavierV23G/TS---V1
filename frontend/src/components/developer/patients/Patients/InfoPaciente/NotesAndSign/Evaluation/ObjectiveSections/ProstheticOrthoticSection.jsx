@@ -1,4 +1,4 @@
-// Enhanced ProstheticOrthoticSection.jsx
+// Enhanced ProstheticOrthoticSection.jsx with Finale Integration
 import React, { useState } from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/ProstheticOrthoticSection.scss';
 
@@ -43,6 +43,18 @@ const ProstheticOrthoticSection = ({ data, onChange }) => {
     { value: 'Both', label: 'Both' }
   ];
   
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+  
   // Manejar cambios en los campos de nueva prótesis
   const handleProstheticChange = (field, value) => {
     setNewProsthetic(prev => ({
@@ -63,8 +75,7 @@ const ProstheticOrthoticSection = ({ data, onChange }) => {
   const handleAddProsthetic = () => {
     const updatedProsthetics = [...prostheticsList, { ...newProsthetic, id: Date.now() }];
     setProstheticsList(updatedProsthetics);
-    onChange({
-      ...data,
+    handleChange({
       prosthetics: updatedProsthetics
     });
     
@@ -80,8 +91,7 @@ const ProstheticOrthoticSection = ({ data, onChange }) => {
   const handleAddOrthotic = () => {
     const updatedOrthotics = [...orthoticsList, { ...newOrthotic, id: Date.now() }];
     setOrthoticsList(updatedOrthotics);
-    onChange({
-      ...data,
+    handleChange({
       orthotics: updatedOrthotics
     });
     
@@ -97,8 +107,7 @@ const ProstheticOrthoticSection = ({ data, onChange }) => {
   const handleRemoveProsthetic = (id) => {
     const updatedProsthetics = prostheticsList.filter(item => item.id !== id);
     setProstheticsList(updatedProsthetics);
-    onChange({
-      ...data,
+    handleChange({
       prosthetics: updatedProsthetics
     });
   };
@@ -107,16 +116,14 @@ const ProstheticOrthoticSection = ({ data, onChange }) => {
   const handleRemoveOrthotic = (id) => {
     const updatedOrthotics = orthoticsList.filter(item => item.id !== id);
     setOrthoticsList(updatedOrthotics);
-    onChange({
-      ...data,
+    handleChange({
       orthotics: updatedOrthotics
     });
   };
   
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

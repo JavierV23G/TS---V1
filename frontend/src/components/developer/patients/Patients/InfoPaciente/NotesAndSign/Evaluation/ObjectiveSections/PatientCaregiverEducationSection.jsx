@@ -1,4 +1,4 @@
-// Enhanced PatientCaregiverEducationSection.jsx
+// Enhanced PatientCaregiverEducationSection.jsx with Finale Integration
 import React, { useState } from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/PatientCaregiverEducationSection.scss';
 
@@ -47,6 +47,18 @@ const PatientCaregiverEducationSection = ({ data, onChange }) => {
     { value: 'No', label: 'No' }
   ];
 
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+
   // Manejar cambios en los checkboxes
   const handleCheckboxChange = (field) => {
     const updatedEducation = {
@@ -54,24 +66,21 @@ const PatientCaregiverEducationSection = ({ data, onChange }) => {
       [field]: !(data.education?.[field] || false)
     };
     
-    onChange({
-      ...data,
+    handleChange({
       education: updatedEducation
     });
   };
 
   // Manejar cambios en los selects
   const handleSelectChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };
 
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

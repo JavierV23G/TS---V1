@@ -239,14 +239,14 @@ const VisitCompletionModal = ({ isOpen, onClose, visitData, onSave }) => {
           />
         );
       case 'objective':
-        return (
-          <ObjectiveSection
-            data={formData.objective}
-            onChange={(data) => handleFormChange('objective', data)}
-            onOpenTest={handleOpenTest}
-            autoSaveMessage={showAutoSaveMessage ? autoSaveMessage : ''}
-          />
-        );
+  return (
+    <ObjectiveSection
+      data={formData.objective}  // ✅ Mantener esto igual
+      onChange={(data) => handleFormChange('objective', data)}
+      onOpenTest={handleOpenTest}
+      autoSaveMessage={showAutoSaveMessage ? autoSaveMessage : ''}
+    />
+  );
       case 'transfers':
         return (
           <TransfersSection
@@ -272,14 +272,14 @@ const VisitCompletionModal = ({ isOpen, onClose, visitData, onSave }) => {
             autoSaveMessage={showAutoSaveMessage ? autoSaveMessage : ''}
           />
         );
-      case 'finale':
-        return (
-          <FinaleSection
-            data={formData.finale}
-            onChange={(data) => handleFormChange('finale', data)}
-            autoSaveMessage={showAutoSaveMessage ? autoSaveMessage : ''}
-          />
-        );
+        case 'finale':
+          return (
+            <FinaleSection
+              data={formData}  // ✅ Cambiar de formData.finale a formData
+              onChange={(data) => handleFormChange('finale', data)}
+              autoSaveMessage={showAutoSaveMessage ? autoSaveMessage : ''}
+            />
+          );
       default:
         return <PTEvaluation 
           data={formData.patientInfo} 

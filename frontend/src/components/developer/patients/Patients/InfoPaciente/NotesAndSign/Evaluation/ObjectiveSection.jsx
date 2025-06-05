@@ -1,5 +1,5 @@
-// Enhanced ObjectiveSection.jsx
-import React, { useState } from 'react';
+// Enhanced ObjectiveSection.jsx - FIXED VERSION with proper data flow
+import React, { useState, useEffect } from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSection.scss';
 import StandardizedTest from './StandardizedTest';
 
@@ -15,18 +15,27 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
   // Estados locales
   const [activeTab, setActiveTab] = useState('subjective');
   
-  // Manejador para los cambios en los campos
+  // 🔥 MANEJADOR PRINCIPAL PARA CAMBIOS - ESTA ES LA CLAVE
   const handleChange = (field, value) => {
-    onChange({ ...data, [field]: value });
+    console.log(`ObjectiveSection: Updating ${field} with value:`, value); // Debug log
+    const updatedData = { ...data, [field]: value };
+    onChange(updatedData); // Envía los datos actualizados al componente padre
   };
   
-  // Manejador para los cambios en subsecciones completas
+  // 🔥 MANEJADOR PARA SUBSECCIONES COMPLETAS
   const handleSectionChange = (section, sectionData) => {
-    onChange({
+    console.log(`ObjectiveSection: Updating section ${section} with data:`, sectionData); // Debug log
+    const updatedData = {
       ...data,
       [section]: sectionData
-    });
+    };
+    onChange(updatedData);
   };
+
+  // 🔥 EFECTO PARA DEBUG - VER QUE DATOS LLEGAN
+  useEffect(() => {
+    console.log('ObjectiveSection received data:', data);
+  }, [data]);
 
   // Definir las pestañas con sus iconos
   const tabs = [
@@ -86,7 +95,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     Patient's Subjective Experience
                   </label>
                   <textarea 
-                    value={data.subjective || ''}
+                    value={data?.subjective || ''}
                     onChange={(e) => handleChange('subjective', e.target.value)}
                     rows={6}
                     placeholder="Enter patient's subjective experience and complaints"
@@ -99,14 +108,14 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
         
         {activeTab === 'cognitive' && (
           <CognitiveStatusSection 
-            data={data.cognitive || {}}
+            data={data?.cognitive || {}}
             onChange={(sectionData) => handleSectionChange('cognitive', sectionData)}
           />
         )}
         
         {activeTab === 'sensory' && (
           <SensorySection 
-            data={data.sensory || {}}
+            data={data?.sensory || {}}
             onChange={(sectionData) => handleSectionChange('sensory', sectionData)}
           />
         )}
@@ -133,7 +142,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="clutter" 
-                          checked={data.clutter || false}
+                          checked={data?.clutter || false}
                           onChange={(e) => handleChange('clutter', e.target.checked)}
                         />
                         <label htmlFor="clutter">Clutter</label>
@@ -143,7 +152,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="throwRugs" 
-                          checked={data.throwRugs || false}
+                          checked={data?.throwRugs || false}
                           onChange={(e) => handleChange('throwRugs', e.target.checked)}
                         />
                         <label htmlFor="throwRugs">Throw Rugs</label>
@@ -153,7 +162,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="steps" 
-                          checked={data.steps || false}
+                          checked={data?.steps || false}
                           onChange={(e) => handleChange('steps', e.target.checked)}
                         />
                         <label htmlFor="steps">Steps</label>
@@ -163,7 +172,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="stairs" 
-                          checked={data.stairs || false}
+                          checked={data?.stairs || false}
                           onChange={(e) => handleChange('stairs', e.target.checked)}
                         />
                         <label htmlFor="stairs">Stairs</label>
@@ -173,7 +182,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="railing" 
-                          checked={data.railing || false}
+                          checked={data?.railing || false}
                           onChange={(e) => handleChange('railing', e.target.checked)}
                         />
                         <label htmlFor="railing">Railing</label>
@@ -193,7 +202,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="house" 
-                          checked={data.house || false}
+                          checked={data?.house || false}
                           onChange={(e) => handleChange('house', e.target.checked)}
                         />
                         <label htmlFor="house">House</label>
@@ -203,7 +212,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="apartment" 
-                          checked={data.apartment || false}
+                          checked={data?.apartment || false}
                           onChange={(e) => handleChange('apartment', e.target.checked)}
                         />
                         <label htmlFor="apartment">Apartment</label>
@@ -213,7 +222,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="mobileHome" 
-                          checked={data.mobileHome || false}
+                          checked={data?.mobileHome || false}
                           onChange={(e) => handleChange('mobileHome', e.target.checked)}
                         />
                         <label htmlFor="mobileHome">Mobile Home</label>
@@ -223,7 +232,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="assistedLiving" 
-                          checked={data.assistedLiving || false}
+                          checked={data?.assistedLiving || false}
                           onChange={(e) => handleChange('assistedLiving', e.target.checked)}
                         />
                         <label htmlFor="assistedLiving">Assisted Living</label>
@@ -233,7 +242,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="governmentHousing" 
-                          checked={data.governmentHousing || false}
+                          checked={data?.governmentHousing || false}
                           onChange={(e) => handleChange('governmentHousing', e.target.checked)}
                         />
                         <label htmlFor="governmentHousing">Government Housing</label>
@@ -243,7 +252,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="nursingHome" 
-                          checked={data.nursingHome || false}
+                          checked={data?.nursingHome || false}
                           onChange={(e) => handleChange('nursingHome', e.target.checked)}
                         />
                         <label htmlFor="nursingHome">Nursing Home</label>
@@ -260,7 +269,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     Additional Information
                   </label>
                   <textarea 
-                    value={data.livingAdditional || ''}
+                    value={data?.livingAdditional || ''}
                     onChange={(e) => handleChange('livingAdditional', e.target.value)}
                     rows={4}
                     placeholder="Additional information about living arrangements"
@@ -286,7 +295,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                   <input 
                     type="checkbox" 
                     id="mobilityNotApplicable" 
-                    checked={data.mobilityNotApplicable || false}
+                    checked={data?.mobilityNotApplicable || false}
                     onChange={(e) => {
                       const isChecked = e.target.checked;
                       handleChange('mobilityNotApplicable', isChecked);
@@ -299,29 +308,31 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         handleChange('stairsCurb', '');
                         handleChange('sixMinuteWalk', '');
                         // Optionally clear standardized test data if needed
-                        if (data.standardizedTests?.['Tinetti']) {
-                          onChange({
+                        if (data?.standardizedTests?.['Tinetti']) {
+                          const updatedData = {
                             ...data,
                             standardizedTests: {
                               ...data.standardizedTests,
                               'Tinetti': { ...data.standardizedTests['Tinetti'], isComplete: false }
                             }
-                          });
+                          };
+                          onChange(updatedData);
                         }
-                        if (data.standardizedTests?.['Timed Up And Go']) {
-                          onChange({
+                        if (data?.standardizedTests?.['Timed Up And Go']) {
+                          const updatedData = {
                             ...data,
                             standardizedTests: {
                               ...data.standardizedTests,
                               'Timed Up And Go': { ...data.standardizedTests['Timed Up And Go'], isComplete: false }
                             }
-                          });
+                          };
+                          onChange(updatedData);
                         }
                       }
                     }}
                   />
                   <label htmlFor="mobilityNotApplicable">Not Applicable</label>
-                  {data.mobilityNotApplicable && (
+                  {data?.mobilityNotApplicable && (
                     <div className="alert-message">
                       <i className="fas fa-info-circle"></i>
                       <span>All mobility fields will be disabled</span>
@@ -342,11 +353,11 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="levelSurface" 
-                          checked={data.levelSurface || false}
+                          checked={data?.levelSurface || false}
                           onChange={(e) => handleChange('levelSurface', e.target.checked)}
-                          disabled={data.mobilityNotApplicable}
+                          disabled={data?.mobilityNotApplicable}
                         />
-                        <label htmlFor="levelSurface" className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                        <label htmlFor="levelSurface" className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                           Level Surface
                         </label>
                       </div>
@@ -355,11 +366,11 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="unlevelSurface" 
-                          checked={data.unlevelSurface || false}
+                          checked={data?.unlevelSurface || false}
                           onChange={(e) => handleChange('unlevelSurface', e.target.checked)}
-                          disabled={data.mobilityNotApplicable}
+                          disabled={data?.mobilityNotApplicable}
                         />
-                        <label htmlFor="unlevelSurface" className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                        <label htmlFor="unlevelSurface" className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                           Unlevel Surface
                         </label>
                       </div>
@@ -368,11 +379,11 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                         <input 
                           type="checkbox" 
                           id="carpetedSurface" 
-                          checked={data.carpetedSurface || false}
+                          checked={data?.carpetedSurface || false}
                           onChange={(e) => handleChange('carpetedSurface', e.target.checked)}
-                          disabled={data.mobilityNotApplicable}
+                          disabled={data?.mobilityNotApplicable}
                         />
-                        <label htmlFor="carpetedSurface" className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                        <label htmlFor="carpetedSurface" className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                           Carpeted Surface
                         </label>
                       </div>
@@ -383,47 +394,47 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
               
               <div className="form-row dual-column">
                 <div className="form-group">
-                  <label className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                  <label className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                     <i className="fas fa-shoe-prints"></i>
                     Qualities / Deviations / Postures
                   </label>
                   <textarea 
-                    value={data.gaitQualities || ''}
+                    value={data?.gaitQualities || ''}
                     onChange={(e) => handleChange('gaitQualities', e.target.value)}
                     rows={4}
                     placeholder="Describe gait qualities, deviations and postures"
-                    disabled={data.mobilityNotApplicable}
+                    disabled={data?.mobilityNotApplicable}
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                  <label className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                     <i className="fas fa-angle-double-up"></i>
                     Stairs / Curb
                   </label>
                   <textarea 
-                    value={data.stairsCurb || ''}
+                    value={data?.stairsCurb || ''}
                     onChange={(e) => handleChange('stairsCurb', e.target.value)}
                     rows={4}
                     placeholder="Notes on stairs and curb navigation"
-                    disabled={data.mobilityNotApplicable}
+                    disabled={data?.mobilityNotApplicable}
                   />
                 </div>
               </div>
               
               <div className="form-row">
                 <div className="form-group">
-                  <label className={data.mobilityNotApplicable ? 'disabled' : ''}>
+                  <label className={data?.mobilityNotApplicable ? 'disabled' : ''}>
                     <i className="fas fa-stopwatch"></i>
                     Six Minute Walk
                   </label>
                   <div className="input-with-unit">
                     <input 
                       type="text" 
-                      value={data.sixMinuteWalk || ''}
+                      value={data?.sixMinuteWalk || ''}
                       onChange={(e) => handleChange('sixMinuteWalk', e.target.value)}
                       placeholder="Enter distance covered"
-                      disabled={data.mobilityNotApplicable}
+                      disabled={data?.mobilityNotApplicable}
                     />
                     <span className="unit">feet</span>
                   </div>
@@ -438,16 +449,16 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                   <StandardizedTest 
                     title="Tinetti" 
                     isComplete={data?.standardizedTests?.['Tinetti']?.isComplete || false}
-                    onOpen={() => !data.mobilityNotApplicable && onOpenTest('Tinetti')}
-                    status={data.mobilityNotApplicable ? 'Not Required' : undefined}
+                    onOpen={() => !data?.mobilityNotApplicable && onOpenTest('Tinetti')}
+                    status={data?.mobilityNotApplicable ? 'Not Required' : undefined}
                     score={data?.standardizedTests?.['Tinetti']?.score}
                   />
                   
                   <StandardizedTest 
                     title="Timed Up And Go" 
                     isComplete={data?.standardizedTests?.['Timed Up And Go']?.isComplete || false}
-                    onOpen={() => !data.mobilityNotApplicable && onOpenTest('Timed Up And Go')}
-                    status={data.mobilityNotApplicable ? 'Not Required' : undefined}
+                    onOpen={() => !data?.mobilityNotApplicable && onOpenTest('Timed Up And Go')}
+                    status={data?.mobilityNotApplicable ? 'Not Required' : undefined}
                     score={data?.standardizedTests?.['Timed Up And Go']?.score}
                   />
                 </div>
@@ -474,7 +485,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                   </div>
                   <div className="card-content">
                     <textarea 
-                      value={data.upperExtremities || ''}
+                      value={data?.upperExtremities || ''}
                       onChange={(e) => handleChange('upperExtremities', e.target.value)}
                       rows={5}
                       placeholder="Describe upper extremities strength and ROM"
@@ -489,7 +500,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                   </div>
                   <div className="card-content">
                     <textarea 
-                      value={data.lowerExtremities || ''}
+                      value={data?.lowerExtremities || ''}
                       onChange={(e) => handleChange('lowerExtremities', e.target.value)}
                       rows={5}
                       placeholder="Describe lower extremities strength and ROM"
@@ -505,7 +516,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     Additional Information
                   </label>
                   <textarea 
-                    value={data.muscleAdditional || ''}
+                    value={data?.muscleAdditional || ''}
                     onChange={(e) => handleChange('muscleAdditional', e.target.value)}
                     rows={3}
                     placeholder="Additional information about muscle strength and ROM"
@@ -557,9 +568,9 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     <div className="balance-option">
                       <label>Static</label>
                       <select 
-                        value={data.sittingStatic || ''}
+                        value={data?.sittingStatic || ''}
                         onChange={(e) => handleChange('sittingStatic', e.target.value)}
-                        className={data.sittingStatic ? 
+                        className={data?.sittingStatic ? 
                           `score-${data.sittingStatic.charAt(0).toLowerCase()}` : ''}
                       >
                         <option value="">Select an option</option>
@@ -579,9 +590,9 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     <div className="balance-option">
                       <label>Dynamic</label>
                       <select 
-                        value={data.sittingDynamic || ''}
+                        value={data?.sittingDynamic || ''}
                         onChange={(e) => handleChange('sittingDynamic', e.target.value)}
-                        className={data.sittingDynamic ? 
+                        className={data?.sittingDynamic ? 
                           `score-${data.sittingDynamic.charAt(0).toLowerCase()}` : ''}
                       >
                         <option value="">Select an option</option>
@@ -609,9 +620,9 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     <div className="balance-option">
                       <label>Static</label>
                       <select 
-                        value={data.standingStatic || ''}
+                        value={data?.standingStatic || ''}
                         onChange={(e) => handleChange('standingStatic', e.target.value)}
-                        className={data.standingStatic ? 
+                        className={data?.standingStatic ? 
                           `score-${data.standingStatic.charAt(0).toLowerCase()}` : ''}
                       >
                         <option value="">Select an option</option>
@@ -631,9 +642,9 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     <div className="balance-option">
                       <label>Dynamic</label>
                       <select 
-                        value={data.standingDynamic || ''}
+                        value={data?.standingDynamic || ''}
                         onChange={(e) => handleChange('standingDynamic', e.target.value)}
-                        className={data.standingDynamic ? 
+                        className={data?.standingDynamic ? 
                           `score-${data.standingDynamic.charAt(0).toLowerCase()}` : ''}
                       >
                         <option value="">Select an option</option>
@@ -660,7 +671,7 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
                     Additional Information
                   </label>
                   <textarea 
-                    value={data.balanceAdditional || ''}
+                    value={data?.balanceAdditional || ''}
                     onChange={(e) => handleChange('balanceAdditional', e.target.value)}
                     rows={3}
                     placeholder="Additional information about balance"
@@ -729,28 +740,28 @@ const ObjectiveSection = ({ data, onChange, onOpenTest, autoSaveMessage }) => {
         
         {activeTab === 'equipment' && (
           <EquipmentSection 
-            data={data.equipment || {}}
+            data={data?.equipment || {}}
             onChange={(sectionData) => handleSectionChange('equipment', sectionData)}
           />
         )}
         
         {activeTab === 'prosthetic' && (
           <ProstheticOrthoticSection 
-            data={data.prostheticOrthotic || {}}
+            data={data?.prostheticOrthotic || {}}
             onChange={(sectionData) => handleSectionChange('prostheticOrthotic', sectionData)}
           />
         )}
         
         {activeTab === 'education' && (
           <PatientCaregiverEducationSection 
-            data={data.patientEducation || {}}
+            data={data?.patientEducation || {}}
             onChange={(sectionData) => handleSectionChange('patientEducation', sectionData)}
           />
         )}
         
         {activeTab === 'woundcare' && (
           <WoundCareSection 
-            data={data.woundCare || {}}
+            data={data?.woundCare || {}}
             onChange={(sectionData) => handleSectionChange('woundCare', sectionData)}
             onOpenTest={onOpenTest}
           />

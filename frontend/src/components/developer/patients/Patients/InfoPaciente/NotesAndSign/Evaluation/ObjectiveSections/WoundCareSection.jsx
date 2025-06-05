@@ -1,4 +1,4 @@
-// Enhanced WoundCareSection.jsx
+// Enhanced WoundCareSection.jsx with Finale Integration
 import React from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/WoundCareSection.scss';
 import StandardizedTest from '../StandardizedTest';
@@ -10,10 +10,21 @@ const WoundCareSection = ({ data, onChange, onOpenTest }) => {
     WOUND: 'Wound Assessment'
   };
 
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

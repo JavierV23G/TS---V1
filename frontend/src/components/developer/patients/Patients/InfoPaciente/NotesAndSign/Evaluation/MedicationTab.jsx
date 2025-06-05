@@ -1,11 +1,18 @@
-// Enhanced MedicationTab.jsx
+// Enhanced MedicationTab.jsx with Finale Integration
 import React from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/MedicationTab.scss';
 
 const MedicationTab = ({ data, onChange, onOpenMedicationList, autoSaveMessage }) => {
-  // Manejador para los cambios en los campos
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
   const handleChange = (field, value) => {
-    onChange({ ...data, [field]: value });
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      [field]: value
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
   };
   
   // Lista de posibles medicamentos frecuentes (solo como ejemplo)

@@ -13,7 +13,25 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     pmh: '',
     wbs: '',
     clinicalGrouping: '',
-    homebound: ''
+    homebound: '',
+    // New visits data
+    approvedVisits: {
+      pt: {
+        approved: 12,
+        used: 3,
+        status: 'active' // active, waiting, no_more
+      },
+      ot: {
+        approved: 8,
+        used: 2,
+        status: 'active'
+      },
+      st: {
+        approved: 6,
+        used: 6,
+        status: 'no_more'
+      }
+    }
   });
   
   // Initialize with patient data
@@ -33,7 +51,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         pmh: patient.medicalInfo.pmh || '',
         wbs: patient.medicalInfo.wbs || '',
         clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || ''
+        homebound: patient.medicalInfo.homebound || '',
+        approvedVisits: patient.medicalInfo.approvedVisits || {
+          pt: { approved: 0, used: 0, status: 'waiting' },
+          ot: { approved: 0, used: 0, status: 'waiting' },
+          st: { approved: 0, used: 0, status: 'waiting' }
+        }
       });
     }
   }, [patient]);
@@ -81,6 +104,56 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       height: totalInches
     });
   };
+
+  // Handle visits input changes
+  const handleVisitsChange = (discipline, field, value) => {
+    console.log('Changing visits:', discipline, field, value); // Debug log
+    
+    // Allow empty values and handle them properly
+    const numericValue = value === '' ? '' : (parseInt(value) || 0);
+    
+    const newApprovedVisits = {
+      ...medicalData.approvedVisits,
+      [discipline]: {
+        ...medicalData.approvedVisits[discipline],
+        [field]: numericValue
+      }
+    };
+
+    // Auto-update status based on visits (only if not manually set)
+    const disciplineData = newApprovedVisits[discipline];
+    const approvedNum = parseInt(disciplineData.approved) || 0;
+    const usedNum = parseInt(disciplineData.used) || 0;
+    
+    if (approvedNum === 0) {
+      disciplineData.status = 'waiting';
+    } else if (usedNum >= approvedNum && approvedNum > 0) {
+      disciplineData.status = 'no_more';
+    } else if (approvedNum > 0 && usedNum < approvedNum) {
+      disciplineData.status = 'active';
+    }
+
+    setMedicalData({
+      ...medicalData,
+      approvedVisits: newApprovedVisits
+    });
+  };
+
+  // Handle status change
+  const handleStatusChange = (discipline, status) => {
+    console.log('Changing status:', discipline, status); // Debug log
+    
+    setMedicalData({
+      ...medicalData,
+      approvedVisits: {
+        ...medicalData.approvedVisits,
+        [discipline]: {
+          ...medicalData.approvedVisits[discipline],
+          status: status
+        }
+      }
+    });
+  };
   
   // Save changes
   const handleSaveChanges = () => {
@@ -124,7 +197,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         pmh: patient.medicalInfo.pmh || '',
         wbs: patient.medicalInfo.wbs || '',
         clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || ''
+        homebound: patient.medicalInfo.homebound || '',
+        approvedVisits: patient.medicalInfo.approvedVisits || {
+          pt: { approved: 0, used: 0, status: 'waiting' },
+          ot: { approved: 0, used: 0, status: 'waiting' },
+          st: { approved: 0, used: 0, status: 'waiting' }
+        }
       });
     } else {
       // Reset to defaults if no patient data
@@ -137,7 +215,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         pmh: '',
         wbs: '',
         clinicalGrouping: '',
-        homebound: ''
+        homebound: '',
+        approvedVisits: {
+          pt: { approved: 0, used: 0, status: 'waiting' },
+          ot: { approved: 0, used: 0, status: 'waiting' },
+          st: { approved: 0, used: 0, status: 'waiting' }
+        }
       });
     }
     
@@ -200,6 +283,59 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       return '#eab308';
     
     return '#64748b';
+  };
+
+  // Get discipline details
+  const getDisciplineDetails = (discipline) => {
+    const details = {
+      pt: {
+        name: 'Physical Therapy',
+        shortName: 'PT',
+        icon: 'fas fa-dumbbell',
+        color: '#3b82f6',
+        gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)'
+      },
+      ot: {
+        name: 'Occupational Therapy',
+        shortName: 'OT',
+        icon: 'fas fa-hands',
+        color: '#10b981',
+        gradient: 'linear-gradient(135deg, #10b981, #059669)'
+      },
+      st: {
+        name: 'Speech Therapy',
+        shortName: 'ST',
+        icon: 'fas fa-comments',
+        color: '#f59e0b',
+        gradient: 'linear-gradient(135deg, #f59e0b, #d97706)'
+      }
+    };
+    return details[discipline];
+  };
+
+  // Get status details
+  const getStatusDetails = (status) => {
+    const statusDetails = {
+      waiting: {
+        text: 'Waiting for more visits',
+        icon: 'fas fa-clock',
+        color: '#64748b',
+        bgColor: '#f1f5f9'
+      },
+      active: {
+        text: 'Visits available',
+        icon: 'fas fa-check-circle',
+        color: '#10b981',
+        bgColor: '#ecfdf5'
+      },
+      no_more: {
+        text: 'No more visits approved',
+        icon: 'fas fa-times-circle',
+        color: '#ef4444',
+        bgColor: '#fef2f2'
+      }
+    };
+    return statusDetails[status];
   };
   
   return (
@@ -310,7 +446,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                   value={medicalData.clinicalGrouping} 
                   onChange={handleInputChange}
                 >
-                  <option value="">Select Wound Bed Status</option>
+                  <option value="">Select Clinical Grouping</option>
                   <option value="No wounds present">No wounds present</option>
                   <option value="Wound healing well, no signs of infection">Wound healing well, no signs of infection</option>
                   <option value="Clean wound, granulating tissue present">Clean wound, granulating tissue present</option>
@@ -391,6 +527,216 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 rows="2"
               ></textarea>
             </div>
+
+            {/* NUEVA SECCIÓN DE VISITAS APROBADAS */}
+            <div style={{ marginTop: '32px', paddingTop: '28px', borderTop: '2px solid #e2e8f0' }}>
+              <h5 style={{ 
+                margin: '0 0 24px 0', 
+                fontSize: '16px', 
+                color: '#0f172a', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <i className="fas fa-calendar-check" style={{ 
+                  color: '#3b82f6',
+                  fontSize: '18px',
+                  background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '10px'
+                }}></i>
+                Approved Visits Management
+              </h5>
+              
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                gap: '20px' 
+              }}>
+                {Object.entries(medicalData.approvedVisits).map(([discipline, data]) => {
+                  const disciplineInfo = getDisciplineDetails(discipline);
+                  return (
+                    <div key={discipline} style={{
+                      background: 'white',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      border: '2px solid #e5e7eb',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)'
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '14px', 
+                        marginBottom: '20px' 
+                      }}>
+                        <div style={{ 
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '12px',
+                          backgroundColor: `${disciplineInfo.color}15`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '20px',
+                          color: disciplineInfo.color
+                        }}>
+                          <i className={disciplineInfo.icon}></i>
+                        </div>
+                        <div>
+                          <h6 style={{ 
+                            margin: '0 0 4px 0', 
+                            fontSize: '15px', 
+                            fontWeight: '600', 
+                            color: '#1e293b' 
+                          }}>
+                            {disciplineInfo.name}
+                          </h6>
+                          <span style={{ 
+                            fontSize: '12px', 
+                            color: '#64748b', 
+                            fontWeight: '500', 
+                            background: '#f1f5f9', 
+                            padding: '2px 8px', 
+                            borderRadius: '20px' 
+                          }}>
+                            {disciplineInfo.shortName}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                          <div style={{ flex: '1' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '11px', 
+                              color: '#64748b', 
+                              fontWeight: '700', 
+                              marginBottom: '8px', 
+                              textTransform: 'uppercase', 
+                              letterSpacing: '1px' 
+                            }}>
+                              APPROVED
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={data.approved}
+                              onChange={(e) => handleVisitsChange(discipline, 'approved', e.target.value)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              placeholder="0"
+                              style={{
+                                width: '100%',
+                                height: '45px',
+                                padding: '12px 16px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '12px',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                background: '#ffffff',
+                                color: '#1e293b',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                appearance: 'none',
+                                MozAppearance: 'textfield',
+                                WebkitAppearance: 'none'
+                              }}
+                            />
+                          </div>
+                          <div style={{ flex: '1' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '11px', 
+                              color: '#64748b', 
+                              fontWeight: '700', 
+                              marginBottom: '8px', 
+                              textTransform: 'uppercase', 
+                              letterSpacing: '1px' 
+                            }}>
+                              USED
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              max={parseInt(data.approved) || 999}
+                              value={data.used}
+                              onChange={(e) => handleVisitsChange(discipline, 'used', e.target.value)}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              placeholder="0"
+                              style={{
+                                width: '100%',
+                                height: '45px',
+                                padding: '12px 16px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '12px',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                background: '#ffffff',
+                                color: '#1e293b',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                appearance: 'none',
+                                MozAppearance: 'textfield',
+                                WebkitAppearance: 'none'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div style={{ marginTop: '16px' }}>
+                          <label style={{ 
+                            display: 'block', 
+                            fontSize: '11px', 
+                            color: '#64748b', 
+                            fontWeight: '700', 
+                            marginBottom: '8px', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '1px' 
+                          }}>
+                            STATUS
+                          </label>
+                          <select
+                            value={data.status}
+                            onChange={(e) => handleStatusChange(discipline, e.target.value)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onFocus={(e) => e.stopPropagation()}
+                            style={{
+                              width: '100%',
+                              height: '45px',
+                              padding: '12px 16px',
+                              border: '2px solid #e2e8f0',
+                              borderRadius: '12px',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              background: '#ffffff',
+                              color: '#1e293b',
+                              outline: 'none',
+                              cursor: 'pointer',
+                              boxSizing: 'border-box'
+                            }}
+                          >
+                            <option value="waiting">Waiting for more visits</option>
+                            <option value="active">Visits available</option>
+                            <option value="no_more">No more visits approved</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             
             <div className="form-actions">
               <button className="cancel-btn" onClick={handleCancelEdit}>
@@ -450,6 +796,84 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 </div>
               </div>
             </div>
+
+            {/* NUEVA SECCIÓN DE VISITAS APROBADAS - VIEW MODE */}
+            <div className="info-section approved-visits-section-view">
+              <div className="info-icon">
+                <i className="fas fa-calendar-check"></i>
+              </div>
+              <div className="info-content">
+                <div className="info-label">Approved Visits</div>
+                <div className="info-value">
+                  <div className="visits-grid-view">
+                    {Object.entries(medicalData.approvedVisits).map(([discipline, data]) => {
+                      const disciplineInfo = getDisciplineDetails(discipline);
+                      const statusInfo = getStatusDetails(data.status);
+                      const remaining = Math.max(0, (parseInt(data.approved) || 0) - (parseInt(data.used) || 0));
+                      const progressPercentage = (parseInt(data.approved) || 0) > 0 ? ((parseInt(data.used) || 0) / (parseInt(data.approved) || 0)) * 100 : 0;
+                      
+                      return (
+                        <div key={discipline} className="visit-card-view">
+                          <div className="visit-card-header">
+                            <div className="discipline-badge" style={{ background: disciplineInfo.gradient }}>
+                              <i className={disciplineInfo.icon}></i>
+                              <span>{disciplineInfo.shortName}</span>
+                            </div>
+                            <div className="status-badge" style={{ 
+                              color: statusInfo.color, 
+                              backgroundColor: statusInfo.bgColor 
+                            }}>
+                              <i className={statusInfo.icon}></i>
+                              <span>{statusInfo.text}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="visit-stats">
+                            <div className="stats-row">
+                              <div className="stat">
+                                <span className="stat-label">Approved</span>
+                                <span className="stat-value" style={{ color: disciplineInfo.color }}>
+                                  {data.approved || 0}
+                                </span>
+                              </div>
+                              <div className="stat">
+                                <span className="stat-label">Used</span>
+                                <span className="stat-value">{data.used || 0}</span>
+                              </div>
+                              <div className="stat">
+                                <span className="stat-label">Remaining</span>
+                                <span className="stat-value remaining" style={{ 
+                                  color: remaining > 0 ? disciplineInfo.color : '#ef4444' 
+                                }}>
+                                  {remaining}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="progress-container">
+                              <div className="progress-bar">
+                                <div 
+                                  className="progress-fill" 
+                                  style={{ 
+                                    width: `${progressPercentage}%`,
+                                    background: progressPercentage >= 100 ? '#ef4444' : disciplineInfo.gradient
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="progress-text">
+                                {Math.round(progressPercentage)}% used
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="discipline-name">{disciplineInfo.name}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
             
             <div className="info-section">
               <div className="info-icon">
@@ -504,7 +928,6 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 </div>
               </div>
             </div>
-            
             <div className="info-section clinical-section">
               <div className="info-icon" style={{ 
                 color: getClinicalGroupingColor(medicalData.clinicalGrouping),
