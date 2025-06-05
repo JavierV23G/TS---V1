@@ -28,7 +28,7 @@ async def startup():
         Base.metadata.create_all(bind=engine)
         print("✅ Tablas creadas o ya existentes.")
     except Exception as e:
-        print(f"Error during startup: {e}")  # ✅ Línea agregada
+        print(f"Error during startup: {e}")
 
 app.include_router(create_router)
 app.include_router(search_router)
