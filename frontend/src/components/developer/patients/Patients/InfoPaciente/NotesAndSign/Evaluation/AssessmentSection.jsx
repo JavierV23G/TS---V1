@@ -10,9 +10,13 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
   
   return (
     <div className="assessment-section-container">
+      {/* SECCIÓN 1: Problem List / Functional Limitations */}
       <div className="form-section">
         <div className="section-title">
-          <h2>Problem List / Functional Limitations</h2>
+          <h2>
+            <i className="fas fa-list-ul"></i>
+            Problem List / Functional Limitations
+          </h2>
           <span className={`autosaved-badge ${autoSaveMessage ? 'visible' : ''}`}>
             <i className="fas fa-check-circle"></i>
             {autoSaveMessage || 'AUTOSAVED'}
@@ -20,199 +24,244 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
         </div>
         
         <div className="problem-list-grid">
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="decreasedROM" 
-              checked={data.decreasedROM || false}
-              onChange={(e) => handleChange('decreasedROM', e.target.checked)}
-            />
-            <label htmlFor="decreasedROM">
-              <i className="fas fa-ruler-combined"></i>
-              Decreased ROM
-            </label>
+          {/* Mobility & Movement Problems */}
+          <div className="problem-category">
+            <h4 className="category-title">
+              <i className="fas fa-walking"></i>
+              Mobility & Movement
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="decreasedROM" 
+                  checked={data.decreasedROM || false}
+                  onChange={(e) => handleChange('decreasedROM', e.target.checked)}
+                />
+                <label htmlFor="decreasedROM">
+                  <i className="fas fa-ruler-combined"></i>
+                  Decreased ROM
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="dysfunctionalPosture" 
+                  checked={data.dysfunctionalPosture || false}
+                  onChange={(e) => handleChange('dysfunctionalPosture', e.target.checked)}
+                />
+                <label htmlFor="dysfunctionalPosture">
+                  <i className="fas fa-user"></i>
+                  Dysfunctional Posture
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedFunctionalMobility" 
+                  checked={data.impairedFunctionalMobility || false}
+                  onChange={(e) => handleChange('impairedFunctionalMobility', e.target.checked)}
+                />
+                <label htmlFor="impairedFunctionalMobility">
+                  <i className="fas fa-wheelchair"></i>
+                  Impaired Functional Mobility
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="dysfunctionalGait" 
+                  checked={data.dysfunctionalGait || false}
+                  onChange={(e) => handleChange('dysfunctionalGait', e.target.checked)}
+                />
+                <label htmlFor="dysfunctionalGait">
+                  <i className="fas fa-shoe-prints"></i>
+                  Dysfunctional Gait
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedTransfers" 
+                  checked={data.impairedTransfers || false}
+                  onChange={(e) => handleChange('impairedTransfers', e.target.checked)}
+                />
+                <label htmlFor="impairedTransfers">
+                  <i className="fas fa-exchange-alt"></i>
+                  Impaired Transfers
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="dysfunctionalPosture" 
-              checked={data.dysfunctionalPosture || false}
-              onChange={(e) => handleChange('dysfunctionalPosture', e.target.checked)}
-            />
-            <label htmlFor="dysfunctionalPosture">
-              <i className="fas fa-user"></i>
-              Dysfunctional Posture
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedFunctionalActivityTolerance" 
-              checked={data.impairedFunctionalActivityTolerance || false}
-              onChange={(e) => handleChange('impairedFunctionalActivityTolerance', e.target.checked)}
-            />
-            <label htmlFor="impairedFunctionalActivityTolerance">
-              <i className="fas fa-running"></i>
-              Impaired Functional Activity Tolerance
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedFunctionalMobility" 
-              checked={data.impairedFunctionalMobility || false}
-              onChange={(e) => handleChange('impairedFunctionalMobility', e.target.checked)}
-            />
-            <label htmlFor="impairedFunctionalMobility">
-              <i className="fas fa-wheelchair"></i>
-              Impaired Functional Mobility
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedSafetyAwareness" 
-              checked={data.impairedSafetyAwareness || false}
-              onChange={(e) => handleChange('impairedSafetyAwareness', e.target.checked)}
-            />
-            <label htmlFor="impairedSafetyAwareness">
-              <i className="fas fa-exclamation-triangle"></i>
-              Impaired Safety Awareness
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="softTissueDysfunction" 
-              checked={data.softTissueDysfunction || false}
-              onChange={(e) => handleChange('softTissueDysfunction', e.target.checked)}
-            />
-            <label htmlFor="softTissueDysfunction">
-              <i className="fas fa-hand-paper"></i>
-              Soft Tissue Dysfunction
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="jointHypoHypermobility" 
-              checked={data.jointHypoHypermobility || false}
-              onChange={(e) => handleChange('jointHypoHypermobility', e.target.checked)}
-            />
-            <label htmlFor="jointHypoHypermobility">
-              <i className="fas fa-bone"></i>
-              Joint Hyper/Hypomobility
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedBalance" 
-              checked={data.impairedBalance || false}
-              onChange={(e) => handleChange('impairedBalance', e.target.checked)}
-            />
-            <label htmlFor="impairedBalance">
-              <i className="fas fa-balance-scale"></i>
-              Impaired Balance
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedFunctionalStrength" 
-              checked={data.impairedFunctionalStrength || false}
-              onChange={(e) => handleChange('impairedFunctionalStrength', e.target.checked)}
-            />
-            <label htmlFor="impairedFunctionalStrength">
+
+          {/* Strength & Balance Problems */}
+          <div className="problem-category">
+            <h4 className="category-title">
               <i className="fas fa-dumbbell"></i>
-              Impaired Functional Strength
-            </label>
+              Strength & Balance
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedFunctionalStrength" 
+                  checked={data.impairedFunctionalStrength || false}
+                  onChange={(e) => handleChange('impairedFunctionalStrength', e.target.checked)}
+                />
+                <label htmlFor="impairedFunctionalStrength">
+                  <i className="fas fa-dumbbell"></i>
+                  Impaired Functional Strength
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedBalance" 
+                  checked={data.impairedBalance || false}
+                  onChange={(e) => handleChange('impairedBalance', e.target.checked)}
+                />
+                <label htmlFor="impairedBalance">
+                  <i className="fas fa-balance-scale"></i>
+                  Impaired Balance
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedCoordination" 
+                  checked={data.impairedCoordination || false}
+                  onChange={(e) => handleChange('impairedCoordination', e.target.checked)}
+                />
+                <label htmlFor="impairedCoordination">
+                  <i className="fas fa-hand-pointer"></i>
+                  Impaired Coordination
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="fallRisk" 
+                  checked={data.fallRisk || false}
+                  onChange={(e) => handleChange('fallRisk', e.target.checked)}
+                />
+                <label htmlFor="fallRisk">
+                  <i className="fas fa-person-falling"></i>
+                  Fall Risk
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="dysfunctionalGait" 
-              checked={data.dysfunctionalGait || false}
-              onChange={(e) => handleChange('dysfunctionalGait', e.target.checked)}
-            />
-            <label htmlFor="dysfunctionalGait">
-              <i className="fas fa-shoe-prints"></i>
-              Dysfunctional Gait
-            </label>
+
+          {/* Activity & Tolerance Problems */}
+          <div className="problem-category">
+            <h4 className="category-title">
+              <i className="fas fa-running"></i>
+              Activity & Tolerance
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedFunctionalActivityTolerance" 
+                  checked={data.impairedFunctionalActivityTolerance || false}
+                  onChange={(e) => handleChange('impairedFunctionalActivityTolerance', e.target.checked)}
+                />
+                <label htmlFor="impairedFunctionalActivityTolerance">
+                  <i className="fas fa-running"></i>
+                  Impaired Functional Activity Tolerance
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="painRestrictingFunction" 
+                  checked={data.painRestrictingFunction || false}
+                  onChange={(e) => handleChange('painRestrictingFunction', e.target.checked)}
+                />
+                <label htmlFor="painRestrictingFunction">
+                  <i className="fas fa-bolt"></i>
+                  Pain Restricting Function
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="urinaryIncontinence" 
+                  checked={data.urinaryIncontinence || false}
+                  onChange={(e) => handleChange('urinaryIncontinence', e.target.checked)}
+                />
+                <label htmlFor="urinaryIncontinence">
+                  <i className="fas fa-tint"></i>
+                  Urinary Incontinence (Timed Up & Go)
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedCoordination" 
-              checked={data.impairedCoordination || false}
-              onChange={(e) => handleChange('impairedCoordination', e.target.checked)}
-            />
-            <label htmlFor="impairedCoordination">
-              <i className="fas fa-hand-pointer"></i>
-              Impaired Coordination
-            </label>
+
+          {/* Safety & Awareness Problems */}
+          <div className="problem-category">
+            <h4 className="category-title">
+              <i className="fas fa-shield-alt"></i>
+              Safety & Awareness
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="impairedSafetyAwareness" 
+                  checked={data.impairedSafetyAwareness || false}
+                  onChange={(e) => handleChange('impairedSafetyAwareness', e.target.checked)}
+                />
+                <label htmlFor="impairedSafetyAwareness">
+                  <i className="fas fa-exclamation-triangle"></i>
+                  Impaired Safety Awareness
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="painRestrictingFunction" 
-              checked={data.painRestrictingFunction || false}
-              onChange={(e) => handleChange('painRestrictingFunction', e.target.checked)}
-            />
-            <label htmlFor="painRestrictingFunction">
-              <i className="fas fa-bolt"></i>
-              Pain Restricting Function
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="impairedTransfers" 
-              checked={data.impairedTransfers || false}
-              onChange={(e) => handleChange('impairedTransfers', e.target.checked)}
-            />
-            <label htmlFor="impairedTransfers">
-              <i className="fas fa-exchange-alt"></i>
-              Impaired Transfers
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="fallRisk" 
-              checked={data.fallRisk || false}
-              onChange={(e) => handleChange('fallRisk', e.target.checked)}
-            />
-            <label htmlFor="fallRisk">
-              <i className="fas fa-person-falling"></i>
-              Fall Risk
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="urinaryIncontinence" 
-              checked={data.urinaryIncontinence || false}
-              onChange={(e) => handleChange('urinaryIncontinence', e.target.checked)}
-            />
-            <label htmlFor="urinaryIncontinence">
-              <i className="fas fa-tint"></i>
-              Urinary Incontinence (Timed Up & Go)
-            </label>
+
+          {/* Tissue & Joint Problems */}
+          <div className="problem-category">
+            <h4 className="category-title">
+              <i className="fas fa-bone"></i>
+              Tissue & Joint Issues
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="softTissueDysfunction" 
+                  checked={data.softTissueDysfunction || false}
+                  onChange={(e) => handleChange('softTissueDysfunction', e.target.checked)}
+                />
+                <label htmlFor="softTissueDysfunction">
+                  <i className="fas fa-hand-paper"></i>
+                  Soft Tissue Dysfunction
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="jointHypoHypermobility" 
+                  checked={data.jointHypoHypermobility || false}
+                  onChange={(e) => handleChange('jointHypoHypermobility', e.target.checked)}
+                />
+                <label htmlFor="jointHypoHypermobility">
+                  <i className="fas fa-bone"></i>
+                  Joint Hyper/Hypomobility
+                </label>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -232,9 +281,13 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
         </div>
       </div>
       
+      {/* SECCIÓN 2: Assessment/Justification */}
       <div className="form-section">
         <div className="section-title">
-          <h2>Assessment/Justification</h2>
+          <h2>
+            <i className="fas fa-clipboard-check"></i>
+            Assessment/Justification
+          </h2>
         </div>
         
         <div className="form-row">
@@ -287,9 +340,13 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
         </div>
       </div>
       
+      {/* SECCIÓN 3: Rehab Potential */}
       <div className="form-section">
         <div className="section-title">
-          <h2>Rehab Potential</h2>
+          <h2>
+            <i className="fas fa-chart-line"></i>
+            Rehab Potential
+          </h2>
         </div>
         
         <div className="rehab-potential-container">
@@ -329,233 +386,276 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
         </div>
       </div>
       
+      {/* SECCIÓN 4: Treatment As Tolerated/Interventions */}
       <div className="form-section">
         <div className="section-title">
-          <h2>Treatment As Tolerated</h2>
+          <h2>
+            <i className="fas fa-stethoscope"></i>
+            Treatment As Tolerated/Interventions
+          </h2>
         </div>
         
         <div className="treatment-options-grid">
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="evaluation" 
-              checked={data.treatmentEvaluation || false}
-              onChange={(e) => handleChange('treatmentEvaluation', e.target.checked)}
-            />
-            <label htmlFor="evaluation">
+          {/* Basic Interventions */}
+          <div className="treatment-category">
+            <h4 className="category-title">
               <i className="fas fa-clipboard-check"></i>
-              Evaluation
-            </label>
+              Basic Interventions
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="evaluation" 
+                  checked={data.treatmentEvaluation || false}
+                  onChange={(e) => handleChange('treatmentEvaluation', e.target.checked)}
+                />
+                <label htmlFor="evaluation">
+                  <i className="fas fa-clipboard-check"></i>
+                  Evaluation
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="therapeuticExercise" 
+                  checked={data.therapeuticExercise || false}
+                  onChange={(e) => handleChange('therapeuticExercise', e.target.checked)}
+                />
+                <label htmlFor="therapeuticExercise">
+                  <i className="fas fa-dumbbell"></i>
+                  Therapeutic Exercise
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="stretchingFlexibility" 
+                  checked={data.stretchingFlexibility || false}
+                  onChange={(e) => handleChange('stretchingFlexibility', e.target.checked)}
+                />
+                <label htmlFor="stretchingFlexibility">
+                  <i className="fas fa-arrows-alt-h"></i>
+                  Stretching/Flexibility
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="manualTherapy" 
+                  checked={data.manualTherapy || false}
+                  onChange={(e) => handleChange('manualTherapy', e.target.checked)}
+                />
+                <label htmlFor="manualTherapy">
+                  <i className="fas fa-hands"></i>
+                  Manual Therapy
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="therapeuticExercise" 
-              checked={data.therapeuticExercise || false}
-              onChange={(e) => handleChange('therapeuticExercise', e.target.checked)}
-            />
-            <label htmlFor="therapeuticExercise">
-              <i className="fas fa-dumbbell"></i>
-              Therapeutic Exercise
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="transferTraining" 
-              checked={data.transferTraining || false}
-              onChange={(e) => handleChange('transferTraining', e.target.checked)}
-            />
-            <label htmlFor="transferTraining">
-              <i className="fas fa-exchange-alt"></i>
-              Transfer Training
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="establishHomeProgram" 
-              checked={data.establishHomeProgram || false}
-              onChange={(e) => handleChange('establishHomeProgram', e.target.checked)}
-            />
-            <label htmlFor="establishHomeProgram">
-              <i className="fas fa-home"></i>
-              Establish Home Program
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="gaitTraining" 
-              checked={data.gaitTraining || false}
-              onChange={(e) => handleChange('gaitTraining', e.target.checked)}
-            />
-            <label htmlFor="gaitTraining">
+
+          {/* Mobility Training */}
+          <div className="treatment-category">
+            <h4 className="category-title">
               <i className="fas fa-walking"></i>
-              Gait Training
-            </label>
+              Mobility Training
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="gaitTraining" 
+                  checked={data.gaitTraining || false}
+                  onChange={(e) => handleChange('gaitTraining', e.target.checked)}
+                />
+                <label htmlFor="gaitTraining">
+                  <i className="fas fa-walking"></i>
+                  Gait Training
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="transferTraining" 
+                  checked={data.transferTraining || false}
+                  onChange={(e) => handleChange('transferTraining', e.target.checked)}
+                />
+                <label htmlFor="transferTraining">
+                  <i className="fas fa-exchange-alt"></i>
+                  Transfer Training
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="balance" 
+                  checked={data.balance || false}
+                  onChange={(e) => handleChange('balance', e.target.checked)}
+                />
+                <label htmlFor="balance">
+                  <i className="fas fa-balance-scale"></i>
+                  Balance
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="neuromuscularReeducation" 
+                  checked={data.neuromuscularReeducation || false}
+                  onChange={(e) => handleChange('neuromuscularReeducation', e.target.checked)}
+                />
+                <label htmlFor="neuromuscularReeducation">
+                  <i className="fas fa-brain"></i>
+                  Neuromuscular Re-Education
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="stretchingFlexibility" 
-              checked={data.stretchingFlexibility || false}
-              onChange={(e) => handleChange('stretchingFlexibility', e.target.checked)}
-            />
-            <label htmlFor="stretchingFlexibility">
-              <i className="fas fa-arrows-alt-h"></i>
-              Stretching/Flexibility
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="safetyTraining" 
-              checked={data.safetyTraining || false}
-              onChange={(e) => handleChange('safetyTraining', e.target.checked)}
-            />
-            <label htmlFor="safetyTraining">
+
+          {/* Safety & Education */}
+          <div className="treatment-category">
+            <h4 className="category-title">
               <i className="fas fa-shield-alt"></i>
-              Safety Training
-            </label>
+              Safety & Education
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="safetyTraining" 
+                  checked={data.safetyTraining || false}
+                  onChange={(e) => handleChange('safetyTraining', e.target.checked)}
+                />
+                <label htmlFor="safetyTraining">
+                  <i className="fas fa-shield-alt"></i>
+                  Safety Training
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="establishHomeProgram" 
+                  checked={data.establishHomeProgram || false}
+                  onChange={(e) => handleChange('establishHomeProgram', e.target.checked)}
+                />
+                <label htmlFor="establishHomeProgram">
+                  <i className="fas fa-home"></i>
+                  Establish Home Program
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="selfCareManagement" 
+                  checked={data.selfCareManagement || false}
+                  onChange={(e) => handleChange('selfCareManagement', e.target.checked)}
+                />
+                <label htmlFor="selfCareManagement">
+                  <i className="fas fa-user-cog"></i>
+                  Self Care Management
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="voiceTrainingEducation" 
+                  checked={data.voiceTrainingEducation || false}
+                  onChange={(e) => handleChange('voiceTrainingEducation', e.target.checked)}
+                />
+                <label htmlFor="voiceTrainingEducation">
+                  <i className="fas fa-microphone"></i>
+                  Voice Training Education
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="balance" 
-              checked={data.balance || false}
-              onChange={(e) => handleChange('balance', e.target.checked)}
-            />
-            <label htmlFor="balance">
-              <i className="fas fa-balance-scale"></i>
-              Balance
-            </label>
+
+          {/* Specialized Interventions */}
+          <div className="treatment-category">
+            <h4 className="category-title">
+              <i className="fas fa-star"></i>
+              Specialized Interventions
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="painModalities" 
+                  checked={data.painModalities || false}
+                  onChange={(e) => handleChange('painModalities', e.target.checked)}
+                />
+                <label htmlFor="painModalities">
+                  <i className="fas fa-bolt"></i>
+                  Pain Modalities
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="woundCare" 
+                  checked={data.woundCare || false}
+                  onChange={(e) => handleChange('woundCare', e.target.checked)}
+                />
+                <label htmlFor="woundCare">
+                  <i className="fas fa-band-aid"></i>
+                  Wound Care
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="chestPhysicalTherapy" 
+                  checked={data.chestPhysicalTherapy || false}
+                  onChange={(e) => handleChange('chestPhysicalTherapy', e.target.checked)}
+                />
+                <label htmlFor="chestPhysicalTherapy">
+                  <i className="fas fa-lungs"></i>
+                  Chest Physical Therapy
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="prostheticTherapy" 
+                  checked={data.prostheticTherapy || false}
+                  onChange={(e) => handleChange('prostheticTherapy', e.target.checked)}
+                />
+                <label htmlFor="prostheticTherapy">
+                  <i className="fas fa-hand-paper"></i>
+                  Prosthetic Therapy
+                </label>
+              </div>
+              
+              <div className="checkbox-item">
+                <input 
+                  type="checkbox" 
+                  id="fallRiskTreatment" 
+                  checked={data.fallRiskTreatment || false}
+                  onChange={(e) => handleChange('fallRiskTreatment', e.target.checked)}
+                />
+                <label htmlFor="fallRiskTreatment">
+                  <i className="fas fa-person-falling"></i>
+                  Fall Risk Treatment
+                </label>
+              </div>
+            </div>
           </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="prostheticTherapy" 
-              checked={data.prostheticTherapy || false}
-              onChange={(e) => handleChange('prostheticTherapy', e.target.checked)}
-            />
-            <label htmlFor="prostheticTherapy">
-              <i className="fas fa-hand-paper"></i>
-              Prosthetic Therapy
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="painModalities" 
-              checked={data.painModalities || false}
-              onChange={(e) => handleChange('painModalities', e.target.checked)}
-            />
-            <label htmlFor="painModalities">
-              <i className="fas fa-bolt"></i>
-              Pain Modalities
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="woundCare" 
-              checked={data.woundCare || false}
-              onChange={(e) => handleChange('woundCare', e.target.checked)}
-            />
-            <label htmlFor="woundCare">
-              <i className="fas fa-band-aid"></i>
-              Wound Care
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="chestPhysicalTherapy" 
-              checked={data.chestPhysicalTherapy || false}
-              onChange={(e) => handleChange('chestPhysicalTherapy', e.target.checked)}
-            />
-            <label htmlFor="chestPhysicalTherapy">
-              <i className="fas fa-lungs"></i>
-              Chest Physical Therapy
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="manualTherapy" 
-              checked={data.manualTherapy || false}
-              onChange={(e) => handleChange('manualTherapy', e.target.checked)}
-            />
-            <label htmlFor="manualTherapy">
-              <i className="fas fa-hands"></i>
-              Manual Therapy
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="neuromuscularReeducation" 
-              checked={data.neuromuscularReeducation || false}
-              onChange={(e) => handleChange('neuromuscularReeducation', e.target.checked)}
-            />
-            <label htmlFor="neuromuscularReeducation">
-              <i className="fas fa-brain"></i>
-              Neuromuscular Re-Education
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="voiceTrainingEducation" 
-              checked={data.voiceTrainingEducation || false}
-              onChange={(e) => handleChange('voiceTrainingEducation', e.target.checked)}
-            />
-            <label htmlFor="voiceTrainingEducation">
-              <i className="fas fa-microphone"></i>
-              Voice Training Education
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="selfCareManagement" 
-              checked={data.selfCareManagement || false}
-              onChange={(e) => handleChange('selfCareManagement', e.target.checked)}
-            />
-            <label htmlFor="selfCareManagement">
-              <i className="fas fa-user-cog"></i>
-              Self Care Management
-            </label>
-          </div>
-          
-          <div className="checkbox-item">
-            <input 
-              type="checkbox" 
-              id="fallRiskTreatment" 
-              checked={data.fallRiskTreatment || false}
-              onChange={(e) => handleChange('fallRiskTreatment', e.target.checked)}
-            />
-            <label htmlFor="fallRiskTreatment">
-              <i className="fas fa-person-falling"></i>
-              Fall Risk
-            </label>
-          </div>
-          
+        </div>
+
+        {/* Special Agreement Checkbox */}
+        <div className="form-row special-agreement">
           <div className="checkbox-item wide-checkbox">
             <input 
               type="checkbox" 
@@ -586,18 +686,26 @@ const AssessmentSection = ({ data, onChange, autoSaveMessage }) => {
         </div>
       </div>
       
+      {/* SECCIÓN 5: Skilled Care Provided This Visit */}
       <div className="form-section">
         <div className="section-title">
-          <h2>Skilled Care Provided This Visit</h2>
+          <h2>
+            <i className="fas fa-notes-medical"></i>
+            Skilled Care Provided This Visit
+          </h2>
         </div>
         
         <div className="form-row">
           <div className="form-group">
+            <label>
+              <i className="fas fa-clipboard-list"></i>
+              Detail skilled care provided during this visit
+            </label>
             <textarea 
               value={data.skilledCareProvided || ''}
               onChange={(e) => handleChange('skilledCareProvided', e.target.value)}
               rows={6}
-              placeholder="Detail skilled care provided during this visit"
+              placeholder="Detail skilled care provided during this visit (e.g., specific exercises performed, patient education provided, safety training conducted, etc.)"
             />
           </div>
         </div>

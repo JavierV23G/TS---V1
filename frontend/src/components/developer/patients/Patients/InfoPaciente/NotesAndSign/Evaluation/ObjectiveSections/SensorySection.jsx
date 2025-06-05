@@ -1,4 +1,4 @@
-// Enhanced SensorySection.jsx
+// Enhanced SensorySection.jsx with Finale Integration
 import React from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/SensorySection.scss';
 
@@ -18,10 +18,21 @@ const SensorySection = ({ data, onChange }) => {
     { value: 'Left', label: 'Left' }
   ];
 
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+
   // Manejar cambios en los dropdowns
   const handleSelectChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };
@@ -37,16 +48,14 @@ const SensorySection = ({ data, onChange }) => {
       [field]: !sectionData[field]
     };
     
-    onChange({
-      ...data,
+    handleChange({
       [section]: updatedSection
     });
   };
 
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

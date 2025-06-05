@@ -1,4 +1,4 @@
-// Enhanced CognitiveStatusSection.jsx
+// Enhanced CognitiveStatusSection.jsx with Finale Integration
 import React, { useState } from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/CognitiveStatusSection.scss';
 
@@ -37,6 +37,18 @@ const CognitiveStatusSection = ({ data, onChange }) => {
     initiation: "Ability to start activities independently without prompting."
   };
 
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Incluye validación para Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+
   // Manejar cambios en los checkboxes de orientación
   const handleOrientationChange = (field) => {
     const updatedOrientation = {
@@ -44,24 +56,21 @@ const CognitiveStatusSection = ({ data, onChange }) => {
       [field]: !data.orientation?.[field]
     };
     
-    onChange({
-      ...data,
+    handleChange({
       orientation: updatedOrientation
     });
   };
 
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };
 
   // Manejar cambios en los dropdowns
   const handleSelectChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

@@ -438,3 +438,142 @@ $border-radius-sm: 12px;
     }
   }
 }
+
+
+// 🔥 NUEVOS ESTILOS SCSS PARA ASSESSMENT SECTION
+
+// Categorías de problemas organizadas
+.problem-category, .treatment-category {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  
+  .category-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+    
+    i {
+      color: #6c757d;
+      font-size: 16px;
+    }
+  }
+  
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+// Grid para categorías de problemas
+.problem-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// Grid para opciones de tratamiento  
+.treatment-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+// Checkbox especial para el acuerdo PT/CG
+.special-agreement {
+  background: #e8f4fd;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  
+  .wide-checkbox {
+    .checkbox-item {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    
+    label {
+      font-weight: 500;
+      color: #0066cc;
+      
+      i {
+        color: #0066cc;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Mejorar el aspecto de los checkboxes en categorías
+.problem-category .checkbox-item,
+.treatment-category .checkbox-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.15);
+  }
+  
+  input[type="checkbox"]:checked + label {
+    color: #007bff;
+    font-weight: 500;
+    
+    i {
+      color: #007bff;
+    }
+  }
+  
+  label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    
+    i {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+  }
+}
+
+// Iconos específicos por sección
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    
+    i {
+      color: #007bff;
+      font-size: 22px;
+    }
+  }
+}

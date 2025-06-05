@@ -332,7 +332,7 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
           <div className="auth-user-welcome">
             <div className="welcome-message">
               <i className="fas fa-user-check"></i>
-              <span>Welcome back, <strong>{getUserName()}</strong>. {!isMobile && 'Redirecting to your dashboard...'}</span>
+              <span>Welcome<strong>{getUserName()}</strong>. {!isMobile && 'Redirecting to your dashboard...'}</span>
             </div>
           </div>
         )}

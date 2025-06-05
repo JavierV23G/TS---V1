@@ -1703,13 +1703,6 @@ const renderVisitModal = () => {
                     <i className="fas fa-calendar-times"></i>
                     Missed Visit
                   </button>
-                  <button 
-                    className={`tab-button ${activeTab === 'reschedule' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('reschedule')}
-                  >
-                    <i className="fas fa-calendar-alt"></i>
-                    Reschedule
-                  </button>
                 </div>
                 
                 <div className="tab-content">
@@ -1869,49 +1862,6 @@ const renderVisitModal = () => {
                           onChange={handleMissedVisitChange}
                         />
                         <label htmlFor="noShow">PATIENT WAS A NO-SHOW.</label>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {activeTab === 'reschedule' && (
-                    <div className="reschedule-tab">
-                      <div className="info-message">
-                        <i className="fas fa-info-circle"></i>
-                        <p>Please select a new date for this visit. The current visit details will be preserved.</p>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Original Date</label>
-                        <input
-                          type="date"
-                          value={formData.date}
-                          readOnly
-                          className="form-input readonly"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>New Date <span className="required">*</span></label>
-                        <input
-                          type="date"
-                          value={rescheduleDate}
-                          onChange={(e) => setRescheduleDate(e.target.value)}
-                          className="form-input"
-                          min={certPeriodDates.startDate || undefined}
-                          max={certPeriodDates.endDate || undefined}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Reason for Rescheduling</label>
-                        <textarea
-                          name="rescheduleReason"
-                          value={formData.notes}
-                          onChange={handleInputChange}
-                          placeholder="Enter reason for rescheduling"
-                          className="form-input"
-                          rows="4"
-                        ></textarea>
                       </div>
                     </div>
                   )}

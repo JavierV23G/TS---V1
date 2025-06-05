@@ -1,4 +1,4 @@
-// Enhanced EquipmentSection.jsx
+// Enhanced EquipmentSection.jsx with Finale Integration
 import React, { useState } from 'react';
 import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/ObjectiveSections/EquipmentSection.scss';
 
@@ -116,6 +116,18 @@ const EquipmentSection = ({ data, onChange }) => {
     ]
   };
   
+  // 🔥 FUNCIÓN MEJORADA PARA MANEJAR CAMBIOS - Compatible con Finale
+  const handleChange = (updatedData) => {
+    // Validar y limpiar datos antes de enviarlos
+    const cleanedData = {
+      ...data,
+      ...updatedData
+    };
+    
+    // Llamar al onChange original
+    onChange(cleanedData);
+  };
+  
   // Obtener la cantidad total de equipos seleccionados
   const getSelectedCount = () => {
     let count = 0;
@@ -144,16 +156,14 @@ const EquipmentSection = ({ data, onChange }) => {
       [itemId]: !groupData[itemId]
     };
     
-    onChange({
-      ...data,
+    handleChange({
       [group]: updatedGroup
     });
   };
 
   // Manejar cambios en textarea
   const handleTextChange = (field, value) => {
-    onChange({
-      ...data,
+    handleChange({
       [field]: value
     });
   };

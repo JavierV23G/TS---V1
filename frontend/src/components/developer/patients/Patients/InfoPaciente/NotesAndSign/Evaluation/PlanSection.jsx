@@ -1,4 +1,4 @@
-// components/PlanSection.jsx
+// Enhanced PlanSection.jsx with Dynamic Content Detection for Finale
 import React, { useState, useEffect } from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/PlanSection.scss';
 import StandardizedTest from './StandardizedTest';
@@ -53,9 +53,831 @@ const PlanSection = ({ data, onChange }) => {
   
   const durationOptions = generateDurationOptions();
   
+  // 🔥 FUNCIÓN PRINCIPAL PARA DETECTAR CONTENIDO Y ENVIAR A FINALE
+  const detectAndSendContent = (updatedData) => {
+    // Llamar al onChange original para mantener la funcionalidad
+    onChange(updatedData);
+    
+    // Detectar contenido completado para Finale
+    const detectedContent = detectPlanContent(updatedData);
+    
+    // Si hay contenido, enviarlo a la sección finale
+    if (Object.keys(detectedContent).length > 0) {
+      // El padre (VisitCompletionModal) se encargará de pasar esto a finale
+      if (updatedData.onFinaleUpdate) {
+        updatedData.onFinaleUpdate('plan', detectedContent);
+      }
+    }
+  };
+
+  // 🔥 FUNCIÓN PARA DETECTAR CONTENIDO COMPLETADO EN PLAN
+  const detectPlanContent = (planData) => {
+    const content = {};
+    
+    // Función helper para verificar si un valor tiene contenido
+    const hasContent = (value) => {
+      if (!value) return false;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        const emptyValues = ['', 'not provided', 'n/a', 'select an option', 'none', 'null', 'undefined', '0', 'no'];
+        return trimmed.length > 0 && !emptyValues.includes(trimmed.toLowerCase());
+      }
+      if (typeof value === 'number') return value > 0;
+      if (typeof value === 'boolean') return value === true;
+      return false;
+    };
+
+    // 🔥 GOALS SECTION - ADL Goals
+    const adlGoals = [];
+    
+    // Self-feeding goal
+    if (planData.adlLongTerm1 && (
+      hasContent(planData.adlSelfFeedingAssistLevel) || 
+      hasContent(planData.adlSelfFeedingOutcome)
+    )) {
+      let goalText = "Patient to perform self-feeding";
+      if (hasContent(planData.adlSelfFeedingAssistLevel)) {
+        goalText += ` w/ ${planData.adlSelfFeedingAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlSelfFeedingOutcome)) {
+        goalText += ` ${planData.adlSelfFeedingOutcome}`;
+      }
+      if (hasContent(planData.adlSelfFeedingDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlSelfFeedingDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlSelfFeedingDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Upper body dressing goal
+    if (planData.adlLongTerm2 && (
+      hasContent(planData.adlUpperDressingAssistLevel) || 
+      hasContent(planData.adlUpperDressingOutcome)
+    )) {
+      let goalText = "Patient to perform upper body dressing";
+      if (hasContent(planData.adlUpperDressingAssistLevel)) {
+        goalText += ` w/ ${planData.adlUpperDressingAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlUpperDressingOutcome)) {
+        goalText += ` ${planData.adlUpperDressingOutcome}`;
+      }
+      if (hasContent(planData.adlUpperDressingDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlUpperDressingDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlUpperDressingDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Lower body dressing goal
+    if (planData.adlLongTerm3 && (
+      hasContent(planData.adlLowerDressingAssistLevel) || 
+      hasContent(planData.adlLowerDressingOutcome)
+    )) {
+      let goalText = "Patient to perform lower body dressing";
+      if (hasContent(planData.adlLowerDressingAssistLevel)) {
+        goalText += ` w/ ${planData.adlLowerDressingAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlLowerDressingOutcome)) {
+        goalText += ` ${planData.adlLowerDressingOutcome}`;
+      }
+      if (hasContent(planData.adlLowerDressingDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlLowerDressingDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlLowerDressingDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Grooming goal
+    if (planData.adlLongTerm4 && (
+      hasContent(planData.adlGroomingAssistLevel) || 
+      hasContent(planData.adlGroomingOutcome)
+    )) {
+      let goalText = "Patient to perform grooming";
+      if (hasContent(planData.adlGroomingAssistLevel)) {
+        goalText += ` w/ ${planData.adlGroomingAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlGroomingOutcome)) {
+        goalText += ` ${planData.adlGroomingOutcome}`;
+      }
+      if (hasContent(planData.adlGroomingDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlGroomingDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlGroomingDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Bathing goal
+    if (planData.adlLongTerm5 && (
+      hasContent(planData.adlBathingAssistLevel) || 
+      hasContent(planData.adlBathingOutcome)
+    )) {
+      let goalText = "Patient to perform bathing";
+      if (hasContent(planData.adlBathingAssistLevel)) {
+        goalText += ` w/ ${planData.adlBathingAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlBathingOutcome)) {
+        goalText += ` ${planData.adlBathingOutcome}`;
+      }
+      if (hasContent(planData.adlBathingDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlBathingDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlBathingDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Custom ADL Task goal
+    if (planData.adlLongTerm6 && (
+      hasContent(planData.adlCustomTask) || 
+      hasContent(planData.adlCustomTaskAssistLevel) || 
+      hasContent(planData.adlCustomTaskOutcome)
+    )) {
+      let goalText = "Patient to perform";
+      if (hasContent(planData.adlCustomTask)) {
+        goalText += ` ${planData.adlCustomTask}`;
+      } else {
+        goalText += " ADL task";
+      }
+      if (hasContent(planData.adlCustomTaskAssistLevel)) {
+        goalText += ` w/ ${planData.adlCustomTaskAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlCustomTaskOutcome)) {
+        goalText += ` ${planData.adlCustomTaskOutcome}`;
+      }
+      if (hasContent(planData.adlCustomTaskDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlCustomTaskDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlCustomTaskDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // ADL Safety goal
+    if (planData.adlLongTerm7 && (
+      hasContent(planData.adlSafetyPerson) || 
+      hasContent(planData.adlSafetyFunction) || 
+      hasContent(planData.adlSafetyAssistLevel)
+    )) {
+      let goalText = "";
+      const person = planData.adlSafetyPerson || "Patient";
+      goalText += `${person} will demonstrate independence/compliance w/ the following: `;
+      const safetyFunction = planData.adlSafetyFunction || "ADL Safety & Functions";
+      goalText += `${safetyFunction}`;
+      if (hasContent(planData.adlSafetyAssistLevel)) {
+        goalText += ` w/ ${planData.adlSafetyAssistLevel} assist`;
+      }
+      if (hasContent(planData.adlSafetyDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.adlSafetyDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.adlSafetyDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    // Additional ADL Goal
+    if (planData.adlLongTerm8 && hasContent(planData.additionalAdlGoalText)) {
+      let goalText = planData.additionalAdlGoalText;
+      if (hasContent(planData.additionalAdlGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalAdlGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalAdlGoalDuration})`;
+      }
+      adlGoals.push(goalText);
+    }
+
+    if (adlGoals.length > 0) {
+      content['ADL Goals'] = adlGoals;
+    }
+
+    // 🔥 TRANSFERS GOALS
+    const transferGoals = [];
+
+    // Bed mobility goal
+    if (planData.transferLongTerm1 && (
+      hasContent(planData.transferBedMobilityAssistLevel) || 
+      hasContent(planData.transferBedMobilityDevice) || 
+      hasContent(planData.transferBedMobilityOutcome)
+    )) {
+      let goalText = "Patient to perform all bed mobility";
+      if (hasContent(planData.transferBedMobilityAssistLevel)) {
+        goalText += ` with ${planData.transferBedMobilityAssistLevel} assist`;
+      }
+      if (hasContent(planData.transferBedMobilityDevice)) {
+        goalText += ` using ${planData.transferBedMobilityDevice} assistive device`;
+      }
+      goalText += " to ensure safe and functional mobility";
+      if (hasContent(planData.transferBedMobilityOutcome)) {
+        goalText += ` ${planData.transferBedMobilityOutcome}`;
+      }
+      if (hasContent(planData.transferBedMobilityDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.transferBedMobilityDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.transferBedMobilityDuration})`;
+      }
+      transferGoals.push(goalText);
+    }
+
+    // Transfer Type 1 goal
+    if (planData.transferLongTerm2 && (
+      hasContent(planData.transferType1) || 
+      hasContent(planData.transferType1AssistLevel) || 
+      hasContent(planData.transferType1Device)
+    )) {
+      let goalText = `Patient to perform ${planData.transferType1 || 'Bed'} transfer(s)`;
+      if (hasContent(planData.transferType1AssistLevel)) {
+        goalText += ` w/ ${planData.transferType1AssistLevel} assist`;
+      }
+      if (hasContent(planData.transferType1Device)) {
+        goalText += ` using ${planData.transferType1Device} assistive device`;
+      }
+      goalText += " in order to ensure safe and functional transfer(s)";
+      if (hasContent(planData.transferType1Outcome)) {
+        goalText += ` ${planData.transferType1Outcome}`;
+      }
+      if (hasContent(planData.transferType1Duration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.transferType1Duration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.transferType1Duration})`;
+      }
+      transferGoals.push(goalText);
+    }
+
+    // Transfer Type 2 goal
+    if (planData.transferLongTerm3 && (
+      hasContent(planData.transferType2) || 
+      hasContent(planData.transferType2AssistLevel) || 
+      hasContent(planData.transferType2Device)
+    )) {
+      let goalText = `Patient to perform ${planData.transferType2 || 'Tub'} transfer(s)`;
+      if (hasContent(planData.transferType2AssistLevel)) {
+        goalText += ` w/ ${planData.transferType2AssistLevel} assist`;
+      }
+      if (hasContent(planData.transferType2Device)) {
+        goalText += ` using ${planData.transferType2Device} assistive device`;
+      }
+      goalText += " in order to ensure safe functional transfer(s)";
+      if (hasContent(planData.transferType2Outcome)) {
+        goalText += ` ${planData.transferType2Outcome}`;
+      }
+      if (hasContent(planData.transferType2Duration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.transferType2Duration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.transferType2Duration})`;
+      }
+      transferGoals.push(goalText);
+    }
+
+    // Additional Transfer Goal
+    if (planData.transferLongTerm4 && hasContent(planData.additionalTransferGoalText)) {
+      let goalText = planData.additionalTransferGoalText;
+      if (hasContent(planData.additionalTransferGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalTransferGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalTransferGoalDuration})`;
+      }
+      transferGoals.push(goalText);
+    }
+
+    if (transferGoals.length > 0) {
+      content['Transfer Goals'] = transferGoals;
+    }
+
+    // 🔥 BALANCE GOALS
+    const balanceGoals = [];
+
+    // Balance Type 1 goal
+    if (planData.balanceLongTerm1 && (
+      hasContent(planData.balanceType1) || 
+      hasContent(planData.balanceGrade1) || 
+      hasContent(planData.balanceOutcome1)
+    )) {
+      let goalText = `Patient to increase ${planData.balanceType1 || 'Sitting Static'} balance`;
+      if (hasContent(planData.balanceGrade1)) {
+        goalText += ` to ${planData.balanceGrade1}`;
+      }
+      goalText += " to ensure safe functional";
+      if (hasContent(planData.balanceOutcome1)) {
+        goalText += ` ${planData.balanceOutcome1}`;
+      }
+      if (hasContent(planData.balanceDuration1)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.balanceDuration1);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.balanceDuration1})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Balance improvement goal
+    if (planData.balanceLongTerm2 && (
+      hasContent(planData.balanceImproveActivity) || 
+      hasContent(planData.balanceImproveFor) || 
+      hasContent(planData.balanceImproveOutcome)
+    )) {
+      let goalText = "Patient to improve";
+      if (hasContent(planData.balanceImproveActivity)) {
+        goalText += ` ${planData.balanceImproveActivity}`;
+      }
+      goalText += " coordination for";
+      if (hasContent(planData.balanceImproveFor)) {
+        goalText += ` ${planData.balanceImproveFor}`;
+      }
+      goalText += " (activity)";
+      if (hasContent(planData.balanceImproveOutcome)) {
+        goalText += ` ${planData.balanceImproveOutcome}`;
+      }
+      if (hasContent(planData.balanceImproveDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.balanceImproveDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.balanceImproveDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Balance posture goal
+    if (planData.balanceLongTerm3 && (
+      hasContent(planData.balancePostureGrade) || 
+      hasContent(planData.balancePosturePosition) || 
+      hasContent(planData.balancePostureOutcome)
+    )) {
+      let goalText = `Patient will exhibit ${planData.balancePostureGrade || 'P-'} posture in ${planData.balancePosturePosition || 'Standing'} in order to`;
+      if (hasContent(planData.balancePostureOutcome)) {
+        goalText += ` ${planData.balancePostureOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.balancePostureDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.balancePostureDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.balancePostureDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Tinetti Score goal
+    if (planData.balanceLongTerm4 && (
+      hasContent(planData.tinettiScoreFrom) || 
+      hasContent(planData.tinettiScoreTo)
+    )) {
+      let goalText = "Patient to demonstrate improvement in Tinetti score: from";
+      if (hasContent(planData.tinettiScoreFrom)) {
+        goalText += ` ${planData.tinettiScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.tinettiScoreTo)) {
+        goalText += ` ${planData.tinettiScoreTo} (score)`;
+      }
+      if (hasContent(planData.tinettiScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.tinettiScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.tinettiScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Berg Score goal
+    if (planData.balanceLongTerm5 && (
+      hasContent(planData.bergScoreFrom) || 
+      hasContent(planData.bergScoreTo)
+    )) {
+      let goalText = "Patient to demonstrate improvement in Berg score: from";
+      if (hasContent(planData.bergScoreFrom)) {
+        goalText += ` ${planData.bergScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.bergScoreTo)) {
+        goalText += ` ${planData.bergScoreTo} (score)`;
+      }
+      if (hasContent(planData.bergScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.bergScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.bergScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // TUG Score goal
+    if (planData.balanceLongTerm6 && (
+      hasContent(planData.tugScoreFrom) || 
+      hasContent(planData.tugScoreTo)
+    )) {
+      let goalText = "Patient to demonstrate improvement in Tug score: from";
+      if (hasContent(planData.tugScoreFrom)) {
+        goalText += ` ${planData.tugScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.tugScoreTo)) {
+        goalText += ` ${planData.tugScoreTo} (score)`;
+      }
+      if (hasContent(planData.tugScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.tugScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.tugScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Functional Reach Score goal
+    if (planData.balanceLongTerm7 && (
+      hasContent(planData.functionalReachScoreFrom) || 
+      hasContent(planData.functionalReachScoreTo)
+    )) {
+      let goalText = "Patient to demonstrate improvement in Functional Reach score: from";
+      if (hasContent(planData.functionalReachScoreFrom)) {
+        goalText += ` ${planData.functionalReachScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.functionalReachScoreTo)) {
+        goalText += ` ${planData.functionalReachScoreTo} (score)`;
+      }
+      if (hasContent(planData.functionalReachScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.functionalReachScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.functionalReachScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Katz Score goal
+    if (planData.balanceLongTerm8 && (
+      hasContent(planData.katzScoreFrom) || 
+      hasContent(planData.katzScoreTo)
+    )) {
+      let goalText = "Patient to demonstrate improvement in Katz score: from";
+      if (hasContent(planData.katzScoreFrom)) {
+        goalText += ` ${planData.katzScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.katzScoreTo)) {
+        goalText += ` ${planData.katzScoreTo} (score)`;
+      }
+      if (hasContent(planData.katzScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.katzScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.katzScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Moberg Score goal
+    if (planData.balanceLongTerm9 && (
+      hasContent(planData.mobergScoreHand) || 
+      hasContent(planData.mobergScoreFrom) || 
+      hasContent(planData.mobergScoreTo)
+    )) {
+      let goalText = `Patient to demonstrate improvement in Moberg score for ${planData.mobergScoreHand || 'Left Hand'}: from`;
+      if (hasContent(planData.mobergScoreFrom)) {
+        goalText += ` ${planData.mobergScoreFrom} (score) to`;
+      }
+      if (hasContent(planData.mobergScoreTo)) {
+        goalText += ` ${planData.mobergScoreTo} (score)`;
+      }
+      if (hasContent(planData.mobergScoreDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.mobergScoreDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.mobergScoreDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    // Additional Balance Goal
+    if (planData.balanceLongTerm10 && hasContent(planData.additionalBalanceGoalText)) {
+      let goalText = planData.additionalBalanceGoalText;
+      if (hasContent(planData.additionalBalanceGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalBalanceGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalBalanceGoalDuration})`;
+      }
+      balanceGoals.push(goalText);
+    }
+
+    if (balanceGoals.length > 0) {
+      content['Balance Goals'] = balanceGoals;
+    }
+
+    // 🔥 STRENGTH/ROM/ACTIVITY TOLERANCE GOALS
+    const strengthGoals = [];
+
+    // Cardiopulmonary goal
+    if (planData.strengthLongTerm1 && (
+      hasContent(planData.cardioEvidenceBy) || 
+      hasContent(planData.cardioOutcome)
+    )) {
+      let goalText = "Patient's cardiopulmonary status will improve as evidenced by";
+      if (hasContent(planData.cardioEvidenceBy)) {
+        goalText += ` ${planData.cardioEvidenceBy}`;
+      }
+      goalText += " in order to";
+      if (hasContent(planData.cardioOutcome)) {
+        goalText += ` ${planData.cardioOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.cardioDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.cardioDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.cardioDuration})`;
+      }
+      strengthGoals.push(goalText);
+    }
+
+    // ROM goal
+    if (planData.strengthLongTerm2 && (
+      hasContent(planData.romType) || 
+      hasContent(planData.romBodyArea) || 
+      hasContent(planData.romDegreesTo) || 
+      hasContent(planData.romOutcome)
+    )) {
+      let goalText = `Patient to increase ${planData.romType || 'AROM'} of`;
+      if (hasContent(planData.romBodyArea)) {
+        goalText += ` ${planData.romBodyArea}`;
+      }
+      goalText += " (body area) to";
+      if (hasContent(planData.romDegreesTo)) {
+        goalText += ` ${planData.romDegreesTo}`;
+      }
+      goalText += " (degrees) to achieve";
+      if (hasContent(planData.romOutcome)) {
+        goalText += ` ${planData.romOutcome}`;
+        }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.romDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.romDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.romDuration})`;
+      }
+      strengthGoals.push(goalText);
+    }
+
+    // Strength goal
+    if (planData.strengthLongTerm3 && (
+      hasContent(planData.strengthBodyArea) || 
+      hasContent(planData.strengthGrade) || 
+      hasContent(planData.strengthAssistLevel) || 
+      hasContent(planData.strengthWith) || 
+      hasContent(planData.strengthOutcome)
+    )) {
+      let goalText = "Patient to increase strength of";
+      if (hasContent(planData.strengthBodyArea)) {
+        goalText += ` ${planData.strengthBodyArea}`;
+      }
+      goalText += " (body area) to/by";
+      if (hasContent(planData.strengthGrade)) {
+        goalText += ` ${planData.strengthGrade}`;
+      }
+      goalText += " (grade) in order to be";
+      if (hasContent(planData.strengthAssistLevel)) {
+        goalText += ` ${planData.strengthAssistLevel}`;
+      }
+      goalText += " assist";
+      if (hasContent(planData.strengthWith)) {
+        goalText += ` ${planData.strengthWith}`;
+      }
+      goalText += " to achieve";
+      if (hasContent(planData.strengthOutcome)) {
+        goalText += ` ${planData.strengthOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.strengthDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.strengthDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.strengthDuration})`;
+      }
+      strengthGoals.push(goalText);
+    }
+
+    // Fine motor skills goal
+    if (planData.strengthLongTerm4 && hasContent(planData.fineMotorEvidenceBy)) {
+      let goalText = `Patient will demonstrate improved fine motor skills as evidenced by ${planData.fineMotorEvidenceBy}`;
+      if (hasContent(planData.fineMotorDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.fineMotorDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.fineMotorDuration})`;
+      }
+      strengthGoals.push(goalText);
+    }
+
+    // Additional Strength Goal
+    if (planData.strengthLongTerm5 && hasContent(planData.additionalStrengthGoalText)) {
+      let goalText = planData.additionalStrengthGoalText;
+      if (hasContent(planData.additionalStrengthGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalStrengthGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalStrengthGoalDuration})`;
+      }
+      strengthGoals.push(goalText);
+    }
+
+    if (strengthGoals.length > 0) {
+      content['Strength/ROM/Activity Tolerance Goals'] = strengthGoals;
+    }
+
+    // 🔥 PAIN GOALS
+    const painGoals = [];
+
+    // Pain scale goal
+    if (planData.painLongTerm1 && (
+      hasContent(planData.painPoints) || 
+      hasContent(planData.painOutcome)
+    )) {
+      let goalText = "Patient's pain will decrease to";
+      if (hasContent(planData.painPoints)) {
+        goalText += ` ${planData.painPoints}`;
+      }
+      goalText += " points on the pain scale to achieve";
+      if (hasContent(planData.painOutcome)) {
+        goalText += ` ${planData.painOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.painDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.painDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.painDuration})`;
+      }
+      painGoals.push(goalText);
+    }
+
+    // Additional Pain Goals
+    [1, 2, 3].forEach(num => {
+      if (planData[`painLongTerm${num + 1}`] && hasContent(planData[`additionalPainGoalText${num}`])) {
+        let goalText = planData[`additionalPainGoalText${num}`];
+        if (hasContent(planData[`additionalPainGoalDuration${num}`])) {
+          const durationOption = durationOptions.find(opt => opt.value === planData[`additionalPainGoalDuration${num}`]);
+          goalText += ` (Duration: ${durationOption ? durationOption.label : planData[`additionalPainGoalDuration${num}`]})`;
+        }
+        painGoals.push(goalText);
+      }
+    });
+
+    if (painGoals.length > 0) {
+      content['Pain Goals'] = painGoals;
+    }
+
+    // 🔥 HOME PROGRAM/HEP GOALS
+    const homeProgramGoals = [];
+
+    // HEP Progress goal
+    if (planData.homeProgramLongTerm1 && (
+      hasContent(planData.homeProgramProgressPerson) || 
+      hasContent(planData.homeProgramProgressOptional)
+    )) {
+      const person = planData.homeProgramProgressPerson || "Patient";
+      let goalText = `${person} will progress HEP`;
+      if (hasContent(planData.homeProgramProgressOptional)) {
+        goalText += ` ${planData.homeProgramProgressOptional}`;
+      }
+      goalText += " (optional) at each visit in order to be independent w/ home exercise program at discharge";
+      if (hasContent(planData.homeProgramProgressDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.homeProgramProgressDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.homeProgramProgressDuration})`;
+      }
+      homeProgramGoals.push(goalText);
+    }
+
+    // HEP Recall goal
+    if (planData.homeProgramLongTerm2 && (
+      hasContent(planData.homeProgramRecallPerson) || 
+      hasContent(planData.homeProgramRecallPercent) || 
+      hasContent(planData.homeProgramRecallOf) || 
+      hasContent(planData.homeProgramRecallOutcome)
+    )) {
+      const person = planData.homeProgramRecallPerson || "Patient";
+      let goalText = `${person} will recall`;
+      if (hasContent(planData.homeProgramRecallPercent)) {
+        goalText += ` ${planData.homeProgramRecallPercent}%`;
+      }
+      goalText += " of";
+      if (hasContent(planData.homeProgramRecallOf)) {
+        goalText += ` ${planData.homeProgramRecallOf}`;
+      }
+      goalText += " to achieve";
+      if (hasContent(planData.homeProgramRecallOutcome)) {
+        goalText += ` ${planData.homeProgramRecallOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.homeProgramRecallDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.homeProgramRecallDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.homeProgramRecallDuration})`;
+      }
+      homeProgramGoals.push(goalText);
+    }
+
+    // Energy conservation goal
+    if (planData.homeProgramLongTerm3 && (
+      hasContent(planData.homeProgramEnergyPerson) || 
+      hasContent(planData.homeProgramEnergyOutcome)
+    )) {
+      const person = planData.homeProgramEnergyPerson || "Patient";
+      let goalText = `${person} will demonstrate home program for energy conservation/relaxation techniques to reduce SOB as evidenced by`;
+      if (hasContent(planData.homeProgramEnergyOutcome)) {
+        goalText += ` ${planData.homeProgramEnergyOutcome}`;
+      }
+      goalText += " (functional outcome)";
+      if (hasContent(planData.homeProgramEnergyDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.homeProgramEnergyDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.homeProgramEnergyDuration})`;
+      }
+      homeProgramGoals.push(goalText);
+    }
+
+    // Demonstration goal
+    if (planData.homeProgramLongTerm4 && (
+      hasContent(planData.homeProgramDemoPerson) || 
+      hasContent(planData.homeProgramDemoType) || 
+      hasContent(planData.homeProgramDemoAssistLevel)
+    )) {
+      const person = planData.homeProgramDemoPerson || "Patient";
+      let goalText = `${person} will demo`;
+      const demoType = planData.homeProgramDemoType || "Home Safety Precautions";
+      goalText += ` ${demoType}`;
+      if (hasContent(planData.homeProgramDemoAssistLevel)) {
+        goalText += ` w/ ${planData.homeProgramDemoAssistLevel}`;
+      }
+      goalText += " assist";
+      if (hasContent(planData.homeProgramDemoDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.homeProgramDemoDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.homeProgramDemoDuration})`;
+      }
+      homeProgramGoals.push(goalText);
+    }
+
+    // Additional Home Program Goal
+    if (planData.homeProgramLongTerm5 && hasContent(planData.additionalHomeProgramGoalText)) {
+      let goalText = planData.additionalHomeProgramGoalText;
+      if (hasContent(planData.additionalHomeProgramGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalHomeProgramGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalHomeProgramGoalDuration})`;
+      }
+      homeProgramGoals.push(goalText);
+    }
+
+    if (homeProgramGoals.length > 0) {
+      content['Home Program/HEP Goals'] = homeProgramGoals;
+    }
+
+    // 🔥 ADDITIONAL FUNCTIONAL GOALS
+    const additionalFunctionalGoals = [];
+
+    if (planData.additionalGoalsLongTerm1 && hasContent(planData.additionalFunctionalGoalText)) {
+      let goalText = planData.additionalFunctionalGoalText;
+      if (hasContent(planData.additionalFunctionalGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalFunctionalGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalFunctionalGoalDuration})`;
+      }
+      additionalFunctionalGoals.push(goalText);
+    }
+
+    if (additionalFunctionalGoals.length > 0) {
+      content['Additional Functional Goals'] = additionalFunctionalGoals;
+    }
+
+    // 🔥 DISEASE SPECIFIC GOALS
+    const diseaseGoals = [];
+
+    // Disease specific goal 1
+    if (planData.diseaseGoalsLongTerm1 && (
+      hasContent(planData.diseaseGoalsPerson1) || 
+      hasContent(planData.diseaseGoalsActivity) || 
+      hasContent(planData.diseaseGoalsOutcome)
+    )) {
+      const person = planData.diseaseGoalsPerson1 || "Patient";
+      let goalText = `${person} to be independent with`;
+      const activity = planData.diseaseGoalsActivity || "diabetic foot exam";
+      goalText += ` ${activity} in order to`;
+      if (hasContent(planData.diseaseGoalsOutcome)) {
+        goalText += ` ${planData.diseaseGoalsOutcome}`;
+      }
+      if (hasContent(planData.diseaseGoalsDuration1)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.diseaseGoalsDuration1);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.diseaseGoalsDuration1})`;
+      }
+      diseaseGoals.push(goalText);
+    }
+
+    // Disease specific goal 2
+    if (planData.diseaseGoalsLongTerm2 && (
+      hasContent(planData.diseaseGoalsPerson2) || 
+      hasContent(planData.diseaseGoalsPhysicianContact)
+    )) {
+      const person = planData.diseaseGoalsPerson2 || "Patient";
+      let goalText = `${person} to demonstrate understanding of abnormal signs and symptoms of diabetic condition and determine when it is appropriate to contact physician regarding`;
+      if (hasContent(planData.diseaseGoalsPhysicianContact)) {
+        goalText += ` ${planData.diseaseGoalsPhysicianContact}`;
+      }
+      if (hasContent(planData.diseaseGoalsDuration2)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.diseaseGoalsDuration2);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.diseaseGoalsDuration2})`;
+      }
+      diseaseGoals.push(goalText);
+    }
+
+    // Additional Disease Goal
+    if (planData.diseaseGoalsLongTerm3 && hasContent(planData.additionalDiseaseGoalText)) {
+      let goalText = planData.additionalDiseaseGoalText;
+      if (hasContent(planData.additionalDiseaseGoalDuration)) {
+        const durationOption = durationOptions.find(opt => opt.value === planData.additionalDiseaseGoalDuration);
+        goalText += ` (Duration: ${durationOption ? durationOption.label : planData.additionalDiseaseGoalDuration})`;
+      }
+      diseaseGoals.push(goalText);
+    }
+
+    if (diseaseGoals.length > 0) {
+      content['Disease Specific Goals'] = diseaseGoals;
+    }
+
+    // 🔥 GLOBAL PLAN SETTINGS
+    const planSettings = {};
+
+    if (hasContent(planData.stgDuration)) {
+      const durationOption = durationOptions.find(opt => opt.value === planData.stgDuration);
+      planSettings['STG Duration'] = durationOption ? durationOption.label : planData.stgDuration;
+    }
+
+    if (hasContent(planData.ltgDuration)) {
+      const durationOption = durationOptions.find(opt => opt.value === planData.ltgDuration);
+      planSettings['LTG Duration'] = durationOption ? durationOption.label : planData.ltgDuration;
+    }
+
+    if (Object.keys(planSettings).length > 0) {
+      content['Plan Settings'] = planSettings;
+    }
+
+    return content;
+  };
+
   // Manejador para los cambios en los campos
   const handleChange = (field, value) => {
-    onChange({ ...data, [field]: value });
+    const updatedData = { ...data, [field]: value };
+    // 🔥 Usar la nueva función que detecta contenido y envía a Finale
+    detectAndSendContent(updatedData);
   };
   
   // Manejador para cambiar STG global
@@ -70,8 +892,8 @@ const PlanSection = ({ data, onChange }) => {
       }
     });
     
-    // Enviar datos actualizados
-    onChange(updatedData);
+    // 🔥 Usar la nueva función que detecta contenido y envía a Finale
+    detectAndSendContent(updatedData);
   };
   
   // Manejador para cambiar LTG global
@@ -86,8 +908,8 @@ const PlanSection = ({ data, onChange }) => {
       }
     });
     
-    // Enviar datos actualizados
-    onChange(updatedData);
+    // 🔥 Usar la nueva función que detecta contenido y envía a Finale
+    detectAndSendContent(updatedData);
   };
   
   // Cambiar la sección expandida
@@ -139,7 +961,7 @@ const PlanSection = ({ data, onChange }) => {
       </select>
     );
   };
-  
+
   return (
     <div className="plan-section-container">
       <div className="form-section goal-plan-section">
@@ -1463,7 +2285,8 @@ const PlanSection = ({ data, onChange }) => {
                         checked={data.balanceLongTerm10 || false}
                         onChange={(e) => handleChange('balanceLongTerm10', e.target.checked)}
                       />
-                      <label htmlFor="balanceLongTerm10">Long Term</label></div>
+                      <label htmlFor="balanceLongTerm10">Long Term</label>
+                    </div>
                     <button className="add-stg-btn">Add STG</button>
                   </div>
                   
@@ -1810,7 +2633,7 @@ const PlanSection = ({ data, onChange }) => {
               </div>
             )}
           </div>
-          
+
           {/* Pain Section */}
           <div className={`accordion-section ${expandedSection === 'pain' ? 'expanded' : ''}`}>
             <div className="accordion-header" onClick={() => toggleSection('pain')}>
@@ -1880,7 +2703,7 @@ const PlanSection = ({ data, onChange }) => {
                 </div>
                 
                 <div className="goal-item">
-                  <div className="goal-header">
+                    <div className="goal-header">
                     <div className="checkbox-item">
                       <input 
                         type="checkbox" 

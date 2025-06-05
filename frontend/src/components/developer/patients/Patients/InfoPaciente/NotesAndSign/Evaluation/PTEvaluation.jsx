@@ -1,5 +1,5 @@
-// Enhanced PTEvaluation.jsx
-import React, { useState } from 'react';
+// Enhanced PTEvaluation.jsx - FIXED VERSION with proper data flow
+import React, { useState, useEffect } from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/PTEvaluation.scss';
 import StandardizedTest from './StandardizedTest';
 
@@ -20,10 +20,17 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
     { id: 'other', label: 'Other (explain)' }
   ]);
 
-  // Manejador para los cambios en los campos
+  // 🔥 MANEJADOR PRINCIPAL PARA CAMBIOS - ESTA ES LA CLAVE
   const handleChange = (field, value) => {
-    onChange({ ...data, [field]: value });
+    console.log(`PTEvaluation: Updating ${field} with value:`, value); // Debug log
+    const updatedData = { ...data, [field]: value };
+    onChange(updatedData); // Envía los datos actualizados al componente padre
   };
+
+  // 🔥 EFECTO PARA DEBUG - VER QUE DATOS LLEGAN
+  useEffect(() => {
+    console.log('PTEvaluation received data:', data);
+  }, [data]);
 
   // Verificar si un test está completo
   const isTestComplete = (testName) => {
@@ -54,7 +61,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Past Medical History
             </label>
             <textarea 
-              value={data.pastMedicalHistory || ''}
+              value={data?.pastMedicalHistory || ''}
               onChange={(e) => handleChange('pastMedicalHistory', e.target.value)}
               rows={4}
               placeholder="Enter past medical history"
@@ -69,7 +76,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Past Therapy History
             </label>
             <textarea 
-              value={data.pastTherapyHistory || ''}
+              value={data?.pastTherapyHistory || ''}
               onChange={(e) => handleChange('pastTherapyHistory', e.target.value)}
               rows={4}
               placeholder="Enter past therapy history"
@@ -86,7 +93,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             <div className="input-group">
               <input 
                 type="number" 
-                value={data.heightFt || ''}
+                value={data?.heightFt || ''}
                 onChange={(e) => handleChange('heightFt', e.target.value)}
                 placeholder="0"
                 min="0"
@@ -95,7 +102,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <span className="unit">ft</span>
               <input 
                 type="number" 
-                value={data.heightIn || ''}
+                value={data?.heightIn || ''}
                 onChange={(e) => handleChange('heightIn', e.target.value)}
                 placeholder="0"
                 min="0"
@@ -113,7 +120,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             <div className="input-group">
               <input 
                 type="number" 
-                value={data.weight || ''}
+                value={data?.weight || ''}
                 onChange={(e) => handleChange('weight', e.target.value)}
                 placeholder="0"
                 min="0"
@@ -130,7 +137,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Weight Bearing Status
             </label>
             <select 
-              value={data.weightBearingStatus || ''}
+              value={data?.weightBearingStatus || ''}
               onChange={(e) => handleChange('weightBearingStatus', e.target.value)}
             >
               <option value="">Select an option</option>
@@ -150,8 +157,8 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             </label>
             <input 
               type="text" 
-              value={data.nursingDiagnosis || 'see attached document'}
-              readOnly
+              value={data?.nursingDiagnosis || 'see attached document'}
+              onChange={(e) => handleChange('nursingDiagnosis', e.target.value)}
               className="read-only-field"
             />
           </div>
@@ -165,7 +172,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             </label>
             <input 
               type="text" 
-              value={data.referralReasons || ''}
+              value={data?.referralReasons || ''}
               onChange={(e) => handleChange('referralReasons', e.target.value)}
               placeholder="Decreased Strength / Balance"
             />
@@ -181,10 +188,9 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             <div className="input-with-button">
               <input 
                 type="text" 
-                value={data.therapyDiagnosis || ''}
-                readOnly
+                value={data?.therapyDiagnosis || ''}
+                onChange={(e) => handleChange('therapyDiagnosis', e.target.value)}
                 placeholder="Select diagnosis"
-                className="read-only-field"
               />
               <button className="add-btn" onClick={onOpenDiagnosisModal}>
                 <i className="fas fa-plus"></i>
@@ -200,8 +206,9 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             </label>
             <input 
               type="text" 
-              value={data.additionalDisciplines || 'N/A'}
+              value={data?.additionalDisciplines || ''}
               onChange={(e) => handleChange('additionalDisciplines', e.target.value)}
+              placeholder="N/A"
             />
           </div>
         </div>
@@ -213,7 +220,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Patient/Caregiver Expectations of Therapy
             </label>
             <textarea 
-              value={data.expectations || ''}
+              value={data?.expectations || ''}
               onChange={(e) => handleChange('expectations', e.target.value)}
               rows={3}
               placeholder="Enter expectations"
@@ -230,10 +237,9 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             <div className="input-group-checkbox">
               <input 
                 type="text" 
-                value={data.homeboundStatus || 'N/A'}
+                value={data?.homeboundStatus || ''}
                 onChange={(e) => handleChange('homeboundStatus', e.target.value)}
-                readOnly
-                className="read-only-field"
+                placeholder="N/A"
               />
               <div className="checkbox-group">
                 {homeboundOptions.map(option => (
@@ -241,14 +247,14 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                     <input 
                       type="checkbox" 
                       id={option.id} 
-                      checked={data[option.id] || false}
+                      checked={data?.[option.id] || false}
                       onChange={(e) => handleChange(option.id, e.target.checked)}
                     />
                     <label htmlFor={option.id}>{option.label}</label>
-                    {option.id === 'other' && data[option.id] && (
+                    {option.id === 'other' && data?.[option.id] && (
                       <div className="other-explanation">
                         <textarea
-                          value={data.otherExplanation || ''}
+                          value={data?.otherExplanation || ''}
                           onChange={(e) => handleChange('otherExplanation', e.target.value)}
                           placeholder="Please explain..."
                           rows={2}
@@ -269,7 +275,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Prior Level of Function
             </label>
             <textarea 
-              value={data.priorLevelOfFunction || ''}
+              value={data?.priorLevelOfFunction || ''}
               onChange={(e) => handleChange('priorLevelOfFunction', e.target.value)}
               rows={3}
               placeholder="PROGRESSIVE DECLINE"
@@ -284,7 +290,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               Surgical Procedure(s) History
             </label>
             <textarea 
-              value={data.surgicalProcedures || ''}
+              value={data?.surgicalProcedures || ''}
               onChange={(e) => handleChange('surgicalProcedures', e.target.value)}
               rows={3}
               placeholder="Enter surgical history"
@@ -300,7 +306,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
             </label>
             <input 
               type="text" 
-              value={data.hospitalizationDates || ''}
+              value={data?.hospitalizationDates || ''}
               onChange={(e) => handleChange('hospitalizationDates', e.target.value)}
               placeholder="Enter dates"
             />
@@ -338,7 +344,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.restHeartRate || ''} 
+                  value={data?.restHeartRate || ''} 
                   onChange={(e) => handleChange('restHeartRate', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -353,7 +359,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="bp-field">
                 <input 
                   type="number" 
-                  value={data.restSystolic || ''} 
+                  value={data?.restSystolic || ''} 
                   onChange={(e) => handleChange('restSystolic', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -362,7 +368,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                 <span className="bp-divider">/</span>
                 <input 
                   type="number" 
-                  value={data.restDiastolic || ''} 
+                  value={data?.restDiastolic || ''} 
                   onChange={(e) => handleChange('restDiastolic', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -378,7 +384,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                 <input 
                   type="number" 
                   className="vital-input"
-                  value={data.restRespirations || ''} 
+                  value={data?.restRespirations || ''} 
                   onChange={(e) => handleChange('restRespirations', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -393,7 +399,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.restO2Saturation || ''} 
+                  value={data?.restO2Saturation || ''} 
                   onChange={(e) => handleChange('restO2Saturation', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -408,7 +414,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.temperature || ''} 
+                  value={data?.temperature || ''} 
                   onChange={(e) => handleChange('temperature', e.target.value)}
                   placeholder="0"
                   step="0.1"
@@ -437,7 +443,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.exertionHeartRate || ''} 
+                  value={data?.exertionHeartRate || ''} 
                   onChange={(e) => handleChange('exertionHeartRate', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -452,7 +458,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="bp-field">
                 <input 
                   type="number" 
-                  value={data.exertionSystolic || ''} 
+                  value={data?.exertionSystolic || ''} 
                   onChange={(e) => handleChange('exertionSystolic', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -461,7 +467,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                 <span className="bp-divider">/</span>
                 <input 
                   type="number" 
-                  value={data.exertionDiastolic || ''} 
+                  value={data?.exertionDiastolic || ''} 
                   onChange={(e) => handleChange('exertionDiastolic', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -476,7 +482,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.exertionRespirations || ''} 
+                  value={data?.exertionRespirations || ''} 
                   onChange={(e) => handleChange('exertionRespirations', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -491,7 +497,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data.exertionO2Saturation || ''} 
+                  value={data?.exertionO2Saturation || ''} 
                   onChange={(e) => handleChange('exertionO2Saturation', e.target.value)}
                   placeholder="0"
                   min="0"
@@ -517,7 +523,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   Heart Rate Δ:
                 </div>
                 <div className="value">{
-                  data.restHeartRate && data.exertionHeartRate 
+                  data?.restHeartRate && data?.exertionHeartRate 
                   ? `+${Math.max(0, data.exertionHeartRate - data.restHeartRate)} bpm` 
                   : 'N/A'
                 }</div>
@@ -528,7 +534,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   Blood Pressure Δ:
                 </div>
                 <div className="value">{
-                  data.restSystolic && data.exertionSystolic 
+                  data?.restSystolic && data?.exertionSystolic 
                   ? `+${Math.max(0, data.exertionSystolic - data.restSystolic)}/${Math.max(0, data.exertionDiastolic - data.restDiastolic)} mmHg` 
                   : 'N/A'
                 }</div>
@@ -539,10 +545,10 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   O<sub>2</sub> Saturation Δ:
                 </div>
                 <div className={`value ${
-                  data.restO2Saturation && data.exertionO2Saturation && (data.exertionO2Saturation - data.restO2Saturation < -3) 
+                  data?.restO2Saturation && data?.exertionO2Saturation && (data.exertionO2Saturation - data.restO2Saturation < -3) 
                   ? 'negative' : ''}`
                 }>{
-                  data.restO2Saturation && data.exertionO2Saturation 
+                  data?.restO2Saturation && data?.exertionO2Saturation 
                   ? `${data.exertionO2Saturation - data.restO2Saturation > 0 ? '+' : ''}${data.exertionO2Saturation - data.restO2Saturation}%` 
                   : 'N/A'
                 }</div>
@@ -553,7 +559,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                 <input 
                   type="checkbox" 
                   id="vitalsOutOfParameters" 
-                  checked={data.vitalsOutOfParameters || false}
+                  checked={data?.vitalsOutOfParameters || false}
                   onChange={(e) => handleChange('vitalsOutOfParameters', e.target.checked)}
                 />
                 <label htmlFor="vitalsOutOfParameters">
@@ -570,7 +576,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <i className="fas fa-clipboard-list"></i>
             </div>
             <textarea 
-              value={data.vitalsAdditional || ''}
+              value={data?.vitalsAdditional || ''}
               onChange={(e) => handleChange('vitalsAdditional', e.target.value)}
               placeholder="Enter additional vitals information or observations..."
               rows={5}
@@ -597,7 +603,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
           <div className="form-group">
             <label><i className="fas fa-question-circle"></i> Is patient experiencing pain?</label>
             <select 
-              value={data.experiencingPain || ''}
+              value={data?.experiencingPain || ''}
               onChange={(e) => handleChange('experiencingPain', e.target.value)}
             >
               <option value="">Select an option</option>
@@ -607,14 +613,14 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
           </div>
         </div>
         
-        {data.experiencingPain === 'Yes' && (
+        {data?.experiencingPain === 'Yes' && (
           <>
             <div className="form-row">
               <div className="form-group">
                 <label><i className="fas fa-map-marker-alt"></i> Pain Location</label>
                 <input 
                   type="text" 
-                  value={data.painLocation || ''}
+                  value={data?.painLocation || ''}
                   onChange={(e) => handleChange('painLocation', e.target.value)}
                   placeholder="Enter pain location"
                 />
@@ -629,7 +635,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                     <button 
                       key={level}
                       type="button"
-                      className={`pain-level ${data.painIntensity === level ? 'active' : ''}`}
+                      className={`pain-level ${data?.painIntensity === level ? 'active' : ''}`}
                       onClick={() => handleChange('painIntensity', level)}
                     >
                       {level}
@@ -653,7 +659,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                       <input 
                         type="checkbox" 
                         id={`pain${type}`} 
-                        checked={data[`pain${type}`] || false}
+                        checked={data?.[`pain${type}`] || false}
                         onChange={(e) => handleChange(`pain${type}`, e.target.checked)}
                       />
                       <label htmlFor={`pain${type}`}>{type}</label>
@@ -667,7 +673,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="form-group">
                 <label><i className="fas fa-exclamation-circle"></i> Pain Severity</label>
                 <select 
-                  value={data.painSeverity || ''}
+                  value={data?.painSeverity || ''}
                   onChange={(e) => handleChange('painSeverity', e.target.value)}
                 >
                   <option value="">Select an option</option>
@@ -682,7 +688,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
               <div className="form-group">
                 <label><i className="fas fa-walking"></i> Pain Effect on Function</label>
                 <textarea 
-                  value={data.painEffect || ''}
+                  value={data?.painEffect || ''}
                   onChange={(e) => handleChange('painEffect', e.target.value)}
                   rows={3}
                   placeholder="Describe how pain affects function"
@@ -716,7 +722,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   type="radio" 
                   id="medicationChangedNA" 
                   name="medicationChanged"
-                  checked={data.medicationChanged === 'N/A'}
+                  checked={data?.medicationChanged === 'N/A'}
                   onChange={() => handleChange('medicationChanged', 'N/A')}
                 />
                 <label htmlFor="medicationChangedNA">N/A</label>
@@ -726,7 +732,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   type="radio" 
                   id="medicationChangedYes" 
                   name="medicationChanged"
-                  checked={data.medicationChanged === 'Yes'}
+                  checked={data?.medicationChanged === 'Yes'}
                   onChange={() => handleChange('medicationChanged', 'Yes')}
                 />
                 <label htmlFor="medicationChangedYes">Yes</label>
@@ -736,7 +742,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
                   type="radio" 
                   id="medicationChangedNo" 
                   name="medicationChanged"
-                  checked={data.medicationChanged === 'No'}
+                  checked={data?.medicationChanged === 'No'}
                   onChange={() => handleChange('medicationChanged', 'No')}
                 />
                 <label htmlFor="medicationChangedNo">No</label>
@@ -749,7 +755,7 @@ const PTEvaluation = ({ data, onChange, onOpenTest, onOpenDiagnosisModal, autoSa
           <div className="form-group">
             <label><i className="fas fa-info-circle"></i> Additional Information</label>
             <textarea 
-              value={data.medicationAdditional || ''}
+              value={data?.medicationAdditional || ''}
               onChange={(e) => handleChange('medicationAdditional', e.target.value)}
               rows={4}
               placeholder="Additional medication information"
