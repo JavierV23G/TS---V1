@@ -1,45 +1,42 @@
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.log
-*.sqlite3
-.env
-.env.*
-*.db
-*.DS_Store
-.vscode/
-.idea/
 *.egg-info/
 .pytest_cache/
 
-docker-compose.yml
+# Logs and DB
+*.log
+*.sqlite3
+*.db
 
-#Junk
-.vscode/
-.idea/
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
+# Environment files
+.env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# IDE junk
+.vscode/
+.idea/
+.DS_Store
+
+# Node + frontend
+/node_modules
+/.pnp
+.pnp.js
+/build
+/coverage
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local storage and database
 database_data/
 documents_uploaded/
+
+# Only ignore Docker Compose in development
+docker-compose.yml

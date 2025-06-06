@@ -40,9 +40,8 @@ def create_staff(staff: StaffCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered.")
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already registered.")
-    
-    hashed_password = hash_password(staff.password)#
 
+    hashed_password = hash_password(staff.password)
     staff_data = staff.dict()
     staff_data["password"] = hashed_password
 
@@ -50,7 +49,8 @@ def create_staff(staff: StaffCreate, db: Session = Depends(get_db)):
     db.add(new_staff)
     db.commit()
     db.refresh(new_staff)
-    return new_staff
+
+    return StaffResponse.model_validate(new_staff)
 
 @router.post("/assign-staff", response_model=StaffAssignmentResponse)
 def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depends(get_db)):
