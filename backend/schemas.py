@@ -20,14 +20,13 @@ class StaffCreate(BaseModel):
 class StaffResponse(BaseModel):
     id: int
     name: str
-    birthday: date
-    gender: str
-    postal_code: str
+    birthday: Optional[date] = None
+    gender: Optional[str] = None
+    postal_code: Optional[str] = None
     email: str
-    phone: str
-    alt_phone: str
+    phone: Optional[str] = None
+    alt_phone: Optional[str] = None
     username: str
-    password: str
     role: str
     is_active: bool
 

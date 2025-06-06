@@ -29,7 +29,8 @@ router = APIRouter()
 
 @router.get("/staff/", response_model=List[StaffResponse])
 def get_active_staff(db: Session = Depends(get_db)):
-    return db.query(Staff).filter(Staff.is_active == True).all()
+    staff_list = db.query(Staff).filter(Staff.is_active == True).all()
+    return [StaffResponse.model_validate(s) for s in staff_list]
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
