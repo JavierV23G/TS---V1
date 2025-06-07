@@ -98,6 +98,23 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     };
   }, []);
 
+  // Función para convertir el rol al formato del backend
+  const convertRoleForBackend = (role) => {
+    const roleMapping = {
+      'developer': 'Developer',
+      'administrator': 'Administrator', 
+      'agency': 'Agency',
+      'pt': 'PT',
+      'pta': 'PTA',
+      'ot': 'OT',
+      'cota': 'COTA',
+      'st': 'ST',
+      'sta': 'STA'
+    };
+    
+    return roleMapping[role] || role;
+  };
+
   // Handle para cambios en inputs del formulario principal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -227,32 +244,78 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     setCurrentStep('role');
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    setSavedStaffName(`${formData.firstName} ${formData.lastName}`);
+    
+    // Determinar el nombre a mostrar en el modal de éxito
+    const displayName = formData.role === 'agency' 
+      ? formData.agencyFields.fullName 
+      : `${formData.firstName} ${formData.lastName}`;
+    
+    setSavedStaffName(displayName);
   
     try {
-      const staffBody = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        postal_code: formData.zipCode,
-        email: formData.email,
-        phone: formData.phone,
-        alt_phone: formData.altPhone,
+      // Preparar el objeto base para enviar a la API
+      let staffBody = {
         username: formData.userName,
         password: formData.password,
-        role: formData.role,
+        role: convertRoleForBackend(formData.role),
         is_active: true
       };
 
-      if (formData.dob) {
-        staffBody.birthday = formData.dob;
-      }
+      // Configuración específica para agencias
+      if (formData.role === 'agency') {
+        staffBody = {
+          ...staffBody,
+          name: formData.agencyFields.fullName, // ✅ Usar el nombre completo de la agencia
+          email: formData.email || '', // Email del formulario principal
+          phone: formData.agencyFields.contactNumber || '',
+          alt_phone: '', // Las agencias normalmente no tienen teléfono alternativo
+          postal_code: '', // Extraer del address si es necesario
+          address: formData.agencyFields.address || '',
+          // Campos adicionales específicos para agencias
+          fax: formData.agencyFields.fax || '',
+          // Guardar información de sucursales como JSON
+          branches: JSON.stringify(formData.agencyFields.branches || [])
+        };
+        
+        // Si hay dirección, intentar extraer código postal
+        if (formData.agencyFields.address) {
+          const zipMatch = formData.agencyFields.address.match(/\b\d{5}(-\d{4})?\b/);
+          if (zipMatch) {
+            staffBody.postal_code = zipMatch[0];
+          }
+        }
+      } else {
+        // Configuración para staff regular (no agencias)
+        staffBody = {
+          ...staffBody,
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone || '',
+          alt_phone: formData.altPhone || '',
+          postal_code: formData.zipCode || '',
+          address: '', // Staff individual normalmente no tiene address en este contexto
+        };
 
-      if (formData.gender) {
-        staffBody.gender = formData.gender;
+        // Agregar campos opcionales solo si existen
+        if (formData.dob) {
+          staffBody.birthday = formData.dob;
+        }
+
+        if (formData.gender) {
+          staffBody.gender = formData.gender;
+        }
+
+        // Si es un rol que requiere agencia, agregar la información de agencia
+        if (isTherapistOrAdmin() && formData.agency) {
+          staffBody.agency_id = formData.agency; // Esto debería ser el ID de la agencia seleccionada
+        }
       }
   
+      console.log("📤 Sending staff data:", staffBody); // Para debugging
+      
       const res = await fetch('http://localhost:8000/staff/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -271,7 +334,10 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
   
       const staffData = await res.json();
       const newStaffId = staffData.id;
+      
+      console.log("✅ Staff created successfully:", staffData); // Para debugging
   
+      // Subir documentos si existen
       for (const key in documents) {
         const doc = documents[key];
         if (doc.file) {
@@ -287,6 +353,8 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
           if (!uploadRes.ok) {
             const uploadError = await uploadRes.json();
             console.warn(`⚠️ Document '${key}' failed to upload:`, uploadError);
+          } else {
+            console.log(`✅ Document '${key}' uploaded successfully`);
           }
         }
       }
@@ -294,6 +362,7 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
       setIsSaving(false);
       setShowSuccessModal(true);
     } catch (err) {
+      console.error('❌ Error creating staff:', err);
       alert(`Error: ${err.message}`);
       setIsSaving(false);
     }
@@ -568,6 +637,20 @@ const isTherapistOrAdmin = () => {
                           onChange={handleAgencyFieldChange}
                           required
                           placeholder="Enter agency full name"
+                        />
+                      </div>
+                      
+                      {/* ✅ CAMPO DE EMAIL CORREGIDO - Ahora usa handleInputChange para email principal */}
+                      <div className="form-group">
+                        <label htmlFor="email">Email Address</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange} // ✅ Cambiado a handleInputChange
+                          required
+                          placeholder="agency@example.com"
                         />
                       </div>
                       

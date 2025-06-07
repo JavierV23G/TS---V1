@@ -61,9 +61,8 @@ const PatientCard = ({ patient, onView, onEdit, onNotes }) => {
       
       <div className="patient-card-body">
         <div className="info-row">
-          <i className="fas fa-user-md"></i>
-          <span className="therapist-badge">{patient.therapistType}</span>
-          <span>{patient.therapist}</span>
+          <i className="fas fa-hospital-alt"></i>
+          <span>{patient.agency}</span>
         </div>
         <div className="info-row">
           <i className="fas fa-phone"></i>
@@ -166,8 +165,6 @@ const DevPatientsPage = () => {
   // Search and filter states
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [agencySearchTerm, setAgencySearchTerm] = useState('');
-  const [selectedTherapistType, setSelectedTherapistType] = useState('all');
-  const [selectedTherapist, setSelectedTherapist] = useState('all');
   const [selectedAgency, setSelectedAgency] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   
@@ -180,20 +177,15 @@ const DevPatientsPage = () => {
   // Menu options
   const menuOptions = ["Patients", "Therapist"];
   
-  // Therapist types
-  const therapistTypes = ['all', 'PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
-  
   // Status options
   const statusOptions = ['all', 'Active', 'Pending', 'Review', 'Desactive'];
   
-  // Patient data (in a real app, this would come from an API)
+  // Updated Patient data with agencies instead of therapists
   const [patients, setPatients] = useState([
     {
       id: 1,
       name: "Vargas, Javier",
-      therapist: "Regina Araquel",
-      therapistType: "PT",
-      agency: "Supportive Health Group",
+      agency: "Unison Health Services",
       street: "1800 Camden Avenue",
       city: "Los Angeles",
       state: "CA",
@@ -204,48 +196,140 @@ const DevPatientsPage = () => {
       dob: "05/12/1965",
       insurance: "Blue Cross Blue Shield",
       policyNumber: "BCB-123456789",
-      emergencyContact: "Mohammed Ali",
+      emergencyContact: "Rick Grimes",
       emergencyPhone: "(310) 555-7890",
       notes: "Patient recovering well. Following exercise regimen as prescribed.",
     },
     {
       id: 2,
       name: "Nava, Luis",
-      therapist: "James Lee",
-      therapistType: "OT",
       agency: "Intra Care Home Health",
-      street: "1800 Camden Avenue",
+      street: "2150 Century Park East",
       city: "Los Angeles",
       state: "CA",
-      zip: "90025",
-      phone: "(310) 808-5631",
-      certPeriod: "04-19-2023 to 04-19-2025",
+      zip: "90067",
+      phone: "(310) 555-2468",
+      certPeriod: "03-15-2023 to 03-15-2025",
+      status: "Pending",
+      dob: "08/22/1958",
+      insurance: "Medicare",
+      policyNumber: "MED-987654321",
+      emergencyContact: "Robert Williams",
+      emergencyPhone: "(310) 555-1357",
+      notes: "Initial assessment scheduled. Waiting for insurance approval.",
+    },
+    {
+      id: 3,
+      name: "Williams, David",
+      agency: "Happy Home Health",
+      street: "8500 Wilshire Blvd",
+      city: "Beverly Hills",
+      state: "CA",
+      zip: "90211",
+      phone: "(424) 555-9876",
+      certPeriod: "05-10-2023 to 05-10-2025",
+      status: "Active",
+      dob: "12/05/1962",
+      insurance: "Aetna",
+      policyNumber: "AET-456789123",
+      emergencyContact: "Lisa Williams",
+      emergencyPhone: "(424) 555-8642",
+      notes: "Post-surgery rehabilitation progressing well.",
+    },
+    {
+      id: 4,
+      name: "Garcia, Elena",
+      agency: "Supportive Home Health",
+      street: "3470 Wilshire Blvd",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90010",
+      phone: "(213) 555-3579",
+      certPeriod: "02-28-2023 to 02-28-2025",
+      status: "Review",
+      dob: "06/18/1954",
+      insurance: "Humana",
+      policyNumber: "HUM-789456123",
+      emergencyContact: "Miguel Garcia",
+      emergencyPhone: "(213) 555-9753",
+      notes: "Quarterly review scheduled. Patient showing improvement.",
+    },
+    {
+      id: 5,
+      name: "Thompson, Michael",
+      agency: "Quality Home Health",
+      street: "1100 Glendon Avenue",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90024",
+      phone: "(310) 555-7531",
+      certPeriod: "01-05-2023 to 01-05-2025",
       status: "Desactive",
-      dob: "05/12/1965",
+      dob: "09/30/1968",
+      insurance: "Cigna",
+      policyNumber: "CIG-147258369",
+      emergencyContact: "Jennifer Thompson",
+      emergencyPhone: "(310) 555-8642",
+      notes: "Treatment completed. Patient discharged successfully.",
+    },
+    {
+      id: 6,
+      name: "Anderson, Patricia",
+      agency: "Onoria Healthcare",
+      street: "1875 Century Park East",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90067",
+      phone: "(424) 555-4681",
+      certPeriod: "06-20-2023 to 06-20-2025",
+      status: "Active",
+      dob: "03/14/1956",
+      insurance: "United Healthcare",
+      policyNumber: "UHC-852963741",
+      emergencyContact: "James Anderson",
+      emergencyPhone: "(424) 555-9517",
+      notes: "Chronic condition management. Regular monitoring required.",
+    },
+    {
+      id: 7,
+      name: "Robinson, Kevin",
+      agency: "Advance Care Home Health",
+      street: "9100 Wilshire Blvd",
+      city: "Beverly Hills",
+      state: "CA",
+      zip: "90212",
+      phone: "(310) 555-1597",
+      certPeriod: "07-12-2023 to 07-12-2025",
+      status: "Pending",
+      dob: "11/28/1963",
+      insurance: "Kaiser Permanente",
+      policyNumber: "KP-369258147",
+      emergencyContact: "Susan Robinson",
+      emergencyPhone: "(310) 555-7536",
+      notes: "Pending authorization for specialized therapy equipment.",
+    },
+    {
+      id: 8,
+      name: "Davis, Nancy",
+      agency: "Unison Health Services",
+      street: "2049 Century Park East",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90067",
+      phone: "(310) 555-8024",
+      certPeriod: "08-03-2023 to 08-03-2025",
+      status: "Active",
+      dob: "04/07/1961",
       insurance: "Blue Cross Blue Shield",
-      policyNumber: "BCB-123456789",
-      emergencyContact: "Rick Grimes",
-      emergencyPhone: "(310) 555-7890",
-      notes: "Patient recovering well. Following exercise regimen as prescribed.",
+      policyNumber: "BCB-654321987",
+      emergencyContact: "William Davis",
+      emergencyPhone: "(310) 555-2468",
+      notes: "Weekly sessions scheduled. Patient compliance excellent.",
     }
   ]);
   
   // Extract unique agencies for filters
   const agencies = [...new Set(patients.map(patient => patient.agency))];
-  
-  // Get therapists based on selected type
-  const getFilteredTherapists = () => {
-    if (selectedTherapistType === 'all') {
-      return [...new Set(patients.map(patient => patient.therapist))];
-    }
-    
-    return [...new Set(patients
-      .filter(patient => patient.therapistType === selectedTherapistType)
-      .map(patient => patient.therapist))];
-  };
-  
-  // Filtered therapists based on selected type
-  const filteredTherapists = getFilteredTherapists();
   
   // Filter agencies based on search
   const filteredAgencies = agencies.filter(agency => 
@@ -298,24 +382,16 @@ const DevPatientsPage = () => {
       // Match agency filter
       const matchesAgency = selectedAgency === 'all' || 
         patient.agency === selectedAgency;
-      
-      // Match therapist type filter
-      const matchesTherapistType = selectedTherapistType === 'all' || 
-        patient.therapistType === selectedTherapistType;
-      
-      // Match specific therapist
-      const matchesTherapist = selectedTherapist === 'all' || 
-        patient.therapist === selectedTherapist;
         
       // Match status
       const matchesStatus = selectedStatus === 'all' || 
         patient.status === selectedStatus;
       
-      return matchesPatientSearch && matchesAgency && matchesTherapistType && matchesTherapist && matchesStatus;
+      return matchesPatientSearch && matchesAgency && matchesStatus;
     });
     
     return sortPatients(filtered);
-  }, [patientSearchTerm, selectedAgency, selectedTherapistType, selectedTherapist, selectedStatus, sortOption, patients]);
+  }, [patientSearchTerm, selectedAgency, selectedStatus, sortOption, patients]);
   
   // Get filtered patients
   const filteredPatients = getFilteredPatients();
@@ -336,7 +412,7 @@ const DevPatientsPage = () => {
     { title: "Total Patients", value: patients.length, icon: "fa-users", color: "blue" },
     { title: "Active Patients", value: patients.filter(p => p.status === "Active").length, icon: "fa-user-check", color: "green" },
     { title: "Pending Approvals", value: patients.filter(p => p.status === "Pending").length, icon: "fa-user-clock", color: "orange" },
-    { title: "Desactive Patientss", value: patients.filter(p => p.status === "Desactive").length, icon: "fa-user-times", color: "red" },
+    { title: "Desactive Patients", value: patients.filter(p => p.status === "Desactive").length, icon: "fa-user-times", color: "red" },
   ];
   
   // Detect screen size for responsive design
@@ -446,19 +522,6 @@ const DevPatientsPage = () => {
     setActivePage(1);
   };
   
-  // Handle therapist type selection
-  const handleTherapistTypeSelect = (type) => {
-    setSelectedTherapistType(type);
-    setSelectedTherapist('all');
-    setActivePage(1);
-  };
-  
-  // Handle therapist selection
-  const handleTherapistSelect = (therapist) => {
-    setSelectedTherapist(therapist);
-    setActivePage(1);
-  };
-  
   // Handle status selection
   const handleStatusSelect = (status) => {
     setSelectedStatus(status);
@@ -469,8 +532,6 @@ const DevPatientsPage = () => {
   const handleClearFilters = () => {
     setPatientSearchTerm('');
     setAgencySearchTerm('');
-    setSelectedTherapistType('all');
-    setSelectedTherapist('all');
     setSelectedAgency('all');
     setSelectedStatus('all');
     setSortOption('nameAsc');
@@ -834,140 +895,104 @@ const DevPatientsPage = () => {
           
           {/* Filter container */}
           <div className={`filter-container ${showFilters ? 'expanded' : 'collapsed'}`}>
-  <div className="filter-card">
-    {/* Make the entire header clickable to toggle filters */}
-    <div className="filter-header" onClick={toggleFilters} style={{ cursor: 'pointer' }}>
-      <h3><i className="fas fa-filter"></i> Advanced Filters</h3>
-      <div className="filter-header-actions">
-        <span className="filter-count">
-          Showing <strong>{filteredPatients.length}</strong> of <strong>{patients.length}</strong> patients
-        </span>
-        <button 
-          className="toggle-filters-btn" 
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering parent onClick
-            toggleFilters();
-          }}
-          title={showFilters ? "Collapse filters" : "Expand filters"}
-          disabled={isLoggingOut}
-        >
-          <i className={`fas fa-chevron-${showFilters ? 'up' : 'down'}`}></i>
-        </button>
-      </div>
-    </div>
-    
-    {showFilters && (
-      <>
-        <div className="filter-section">
-          <div className="agency-filter">
-            <h4>Healthcare Agencies</h4>
-            <div className="search-box">
-              <i className="fas fa-search"></i>
-              <input 
-                type="text" 
-                placeholder="Search agencies..." 
-                value={agencySearchTerm}
-                onChange={(e) => setAgencySearchTerm(e.target.value)}
-                disabled={isLoggingOut}
-              />
-            </div>
-            
-            <div className="agency-list">
-              <div 
-                className={`agency-item ${selectedAgency === 'all' ? 'active' : ''}`}
-                onClick={() => !isLoggingOut && handleAgencySelect('all')}
-              >
-                <i className="fas fa-hospital-alt"></i> All Agencies
-              </div>
-              {filteredAgencies.map((agency, index) => (
-                <div 
-                  key={index} 
-                  className={`agency-item ${selectedAgency === agency ? 'active' : ''}`}
-                  onClick={() => !isLoggingOut && handleAgencySelect(agency)}
-                >
-                  <i className="fas fa-building"></i> {agency}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="therapist-filter">
-            <h4>Therapist Filters</h4>
-            <div className="therapist-type-filter">
-              <p>Filter by qualification:</p>
-              <div className="type-buttons">
-                {therapistTypes.map((type, index) => (
+            <div className="filter-card">
+              {/* Make the entire header clickable to toggle filters */}
+              <div className="filter-header" onClick={toggleFilters} style={{ cursor: 'pointer' }}>
+                <h3><i className="fas fa-filter"></i> Advanced Filters</h3>
+                <div className="filter-header-actions">
+                  <span className="filter-count">
+                    Showing <strong>{filteredPatients.length}</strong> of <strong>{patients.length}</strong> patients
+                  </span>
                   <button 
-                    key={index} 
-                    className={`type-button ${selectedTherapistType === type ? 'active' : ''}`}
-                    onClick={() => !isLoggingOut && handleTherapistTypeSelect(type)}
+                    className="toggle-filters-btn" 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering parent onClick
+                      toggleFilters();
+                    }}
+                    title={showFilters ? "Collapse filters" : "Expand filters"}
                     disabled={isLoggingOut}
                   >
-                    {type === 'all' ? 'All' : type}
+                    <i className={`fas fa-chevron-${showFilters ? 'up' : 'down'}`}></i>
                   </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="therapist-list">
-              <div 
-                className={`therapist-item ${selectedTherapist === 'all' ? 'active' : ''}`}
-                onClick={() => !isLoggingOut && handleTherapistSelect('all')}
-              >
-                <i className="fas fa-user-md"></i> All Therapists
-              </div>
-              {filteredTherapists.map((therapist, index) => (
-                <div 
-                  key={index} 
-                  className={`therapist-item ${selectedTherapist === therapist ? 'active' : ''}`}
-                  onClick={() => !isLoggingOut && handleTherapistSelect(therapist)}
-                >
-                  <i className="fas fa-user"></i> {therapist}
                 </div>
-              ))}
+              </div>
+              
+              {showFilters && (
+                <>
+                  <div className="filter-section">
+                    <div className="agency-filter">
+                      <h4>Healthcare Agencies</h4>
+                      <div className="search-box">
+                        <i className="fas fa-search"></i>
+                        <input 
+                          type="text" 
+                          placeholder="Search agencies..." 
+                          value={agencySearchTerm}
+                          onChange={(e) => setAgencySearchTerm(e.target.value)}
+                          disabled={isLoggingOut}
+                        />
+                      </div>
+                      
+                      <div className="agency-list">
+                        <div 
+                          className={`agency-item ${selectedAgency === 'all' ? 'active' : ''}`}
+                          onClick={() => !isLoggingOut && handleAgencySelect('all')}
+                        >
+                          <i className="fas fa-hospital-alt"></i> All Agencies
+                        </div>
+                        {filteredAgencies.map((agency, index) => (
+                          <div 
+                            key={index} 
+                            className={`agency-item ${selectedAgency === agency ? 'active' : ''}`}
+                            onClick={() => !isLoggingOut && handleAgencySelect(agency)}
+                          >
+                            <i className="fas fa-building"></i> {agency}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="status-filter">
+                      <h4>Patient Status</h4>
+                      <div className="status-buttons">
+                        {statusOptions.map((status, index) => (
+                          <button 
+                            key={index} 
+                            className={`status-button ${selectedStatus === status ? 'active' : ''} ${status.toLowerCase()}`}
+                            onClick={() => !isLoggingOut && handleStatusSelect(status)}
+                            disabled={isLoggingOut}
+                          >
+                            {status === 'all' ? 'All Statuses' : status}
+                            {status !== 'all' && (
+                              <span className="status-count">
+                                {patients.filter(p => p.status === status).length}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="filter-footer">
+                    <button 
+                      className="clear-filters" 
+                      onClick={handleClearFilters}
+                      disabled={isLoggingOut}
+                    >
+                      <i className="fas fa-times-circle"></i> Clear Filters
+                    </button>
+                    
+                    <div className="filter-tips">
+                      <div className="tip-icon"><i className="fas fa-lightbulb"></i></div>
+                      <p>Tip: Press <kbd>Ctrl</kbd> + <kbd>F</kbd> to quickly search patients</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           
-          <div className="status-filter">
-            <h4>Patient Status</h4>
-            <div className="status-buttons">
-              {statusOptions.map((status, index) => (
-                <button 
-                  key={index} 
-                  className={`status-button ${selectedStatus === status ? 'active' : ''} ${status.toLowerCase()}`}
-                  onClick={() => !isLoggingOut && handleStatusSelect(status)}
-                  disabled={isLoggingOut}
-                >
-                  {status === 'all' ? 'All Statuses' : status}
-                  {status !== 'all' && (
-                    <span className="status-count">
-                      {patients.filter(p => p.status === status).length}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="filter-footer">
-          <button 
-            className="clear-filters" 
-            onClick={handleClearFilters}
-            disabled={isLoggingOut}
-          >
-            <i className="fas fa-times-circle"></i> Clear Filters
-          </button>
-          
-          <div className="filter-tips">
-            <div className="tip-icon"><i className="fas fa-lightbulb"></i></div>
-            <p>Tip: Press <kbd>Ctrl</kbd> + <kbd>F</kbd> to quickly search patients</p>
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-</div>
           {/* Patients table area with improved views */}
           <div className="patients-table-area">
             <div className="table-header">
@@ -1040,7 +1065,7 @@ const DevPatientsPage = () => {
                 )}
               </div>
             </div>
-            
+
             {currentView === 'list' ? (
               // List view
               <div className="patients-table-wrapper">
@@ -1049,7 +1074,7 @@ const DevPatientsPage = () => {
                     <tr>
                       <th>ID</th>
                       <th>Name</th>
-                      <th>Therapist</th>
+                      <th>Agency</th>
                       <th>Status</th>
                       <th>Phone</th>
                       <th>Address</th>
@@ -1064,8 +1089,7 @@ const DevPatientsPage = () => {
                           <td>{patient.id}</td>
                           <td className="patient-name-cell">{patient.name}</td>
                           <td>
-                            <span className="therapist-badge">{patient.therapistType}</span>
-                            {patient.therapist}
+                            <span className="agency-name">{patient.agency}</span>
                           </td>
                           <td>
                             <span className={`status-badge ${patient.status.toLowerCase()}`}>
@@ -1203,20 +1227,7 @@ const DevPatientsPage = () => {
       
       {/* AI Assistant */}
       {showAIAssistant && !isLoggingOut && <AIAssistant />}
-      
-      {/* Floating Quick Action Button with Menu */}
-      {!isLoggingOut && (
-        <div className="quick-action-btn">
-          <button 
-            className="add-patient-btn"
-            onClick={handleNavigateToCreatePatient}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="btn-tooltip">Add New Patient</span>
-          </button>
-        </div>
-      )}
-      
+
       {/* Quick Tour */}
       {showQuickTour && !isLoggingOut && (
         <div className="quick-tour">
@@ -1240,7 +1251,7 @@ const DevPatientsPage = () => {
                 <div className="step-number">2</div>
                 <div className="step-content">
                   <h4>Advanced Filters</h4>
-                  <p>Filter patients by agency, therapist type, and status to narrow down your results.</p>
+                  <p>Filter patients by agency and status to narrow down your results.</p>
                 </div>
               </div>
               <div className="tour-step">

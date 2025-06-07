@@ -149,7 +149,7 @@ const DevReferralsPage = () => {
         if (!response.ok) throw new Error('Failed to fetch staff');
         const data = await response.json();
   
-        const agenciesOnly = data.filter(person => person.role === 'agency');
+        const agenciesOnly = data.filter(person => person.role === 'Agency');
         setAgencies(agenciesOnly);
       } catch (error) {
         console.error('Error loading agencies:', error);
@@ -237,7 +237,7 @@ const DevReferralsPage = () => {
         full_name: `${formData.firstName} ${formData.lastName}`,
         birthday: formData.dob,
         gender: formData.gender,
-        address: formData.address,
+        address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
         contact_info: JSON.stringify(formData.contactNumbers),
         payor_type: formData.payorType,
         physician: formData.physician,
@@ -251,7 +251,8 @@ const DevReferralsPage = () => {
         weight: `${formData.weight} ${formData.weightUnit}`,
         height: `${formData.height} ${formData.heightUnit}`,
         past_medical_history: formData.pmh,
-        initial_cert_start_date: formData.certPeriodStart
+        initial_cert_start_date: formData.certPeriodStart,
+        required_disciplines: JSON.stringify(formData.disciplines)
       };
   
       const createRes = await fetch('http://localhost:8000/patients/', {
@@ -378,18 +379,40 @@ const DevReferralsPage = () => {
     }));
   };
   
-  // Handle contact number changes
-  const handleContactNumberChange = (index, value) => {
-    if (isLoggingOut) return;
-    
-    const updatedNumbers = [...formData.contactNumbers];
-    updatedNumbers[index] = value;
-    
-    setFormData(prev => ({
-      ...prev,
-      contactNumbers: updatedNumbers
-    }));
-  };
+// Función para formatear número de teléfono
+const formatPhoneNumber = (value) => {
+  if (!value) return value;
+  
+  // Solo números
+  const phoneNumber = value.replace(/[^\d]/g, '');
+  
+  // Si tiene menos de 4 dígitos, devolver tal como está
+  if (phoneNumber.length < 4) return phoneNumber;
+  
+  // Si tiene menos de 7 dígitos, formato (xxx) xxx
+  if (phoneNumber.length < 7) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  }
+  
+  // Formato completo (xxx) xxx-xxxx
+  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
+
+// Handle contact number changes
+const handleContactNumberChange = (index, value) => {
+  if (isLoggingOut) return;
+  
+  // Formatear el número automáticamente
+  const formattedNumber = formatPhoneNumber(value);
+  
+  const updatedNumbers = [...formData.contactNumbers];
+  updatedNumbers[index] = formattedNumber;
+  
+  setFormData(prev => ({
+    ...prev,
+    contactNumbers: updatedNumbers
+  }));
+};
   
   // Add a new contact number
   const addContactNumber = () => {
@@ -1018,13 +1041,14 @@ const DevReferralsPage = () => {
                     <div className="contact-numbers">
                       {formData.contactNumbers.map((number, index) => (
                         <div key={index} className="contact-number-row">
-                          <input
-                            type="tel"
-                            value={number}
-                            onChange={(e) => handleContactNumberChange(index, e.target.value)}
-                            placeholder="Phone number"
-                            disabled={isLoggingOut}
-                          />
+                        <input
+                          type="tel"
+                          value={number}
+                          onChange={(e) => handleContactNumberChange(index, e.target.value)}
+                          placeholder="(___) ___-____"
+                          maxLength="14"
+                          disabled={isLoggingOut}
+                        />
                           
                           <div className="contact-actions">
                             {index === formData.contactNumbers.length - 1 && (
