@@ -1937,3 +1937,431 @@
 }
 
 
+// Reemplaza o agrega estos estilos en tu archivo SCSS
+
+// Estadísticas mejoradas
+.stats-container {
+  margin-bottom: 2.5rem;
+  animation: fadeIn 0.8s ease 0.7s backwards;
+  
+  h2 {
+    color: white;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: inline-block;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-300));
+      border-radius: 3px;
+    }
+  }
+  
+  .staffing-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.8rem;
+    
+    .stat-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 16px;
+      padding: 1.8rem;
+      @include card-3d-effect;
+      overflow: hidden;
+      border: 1px solid rgba(44, 123, 229, 0.1);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        border-color: rgba(44, 123, 229, 0.2);
+      }
+      
+      // Header común para todas las cards
+      .stat-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.2rem;
+        
+        .stat-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 12px;
+          background: rgba(44, 123, 229, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          margin-right: 1.2rem;
+          color: var(--color-primary-500);
+          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+          overflow: hidden;
+          
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-blue-premium);
+            opacity: 0;
+            transition: opacity 0.3s;
+          }
+          
+          i {
+            position: relative;
+            z-index: 2;
+          }
+        }
+        
+        .stat-main-info {
+          flex: 1;
+          
+          .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--color-primary-700);
+            margin: 0 0 0.3rem 0;
+            line-height: 1;
+          }
+          
+          .stat-label {
+            font-size: 0.95rem;
+            color: #4e5d78;
+            margin: 0;
+            font-weight: 500;
+          }
+        }
+      }
+      
+      &:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+        
+        &::before {
+          opacity: 1;
+        }
+        
+        i {
+          color: white;
+        }
+      }
+      
+      // Card específica de terapeutas
+      &.therapists-card {
+        .therapist-breakdown {
+          .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            
+            .breakdown-item {
+              background: #f8fafc;
+              padding: 0.6rem 0.8rem;
+              border-radius: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border: 1px solid #e2e8f0;
+              transition: all 0.3s ease;
+              
+              &:hover {
+                background: #e2e8f0;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+              }
+              
+              .breakdown-label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #475569;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              .breakdown-value {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: var(--color-primary-600);
+                background: rgba(44, 123, 229, 0.1);
+                padding: 0.2rem 0.5rem;
+                border-radius: 6px;
+                min-width: 24px;
+                text-align: center;
+              }
+            }
+          }
+        }
+      }
+      
+      // Card específica de agencias
+      &.agencies-card {
+        .stat-icon {
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
+          
+          &::before {
+            background: linear-gradient(135deg, #10b981, #34d399);
+          }
+        }
+        
+        .stat-header .stat-main-info .stat-value {
+          color: #059669;
+        }
+        
+        .stat-footer {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid #e5e7eb;
+          
+          .change-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            width: fit-content;
+            
+            i {
+              font-size: 0.8rem;
+            }
+            
+            &.increase {
+              background: rgba(16, 185, 129, 0.1);
+              color: #059669;
+              
+              i {
+                color: #10b981;
+              }
+            }
+            
+            &.decrease {
+              background: rgba(239, 68, 68, 0.1);
+              color: #dc2626;
+              
+              i {
+                color: #ef4444;
+              }
+            }
+            
+            &.no-change {
+              background: rgba(107, 114, 128, 0.1);
+              color: #6b7280;
+              
+              i {
+                color: #9ca3af;
+              }
+            }
+          }
+        }
+      }
+      
+      // Card específica de personal interno
+      &.internal-staff-card {
+        .stat-icon {
+          background: rgba(139, 69, 19, 0.1);
+          color: #8b4513;
+          
+          &::before {
+            background: linear-gradient(135deg, #8b4513, #a0522d);
+          }
+        }
+        
+        .stat-header .stat-main-info .stat-value {
+          color: #8b4513;
+        }
+        
+        .internal-staff-breakdown {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+          
+          .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            
+            &:hover {
+              background: #e2e8f0;
+              transform: translateX(5px);
+            }
+            
+            .breakdown-label {
+              font-size: 0.9rem;
+              font-weight: 500;
+              color: #475569;
+            }
+            
+            .breakdown-value {
+              font-size: 1.1rem;
+              font-weight: 700;
+              color: #8b4513;
+              background: rgba(139, 69, 19, 0.1);
+              padding: 0.2rem 0.6rem;
+              border-radius: 6px;
+              min-width: 28px;
+              text-align: center;
+            }
+          }
+        }
+      }
+      
+      // Card de acción (Create Patient)
+      &.action-card {
+        background: linear-gradient(135deg, rgba(44, 123, 229, 0.05), rgba(79, 172, 254, 0.05));
+        border: 2px dashed rgba(44, 123, 229, 0.3);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(44, 123, 229, 0.1), transparent);
+          transition: left 0.5s;
+        }
+        
+        &:hover {
+          background: linear-gradient(135deg, rgba(44, 123, 229, 0.1), rgba(79, 172, 254, 0.1));
+          border-color: rgba(44, 123, 229, 0.5);
+          transform: translateY(-10px) scale(1.02);
+          
+          &::before {
+            left: 100%;
+          }
+          
+          .action-arrow {
+            transform: translateX(10px);
+            opacity: 1;
+          }
+        }
+        
+        .stat-header {
+          margin-bottom: 0;
+          
+          .action-icon {
+            background: var(--gradient-blue-premium);
+            color: white;
+            
+            &::before {
+              opacity: 0;
+            }
+          }
+          
+          .stat-main-info {
+            .stat-value {
+              color: var(--color-primary-600);
+            }
+          }
+        }
+        
+        .action-arrow {
+          position: absolute;
+          top: 50%;
+          right: 1.5rem;
+          transform: translateY(-50%);
+          font-size: 1.2rem;
+          color: var(--color-primary-500);
+          opacity: 0;
+          transition: all 0.3s ease;
+        }
+      }
+    }
+  }
+}
+
+// Media queries para responsividad
+@media (max-width: 1200px) {
+  .stats-container {
+    .staffing-stats {
+      grid-template-columns: repeat(2, 1fr);
+      
+      .stat-card.therapists-card {
+        .therapist-breakdown .breakdown-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    .staffing-stats {
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+      
+      .stat-card {
+        padding: 1.4rem;
+        
+        .stat-header {
+          .stat-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.3rem;
+            margin-right: 1rem;
+          }
+          
+          .stat-main-info {
+            .stat-value {
+              font-size: 1.8rem;
+            }
+          }
+        }
+        
+        &.therapists-card {
+          .therapist-breakdown .breakdown-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem;
+            
+            .breakdown-item {
+              padding: 0.5rem 0.6rem;
+              
+              .breakdown-label {
+                font-size: 0.8rem;
+              }
+              
+              .breakdown-value {
+                font-size: 1rem;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    .staffing-stats {
+      .stat-card {
+        &.therapists-card {
+          .therapist-breakdown .breakdown-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      }
+    }
+  }
+}

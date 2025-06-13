@@ -17,6 +17,40 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'staff', 'agencies'
 
+  // Función para convertir el rol del backend al frontend
+  const convertRoleFromBackend = (role) => {
+    const roleMapping = {
+      'Developer': 'developer',
+      'Administrator': 'administrator',
+      'Agency': 'agency',
+      'PT': 'pt',
+      'PTA': 'pta',
+      'OT': 'ot',
+      'COTA': 'cota',
+      'ST': 'st',
+      'STA': 'sta'
+    };
+    
+    return roleMapping[role] || role.toLowerCase();
+  };
+
+  // Función para convertir el rol del frontend al backend
+  const convertRoleToBackend = (role) => {
+    const roleMapping = {
+      'developer': 'Developer',
+      'administrator': 'Administrator',
+      'agency': 'Agency',
+      'pt': 'PT',
+      'pta': 'PTA',
+      'ot': 'OT',
+      'cota': 'COTA',
+      'st': 'ST',
+      'sta': 'STA'
+    };
+    
+    return roleMapping[role] || role;
+  };
+
   // Función para construir parámetros de consulta para API
   const buildQueryParams = (params) =>
     Object.entries(params)
@@ -76,21 +110,23 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
       const data = await response.json();
   
       const adjustedData = data.map(staff => {
+        // Convertir rol del backend al formato frontend
+        const frontendRole = convertRoleFromBackend(staff.role);
+        
         // Procesar el nombre completo para separarlo en nombre y apellido
         const [firstName, ...rest] = staff.name?.split(' ') || [''];
         const lastName = rest.join(' ');
   
         // Mapear el rol a su visualización correspondiente
-        const roleDisplay = roles.find(r => r.value === staff.role)?.label || staff.role;
+        const roleDisplay = roles.find(r => r.value === frontendRole)?.label || staff.role;
         
         // Determinar el tipo basado en el rol (agency o staff)
-        const type = staff.role === 'agency' ? 'agency' : 'staff';
+        const type = frontendRole === 'agency' ? 'agency' : 'staff';
         
         // Para el tipo agency, usar el name como agencyName
         const agencyName = type === 'agency' ? staff.name : '';
         
         // Para los tipos staff que pueden tener una agencia asignada, buscar si tiene agency_id 
-        // (esto depende de cómo esté estructurada tu API)
         const agency = staff.agency_id ? {
           id: staff.agency_id,
           name: staff.agency_name || '',
@@ -98,13 +134,15 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           phone: staff.agency_phone || ''
         } : null;
         
-        // Procesar las sucursales si existen (esto depende de cómo esté estructurada tu API)
-        const branches = staff.branches ? JSON.parse(staff.branches) : [];
+        // Procesar las sucursales si existen
+        const branches = staff.branches ? 
+          (typeof staff.branches === 'string' ? JSON.parse(staff.branches) : staff.branches) : 
+          (type === 'agency' ? [{ name: '', address: '', phone: '' }] : []);
         
         // Inicializar documentos basados en el tipo y rol
-        const documents = staff.documents ? JSON.parse(staff.documents) : 
-          type === 'agency' ? initializeDocuments('agency', 'agency') : 
-          requiresDocuments(staff.role) ? initializeDocuments(staff.role, 'staff') : {};
+        const documents = staff.documents ? 
+          (typeof staff.documents === 'string' ? JSON.parse(staff.documents) : staff.documents) : 
+          initializeDocuments(frontendRole, type);
   
         return {
           id: staff.id,
@@ -121,7 +159,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           address: staff.address || '',
           userName: staff.username || '',
           password: '********', // Por seguridad siempre ocultamos la contraseña
-          role: staff.role || '',
+          role: frontendRole, // ✅ Usar el rol convertido al formato frontend
           roleDisplay: roleDisplay,
           agency: agency,
           branches: branches,
@@ -183,12 +221,12 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     { value: 'developer', label: 'Developer', icon: 'fa-laptop-code', description: 'System development and technical support' },
     { value: 'administrator', label: 'Administrator', icon: 'fa-user-shield', description: 'System administration and user management' },
     { value: 'agency', label: 'Agency', icon: 'fa-hospital-alt', description: 'Healthcare provider organization' },
-    { value: 'pt', label: 'PT - Physical Therapist', icon: 'fa-user-md', description: 'Evaluates and treats physical mobility disorders' },
-    { value: 'pta', label: 'PTA - Physical Therapist Assistant', icon: 'fa-user-nurse', description: 'Assists physical therapists in treatment delivery' },
-    { value: 'ot', label: 'OT - Occupational Therapist', icon: 'fa-hand-holding-medical', description: 'Helps patients improve daily living activities' },
-    { value: 'cota', label: 'COTA - Occupational Therapy Assistant', icon: 'fa-hand-holding', description: 'Assists occupational therapists with treatment' },
-    { value: 'st', label: 'ST - Speech Therapist', icon: 'fa-comment-medical', description: 'Evaluates and treats communication disorders' },
-    { value: 'sta', label: 'STA - Speech Therapy Assistant', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
+    { value: 'pt', label: 'Physical Therapist (PT)', icon: 'fa-user-md', description: 'Evaluates and treats physical mobility disorders' },
+    { value: 'pta', label: 'Physical Therapist Assistant (PTA)', icon: 'fa-user-nurse', description: 'Assists physical therapists in treatment delivery' },
+    { value: 'ot', label: 'Occupational Therapist (OT)', icon: 'fa-hand-holding-medical', description: 'Helps patients improve daily living activities' },
+    { value: 'cota', label: 'Occupational Therapy Assistant (COTA)', icon: 'fa-hand-holding', description: 'Assists occupational therapists with treatment' },
+    { value: 'st', label: 'Speech Therapist (ST)', icon: 'fa-comment-medical', description: 'Evaluates and treats communication disorders' },
+    { value: 'sta', label: 'Speech Therapy Assistant (STA)', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
   ];
 
   // Lista de documentos requeridos con iconos mejorados
@@ -217,12 +255,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     setEditMode(true);
     
     // Resetear la pestaña activa según el tipo de miembro
-    if (member.type === 'agency') {
-      setActiveTab('info');
-    } else {
-      setActiveTab('info');
-    }
-    
+    setActiveTab('info');
     setPasswordVisible(false);
   };
 
@@ -254,7 +287,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         alt_phone: updatedStaff.alternatePhone || '',
         address: updatedStaff.address || '',
         username: updatedStaff.userName,
-        role: updatedStaff.role,
+        role: convertRoleToBackend(updatedStaff.role), // ✅ CONVERTIR AL FORMATO BACKEND
         is_active: updatedStaff.status === 'active',
         fax: updatedStaff.fax || ''
       };
@@ -439,6 +472,15 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   const handleUpdateAgency = (agencyId) => {
     if (!selectedStaff) return;
     
+    if (!agencyId) {
+      // Si se deselecciona la agencia
+      setSelectedStaff(prev => ({
+        ...prev,
+        agency: null
+      }));
+      return;
+    }
+    
     const selectedAgency = staffList
       .filter(item => item.type === 'agency')
       .find(a => a.id === parseInt(agencyId));
@@ -534,6 +576,11 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   const initializeDocuments = (role, type) => {
     const documents = {};
     
+    // Solo inicializar documentos para roles que los requieren
+    if (!requiresDocuments(role)) {
+      return documents;
+    }
+    
     // Determinar qué lista de documentos usar
     const docList = type === 'agency' ? documentsList.agency : documentsList.staff;
     
@@ -544,26 +591,6 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     
     return documents;
   };
-
-  // Debemos inicializar documentos cuando cambia el rol
-  useEffect(() => {
-    if (selectedStaff && editMode) {
-      // Si cambia de rol y necesita documentos diferentes, inicializamos
-      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role) && 
-          (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-        setSelectedStaff(prev => ({
-          ...prev,
-          documents: initializeDocuments(prev.role, prev.type)
-        }));
-      } else if (selectedStaff.role === 'agency' && 
-                (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-        setSelectedStaff(prev => ({
-          ...prev,
-          documents: initializeDocuments(prev.role, 'agency')
-        }));
-      }
-    }
-  }, [selectedStaff?.role, editMode]);
 
   // Verificar si el rol requiere afiliación a una agencia
   const requiresAgency = (role) => {
@@ -577,36 +604,35 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
 
   // Renderizar pestañas basado en el tipo de miembro seleccionado
   const renderTabs = () => {
-    if (!selectedStaff) return null;
+    if (!selectedStaff) return [];
     
     const commonTabs = [
-      { id: 'info', icon: 'fa-user-circle', label: 'Personal Information' },
-      { id: 'security', icon: 'fa-shield-alt', label: 'Security' },
+      { id: 'info', icon: 'fa-user-circle', label: 'Information' },
     ];
     
     // Pestañas específicas para staff
     if (selectedStaff.type === 'staff') {
       const tabs = [...commonTabs];
       
-      // Solo mostrar pestaña de documentos para roles que requieren documentos
-      if (requiresDocuments(selectedStaff.role)) {
-        tabs.splice(1, 0, { id: 'documents', icon: 'fa-file-medical-alt', label: 'Documents' });
+      // Solo mostrar pestaña de agencia para roles que requieren afiliación
+      if (requiresAgency(selectedStaff.role)) {
+        tabs.push({ id: 'agency', icon: 'fa-hospital-user', label: 'Agency' });
       }
       
-      // Mostrar pestaña de agencia para roles que requieren afiliación
-      if (requiresAgency(selectedStaff.role)) {
-        // Solo añadir la pestaña de agencia si no está ya
-        if (!tabs.some(tab => tab.id === 'agency')) {
-          tabs.splice(1, 0, { id: 'agency', icon: 'fa-hospital-user', label: 'Agency' });
-        }
+      // Solo mostrar pestaña de documentos para roles que requieren documentos
+      if (requiresDocuments(selectedStaff.role)) {
+        tabs.push({ id: 'documents', icon: 'fa-file-medical-alt', label: 'Documents' });
       }
+      
+      // Pestaña de seguridad siempre al final
+      tabs.push({ id: 'security', icon: 'fa-shield-alt', label: 'Security' });
       
       return tabs;
     }
     
     // Pestañas específicas para agencias
     return [
-      { id: 'info', icon: 'fa-building', label: 'Agency Information' },
+      { id: 'info', icon: 'fa-building', label: 'Information' },
       { id: 'branches', icon: 'fa-code-branch', label: 'Branches' },
       { id: 'documents', icon: 'fa-file-contract', label: 'Documents' },
       { id: 'security', icon: 'fa-lock', label: 'Security' },
@@ -622,12 +648,12 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
       switch (activeTab) {
         case 'info':
           return renderStaffInfoTab();
+        case 'agency':
+          return requiresAgency(selectedStaff.role) ? renderAgencyTab() : null;
         case 'documents':
           return requiresDocuments(selectedStaff.role) ? renderDocumentsTab('staff') : null;
         case 'security':
           return renderSecurityTab();
-        case 'agency':
-          return requiresAgency(selectedStaff.role) ? renderAgencyTab() : null;
         default:
           return null;
       }
@@ -735,7 +761,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     </div>
   );
 
-// Pestaña de información para agencias
+
+  // Pestaña de información para agencias
 const renderAgencyInfoTab = () => (
   <div className="info-tab-content">
     <div className="info-section">
@@ -822,12 +849,14 @@ const renderBranchesTab = () => (
           <div key={index} className="branch-card">
             <div className="branch-header">
               <h4>Branch #{index + 1}</h4>
-              <button 
-                className="remove-branch-btn"
-                onClick={() => handleRemoveBranch(index)}
-              >
-                <i className="fas fa-trash-alt"></i>
-              </button>
+              {selectedStaff.branches.length > 1 && (
+                <button 
+                  className="remove-branch-btn"
+                  onClick={() => handleRemoveBranch(index)}
+                >
+                  <i className="fas fa-trash-alt"></i>
+                </button>
+              )}
             </div>
             <div className="branch-body">
               <div className="form-row">
@@ -883,7 +912,7 @@ const renderBranchesTab = () => (
 const renderDocumentsTab = (type) => {
   // Asegurarse de que existe documents en selectedStaff
   if (!selectedStaff.documents) {
-    selectedStaff.documents = {};
+    selectedStaff.documents = initializeDocuments(selectedStaff.role, selectedStaff.type);
   }
   
   // Determinar qué lista de documentos mostrar
@@ -1482,8 +1511,15 @@ return (
                         setActiveTab('info');
                         
                         // Asegurarse de que los documentos se inicialicen correctamente
-                        if (requiresDocuments(newRole) && (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
+                        if (requiresDocuments(newRole)) {
                           handleUpdateMember('documents', initializeDocuments(newRole, selectedStaff.type));
+                        } else {
+                          handleUpdateMember('documents', {});
+                        }
+                        
+                        // Si ya no requiere agencia, limpiar la agencia asignada
+                        if (!requiresAgency(newRole)) {
+                          handleUpdateMember('agency', null);
                         }
                       }}
                       disabled={selectedStaff.type === 'agency'} // No cambiar rol para agencias
@@ -1511,8 +1547,7 @@ return (
             <div className="modal-actions">
               <button className="close-modal-btn" onClick={handleCloseProfile}>
                 <i className="fas fa-times"></i>
-              </button>
-            </div>
+              </button></div>
           </div>
           
           <div className="modal-tabs">
@@ -1523,30 +1558,30 @@ return (
                 onClick={() => handleChangeTab(tab.id)}
               >
                 <i className={`fas ${tab.icon}`}></i>
-                 <span>{tab.label}</span>
-               </button>
-             ))}
-           </div>
-           
-           <div className="modal-content">
-             {renderTabContent()}
-           </div>
-           
-           <div className="modal-footer">
-             <button className="cancel-btn" onClick={handleCloseProfile}>
-               <i className="fas fa-times"></i>
-               <span>Cancel</span>
-             </button>
-             <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
-               <i className="fas fa-save"></i>
-               <span>Save Changes</span>
-             </button>
-           </div>
-         </div>
-       </div>
-     )}
-   </div>
- );
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+          
+          <div className="modal-content">
+            {renderTabContent()}
+          </div>
+          
+          <div className="modal-footer">
+            <button className="cancel-btn" onClick={handleCloseProfile}>
+              <i className="fas fa-times"></i>
+              <span>Cancel</span>
+            </button>
+            <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
+              <i className="fas fa-save"></i>
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 };
 
 export default DevStaffEditComponent;

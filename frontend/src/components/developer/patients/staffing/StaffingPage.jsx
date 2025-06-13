@@ -227,6 +227,9 @@ const DevStaffingPage = () => {
     { role: 'ot' },
     { role: 'administrator' },
     { role: 'support' },
+    { role: 'agency' },
+    { role: 'agency' },
+    { role: 'agency' },
     // Agrega más datos simulados si es necesario
   ];
 
@@ -243,28 +246,28 @@ const DevStaffingPage = () => {
 
   const internalStaffCounts = {
     Admin: staffList.filter(staff => staff.role === 'administrator').length,
-    Agency: staffList.filter(staff => staff.role === 'agency').length,
     Support: staffList.filter(staff => staff.role === 'support').length,
     Developer: staffList.filter(staff => staff.role === 'developer').length,
   };
 
   const totalInternalStaff = Object.values(internalStaffCounts).reduce((sum, count) => sum + count, 0);
 
-  const monthlyIncorporations = {
-    currentMonth: 0,
-    previousMonth: 100,
+  // Nuevo conteo de agencias
+  const newAgencies = {
+    currentMonth: staffList.filter(staff => staff.role === 'agency').length,
+    previousMonth: 2, // Simulando que el mes anterior había 2 agencias
   };
 
-  let incorporationChange = 0;
-  let changeDirection = '';
-  if (monthlyIncorporations.previousMonth === 0) {
-    incorporationChange = monthlyIncorporations.currentMonth > 0 ? 100 : 0;
-    changeDirection = monthlyIncorporations.currentMonth > 0 ? 'increase' : 'no-change';
+  let agencyChange = 0;
+  let agencyChangeDirection = '';
+  if (newAgencies.previousMonth === 0) {
+    agencyChange = newAgencies.currentMonth > 0 ? 100 : 0;
+    agencyChangeDirection = newAgencies.currentMonth > 0 ? 'increase' : 'no-change';
   } else {
-    incorporationChange = Math.round(
-      ((monthlyIncorporations.currentMonth - monthlyIncorporations.previousMonth) / monthlyIncorporations.previousMonth) * 100
+    agencyChange = Math.round(
+      ((newAgencies.currentMonth - newAgencies.previousMonth) / newAgencies.previousMonth) * 100
     );
-    changeDirection = incorporationChange > 0 ? 'increase' : incorporationChange < 0 ? 'decrease' : 'no-change';
+    agencyChangeDirection = agencyChange > 0 ? 'increase' : agencyChange < 0 ? 'decrease' : 'no-change';
   }
 
   const handleNavigateToCreateReferral = () => {
@@ -535,74 +538,115 @@ const DevStaffingPage = () => {
             </div>
           </div>
           
-          {/* Sección de estadísticas */}
+          {/* Sección de estadísticas mejorada */}
           <div className="stats-container">
             <h2>Staffing Overview</h2>
             <div className="staffing-stats">
-              {/* Total Therapists con desglose */}
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-users"></i>
+              {/* Total Therapists con desglose mejorado */}
+              <div className="stat-card therapists-card">
+                <div className="stat-header">
+                  <div className="stat-icon">
+                    <i className="fas fa-users"></i>
+                  </div>
+                  <div className="stat-main-info">
+                    <h3 className="stat-value">{totalTherapists}</h3>
+                    <p className="stat-label">Total Therapists</p>
+                  </div>
                 </div>
-                <div className="stat-info">
-                  <h3 className="stat-value">{totalTherapists}</h3>
-                  <p>Total Therapists</p>
-                  <div className="therapist-breakdown">
-                    <span>PT: {therapistCounts.PT}</span>
-                    <span>PTA: {therapistCounts.PTA}</span>
-                    <span>OT: {therapistCounts.OT}</span>
-                    <span>COTA: {therapistCounts.COTA}</span>
-                    <span>ST: {therapistCounts.ST}</span>
-                    <span>STA: {therapistCounts.STA}</span>
+                <div className="therapist-breakdown">
+                  <div className="breakdown-grid">
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">PT</span>
+                      <span className="breakdown-value">{therapistCounts.PT}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">PTA</span>
+                      <span className="breakdown-value">{therapistCounts.PTA}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">OT</span>
+                      <span className="breakdown-value">{therapistCounts.OT}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">COTA</span>
+                      <span className="breakdown-value">{therapistCounts.COTA}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">ST</span>
+                      <span className="breakdown-value">{therapistCounts.ST}</span>
+                    </div>
+                    <div className="breakdown-item">
+                      <span className="breakdown-label">STA</span>
+                      <span className="breakdown-value">{therapistCounts.STA}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Incorporación mensual */}
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-user-plus"></i>
+              {/* Active Agencies */}
+              <div className="stat-card agencies-card">
+                <div className="stat-header">
+                  <div className="stat-icon">
+                    <i className="fas fa-building"></i>
+                  </div>
+                  <div className="stat-main-info">
+                    <h3 className="stat-value">{newAgencies.currentMonth}</h3>
+                    <p className="stat-label">Active Agencies</p>
+                  </div>
                 </div>
-                <div className="stat-info">
-                  <h3 className="stat-value">{monthlyIncorporations.currentMonth}</h3>
-                  <p>Monthly Incorporations</p>
-                  <div className={`change-indicator ${changeDirection}`}>
-                    {changeDirection !== 'no-change' ? (
-                      <>
-                        {Math.abs(incorporationChange)}% {changeDirection === 'increase' ? '↑' : '↓'}
-                      </>
-                    ) : (
-                      'No Change'
-                    )}
+                <div className="stat-footer">
+                  <div className={`change-indicator ${agencyChangeDirection}`}>
+                    <i className={`fas fa-${agencyChangeDirection === 'increase' ? 'arrow-up' : agencyChangeDirection === 'decrease' ? 'arrow-down' : 'minus'}`}></i>
+                    <span>
+                      {agencyChangeDirection !== 'no-change' ? 
+                        `${Math.abs(agencyChange)}% vs last month` : 
+                        'No change'
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Personal interno */}
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-user-tie"></i>
+              {/* Internal Staff mejorado */}
+              <div className="stat-card internal-staff-card">
+                <div className="stat-header">
+                  <div className="stat-icon">
+                    <i className="fas fa-user-tie"></i>
+                  </div>
+                  <div className="stat-main-info">
+                    <h3 className="stat-value">{totalInternalStaff}</h3>
+                    <p className="stat-label">Internal Staff</p>
+                  </div>
                 </div>
-                <div className="stat-info">
-                  <h3 className="stat-value">{totalInternalStaff}</h3>
-                  <p>Internal Staff</p>
-                  <div className="internal-staff-breakdown">
-                    <span>Admin: {internalStaffCounts.Admin}</span>
-                    <span>Agency: {internalStaffCounts.Agency}</span>
-                    <span>Support: {internalStaffCounts.Support}</span>
-                    <span>Developer: {internalStaffCounts.Developer}</span>
+                <div className="internal-staff-breakdown">
+                  <div className="breakdown-row">
+                    <span className="breakdown-label">Admin</span>
+                    <span className="breakdown-value">{internalStaffCounts.Admin}</span>
+                  </div>
+                  <div className="breakdown-row">
+                    <span className="breakdown-label">Support</span>
+                    <span className="breakdown-value">{internalStaffCounts.Support}</span>
+                  </div>
+                  <div className="breakdown-row">
+                    <span className="breakdown-label">Developer</span>
+                    <span className="breakdown-value">{internalStaffCounts.Developer}</span>
                   </div>
                 </div>
               </div>
 
               {/* Botón para crear un nuevo paciente */}
               <div className="stat-card action-card" onClick={handleNavigateToCreateReferral}>
-                <div className="stat-icon">
-                  <i className="fas fa-user-plus"></i>
+                <div className="stat-header">
+                  <div className="stat-icon action-icon">
+                    <i className="fas fa-user-plus"></i>
+                  </div>
+                  <div className="stat-main-info">
+                    <h3 className="stat-value">Create</h3>
+                    <p className="stat-label">New Patient Referral</p>
+                  </div>
                 </div>
-                <div className="stat-info">
-                  <h3 className="stat-value">Create Patient</h3>
-                  <p>Start a new patient referral</p>
+                <div className="action-arrow">
+                  <i className="fas fa-arrow-right"></i>
                 </div>
               </div>
             </div>
@@ -739,6 +783,7 @@ const DevStaffingPage = () => {
               disabled={isLoggingOut}
             >
               <i className="fas fa-plus"></i>
+              <span className="btn-tooltip">Add New Company</span>
             </button>
           ) : null}
         </div>

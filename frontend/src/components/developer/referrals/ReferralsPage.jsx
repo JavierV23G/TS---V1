@@ -41,50 +41,69 @@ const DevReferralsPage = () => {
   const fileInputRef = useRef(null);
   
   // Form data state with added weight and height fields
-  const [formData, setFormData] = useState({
-    // Patient personal data
-    firstName: '',
-    lastName: '',
-    dob: '',
-    gender: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    contactNumbers: [''],
-    
-    // Care Period
-    payorType: '',
-    certPeriodStart: '',
-    certPeriodEnd: '',
-    urgencyLevel: 'normal',
-    
-    // Medical
-    physician: '',
-    agencyId: '',
-    agencyBranch: '',
-    nurseManager: '',
-    nursingDiagnosis: '',
-    pmh: '',
-    priorLevelOfFunction: 'To Be Obtained at Evaluation',
-    homebound: {},
-    wbs: '',
-    weight: '',
-    weightUnit: 'lbs', 
-    height: '',
-    heightUnit: 'ft', 
-    
-    // Therapy
-    reasonsForReferral: {
-      strength_balance: false,
-      gait: false,
-      adls: false,
-      orthopedic: false,
-      neurological: false,
-      wheelchair: false,
-      additional: ''
-    },
-    disciplines: []
-  });
+const [formData, setFormData] = useState({
+  // Patient personal data
+  firstName: '',
+  lastName: '',
+  dob: '',
+  gender: '',
+  address: '',
+  city: '',
+  zipCode: '',
+  contactNumbers: [''],
+  
+  // Care Period
+  payorType: '',
+  certPeriodStart: '',
+  certPeriodEnd: '',
+  urgencyLevel: 'normal',
+  
+  // Medical
+  physician: '',
+  agencyId: '',
+  agencyBranch: '',
+  nurseManager: '',
+  nursingDiagnosis: '',
+  pmh: '',
+  priorLevelOfFunction: 'To Be Obtained at Evaluation',
+  wbs: '',
+  
+  // Homebound - SOLO UNA VEZ
+  homebound: {
+    na: false,
+    needs_assistance: false,
+    residual_weakness: false,
+    requires_assistance_ambulate: false,
+    confusion: false,
+    safely_leave: false,
+    sob: false,
+    adaptive_devices: false,
+    medical_restrictions: false,
+    taxing_effort: false,
+    bedbound: false,
+    transfers: false,
+    other: false,
+    otherReason: ''
+  },
+  
+  // Weight y Height - SOLO UNA VEZ
+  weight: '',
+  weightUnit: 'lbs', 
+  height: '',
+  heightUnit: 'ft',
+  
+  // Therapy - SOLO UNA VEZ
+  reasonsForReferral: {
+    strength_balance: false,
+    gait: false,
+    adls: false,
+    orthopedic: false,
+    neurological: false,
+    wheelchair: false,
+    additional: ''
+  },
+  disciplines: []
+});
   
   const [uploadedFiles, setUploadedFiles] = useState([]);
   
@@ -367,29 +386,149 @@ const DevReferralsPage = () => {
   };
   
   // Handle form input changes
-  const handleInputChange = (e) => {
-    if (isLoggingOut) return;
-    
-    const { name, value, type, checked } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+const handleInputChange = (e) => {
+  if (isLoggingOut) return;
   
-  // Handle contact number changes
-  const handleContactNumberChange = (index, value) => {
-    if (isLoggingOut) return;
+  const { name, value, type, checked } = e.target;
+  
+  // Manejo especial para campos numéricos
+  if (name === 'weight' || name === 'height') {
+    // Validación para weight
+    if (name === 'weight') {
+      if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+      return;
+    }
     
-    const updatedNumbers = [...formData.contactNumbers];
-    updatedNumbers[index] = value;
-    
+    // Validación para height
+    if (name === 'height') {
+      const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
+      if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+      return;
+    }
+  }
+  
+  // Manejo normal para otros campos
+  setFormData(prev => ({
+    ...prev,
+    [name]: type === 'checkbox' ? checked : value
+  }));
+};
+  
+const handleWeightChange = (e) => {
+  if (isLoggingOut) return;
+  
+  const value = e.target.value;
+  // Permitir números decimales y validar rango
+  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
     setFormData(prev => ({
       ...prev,
-      contactNumbers: updatedNumbers
+      weight: value
     }));
-  };
+  }
+};
+
+// Función para manejar cambios en height
+const handleHeightChange = (e) => {
+  if (isLoggingOut) return;
+  
+  const value = e.target.value;
+  // Validar según la unidad seleccionada
+  const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
+  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
+    setFormData(prev => ({
+      ...prev,
+      height: value
+    }));
+  }
+};
+
+// Función para manejar cambios en weightUnit
+const handleWeightUnitChange = (e) => {
+  if (isLoggingOut) return;
+  
+  setFormData(prev => ({
+    ...prev,
+    weightUnit: e.target.value
+  }));
+};
+
+// Función para manejar cambios en heightUnit con conversión
+const handleHeightUnitChange = (e) => {
+  if (isLoggingOut) return;
+  
+  // Convertir altura si es necesario
+  let newHeight = formData.height;
+  if (formData.height && !isNaN(parseFloat(formData.height))) {
+    const currentValue = parseFloat(formData.height);
+    if (formData.heightUnit === 'ft' && e.target.value === 'cm') {
+      // Convertir de pies a centímetros
+      newHeight = (currentValue * 30.48).toFixed(1);
+    } else if (formData.heightUnit === 'cm' && e.target.value === 'ft') {
+      // Convertir de centímetros a pies
+      newHeight = (currentValue / 30.48).toFixed(1);
+    }
+  }
+  
+  setFormData(prev => ({
+    ...prev,
+    heightUnit: e.target.value,
+    height: newHeight
+  }));
+};
+
+
+
+
+
+
+
+
+
+
+// Función para formatear número de teléfono
+const formatPhoneNumber = (value) => {
+  if (!value) return value;
+  
+  // Solo números
+  const phoneNumber = value.replace(/[^\d]/g, '');
+  
+  // Si tiene menos de 4 dígitos, devolver tal como está
+  if (phoneNumber.length < 4) return phoneNumber;
+  
+  // Si tiene menos de 7 dígitos, formato (xxx) xxx
+  if (phoneNumber.length < 7) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  }
+  
+  // Formato completo (xxx) xxx-xxxx
+  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
+
+// Handle contact number changes (esta línea ya existe)
+const handleContactNumberChange = (index, value) => {
+  if (isLoggingOut) return;
+  
+  // Formatear el número automáticamente
+  const formattedNumber = formatPhoneNumber(value);
+  
+  const updatedNumbers = [...formData.contactNumbers];
+  updatedNumbers[index] = formattedNumber;
+  
+  setFormData(prev => ({
+    ...prev,
+    contactNumbers: updatedNumbers
+  }));
+};
   
   // Add a new contact number
   const addContactNumber = () => {
@@ -434,31 +573,44 @@ const DevReferralsPage = () => {
   };
   
   // Handle homebound option changes
-  const handleHomeboundChange = (optionId, isChecked) => {
-    if (isLoggingOut) return;
-    
-    setFormData(prev => ({
-      ...prev,
-      homebound: {
-        ...prev.homebound,
-        [optionId]: isChecked
-      }
-    }));
-  };
+const handleHomeboundChange = (optionId, isChecked) => {
+  if (isLoggingOut) return;
+  
+  setFormData(prev => ({
+    ...prev,
+    homebound: {
+      ...prev.homebound,
+      [optionId]: isChecked
+    }
+  }));
+};
   
   // Handle reasons for referral changes
-  const handleReasonChange = (reasonId, isChecked) => {
-    if (isLoggingOut) return;
-    
-    setFormData(prev => ({
-      ...prev,
-      reasonsForReferral: {
-        ...prev.reasonsForReferral,
-        [reasonId]: isChecked
-      }
-    }));
-  };
+const handleReasonChange = (reasonId, isChecked) => {
+  if (isLoggingOut) return;
   
+  setFormData(prev => ({
+    ...prev,
+    reasonsForReferral: {
+      ...prev.reasonsForReferral,
+      [reasonId]: isChecked
+    }
+  }));
+};
+  
+const validateNumericInput = (value, min = 0, max = Infinity) => {
+  if (value === '') return true;
+  const numValue = parseFloat(value);
+  return !isNaN(numValue) && numValue >= min && numValue <= max;
+};
+
+// Función para formatear números
+const formatNumber = (value, decimals = 1) => {
+  if (!value || isNaN(parseFloat(value))) return '';
+  return parseFloat(value).toFixed(decimals);
+};
+
+
   // Handle discipline selection
   const handleDisciplineChange = (discipline) => {
     if (isLoggingOut) return;
@@ -489,75 +641,91 @@ const DevReferralsPage = () => {
   };
   
   // Reset form to initial state
-  const resetForm = () => {
-    // Reset all form data to initial values
-    setFormData({
-      firstName: '',
-      lastName: '',
-      dob: '',
-      gender: '',
-      address: '',
-      city: '',
-      zipCode: '',
-      contactNumbers: [''],
-      payorType: '',
-      certPeriodStart: '',
-      certPeriodEnd: '',
-      urgencyLevel: 'normal',
-      physician: '',
-      agencyId: '',
-      agencyBranch: '',
-      nurseManager: '',
-      newNurseManager: '',
-      nursingDiagnosis: '',
-      pmh: '',
-      priorLevelOfFunction: 'To Be Obtained at Evaluation',
-      homebound: {},
-      wbs: '',
-      weight: '',
-      weightUnit: 'lbs',
-      height: '',
-      heightUnit: 'ft',
-      reasonsForReferral: {
-        strength_balance: false,
-        gait: false,
-        adls: false,
-        orthopedic: false,
-        neurological: false,
-        wheelchair: false,
-        additional: ''
-      },
-      disciplines: []
-    });
+const resetForm = () => {
+  setFormData({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    gender: '',
+    address: '',
+    city: '',
+    zipCode: '',
+    contactNumbers: [''],
+    payorType: '',
+    certPeriodStart: '',
+    certPeriodEnd: '',
+    urgencyLevel: 'normal',
+    physician: '',
+    agencyId: '',
+    agencyBranch: '',
+    nurseManager: '',
+    nursingDiagnosis: '',
+    pmh: '',
+    priorLevelOfFunction: 'To Be Obtained at Evaluation',
     
-    // Reset discipline selections
-    setSelectedDisciplines({
-      PT: false,
-      PTA: false,
-      OT: false,
-      COTA: false,
-      ST: false,
-      STA: false
-    });
+    // Estructura correcta para homebound
+    homebound: {
+      na: false,
+      needs_assistance: false,
+      residual_weakness: false,
+      requires_assistance_ambulate: false,
+      confusion: false,
+      safely_leave: false,
+      sob: false,
+      adaptive_devices: false,
+      medical_restrictions: false,
+      taxing_effort: false,
+      bedbound: false,
+      transfers: false,
+      other: false,
+      otherReason: ''
+    },
     
-    // Reset therapist selections
-    setTherapists({
-      PT: null,
-      PTA: null,
-      OT: null,
-      COTA: null,
-      ST: null,
-      STA: null
-    });
+    wbs: '',
+    weight: '',
+    weightUnit: 'lbs',
+    height: '',
+    heightUnit: 'ft',
     
-    // Reset uploaded files
-    setUploadedFiles([]);
+    // Estructura correcta para reasonsForReferral
+    reasonsForReferral: {
+      strength_balance: false,
+      gait: false,
+      adls: false,
+      orthopedic: false,
+      neurological: false,
+      wheelchair: false,
+      additional: ''
+    },
     
-    // Reset adding new manager state
-    setAddingNewManager(false);
-    
-    console.log('Form has been reset completely');
-  };
+    disciplines: []
+  });
+  
+  // Reset discipline selections
+  setSelectedDisciplines({
+    PT: false,
+    PTA: false,
+    OT: false,
+    COTA: false,
+    ST: false,
+    STA: false
+  });
+  
+  // Reset therapist selections
+  setSelectedTherapists({
+    PT: '',
+    PTA: '',
+    OT: '',
+    COTA: '',
+    ST: '',
+    STA: ''
+  });
+  
+  // Reset uploaded files
+  setUploadedFiles([]);
+  
+  console.log('Form has been reset completely');
+};
 
   // Cancel creating referral and go back to menu
   const handleCancelCreateReferral = () => {
@@ -1018,13 +1186,14 @@ const DevReferralsPage = () => {
                     <div className="contact-numbers">
                       {formData.contactNumbers.map((number, index) => (
                         <div key={index} className="contact-number-row">
-                          <input
-                            type="tel"
-                            value={number}
-                            onChange={(e) => handleContactNumberChange(index, e.target.value)}
-                            placeholder="Phone number"
-                            disabled={isLoggingOut}
-                          />
+<input
+  type="tel"
+  value={number}
+  onChange={(e) => handleContactNumberChange(index, e.target.value)}
+  placeholder="(___) ___-____"
+  maxLength="14"
+  disabled={isLoggingOut}
+/>
                           
                           <div className="contact-actions">
                             {index === formData.contactNumbers.length - 1 && (
@@ -1271,44 +1440,54 @@ const DevReferralsPage = () => {
                     </select>
                   </div>
                   
-                  <div className="form-group full-width">
-                    <label>Homebound</label>
-                    <div className="homebound-options">
-                      {homeboundOptions.map(option => (
-                        <div key={option.id} className="option-item">
-                          <label className="checkbox-container">
-                            <input
-                              type="checkbox"
-                              checked={!!formData.homebound[option.id]}
-                              onChange={(e) => handleHomeboundChange(option.id, e.target.checked)}
-                              disabled={isLoggingOut}
-                            />
-                            <span className="checkbox-label">{option.label}</span>
-                          </label>
-                          
-                          {option.id === 'other' && formData.homebound['other'] && (
-                            <input
-                              type="text"
-                              className="form-control other-reason mt-1"
-                              placeholder="Explain other reason"
-                              value={formData.homebound.otherReason || ''}
-                              onChange={(e) => {
-                                if (isLoggingOut) return;
-                                setFormData(prev => ({
-                                  ...prev,
-                                  homebound: {
-                                    ...prev.homebound,
-                                    otherReason: e.target.value
-                                  }
-                                }));
-                              }}
-                              disabled={isLoggingOut}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+<div className="form-group full-width">
+  <label>Homebound</label>
+  <div className="homebound-options">
+    {homeboundOptions.map(option => (
+      <div key={option.id} className="option-item">
+        <label className="checkbox-container">
+          <input
+            type="checkbox"
+            checked={formData.homebound[option.id] || false}
+            onChange={(e) => {
+              if (isLoggingOut) return;
+              setFormData(prev => ({
+                ...prev,
+                homebound: {
+                  ...prev.homebound,
+                  [option.id]: e.target.checked
+                }
+              }));
+            }}
+            disabled={isLoggingOut}
+          />
+          <span className="checkmark"></span>
+          <span className="checkbox-label">{option.label}</span>
+        </label>
+        
+        {option.id === 'other' && formData.homebound['other'] && (
+          <input
+            type="text"
+            className="other-reason-input"
+            placeholder="Explain other reason"
+            value={formData.homebound.otherReason || ''}
+            onChange={(e) => {
+              if (isLoggingOut) return;
+              setFormData(prev => ({
+                ...prev,
+                homebound: {
+                  ...prev.homebound,
+                  otherReason: e.target.value
+                }
+              }));
+            }}
+            disabled={isLoggingOut}
+          />
+        )}
+      </div>
+    ))}
+  </div>
+</div>
                   
                   <div className="form-group">
                     <label htmlFor="wbs">WBS (Weight Bearing Status)</label>
@@ -1329,63 +1508,140 @@ const DevReferralsPage = () => {
                   </div>
                   
                   {/* Weight field with unit selection */}
-                  <div className="form-group">
-                    <label htmlFor="weight">Weight</label>
-                    <div className="measurement-input">
-                      <input
-                        type="number"
-                        id="weight"
-                        name="weight"
-                        value={formData.weight}
-                        onChange={handleInputChange}
-                        placeholder="Enter weight"
-                        min="0"
-                        step="0.1"
-                        disabled={isLoggingOut}
-                      />
-                      <select
-                        name="weightUnit"
-                        value={formData.weightUnit}
-                        onChange={handleInputChange}
-                        disabled={isLoggingOut}
-                      >
-                        <option value="lbs">lbs</option>
-                        <option value="kg">kg</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {/* Height field with unit selection */}
-                  <div className="form-group">
-                    <label htmlFor="height">Height</label>
-                    <div className="measurement-input">
-                      <input
-                        type="number"
-                        id="height"
-                        name="height"
-                        value={formData.height}
-                        onChange={handleInputChange}
-                        placeholder="Enter height"
-                        min="0"
-                        step="0.1"
-                        disabled={isLoggingOut}
-                      />
-                      <select
-                        name="heightUnit"
-                        value={formData.heightUnit}
-                        onChange={handleInputChange}
-                        disabled={isLoggingOut}
-                      >
-                        <option value="ft">ft</option>
-                        <option value="cm">cm</option>
-                      </select>
-                    </div>
-                    {formData.heightUnit === 'ft' && (
-                      <small className="form-text text-muted">
-                        Enter height in feet (e.g., 5.5 for 5 feet 6 inches)
-                      </small>
-                    )}
-                  </div>
+<div className="form-group">
+  <label htmlFor="weight">Weight</label>
+  <div className="large-measurement-input">
+    <div className="number-input-container">
+      <input
+        type="number"
+        id="weight"
+        name="weight"
+        value={formData.weight}
+        onChange={(e) => {
+          if (isLoggingOut) return;
+          const value = e.target.value;
+          // Permitir números decimales y validar rango
+          if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
+            setFormData(prev => ({
+              ...prev,
+              weight: value
+            }));
+          }
+        }}
+        onBlur={(e) => {
+          // Formatear el número al perder el foco
+          const value = parseFloat(e.target.value);
+          if (!isNaN(value)) {
+            setFormData(prev => ({
+              ...prev,
+              weight: value.toString()
+            }));
+          }
+        }}
+        placeholder=""
+        min="0"
+        max="1000"
+        step="0.1"
+        disabled={isLoggingOut}
+        className="large-number-input"
+      />
+    </div>
+    <div className="unit-selector-container">
+      <select
+        name="weightUnit"
+        value={formData.weightUnit}
+        onChange={(e) => {
+          if (isLoggingOut) return;
+          setFormData(prev => ({
+            ...prev,
+            weightUnit: e.target.value
+          }));
+        }}
+        disabled={isLoggingOut}
+        className="large-unit-select"
+      >
+        <option value="lbs">lbs</option>
+        <option value="kg">kg</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+{/* Height field - NUEVO DISEÑO MÁS GRANDE */}
+<div className="form-group">
+  <label htmlFor="height">Height</label>
+  <div className="large-measurement-input">
+    <div className="number-input-container">
+      <input
+        type="number"
+        id="height"
+        name="height"
+        value={formData.height}
+        onChange={(e) => {
+          if (isLoggingOut) return;
+          const value = e.target.value;
+          // Validar según la unidad seleccionada
+          const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
+          if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
+            setFormData(prev => ({
+              ...prev,
+              height: value
+            }));
+          }
+        }}
+        onBlur={(e) => {
+          // Formatear el número al perder el foco
+          const value = parseFloat(e.target.value);
+          if (!isNaN(value)) {
+            setFormData(prev => ({
+              ...prev,
+              height: value.toString()
+            }));
+          }
+        }}
+        
+        min="0"
+        max={formData.heightUnit === 'ft' ? "10" : "300"}
+        step="0.1"
+        disabled={isLoggingOut}
+        className="large-number-input"
+      />
+    </div>
+    <div className="unit-selector-container">
+      <select
+        name="heightUnit"
+        value={formData.heightUnit}
+        onChange={(e) => {
+          if (isLoggingOut) return;
+          // Convertir altura si es necesario
+          let newHeight = formData.height;
+          if (formData.height && !isNaN(parseFloat(formData.height))) {
+            const currentValue = parseFloat(formData.height);
+            if (formData.heightUnit === 'ft' && e.target.value === 'cm') {
+              // Convertir de pies a centímetros
+              newHeight = (currentValue * 30.48).toFixed(1);
+            } else if (formData.heightUnit === 'cm' && e.target.value === 'ft') {
+              // Convertir de centímetros a pies
+              newHeight = (currentValue / 30.48).toFixed(1);
+            }
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            heightUnit: e.target.value,
+            height: newHeight
+          }));
+        }}
+        disabled={isLoggingOut}
+        className="large-unit-select"
+      >
+        <option value="ft">ft</option>
+        <option value="cm">cm</option>
+      </select>
+    </div>
+  </div>
+</div>
+                
                 </div>
               </div>
               
@@ -1397,45 +1653,56 @@ const DevReferralsPage = () => {
                 </div>
                 
                 <div className="form-grid">
-                  <div className="form-group full-width">
-                    <label>Reasons for Referral</label>
-                    <div className="reason-options">
-                      {referralOptions.map(reason => (
-                        <div key={reason.id} className="option-item">
-                          <label className="checkbox-container">
-                            <input
-                              type="checkbox"
-                              checked={!!formData.reasonsForReferral[reason.id]}
-                              onChange={(e) => handleReasonChange(reason.id, e.target.checked)}
-                              disabled={isLoggingOut}
-                            />
-                            <span className="checkbox-label">{reason.label}</span>
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="additional-reasons mt-3">
-                      <label>Additional Reasons:</label>
-                      <textarea
-                        name="additionalReasons"
-                        value={formData.reasonsForReferral.additional || ''}
-                        onChange={(e) => {
-                          if (isLoggingOut) return;
-                          setFormData(prev => ({
-                            ...prev,
-                            reasonsForReferral: {
-                              ...prev.reasonsForReferral,
-                              additional: e.target.value
-                            }
-                          }));
-                        }}
-                        className="form-control"
-                        rows="3"
-                        disabled={isLoggingOut}
-                      ></textarea>
-                    </div>
-                  </div>
+<div className="form-group full-width">
+  <label>Reasons for Referral</label>
+  <div className="reason-options">
+    {referralOptions.map(reason => (
+      <div key={reason.id} className="option-item">
+        <label className="checkbox-container">
+          <input
+            type="checkbox"
+            checked={formData.reasonsForReferral[reason.id] || false}
+            onChange={(e) => {
+              if (isLoggingOut) return;
+              setFormData(prev => ({
+                ...prev,
+                reasonsForReferral: {
+                  ...prev.reasonsForReferral,
+                  [reason.id]: e.target.checked
+                }
+              }));
+            }}
+            disabled={isLoggingOut}
+          />
+          <span className="checkmark"></span>
+          <span className="checkbox-label">{reason.label}</span>
+        </label>
+      </div>
+    ))}
+  </div>
+  
+  <div className="additional-reasons">
+    <label htmlFor="additionalReasons">Additional Reasons:</label>
+    <textarea
+      id="additionalReasons"
+      name="additionalReasons"
+      value={formData.reasonsForReferral.additional || ''}
+      onChange={(e) => {
+        if (isLoggingOut) return;
+        setFormData(prev => ({
+          ...prev,
+          reasonsForReferral: {
+            ...prev.reasonsForReferral,
+            additional: e.target.value
+          }
+        }));
+      }}
+      rows="3"
+      placeholder="Enter any additional reasons for referral..."
+      disabled={isLoggingOut}
+    />
+  </div>
+</div>
                   
                   <div className="form-group full-width">
                     <label>Disciplines Needed</label>
