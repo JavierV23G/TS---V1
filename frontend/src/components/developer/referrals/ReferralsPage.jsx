@@ -15,7 +15,6 @@ const DevReferralsPage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const [agencies, setAgencies] = useState([]);
-
   const [therapists, setTherapists] = useState([]);
   const [selectedTherapists, setSelectedTherapists] = useState({
     PT: '', PTA: '', OT: '', COTA: '', ST: '', STA: ''
@@ -31,7 +30,7 @@ const DevReferralsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // State for view management
-  const [currentView, setCurrentView] = useState('menu'); // 'menu', 'createReferral', 'stats'
+  const [currentView, setCurrentView] = useState('menu');
   const [referralFormLoading, setReferralFormLoading] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   
@@ -40,70 +39,70 @@ const DevReferralsPage = () => {
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   
-  // Form data state with added weight and height fields
-const [formData, setFormData] = useState({
-  // Patient personal data
-  firstName: '',
-  lastName: '',
-  dob: '',
-  gender: '',
-  address: '',
-  city: '',
-  zipCode: '',
-  contactNumbers: [''],
-  
-  // Care Period
-  payorType: '',
-  certPeriodStart: '',
-  certPeriodEnd: '',
-  urgencyLevel: 'normal',
-  
-  // Medical
-  physician: '',
-  agencyId: '',
-  agencyBranch: '',
-  nurseManager: '',
-  nursingDiagnosis: '',
-  pmh: '',
-  priorLevelOfFunction: 'To Be Obtained at Evaluation',
-  wbs: '',
-  
-  // Homebound - SOLO UNA VEZ
-  homebound: {
-    na: false,
-    needs_assistance: false,
-    residual_weakness: false,
-    requires_assistance_ambulate: false,
-    confusion: false,
-    safely_leave: false,
-    sob: false,
-    adaptive_devices: false,
-    medical_restrictions: false,
-    taxing_effort: false,
-    bedbound: false,
-    transfers: false,
-    other: false,
-    otherReason: ''
-  },
-  
-  // Weight y Height - SOLO UNA VEZ
-  weight: '',
-  weightUnit: 'lbs', 
-  height: '',
-  heightUnit: 'ft',
-  
-  // Therapy - SOLO UNA VEZ
-  reasonsForReferral: {
-    strength_balance: false,
-    gait: false,
-    adls: false,
-    orthopedic: false,
-    neurological: false,
-    wheelchair: false,
-    additional: ''
-  },
-  disciplines: []
-});
+  // Form data state - ESTRUCTURA CORREGIDA
+  const [formData, setFormData] = useState({
+    // Patient personal data
+    firstName: '',
+    lastName: '',
+    dob: '',
+    gender: '',
+    address: '',
+    city: '',
+    zipCode: '',
+    contactNumbers: [''],
+    
+    // Care Period
+    payorType: '',
+    certPeriodStart: '',
+    certPeriodEnd: '',
+    urgencyLevel: 'normal',
+    
+    // Medical
+    physician: '',
+    agencyId: '',
+    agencyBranch: '',
+    nurseManager: '',
+    nursingDiagnosis: '',
+    pmh: '',
+    priorLevelOfFunction: 'To Be Obtained at Evaluation',
+    wbs: '',
+    
+    // Homebound - Estructura correcta
+    homebound: {
+      na: false,
+      needs_assistance: false,
+      residual_weakness: false,
+      requires_assistance_ambulate: false,
+      confusion: false,
+      safely_leave: false,
+      sob: false,
+      adaptive_devices: false,
+      medical_restrictions: false,
+      taxing_effort: false,
+      bedbound: false,
+      transfers: false,
+      other: false,
+      otherReason: ''
+    },
+    
+    // Weight y Height
+    weight: '',
+    weightUnit: 'lbs', 
+    height: '',
+    heightUnit: 'ft',
+    
+    // Therapy - Estructura correcta
+    reasonsForReferral: {
+      strength_balance: false,
+      gait: false,
+      adls: false,
+      orthopedic: false,
+      neurological: false,
+      wheelchair: false,
+      additional: ''
+    },
+    disciplines: []
+  });
   
   const [uploadedFiles, setUploadedFiles] = useState([]);
   
@@ -146,36 +145,35 @@ const [formData, setFormData] = useState({
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'User'),
     email: currentUser?.email || 'user@example.com',
     role: currentUser?.role || 'User',
-    status: 'online', // online, away, busy, offline
+    status: 'online',
   };
   
-//////////////////////////////////////EFECTOS DE LA PAGINA//////////////////////////////////////////
+  //////////////////////////////////////EFECTOS DE LA PAGINA//////////////////////////////////////////
 
   // Para la carga del screen principal
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
-
     return () => clearTimeout(timeout); 
   }, []);
 
-  // Agencias del dropdown menu
+  // Agencias del dropdown menu - CORREGIDO
   useEffect(() => {
     const fetchAgencies = async () => {
       try {
         const response = await fetch('http://localhost:8000/staff');
         if (!response.ok) throw new Error('Failed to fetch staff');
         const data = await response.json();
-  
-        const agenciesOnly = data.filter(person => person.role === 'agency');
+        
+        // Cambié 'Agency' por 'agency' para que coincida con el backend
+        const agenciesOnly = data.filter(person => person.role.toLowerCase() === 'agency');
         setAgencies(agenciesOnly);
       } catch (error) {
         console.error('Error loading agencies:', error);
         toast.error('Error loading agencies');
       }
     };
-  
     fetchAgencies();
   }, []);
 
@@ -194,7 +192,6 @@ const [formData, setFormData] = useState({
         toast.error("Error loading therapists");
       }
     };
-  
     fetchTherapists();
   }, []);
 
@@ -205,7 +202,6 @@ const [formData, setFormData] = useState({
         setShowUserMenu(false);
       }
     };
-    
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -217,10 +213,8 @@ const [formData, setFormData] = useState({
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
-    handleResize(); // Initial check
+    handleResize();
     window.addEventListener('resize', handleResize);
-    
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
@@ -233,7 +227,6 @@ const [formData, setFormData] = useState({
       
       const formattedEndDate = endDate.toISOString().split('T')[0];
       
-      // We set a suggested end date but it can be modified
       setFormData(prev => ({
         ...prev,
         certPeriodEnd: formattedEndDate
@@ -241,9 +234,9 @@ const [formData, setFormData] = useState({
     }
   }, [formData.certPeriodStart]);
   
-/////////////////////////// HANDLE BUTTONS /////////////////////////////////////////////////////
+  /////////////////////////// HANDLE BUTTONS /////////////////////////////////////////////////////
 
-  // Form submision
+  // Form submission - ACTUALIZADO CON LA ESTRUCTURA CORRECTA
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLoggingOut) return;
@@ -251,12 +244,25 @@ const [formData, setFormData] = useState({
     try {
       setFormSubmitting(true);
   
+      // Validar que al menos una disciplina esté seleccionada
+      if (formData.disciplines.length === 0) {
+        toast.error('Please select at least one discipline');
+        return;
+      }
+
+      // Validar que cada disciplina seleccionada tenga un terapeuta asignado
+      const missingTherapists = formData.disciplines.filter(discipline => !selectedTherapists[discipline]);
+      if (missingTherapists.length > 0) {
+        toast.error(`Please assign therapists for: ${missingTherapists.join(', ')}`);
+        return;
+      }
+  
       // Paso 1: Crear paciente
       const patientPayload = {
         full_name: `${formData.firstName} ${formData.lastName}`,
         birthday: formData.dob,
         gender: formData.gender,
-        address: formData.address,
+        address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
         contact_info: JSON.stringify(formData.contactNumbers),
         payor_type: formData.payorType,
         physician: formData.physician,
@@ -267,10 +273,11 @@ const [formData, setFormData] = useState({
         homebound_status: JSON.stringify(formData.homebound),
         weight_bearing_status: formData.wbs,
         referral_reason: JSON.stringify(formData.reasonsForReferral),
-        weight: `${formData.weight} ${formData.weightUnit}`,
-        height: `${formData.height} ${formData.heightUnit}`,
+        weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
+        height: formData.height ? `${formData.height} ${formData.heightUnit}` : '',
         past_medical_history: formData.pmh,
-        initial_cert_start_date: formData.certPeriodStart
+        initial_cert_start_date: formData.certPeriodStart,
+        required_disciplines: JSON.stringify(formData.disciplines)
       };
   
       const createRes = await fetch('http://localhost:8000/patients/', {
@@ -279,14 +286,18 @@ const [formData, setFormData] = useState({
         body: JSON.stringify(patientPayload),
       });
   
-      if (!createRes.ok) throw new Error('Failed to create patient');
+      if (!createRes.ok) {
+        const errorData = await createRes.text();
+        console.error('Error creating patient:', errorData);
+        throw new Error('Failed to create patient');
+      }
   
       const createdPatient = await createRes.json();
       const patientId = createdPatient.id;
   
       // Paso 2: Asignar terapeutas
       const assignPromises = Object.entries(selectedTherapists).map(([discipline, staffId]) => {
-        if (staffId) {
+        if (staffId && formData.disciplines.includes(discipline)) {
           return fetch(`http://localhost:8000/assign-staff?patient_id=${patientId}&staff_id=${parseInt(staffId)}`, {
             method: 'POST'
           });
@@ -295,7 +306,12 @@ const [formData, setFormData] = useState({
       });
   
       const assignmentResults = await Promise.all(assignPromises.filter(Boolean));
-      if (assignmentResults.some(r => !r.ok)) throw new Error('Error assigning therapist(s)');
+      const failedAssignments = assignmentResults.filter(r => !r.ok);
+      if (failedAssignments.length > 0) {
+        console.error('Some therapist assignments failed');
+        // No fallar completamente, solo mostrar advertencia
+        toast.warning('Patient created but some therapist assignments may have failed');
+      }
   
       // Paso 3: Subir documentos
       for (let file of uploadedFiles) {
@@ -309,8 +325,9 @@ const [formData, setFormData] = useState({
         });
   
         if (!uploadRes.ok) {
-          console.error(await uploadRes.text());
-          throw new Error('Error uploading document');
+          console.error('Document upload failed:', await uploadRes.text());
+          // No fallar por documentos, solo advertir
+          toast.warning('Patient created but document upload failed');
         }
       }
   
@@ -318,8 +335,8 @@ const [formData, setFormData] = useState({
       resetForm();
       setCurrentView("menu");
     } catch (error) {
-      console.error(error);
-      toast.error("Error creating patient");
+      console.error('Error in form submission:', error);
+      toast.error("Error creating patient: " + error.message);
     } finally {
       setFormSubmitting(false);
     }
@@ -329,7 +346,6 @@ const [formData, setFormData] = useState({
   const handleLogout = () => {
     setIsLoggingOut(true);
     setShowUserMenu(false);
-    
     document.body.classList.add('logging-out');
   };
   
@@ -342,15 +358,13 @@ const [formData, setFormData] = useState({
   // Handle navigation to main menu
   const handleMainMenuTransition = () => {
     if (isLoggingOut) return;
-    
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     navigate(`/${baseRole}/homePage`);
   };
 
-  // Handle starting create new referral process - mantiene el tiempo del primer código
+  // Handle starting create new referral process
   const handleStartCreateReferral = () => {
     if (isLoggingOut) return;
-    
     setReferralFormLoading(true);
     setTimeout(() => {
       setCurrentView('createReferral');
@@ -361,7 +375,6 @@ const [formData, setFormData] = useState({
   // Handle navigation to referral stats
   const handleReferralStats = () => {
     if (isLoggingOut) return;
-    
     setCurrentView('stats');
   };
   
@@ -374,47 +387,74 @@ const [formData, setFormData] = useState({
   // Handle file upload
   const handleFileUpload = (e) => {
     if (isLoggingOut) return;
-    
     const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
-    
     if (files.length === 0) {
-      toast.error('Por favor, sube solo archivos PDF.');
+      toast.error('Please upload only PDF files.');
       return;
     }
-    
     setUploadedFiles(files);
   };
   
-  // Handle form input changes
+  // Handle form input changes - MEJORADO
+// Handle form input changes - ACTUALIZADO PARA WEIGHT/HEIGHT
 const handleInputChange = (e) => {
   if (isLoggingOut) return;
   
   const { name, value, type, checked } = e.target;
   
-  // Manejo especial para campos numéricos
-  if (name === 'weight' || name === 'height') {
-    // Validación para weight
-    if (name === 'weight') {
-      if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value
-        }));
+  // Manejo especial para campos numéricos weight y height
+  if (name === 'weight') {
+    // Validar peso: permitir decimales, rango 0-1000
+    if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    return;
+  }
+  
+  if (name === 'height') {
+    // Validar altura según la unidad seleccionada
+    const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
+    if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    return;
+  }
+  
+  // Manejo para weightUnit y heightUnit
+  if (name === 'weightUnit') {
+    setFormData(prev => ({
+      ...prev,
+      weightUnit: value
+    }));
+    return;
+  }
+  
+  if (name === 'heightUnit') {
+    // Convertir altura automáticamente cuando cambia la unidad
+    let newHeight = formData.height;
+    if (formData.height && !isNaN(parseFloat(formData.height))) {
+      const currentValue = parseFloat(formData.height);
+      if (formData.heightUnit === 'ft' && value === 'cm') {
+        // Convertir de pies a centímetros
+        newHeight = (currentValue * 30.48).toFixed(1);
+      } else if (formData.heightUnit === 'cm' && value === 'ft') {
+        // Convertir de centímetros a pies
+        newHeight = (currentValue / 30.48).toFixed(1);
       }
-      return;
     }
     
-    // Validación para height
-    if (name === 'height') {
-      const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
-      if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value
-        }));
-      }
-      return;
-    }
+    setFormData(prev => ({
+      ...prev,
+      heightUnit: value,
+      height: newHeight
+    }));
+    return;
   }
   
   // Manejo normal para otros campos
@@ -423,13 +463,15 @@ const handleInputChange = (e) => {
     [name]: type === 'checkbox' ? checked : value
   }));
 };
-  
+
+// Función específica para manejar cambios en weight (para el input large)
 const handleWeightChange = (e) => {
   if (isLoggingOut) return;
   
   const value = e.target.value;
-  // Permitir números decimales y validar rango
-  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
+  
+  // Permitir números decimales y validar rango 0-1000
+  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000 && !isNaN(parseFloat(value)))) {
     setFormData(prev => ({
       ...prev,
       weight: value
@@ -437,14 +479,16 @@ const handleWeightChange = (e) => {
   }
 };
 
-// Función para manejar cambios en height
+// Función específica para manejar cambios en height (para el input large)
 const handleHeightChange = (e) => {
   if (isLoggingOut) return;
   
   const value = e.target.value;
+  
   // Validar según la unidad seleccionada
   const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
-  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
+  
+  if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue && !isNaN(parseFloat(value)))) {
     setFormData(prev => ({
       ...prev,
       height: value
@@ -452,7 +496,7 @@ const handleHeightChange = (e) => {
   }
 };
 
-// Función para manejar cambios en weightUnit
+// Función para manejar cambios en weightUnit (para el select large)
 const handleWeightUnitChange = (e) => {
   if (isLoggingOut) return;
   
@@ -462,78 +506,69 @@ const handleWeightUnitChange = (e) => {
   }));
 };
 
-// Función para manejar cambios en heightUnit con conversión
+// Función para manejar cambios en heightUnit con conversión automática (para el select large)
 const handleHeightUnitChange = (e) => {
   if (isLoggingOut) return;
   
-  // Convertir altura si es necesario
+  const newUnit = e.target.value;
   let newHeight = formData.height;
+  
+  // Convertir altura si hay un valor válido
   if (formData.height && !isNaN(parseFloat(formData.height))) {
     const currentValue = parseFloat(formData.height);
-    if (formData.heightUnit === 'ft' && e.target.value === 'cm') {
-      // Convertir de pies a centímetros
+    
+    if (formData.heightUnit === 'ft' && newUnit === 'cm') {
+      // Convertir de pies a centímetros (1 ft = 30.48 cm)
       newHeight = (currentValue * 30.48).toFixed(1);
-    } else if (formData.heightUnit === 'cm' && e.target.value === 'ft') {
-      // Convertir de centímetros a pies
+    } else if (formData.heightUnit === 'cm' && newUnit === 'ft') {
+      // Convertir de centímetros a pies (1 cm = 0.0328084 ft)
       newHeight = (currentValue / 30.48).toFixed(1);
     }
   }
   
   setFormData(prev => ({
     ...prev,
-    heightUnit: e.target.value,
+    heightUnit: newUnit,
     height: newHeight
   }));
 };
 
-
-
-
-
-
-
-
-
-
-// Función para formatear número de teléfono
-const formatPhoneNumber = (value) => {
-  if (!value) return value;
-  
-  // Solo números
-  const phoneNumber = value.replace(/[^\d]/g, '');
-  
-  // Si tiene menos de 4 dígitos, devolver tal como está
-  if (phoneNumber.length < 4) return phoneNumber;
-  
-  // Si tiene menos de 7 dígitos, formato (xxx) xxx
-  if (phoneNumber.length < 7) {
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-  }
-  
-  // Formato completo (xxx) xxx-xxxx
-  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+// Función de validación para números
+const validateNumericInput = (value, min = 0, max = Infinity) => {
+  if (value === '') return true;
+  const numValue = parseFloat(value);
+  return !isNaN(numValue) && numValue >= min && numValue <= max;
 };
 
-// Handle contact number changes (esta línea ya existe)
-const handleContactNumberChange = (index, value) => {
-  if (isLoggingOut) return;
-  
-  // Formatear el número automáticamente
-  const formattedNumber = formatPhoneNumber(value);
-  
-  const updatedNumbers = [...formData.contactNumbers];
-  updatedNumbers[index] = formattedNumber;
-  
-  setFormData(prev => ({
-    ...prev,
-    contactNumbers: updatedNumbers
-  }));
+// Función para formatear números (opcional)
+const formatNumber = (value, decimals = 1) => {
+  if (!value || isNaN(parseFloat(value))) return '';
+  return parseFloat(value).toFixed(decimals);
 };
+
+  // Función para formatear número de teléfono
+  const formatPhoneNumber = (value) => {
+    if (!value) return value;
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    if (phoneNumber.length < 4) return phoneNumber;
+    if (phoneNumber.length < 7) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    }
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  };
+
+  // Handle contact number changes
+  const handleContactNumberChange = (index, value) => {
+    if (isLoggingOut) return;
+    const formattedNumber = formatPhoneNumber(value);
+    const updatedNumbers = [...formData.contactNumbers];
+    updatedNumbers[index] = formattedNumber;
+    setFormData(prev => ({ ...prev, contactNumbers: updatedNumbers }));
+  };
   
   // Add a new contact number
   const addContactNumber = () => {
     if (isLoggingOut) return;
-    
     setFormData(prev => ({
       ...prev,
       contactNumbers: [...prev.contactNumbers, '']
@@ -543,24 +578,17 @@ const handleContactNumberChange = (index, value) => {
   // Remove a contact number
   const removeContactNumber = (index) => {
     if (isLoggingOut) return;
-    
     if (formData.contactNumbers.length > 1) {
       const updatedNumbers = [...formData.contactNumbers];
       updatedNumbers.splice(index, 1);
-      
-      setFormData(prev => ({
-        ...prev,
-        contactNumbers: updatedNumbers
-      }));
+      setFormData(prev => ({ ...prev, contactNumbers: updatedNumbers }));
     }
   };
   
   // Handle agency selection
   const handleAgencyChange = (e) => {
     if (isLoggingOut) return;
-    
     const agencyId = e.target.value;
-    
     setFormData(prev => ({
       ...prev,
       agencyId,
@@ -568,50 +596,34 @@ const handleContactNumberChange = (index, value) => {
       nurseManager: '',
       newNurseManager: ''
     }));
-    
     setAddingNewManager(false);
   };
   
-  // Handle homebound option changes
-const handleHomeboundChange = (optionId, isChecked) => {
-  if (isLoggingOut) return;
+  // Handle homebound option changes - CORREGIDO
+  const handleHomeboundChange = (optionId, isChecked) => {
+    if (isLoggingOut) return;
+    setFormData(prev => ({
+      ...prev,
+      homebound: {
+        ...prev.homebound,
+        [optionId]: isChecked
+      }
+    }));
+  };
   
-  setFormData(prev => ({
-    ...prev,
-    homebound: {
-      ...prev.homebound,
-      [optionId]: isChecked
-    }
-  }));
-};
-  
-  // Handle reasons for referral changes
-const handleReasonChange = (reasonId, isChecked) => {
-  if (isLoggingOut) return;
-  
-  setFormData(prev => ({
-    ...prev,
-    reasonsForReferral: {
-      ...prev.reasonsForReferral,
-      [reasonId]: isChecked
-    }
-  }));
-};
-  
-const validateNumericInput = (value, min = 0, max = Infinity) => {
-  if (value === '') return true;
-  const numValue = parseFloat(value);
-  return !isNaN(numValue) && numValue >= min && numValue <= max;
-};
+  // Handle reasons for referral changes - CORREGIDO
+  const handleReasonChange = (reasonId, isChecked) => {
+    if (isLoggingOut) return;
+    setFormData(prev => ({
+      ...prev,
+      reasonsForReferral: {
+        ...prev.reasonsForReferral,
+        [reasonId]: isChecked
+      }
+    }));
+  };
 
-// Función para formatear números
-const formatNumber = (value, decimals = 1) => {
-  if (!value || isNaN(parseFloat(value))) return '';
-  return parseFloat(value).toFixed(decimals);
-};
-
-
-  // Handle discipline selection
+  // Handle discipline selection - MEJORADO
   const handleDisciplineChange = (discipline) => {
     if (isLoggingOut) return;
     
@@ -628,104 +640,102 @@ const formatNumber = (value, decimals = 1) => {
       ...prev,
       disciplines: selectedDisciplinesList
     }));
+
+    // Si se deselecciona una disciplina, limpiar su terapeuta asignado
+    if (!updatedDisciplines[discipline]) {
+      setSelectedTherapists(prev => ({
+        ...prev,
+        [discipline]: ''
+      }));
+    }
   };
   
   // Handle therapist selection
   const handleTherapistSelection = (discipline, therapistId) => {
     if (isLoggingOut) return;
-  
     setSelectedTherapists(prev => ({
       ...prev,
       [discipline]: therapistId
     }));
   };
   
-  // Reset form to initial state
-const resetForm = () => {
-  setFormData({
-    firstName: '',
-    lastName: '',
-    dob: '',
-    gender: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    contactNumbers: [''],
-    payorType: '',
-    certPeriodStart: '',
-    certPeriodEnd: '',
-    urgencyLevel: 'normal',
-    physician: '',
-    agencyId: '',
-    agencyBranch: '',
-    nurseManager: '',
-    nursingDiagnosis: '',
-    pmh: '',
-    priorLevelOfFunction: 'To Be Obtained at Evaluation',
+  // Reset form to initial state - CORREGIDO
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      dob: '',
+      gender: '',
+      address: '',
+      city: '',
+      zipCode: '',
+      contactNumbers: [''],
+      payorType: '',
+      certPeriodStart: '',
+      certPeriodEnd: '',
+      urgencyLevel: 'normal',
+      physician: '',
+      agencyId: '',
+      agencyBranch: '',
+      nurseManager: '',
+      nursingDiagnosis: '',
+      pmh: '',
+      priorLevelOfFunction: 'To Be Obtained at Evaluation',
+      homebound: {
+        na: false,
+        needs_assistance: false,
+        residual_weakness: false,
+        requires_assistance_ambulate: false,
+        confusion: false,
+        safely_leave: false,
+        sob: false,
+        adaptive_devices: false,
+        medical_restrictions: false,
+        taxing_effort: false,
+        bedbound: false,
+        transfers: false,
+        other: false,
+        otherReason: ''
+      },
+      wbs: '',
+      weight: '',
+      weightUnit: 'lbs',
+      height: '',
+      heightUnit: 'ft',
+      reasonsForReferral: {
+        strength_balance: false,
+        gait: false,
+        adls: false,
+        orthopedic: false,
+        neurological: false,
+        wheelchair: false,
+        additional: ''
+      },
+      disciplines: []
+    });
     
-    // Estructura correcta para homebound
-    homebound: {
-      na: false,
-      needs_assistance: false,
-      residual_weakness: false,
-      requires_assistance_ambulate: false,
-      confusion: false,
-      safely_leave: false,
-      sob: false,
-      adaptive_devices: false,
-      medical_restrictions: false,
-      taxing_effort: false,
-      bedbound: false,
-      transfers: false,
-      other: false,
-      otherReason: ''
-    },
+    setSelectedDisciplines({
+      PT: false,
+      PTA: false,
+      OT: false,
+      COTA: false,
+      ST: false,
+      STA: false
+    });
     
-    wbs: '',
-    weight: '',
-    weightUnit: 'lbs',
-    height: '',
-    heightUnit: 'ft',
+    setSelectedTherapists({
+      PT: '',
+      PTA: '',
+      OT: '',
+      COTA: '',
+      ST: '',
+      STA: ''
+    });
     
-    // Estructura correcta para reasonsForReferral
-    reasonsForReferral: {
-      strength_balance: false,
-      gait: false,
-      adls: false,
-      orthopedic: false,
-      neurological: false,
-      wheelchair: false,
-      additional: ''
-    },
-    
-    disciplines: []
-  });
-  
-  // Reset discipline selections
-  setSelectedDisciplines({
-    PT: false,
-    PTA: false,
-    OT: false,
-    COTA: false,
-    ST: false,
-    STA: false
-  });
-  
-  // Reset therapist selections
-  setSelectedTherapists({
-    PT: '',
-    PTA: '',
-    OT: '',
-    COTA: '',
-    ST: '',
-    STA: ''
-  });
-  
-  // Reset uploaded files
-  setUploadedFiles([]);
-  
-  console.log('Form has been reset completely');
-};
+    setUploadedFiles([]);
+    setAddingNewManager(false);
+    console.log('Form has been reset completely');
+  };
 
   // Cancel creating referral and go back to menu
   const handleCancelCreateReferral = () => {
@@ -738,18 +748,17 @@ const resetForm = () => {
       return false;
     });
     
-    if (hasFormData && !window.confirm('¿Está seguro de que desea cancelar? Todos los datos ingresados se perderán.')) {
+    if (hasFormData && !window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
       return;
     }
     
-    // Reset form and go back to menu
     setCurrentView('menu');
     resetForm();
   };
 
-////////////////////////////////HTML DE LA PAGINA////////////////////////////////////////////////
+  ////////////////////////////////HTML DE LA PAGINA////////////////////////////////////////////////
 
-  // Homebound options
+  // Homebound options - ACTUALIZADO
   const homeboundOptions = [
     { id: 'na', label: 'N/A', icon: 'fa-times-circle' },
     { id: 'needs_assistance', label: 'Needs assistance for all activities', icon: 'fa-hands-helping' },
@@ -780,7 +789,7 @@ const resetForm = () => {
     'DEP (100% Assist)'
   ];
 
-  // Reasons for Referral options
+  // Reasons for Referral options - ACTUALIZADO
   const referralOptions = [
     { id: 'strength_balance', label: 'Decreased Strength / Balance' },
     { id: 'gait', label: 'Decreased Gait Ability' },
@@ -797,7 +806,7 @@ const resetForm = () => {
                   ${currentView === 'createReferral' ? 'form-active' : ''}`}
       ref={containerRef}
     >
-      {/* Logout animation - Show only when logging out */}
+      {/* Logout animation */}
       {isLoggingOut && (
         <LogoutAnimation 
           isMobile={isMobile} 
@@ -1076,7 +1085,7 @@ const resetForm = () => {
               </button>
             </div>
             
-            {/* Formulario para crear paciente*/}
+            {/* Formulario para crear paciente */}
             <form className="patient-referral-form" onSubmit={handleSubmit}>
               {/* Patient Information Section */}
               <div className="form-section">
@@ -1186,14 +1195,14 @@ const resetForm = () => {
                     <div className="contact-numbers">
                       {formData.contactNumbers.map((number, index) => (
                         <div key={index} className="contact-number-row">
-<input
-  type="tel"
-  value={number}
-  onChange={(e) => handleContactNumberChange(index, e.target.value)}
-  placeholder="(___) ___-____"
-  maxLength="14"
-  disabled={isLoggingOut}
-/>
+                          <input
+                            type="tel"
+                            value={number}
+                            onChange={(e) => handleContactNumberChange(index, e.target.value)}
+                            placeholder="(___) ___-____"
+                            maxLength="14"
+                            disabled={isLoggingOut}
+                          />
                           
                           <div className="contact-actions">
                             {index === formData.contactNumbers.length - 1 && (
@@ -1341,6 +1350,7 @@ const resetForm = () => {
                       onChange={handleAgencyChange} 
                       className="form-select"
                       required
+                      disabled={isLoggingOut}
                     >
                       <option value="">Select Agency</option>
                       {agencies.map((agency) => (
@@ -1363,7 +1373,11 @@ const resetForm = () => {
                           disabled={isLoggingOut} 
                         > 
                           <option value="">Select Branch</option> 
-                          <option value="placeholder">Seleccione una sucursal</option>
+                          <option value="main">Main Branch</option>
+                          <option value="north">North Branch</option>
+                          <option value="south">South Branch</option>
+                          <option value="east">East Branch</option>
+                          <option value="west">West Branch</option>
                         </select>
                       </div>
                       
@@ -1388,7 +1402,7 @@ const resetForm = () => {
                             type="text"
                             id="newNurseManager"
                             name="newNurseManager"
-                            value={formData.newNurseManager}
+                            value={formData.newNurseManager || ''}
                             onChange={handleInputChange}
                             required
                             disabled={isLoggingOut}
@@ -1408,6 +1422,7 @@ const resetForm = () => {
                       rows="3"
                       required
                       disabled={isLoggingOut}
+                      placeholder="Enter nursing diagnosis..."
                     ></textarea>
                   </div>
                   
@@ -1420,6 +1435,7 @@ const resetForm = () => {
                       onChange={handleInputChange}
                       rows="3"
                       disabled={isLoggingOut}
+                      placeholder="Enter past medical history..."
                     ></textarea>
                   </div>
                   
@@ -1440,54 +1456,46 @@ const resetForm = () => {
                     </select>
                   </div>
                   
-<div className="form-group full-width">
-  <label>Homebound</label>
-  <div className="homebound-options">
-    {homeboundOptions.map(option => (
-      <div key={option.id} className="option-item">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={formData.homebound[option.id] || false}
-            onChange={(e) => {
-              if (isLoggingOut) return;
-              setFormData(prev => ({
-                ...prev,
-                homebound: {
-                  ...prev.homebound,
-                  [option.id]: e.target.checked
-                }
-              }));
-            }}
-            disabled={isLoggingOut}
-          />
-          <span className="checkmark"></span>
-          <span className="checkbox-label">{option.label}</span>
-        </label>
-        
-        {option.id === 'other' && formData.homebound['other'] && (
-          <input
-            type="text"
-            className="other-reason-input"
-            placeholder="Explain other reason"
-            value={formData.homebound.otherReason || ''}
-            onChange={(e) => {
-              if (isLoggingOut) return;
-              setFormData(prev => ({
-                ...prev,
-                homebound: {
-                  ...prev.homebound,
-                  otherReason: e.target.value
-                }
-              }));
-            }}
-            disabled={isLoggingOut}
-          />
-        )}
-      </div>
-    ))}
-  </div>
-</div>
+                  {/* Homebound Section - ESTRUCTURA CORREGIDA */}
+                  <div className="form-group full-width">
+                    <label>Homebound</label>
+                    <div className="homebound-options">
+                      {homeboundOptions.map(option => (
+                        <div key={option.id} className="option-item">
+                          <label className="checkbox-container">
+                            <input
+                              type="checkbox"
+                              checked={formData.homebound[option.id] || false}
+                              onChange={(e) => handleHomeboundChange(option.id, e.target.checked)}
+                              disabled={isLoggingOut}
+                            />
+                            <span className="checkmark"></span>
+                            <span className="checkbox-label">{option.label}</span>
+                          </label>
+                          
+                          {option.id === 'other' && formData.homebound.other && (
+                            <input
+                              type="text"
+                              className="other-reason-input"
+                              placeholder="Explain other reason"
+                              value={formData.homebound.otherReason || ''}
+                              onChange={(e) => {
+                                if (isLoggingOut) return;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  homebound: {
+                                    ...prev.homebound,
+                                    otherReason: e.target.value
+                                  }
+                                }));
+                              }}
+                              disabled={isLoggingOut}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   
                   <div className="form-group">
                     <label htmlFor="wbs">WBS (Weight Bearing Status)</label>
@@ -1507,29 +1515,19 @@ const resetForm = () => {
                     </select>
                   </div>
                   
-                  {/* Weight field with unit selection */}
+                  {/* Weight field with unit selection - MEJORADO */}
+{/* Weight field con diseño large */}
 <div className="form-group">
   <label htmlFor="weight">Weight</label>
-  <div className="large-measurement-input">
-    <div className="number-input-container">
+  <div className="premium-measurement-container">
+    <div className="measurement-input-wrapper">
       <input
         type="number"
         id="weight"
         name="weight"
         value={formData.weight}
-        onChange={(e) => {
-          if (isLoggingOut) return;
-          const value = e.target.value;
-          // Permitir números decimales y validar rango
-          if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
-            setFormData(prev => ({
-              ...prev,
-              weight: value
-            }));
-          }
-        }}
+        onChange={handleWeightChange}
         onBlur={(e) => {
-          // Formatear el número al perder el foco
           const value = parseFloat(e.target.value);
           if (!isNaN(value)) {
             setFormData(prev => ({
@@ -1538,59 +1536,46 @@ const resetForm = () => {
             }));
           }
         }}
-        placeholder=""
+        placeholder="Enter weight"
         min="0"
         max="1000"
         step="0.1"
         disabled={isLoggingOut}
-        className="large-number-input"
+        className="premium-number-field"
       />
     </div>
-    <div className="unit-selector-container">
+    <div className="measurement-unit-wrapper">
       <select
         name="weightUnit"
         value={formData.weightUnit}
-        onChange={(e) => {
-          if (isLoggingOut) return;
-          setFormData(prev => ({
-            ...prev,
-            weightUnit: e.target.value
-          }));
-        }}
+        onChange={handleWeightUnitChange}
         disabled={isLoggingOut}
-        className="large-unit-select"
+        className="premium-unit-selector"
       >
         <option value="lbs">lbs</option>
         <option value="kg">kg</option>
       </select>
     </div>
   </div>
+  {formData.weightUnit === 'kg' && (
+    <small className="form-text text-muted">
+      Enter weight in kilograms
+    </small>
+  )}
 </div>
 
-{/* Height field - NUEVO DISEÑO MÁS GRANDE */}
+{/* Height field con nuevo diseño premium */}
 <div className="form-group">
   <label htmlFor="height">Height</label>
-  <div className="large-measurement-input">
-    <div className="number-input-container">
+  <div className="premium-measurement-container">
+    <div className="measurement-input-wrapper">
       <input
         type="number"
         id="height"
         name="height"
         value={formData.height}
-        onChange={(e) => {
-          if (isLoggingOut) return;
-          const value = e.target.value;
-          // Validar según la unidad seleccionada
-          const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
-          if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
-            setFormData(prev => ({
-              ...prev,
-              height: value
-            }));
-          }
-        }}
+        onChange={handleHeightChange}
         onBlur={(e) => {
-          // Formatear el número al perder el foco
           const value = parseFloat(e.target.value);
           if (!isNaN(value)) {
             setFormData(prev => ({
@@ -1599,49 +1584,38 @@ const resetForm = () => {
             }));
           }
         }}
-        
+        placeholder="Enter height"
         min="0"
         max={formData.heightUnit === 'ft' ? "10" : "300"}
         step="0.1"
         disabled={isLoggingOut}
-        className="large-number-input"
+        className="premium-number-field"
       />
     </div>
-    <div className="unit-selector-container">
+    <div className="measurement-unit-wrapper">
       <select
         name="heightUnit"
         value={formData.heightUnit}
-        onChange={(e) => {
-          if (isLoggingOut) return;
-          // Convertir altura si es necesario
-          let newHeight = formData.height;
-          if (formData.height && !isNaN(parseFloat(formData.height))) {
-            const currentValue = parseFloat(formData.height);
-            if (formData.heightUnit === 'ft' && e.target.value === 'cm') {
-              // Convertir de pies a centímetros
-              newHeight = (currentValue * 30.48).toFixed(1);
-            } else if (formData.heightUnit === 'cm' && e.target.value === 'ft') {
-              // Convertir de centímetros a pies
-              newHeight = (currentValue / 30.48).toFixed(1);
-            }
-          }
-          
-          setFormData(prev => ({
-            ...prev,
-            heightUnit: e.target.value,
-            height: newHeight
-          }));
-        }}
+        onChange={handleHeightUnitChange}
         disabled={isLoggingOut}
-        className="large-unit-select"
+        className="premium-unit-selector"
       >
         <option value="ft">ft</option>
         <option value="cm">cm</option>
       </select>
     </div>
   </div>
+  {formData.heightUnit === 'ft' && (
+    <small className="form-text text-muted">
+      Enter height in feet (e.g., 5.5 for 5 feet 6 inches)
+    </small>
+  )}
+  {formData.heightUnit === 'cm' && (
+    <small className="form-text text-muted">
+      Enter height in centimeters
+    </small>
+  )}
 </div>
-                
                 </div>
               </div>
               
@@ -1653,57 +1627,50 @@ const resetForm = () => {
                 </div>
                 
                 <div className="form-grid">
-<div className="form-group full-width">
-  <label>Reasons for Referral</label>
-  <div className="reason-options">
-    {referralOptions.map(reason => (
-      <div key={reason.id} className="option-item">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={formData.reasonsForReferral[reason.id] || false}
-            onChange={(e) => {
-              if (isLoggingOut) return;
-              setFormData(prev => ({
-                ...prev,
-                reasonsForReferral: {
-                  ...prev.reasonsForReferral,
-                  [reason.id]: e.target.checked
-                }
-              }));
-            }}
-            disabled={isLoggingOut}
-          />
-          <span className="checkmark"></span>
-          <span className="checkbox-label">{reason.label}</span>
-        </label>
-      </div>
-    ))}
-  </div>
-  
-  <div className="additional-reasons">
-    <label htmlFor="additionalReasons">Additional Reasons:</label>
-    <textarea
-      id="additionalReasons"
-      name="additionalReasons"
-      value={formData.reasonsForReferral.additional || ''}
-      onChange={(e) => {
-        if (isLoggingOut) return;
-        setFormData(prev => ({
-          ...prev,
-          reasonsForReferral: {
-            ...prev.reasonsForReferral,
-            additional: e.target.value
-          }
-        }));
-      }}
-      rows="3"
-      placeholder="Enter any additional reasons for referral..."
-      disabled={isLoggingOut}
-    />
-  </div>
-</div>
+                  {/* Reasons for Referral - ESTRUCTURA CORREGIDA */}
+                  <div className="form-group full-width">
+                    <label>Reasons for Referral</label>
+                    <div className="reason-options">
+                      {referralOptions.map(reason => (
+                        <div key={reason.id} className="option-item">
+                          <label className="checkbox-container">
+                            <input
+                              type="checkbox"
+                              checked={formData.reasonsForReferral[reason.id] || false}
+                              onChange={(e) => handleReasonChange(reason.id, e.target.checked)}
+                              disabled={isLoggingOut}
+                            />
+                            <span className="checkmark"></span>
+                            <span className="checkbox-label">{reason.label}</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="additional-reasons">
+                      <label htmlFor="additionalReasons">Additional Reasons:</label>
+                      <textarea
+                        id="additionalReasons"
+                        name="additionalReasons"
+                        value={formData.reasonsForReferral.additional || ''}
+                        onChange={(e) => {
+                          if (isLoggingOut) return;
+                          setFormData(prev => ({
+                            ...prev,
+                            reasonsForReferral: {
+                              ...prev.reasonsForReferral,
+                              additional: e.target.value
+                            }
+                          }));
+                        }}
+                        rows="3"
+                        placeholder="Enter any additional reasons for referral..."
+                        disabled={isLoggingOut}
+                      />
+                    </div>
+                  </div>
                   
+                  {/* Disciplines Section - MEJORADO */}
                   <div className="form-group full-width">
                     <label>Disciplines Needed</label>
                     <div className="disciplines-container">
@@ -1737,9 +1704,11 @@ const resetForm = () => {
                               <label htmlFor="pt-therapist">PT Therapist</label>
                               <select 
                                 id="pt-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.PT || ''} 
                                 onChange={(e) => handleTherapistSelection('PT', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select PT Therapist</option>
                                 {therapists
@@ -1759,9 +1728,11 @@ const resetForm = () => {
                               <label htmlFor="pta-therapist">PTA Therapist</label>
                               <select 
                                 id="pta-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.PTA || ''} 
                                 onChange={(e) => handleTherapistSelection('PTA', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select PTA Therapist</option>
                                 {therapists
@@ -1789,7 +1760,7 @@ const resetForm = () => {
                               <span>OT</span>
                             </label>
                             <label className={`discipline-checkbox ${selectedDisciplines.COTA ? 'selected' : ''}`}>
-                              <input
+                            <input
                                 type="checkbox"
                                 checked={selectedDisciplines.COTA}
                                 onChange={() => handleDisciplineChange('COTA')}
@@ -1805,9 +1776,11 @@ const resetForm = () => {
                               <label htmlFor="ot-therapist">OT Therapist</label>
                               <select 
                                 id="ot-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.OT || ''} 
                                 onChange={(e) => handleTherapistSelection('OT', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select OT Therapist</option>
                                 {therapists
@@ -1827,9 +1800,11 @@ const resetForm = () => {
                               <label htmlFor="cota-therapist">COTA Therapist</label>
                               <select 
                                 id="cota-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.COTA || ''} 
                                 onChange={(e) => handleTherapistSelection('COTA', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select COTA Therapist</option>
                                 {therapists
@@ -1873,9 +1848,11 @@ const resetForm = () => {
                               <label htmlFor="st-therapist">ST Therapist</label>
                               <select 
                                 id="st-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.ST || ''} 
                                 onChange={(e) => handleTherapistSelection('ST', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select ST Therapist</option>
                                 {therapists
@@ -1895,9 +1872,11 @@ const resetForm = () => {
                               <label htmlFor="sta-therapist">STA Therapist</label>
                               <select 
                                 id="sta-therapist" 
+                                className="therapist-selector" 
                                 value={selectedTherapists.STA || ''} 
                                 onChange={(e) => handleTherapistSelection('STA', e.target.value)}
                                 required
+                                disabled={isLoggingOut}
                               >
                                 <option value="">Select STA Therapist</option>
                                 {therapists
@@ -1982,6 +1961,7 @@ const resetForm = () => {
                               e.stopPropagation();
                               fileInputRef.current.click();
                             }}
+                            disabled={isLoggingOut}
                           >
                             <i className="fas fa-exchange-alt"></i> Change Files
                           </button>
@@ -1992,6 +1972,7 @@ const resetForm = () => {
                               e.stopPropagation();
                               setUploadedFiles([]);
                             }}
+                            disabled={isLoggingOut}
                           >
                             <i className="fas fa-trash-alt"></i> Clear Files
                           </button>
@@ -2000,7 +1981,7 @@ const resetForm = () => {
                     )}
                     
                     <div className="upload-guidelines">
-                      <p><i className="fas fa-info-circle"></i> Supported formats: PDF only. Max file size: 10MB</p>
+                      <p><i className="fas fa-info-circle"></i> Supported formats: PDF only. Max file size: 10MB per file</p>
                     </div>
                   </div>
                 </div>
