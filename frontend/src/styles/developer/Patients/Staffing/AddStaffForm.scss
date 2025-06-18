@@ -5624,3 +5624,206 @@ $breakpoint-xl: 1200px;
     }
   }
 }
+
+
+// Password Input Container with Visibility Toggle
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="password"],
+  input[type="text"] {
+    flex: 1;
+    padding-right: 100px; // Space for both buttons
+    border: 1.5px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+
+    &:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+  }
+
+  // Password Visibility Toggle Button
+  .password-visibility-btn {
+    position: absolute;
+    right: 85px; // Position before generate button
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    &:hover {
+      color: #4f46e5;
+      background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  // Generate Password Button
+  .generate-password-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+
+    &:hover {
+      background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+      transform: translateY(-50%) translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    i {
+      font-size: 10px;
+    }
+
+    span {
+      font-size: 11px;
+      white-space: nowrap;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .password-input-container {
+    .password-visibility-btn {
+      right: 75px;
+      padding: 6px;
+    }
+
+    .generate-password-btn {
+      padding: 5px 8px;
+      
+      span {
+        display: none; // Hide text on mobile, keep only icon
+      }
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      padding-right: 80px; // Adjust for smaller buttons
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .password-input-container {
+    .password-visibility-btn {
+      right: 45px;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      padding-right: 60px;
+    }
+  }
+}
+
+// Form section specific styles
+.form-section {
+  .form-group {
+    .password-input-container {
+      margin-top: 4px;
+    }
+  }
+}
+
+// Dark mode support (if needed)
+.dark-mode {
+  .password-input-container {
+    input[type="password"],
+    input[type="text"] {
+      background-color: #1f2937;
+      border-color: #374151;
+      color: #f9fafb;
+
+      &:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      &::placeholder {
+        color: #6b7280;
+      }
+    }
+
+    .password-visibility-btn {
+      color: #9ca3af;
+
+      &:hover {
+        color: #6366f1;
+        background-color: rgba(99, 102, 241, 0.1);
+      }
+    }
+  }
+}
+
+// Animation for password reveal
+.password-input-container input {
+  transition: all 0.2s ease;
+}
+
+// Focus states
+.password-input-container:focus-within {
+  .password-visibility-btn {
+    color: #4f46e5;
+  }
+}
+
+// Accessibility improvements
+.password-visibility-btn:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.generate-password-btn:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}

@@ -8,6 +8,9 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedStaffName, setSavedStaffName] = useState('');
   const [currentStep, setCurrentStep] = useState('role'); // 'role', 'details'
+  
+const [showPassword, setShowPassword] = useState(false);
+
 
   // Estado principal del formulario
   const [formData, setFormData] = useState({
@@ -242,6 +245,7 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
 
     setCurrentStep('role');
+    setShowPassword(false);
   };
 
 const handleSubmit = async (e) => {
@@ -794,15 +798,43 @@ const isTherapistOrAdmin = () => {
                       
                       <div className="form-group">
                         <label htmlFor="password">Password</label>
-                        <input
-                          type="password"
-                          id="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Enter password"
-                        />
+                        <div className="password-input-container">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="Enter password"
+                          />
+                          <button
+                            type="button"
+                            className="password-visibility-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="generate-password-btn"
+                            onClick={() => {
+                              // Generar contraseña aleatoria más segura
+                              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                              let newPassword = '';
+                              for (let i = 0; i < 12; i++) {
+                                newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+                              }
+                              setFormData({
+                                ...formData,
+                                password: newPassword
+                              });
+                            }}
+                          >
+                            <i className="fas fa-key"></i>
+                            <span>Generate</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
