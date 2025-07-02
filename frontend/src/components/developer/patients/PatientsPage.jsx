@@ -186,15 +186,17 @@ const calculateStats = (patients) => {
 
   const total = patients.length;
   
-  // Conteo más explícito
+  // Conteo más explícito usando el campo 'status' que mapeamos desde 'is_active'
   const activePatients = patients.filter(p => {
-    console.log(`Patient ${p.id} status check: "${p.status}" === "Active" ? ${p.status === "Active"}`);
-    return p.status === "Active";
+    const isActive = p.status === "Active";
+    console.log(`Patient ${p.id} status check: "${p.status}" === "Active" ? ${isActive}`);
+    return isActive;
   });
   
   const inactivePatients = patients.filter(p => {
-    console.log(`Patient ${p.id} status check: "${p.status}" === "Inactive" ? ${p.status === "Inactive"}`);
-    return p.status === "Inactive";
+    const isInactive = p.status === "Inactive";
+    console.log(`Patient ${p.id} status check: "${p.status}" === "Inactive" ? ${isInactive}`);
+    return isInactive;
   });
   
   const active = activePatients.length;
@@ -365,7 +367,7 @@ const DevPatientsPage = () => {
         fetchAllCertPeriods()
       ]);
       
-      // CORRECCIÓN: Manejo más explícito del campo is_active
+      // CORRECCIÓN: Mapeo correcto del campo is_active al status
       const normalizedPatients = data.map(patient => {
         const agency = agenciesData.find(a => a.id === patient.agency_id);
         
@@ -377,7 +379,7 @@ const DevPatientsPage = () => {
           is_active_value: patient.is_active
         });
         
-        // CORRECCIÓN: Manejo más robusto del campo booleano
+        // CORRECCIÓN: Mapeo directo del campo is_active de la API
         let status;
         if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
           status = 'Active';
@@ -395,7 +397,7 @@ const DevPatientsPage = () => {
           ...patient,
           name: patient.full_name,
           agency_name: agency ? agency.name : 'Unknown Agency',
-          status: status,
+          status: status, // Este campo se usa en toda la aplicación para filtros y display
         };
       });
       
@@ -447,7 +449,7 @@ const DevPatientsPage = () => {
       const matchesAgency = selectedAgency === 'all' || 
         patient.agency_name === selectedAgency;
       
-      // Filtro de estado más explícito
+      // CORRECCIÓN: Filtro de estado que maneja tanto 'all' como estados específicos
       const matchesStatus = selectedStatus === 'all' || patient.status === selectedStatus;
       
       console.log(`Patient ${patient.id} filter check:`, {
@@ -805,7 +807,7 @@ const DevPatientsPage = () => {
               <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
             </div>
             
-            {showUserMenu && !isLoggingOut && (
+{showUserMenu && !isLoggingOut && (
               <div className="support-user-menu">
                 <div className="support-menu-header">
                   <div className="support-user-info">
