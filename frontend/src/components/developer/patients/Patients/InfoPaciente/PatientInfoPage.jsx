@@ -14,7 +14,7 @@ import LogoutAnimation from '../../../../../components/LogOut/LogOut';
 import '../../../../../styles/developer/Patients/InfoPaciente/PatientInfoPage.scss';
 
 // Patient Info Header Component
-const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus }) => {
+const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus, isUpdatingStatus }) => {
   const navigate = useNavigate();
   const rolePrefix = window.location.hash.split('/')[1];
 
@@ -40,17 +40,25 @@ const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus })
         <div className="patient-id">#{patient?.id || '0'}</div>
       </div>
       <div className="header-actions">
+        {/* BOTÓN DE ACTIVAR/DESACTIVAR - TEMPORALMENTE DESHABILITADO */}
         <button 
           className={`action-button status-toggle ${isActive ? 'deactivate' : 'activate'}`} 
-          onClick={onToggleStatus}
+          onClick={() => {
+            alert('Patient status update feature will be available when the PATCH /patients/{id} endpoint is implemented.');
+          }}
+          title="Feature coming soon - requires API endpoint"
         >
           <i className={`fas ${isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
-          <span>{isActive ? 'Deactivate' : 'Activate'}</span>
+          <span>{isActive ? 'Deactivate' : 'Activate'} (Coming Soon)</span>
         </button>
+        
+        {/* BOTÓN DE IMPRIMIR - REMOVIDO */}
+        {/* 
         <button className="action-button print">
           <i className="fas fa-print"></i>
           <span>Print</span>
         </button>
+        */}
       </div>
     </div>
   );
@@ -86,10 +94,11 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Personal Information Card Component
+// Personal Information Card Component with API Integration
 const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     full_name: '',
     birthday: '',
@@ -97,6 +106,8 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
     address: '',
     contact_info: ''
   });
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     if (patient) {
@@ -119,14 +130,24 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      // Aquí harías la llamada a tu API para actualizar el paciente
-      // Por ahora solo actualizamos el estado local
-      onUpdatePatient({ ...patient, ...formData });
+      setIsSaving(true);
+      setError(null);
+      
+      // TODO: Implement patient update API call when endpoint is available
+      // For now, just update local state
+      console.log('Would update patient with:', formData);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedPatient = { ...patient, ...formData };
+      onUpdatePatient(updatedPatient);
       setIsEditing(false);
+      
     } catch (error) {
       console.error('Error updating patient:', error);
+      setError(error.message);
     } finally {
       setIsSaving(false);
     }
@@ -134,6 +155,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
 
   const toggleEdit = () => {
     setIsEditing(!isEditing);
+    setError(null);
   };
   
   return (
@@ -145,6 +167,16 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
         </button>
       </div>
       <div className="card-body">
+        {error && (
+          <div className="error-message">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>{error}</span>
+            <button onClick={() => setError(null)}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        )}
+        
         {isEditing ? (
           <div className="edit-form">
             <div className="form-group">
@@ -154,6 +186,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleInputChange}
+                disabled={isSaving}
               />
             </div>
             <div className="form-group">
@@ -163,6 +196,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 name="birthday"
                 value={formData.birthday}
                 onChange={handleInputChange}
+                disabled={isSaving}
               />
             </div>
             <div className="form-group">
@@ -171,6 +205,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 name="gender"
                 value={formData.gender}
                 onChange={handleInputChange}
+                disabled={isSaving}
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -186,6 +221,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 value={formData.address}
                 onChange={handleInputChange}
                 placeholder="Full Address"
+                disabled={isSaving}
               />
             </div>
             <div className="form-group">
@@ -195,6 +231,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 name="contact_info"
                 value={formData.contact_info}
                 onChange={handleInputChange}
+                disabled={isSaving}
               />
             </div>
             <div className="form-actions">
@@ -202,7 +239,14 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 Cancel
               </button>
               <button className="save-btn" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </div>
@@ -247,95 +291,55 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
       });
     }
   };
-  
-  // Convert API patient data to format expected by existing components
-  const convertedPatient = patient ? {
-    ...patient,
-    // Map API fields to component expected format
-    name: patient.full_name,
-    dob: patient.birthday,
-    status: patient.is_active ? 'Active' : 'Inactive',
-    // Add mock data for fields that might not be in API
-    emergencyContact: 'Contact information not available',
-    emergencyPhone: '',
-    certPeriod: patient.initial_cert_start_date ? 
-      `${patient.initial_cert_start_date} to ${patient.initial_cert_start_date}` : 
-      'No certification period set'
-  } : null;
+
+  // Handler for emergency contacts updates
+  const handleUpdateContacts = (updatedContacts) => {
+    console.log('Emergency contacts updated:', updatedContacts);
+  };
   
   return (
     <div className="general-info-section">
       <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} />
       <CertificationPeriodComponent 
-        patient={convertedPatient} 
+        patient={patient} 
         onUpdateCertPeriod={handleUpdateCertPeriod}
       />
-      <EmergencyContactsComponent patient={convertedPatient} />
+      <EmergencyContactsComponent 
+        patient={patient} 
+        onUpdateContacts={handleUpdateContacts}
+      />
     </div>
   );
 };
 
 // Medical Information Section Component
-const MedicalInformationSection = ({ patient }) => {
+const MedicalInformationSection = ({ patient, onUpdatePatient }) => {
   const handleUpdateMedicalInfo = (updatedMedicalData) => {
     console.log('Medical information updated:', updatedMedicalData);
+    if (onUpdatePatient) {
+      onUpdatePatient({ ...patient, ...updatedMedicalData });
+    }
   };
 
-  // Convert API patient data to format expected by medical component
-  const convertedPatient = patient ? {
-    ...patient,
-    medicalInfo: {
-      weight: patient.weight || 0,
-      height: patient.height || 0,
-      nursingDiagnosis: patient.nursing_diagnosis || '',
-      pmh: patient.past_medical_history || '',
-      wbs: patient.weight_bearing_status || '',
-      clinicalGrouping: patient.clinical_grouping || '',
-      homebound: patient.homebound_status || ''
-    }
-  } : null;
-  
   return (
     <div className="medical-info-section">
-      <MedicalInfoComponent patient={convertedPatient} onUpdateMedicalInfo={handleUpdateMedicalInfo} />
+      <MedicalInfoComponent patient={patient} onUpdateMedicalInfo={handleUpdateMedicalInfo} />
     </div>
   );
 };
 
 // Disciplines Section Component
-const DisciplinesSection = ({ patient }) => {
+const DisciplinesSection = ({ patient, onUpdatePatient }) => {
   const handleUpdateDisciplines = (updatedDisciplines) => {
     console.log('Disciplines updated:', updatedDisciplines);
+    if (onUpdatePatient) {
+      onUpdatePatient({ ...patient, required_disciplines: updatedDisciplines });
+    }
   };
 
-  // Convert API patient data and create mock disciplines data
-  const convertedPatient = patient ? {
-    ...patient,
-    disciplines: {
-      PT: {
-        isActive: patient.required_disciplines?.includes('PT') || false,
-        therapist: null,
-        assistant: null,
-        frequency: ''
-      },
-      OT: {
-        isActive: patient.required_disciplines?.includes('OT') || false,
-        therapist: null,
-        assistant: null,
-        frequency: ''
-      },
-      ST: {
-        isActive: patient.required_disciplines?.includes('ST') || false,
-        therapist: null,
-        assistant: null,
-        frequency: ''
-      }
-    }
-  } : null;
-  
   return (
     <div className="disciplines-section">
-      <DisciplinesComponent patient={convertedPatient} onUpdateDisciplines={handleUpdateDisciplines} />
+      <DisciplinesComponent patient={patient} onUpdateDisciplines={handleUpdateDisciplines} />
     </div>
   );
 };
@@ -404,6 +408,7 @@ const PatientInfoPage = () => {
   const [allPatients, setAllPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const rolePrefix = window.location.hash.split('/')[1];
@@ -480,18 +485,57 @@ const PatientInfoPage = () => {
     };
   }, []);
 
-  // Handle patient status toggle
+  // Handle patient status toggle - DESHABILITADO TEMPORALMENTE
   const handleToggleStatus = async () => {
-    if (!patient) return;
+    // Esta función estará disponible cuando se implemente el endpoint PATCH /patients/{id}
+    console.log('Toggle status feature disabled - waiting for API endpoint implementation');
+    return;
+    
+    /* 
+    // CÓDIGO PARA CUANDO TENGAS EL ENDPOINT LISTO:
+    
+    if (!patient || isUpdatingStatus) return;
     
     try {
-      // Aquí harías la llamada a tu API para actualizar el estado del paciente
-      const updatedPatient = { ...patient, is_active: !patient.is_active };
+      setIsUpdatingStatus(true);
+      setError(null);
+      
+      const newStatus = !patient.is_active;
+      
+      console.log(`Updating patient ${patient.id} status from ${patient.is_active} to ${newStatus}`);
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_active: newStatus
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update patient status: ${response.status} ${response.statusText}`);
+      }
+      
+      const updatedPatient = await response.json();
+      console.log('Patient status updated successfully:', updatedPatient);
+      
       setPatient(updatedPatient);
-      console.log(`Patient ${patient.id} status updated to ${updatedPatient.is_active ? 'Active' : 'Inactive'}`);
+      
+      setAllPatients(prevPatients => 
+        prevPatients.map(p => 
+          p.id === patient.id ? updatedPatient : p
+        )
+      );
+      
     } catch (error) {
       console.error('Error updating patient status:', error);
+      setError(`Failed to ${patient.is_active ? 'deactivate' : 'activate'} patient: ${error.message}`);
+    } finally {
+      setIsUpdatingStatus(false);
     }
+    */
   };
 
   // Handle patient update
@@ -787,6 +831,7 @@ const PatientInfoPage = () => {
             activeTab={activeTab} 
             setActiveTab={setActiveTab}
             onToggleStatus={handleToggleStatus}
+            isUpdatingStatus={isUpdatingStatus}
           />
           
           {/* Tabs navigation */}
@@ -802,10 +847,16 @@ const PatientInfoPage = () => {
               />
             )}
             {activeTab === 'medical' && (
-              <MedicalInformationSection patient={patient} />
+              <MedicalInformationSection 
+                patient={patient} 
+                onUpdatePatient={handleUpdatePatient}
+              />
             )}
             {activeTab === 'disciplines' && (
-              <DisciplinesSection patient={patient} />
+              <DisciplinesSection 
+                patient={patient} 
+                onUpdatePatient={handleUpdatePatient}
+              />
             )}
             {activeTab === 'schedule' && (
               <ScheduleSection 

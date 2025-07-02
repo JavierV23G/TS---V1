@@ -765,29 +765,6 @@ const DevStaffingPage = () => {
         </div>
       </main>
       
-      {!isLoggingOut && (
-        <div className="quick-action-btn">
-          {selectedOption === 'therapists' || !selectedOption ? (
-            <button 
-              className="add-staff-btn" 
-              onClick={(e) => handleAddStaffClick(e)}
-              disabled={isLoggingOut}
-            >
-              <i className="fas fa-plus"></i>
-              <span className="btn-tooltip">Add New Staff</span>
-            </button>
-          ) : selectedOption === 'companies' ? (
-            <button 
-              className="add-company-btn" 
-              onClick={(e) => handleRegisterCompanyClick(e)}
-              disabled={isLoggingOut}
-            >
-              <i className="fas fa-plus"></i>
-              <span className="btn-tooltip">Add New Company</span>
-            </button>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 };
