@@ -101,32 +101,42 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   }, [patient]);
 
   // Effect for animating modal appearance
-  useEffect(() => {
-    if (showEditModal || showDeleteModal || showExerciseLibrary) {
-      document.body.style.overflow = 'hidden';
-      setModalTransition('opening');
-      
-      if (modalRef.current) {
-        const modal = modalRef.current;
-        
-        gsap.fromTo(modal, 
-          { y: 20, opacity: 0 }, 
-          { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.4)" }
-        );
-        
-        setTimeout(() => {
-          setModalTransition('');
-        }, 10);
-      }
-    } else {
-      document.body.style.overflow = '';
-      
-      if (modalTransition !== 'closing') {
-        setModalTransition('');
-      }
+useEffect(() => {
+  if (showEditModal || showDeleteModal || showExerciseLibrary) {
+    // NO bloquear el scroll del body, solo del modal principal
+    const mainContent = document.querySelector('.exercises-component');
+    if (mainContent) {
+      mainContent.style.overflow = 'hidden';
     }
-  }, [showEditModal, showDeleteModal, showExerciseLibrary]);
-  
+    
+    setModalTransition('opening');
+    
+    if (modalRef.current) {
+      const modal = modalRef.current;
+      
+      gsap.fromTo(modal, 
+        { y: 20, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.4)" }
+      );
+      
+      setTimeout(() => {
+        setModalTransition('');
+      }, 10);
+    }
+  } else {
+    // Restaurar el scroll cuando se cierre
+    const mainContent = document.querySelector('.exercises-component');
+    if (mainContent) {
+      mainContent.style.overflow = '';
+    }
+    
+    if (modalTransition !== 'closing') {
+      setModalTransition('');
+    }
+  }
+}, [showEditModal, showDeleteModal, showExerciseLibrary]);
+
+
   // Effect for animating notifications
   useEffect(() => {
     if (saveSuccess || saveError) {
@@ -440,50 +450,64 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   };
   
   // Handle closing modals with animations
-  const handleCloseModal = (modalType, callback) => {
-    setModalTransition('closing');
+const handleCloseModal = (modalType, callback) => {
+  setModalTransition('closing');
+  
+  if (modalRef.current) {
+    const modal = modalRef.current;
     
-    if (modalRef.current) {
-      const modal = modalRef.current;
-      
-      gsap.to(modal, {
-        y: 20, 
-        opacity: 0, 
-        duration: 0.3, 
-        ease: "power2.in",
-        onComplete: () => {
-          // Reset the modal state after animation
-          if (modalType === 'edit') {
-            setShowEditModal(false);
-          } else if (modalType === 'delete') {
-            setShowDeleteModal(false);
-            setExerciseToDelete(null);
-          } else if (modalType === 'library') {
-            setShowExerciseLibrary(false);
-          }
-          
-          // Execute callback if provided
-          if (callback) callback();
-          
-          setTimeout(() => {
-            setModalTransition('');
-          }, 300);
+    gsap.to(modal, {
+      y: 20, 
+      opacity: 0, 
+      duration: 0.3, 
+      ease: "power2.in",
+      onComplete: () => {
+        // Restaurar scroll antes de cerrar
+        const mainContent = document.querySelector('.exercises-component');
+        if (mainContent) {
+          mainContent.style.overflow = '';
         }
-      });
-    } else {
-      // Fallback if ref is not available
-      if (modalType === 'edit') {
-        setShowEditModal(false);
-      } else if (modalType === 'delete') {
-        setShowDeleteModal(false);
-        setExerciseToDelete(null);
-      } else if (modalType === 'library') {
-        setShowExerciseLibrary(false);
+        
+        // Reset the modal state after animation
+        if (modalType === 'edit') {
+          setShowEditModal(false);
+        } else if (modalType === 'delete') {
+          setShowDeleteModal(false);
+          setExerciseToDelete(null);
+        } else if (modalType === 'library') {
+          setShowExerciseLibrary(false);
+        }
+        
+        // Execute callback if provided
+        if (callback) callback();
+        
+        setTimeout(() => {
+          setModalTransition('');
+        }, 300);
       }
-      
-      if (callback) callback();
+    });
+  } else {
+    // Fallback if ref is not available
+    const mainContent = document.querySelector('.exercises-component');
+    if (mainContent) {
+      mainContent.style.overflow = '';
     }
-  };
+    
+    if (modalType === 'edit') {
+      setShowEditModal(false);
+    } else if (modalType === 'delete') {
+      setShowDeleteModal(false);
+      setExerciseToDelete(null);
+    } else if (modalType === 'library') {
+      setShowExerciseLibrary(false);
+    }
+    
+    if (callback) callback();
+  }
+};
+
+
+
   
   // Handle initiating the delete process
   const handleInitiateDelete = (exercise) => {
@@ -945,189 +969,190 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   };
   
   // Render the exercise library modal
-  const renderExerciseLibrary = () => {
-    const filteredExercises = getFilteredExercises();
-    
-    return (
-      <div className={`exercise-library-overlay ${modalTransition}`}>
-        <div className="exercise-library-modal" ref={modalRef}>
-          <div className="library-header">
-            <h3>Exercise Library</h3>
-            <div className="library-header-actions">
+const renderExerciseLibrary = () => {
+  const filteredExercises = getFilteredExercises();
+  
+  return (
+    <div className={`exercise-library-overlay ${modalTransition}`}>
+      <div className="exercise-library-modal" ref={modalRef}>
+        <div className="library-header">
+          <h3>Exercise Library</h3>
+          <div className="library-header-actions">
+            <button 
+              className="close-library-btn"
+              onClick={() => handleCloseModal('library')}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div className="library-filters">
+          <div className="search-box">
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Search exercises..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
               <button 
-                className="close-library-btn"
-                onClick={() => handleCloseModal('library')}
+                className="clear-search" 
+                onClick={() => setSearchQuery('')}
               >
                 <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
+          
+          <div className="filter-groups">
+            <div className="filter-group">
+              <label>Body Part</label>
+              <div className="filter-options">
+                {bodyParts.map(part => (
+                  <button
+                    key={part}
+                    className={`filter-option ${activeBodyPart === part ? 'active' : ''}`}
+                    onClick={() => setActiveBodyPart(part)}
+                  >
+                    {part}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="filter-group">
+              <label>Category</label>
+              <div className="filter-options">
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    className={`filter-option ${activeCategory === category ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="filter-group">
+              <label>Discipline</label>
+              <div className="filter-options">
+                {disciplines.map(discipline => (
+                  <button
+                    key={discipline}
+                    className={`filter-option ${activeDiscipline === discipline ? 'active' : ''}`}
+                    onClick={() => setActiveDiscipline(discipline)}
+                  >
+                    {discipline}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Contenedor de resultados con scroll forzado */}
+        <div className="library-results" style={{ overflowY: 'auto', flex: 1 }}>
+          <div className="results-header">
+            <span className="results-count">{filteredExercises.length} exercises found</span>
+            <div className="results-actions">
+              <button className="results-view-btn active" title="Grid view">
+                <i className="fas fa-th-large"></i>
+              </button>
+              <button className="results-view-btn" title="List view">
+                <i className="fas fa-list"></i>
               </button>
             </div>
           </div>
           
-          <div className="library-filters">
-            <div className="search-box">
-              <i className="fas fa-search"></i>
-              <input
-                type="text"
-                placeholder="Search exercises..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button 
-                  className="clear-search" 
-                  onClick={() => setSearchQuery('')}
+          <div className="results-grid">
+            <TransitionGroup component={null}>
+              {filteredExercises.map((exercise, index) => (
+                <CSSTransition
+                  key={exercise.id}
+                  timeout={400}
+                  classNames="library-item"
                 >
-                  <i className="fas fa-times"></i>
-                </button>
-              )}
-            </div>
-            
-            <div className="filter-groups">
-              <div className="filter-group">
-                <label>Body Part</label>
-                <div className="filter-options">
-                  {bodyParts.map(part => (
-                    <button
-                      key={part}
-                      className={`filter-option ${activeBodyPart === part ? 'active' : ''}`}
-                      onClick={() => setActiveBodyPart(part)}
-                    >
-                      {part}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="filter-group">
-                <label>Category</label>
-                <div className="filter-options">
-                  {categories.map(category => (
-                    <button
-                      key={category}
-                      className={`filter-option ${activeCategory === category ? 'active' : ''}`}
-                      onClick={() => setActiveCategory(category)}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="filter-group">
-                <label>Discipline</label>
-                <div className="filter-options">
-                  {disciplines.map(discipline => (
-                    <button
-                      key={discipline}
-                      className={`filter-option ${activeDiscipline === discipline ? 'active' : ''}`}
-                      onClick={() => setActiveDiscipline(discipline)}
-                    >
-                      {discipline}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="library-results" ref={libraryRef}>
-            <div className="results-header">
-              <span className="results-count">{filteredExercises.length} exercises found</span>
-              <div className="results-actions">
-                <button className="results-view-btn active" title="Grid view">
-                  <i className="fas fa-th-large"></i>
-                </button>
-                <button className="results-view-btn" title="List view">
-                  <i className="fas fa-list"></i>
-                </button>
-              </div>
-            </div>
-            
-            <div className="results-grid">
-              <TransitionGroup component={null}>
-                {filteredExercises.map((exercise, index) => (
-                  <CSSTransition
-                    key={exercise.id}
-                    timeout={400}
-                    classNames="library-item"
+                  <div 
+                    className="library-exercise-card"
+                    style={{animationDelay: `${index * 0.03}s`}}
                   >
-                    <div 
-                      className="library-exercise-card"
-                      style={{animationDelay: `${index * 0.03}s`}}
-                    >
-                      <div className="exercise-image">
-                        <img src={exercise.imageUrl} alt={exercise.name} />
-                        <div className="exercise-discipline" data-discipline={exercise.discipline}>
-                          {exercise.discipline}
-                        </div>
+                    <div className="exercise-image">
+                      <img src={exercise.imageUrl} alt={exercise.name} />
+                      <div className="exercise-discipline" data-discipline={exercise.discipline}>
+                        {exercise.discipline}
                       </div>
-                      
-                      <div className="exercise-details">
-                        <h4 className="exercise-name">{exercise.name}</h4>
-                        <div className="exercise-categories">
-                          <span className="body-part">{exercise.bodyPart}</span>
-                          <span className="category">{exercise.category}</span>
-                        </div>
-                        <p className="exercise-description">{exercise.description}</p>
-                      </div>
-                      
-                      <button 
-                        className="add-btn"
-                        onClick={() => handleAddExercise(exercise)}
-                        disabled={selectedExercises.some(e => e.id === exercise.id)}
-                        data-add-id={exercise.id}
-                      >
-                        {selectedExercises.some(e => e.id === exercise.id) ? (
-                          <>
-                            <i className="fas fa-check"></i>
-                            <span>Added</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="btn-icon">
-                              <i className="fas fa-plus"></i>
-                            </span>
-                            <span className="btn-text">Add</span>
-                            <div className="btn-glow"></div>
-                          </>
-                        )}
-                      </button>
-                      
-                      <button className="preview-btn" title="Preview">
-                        <i className="fas fa-eye"></i>
-                      </button>
                     </div>
-                  </CSSTransition>
-                ))}
-              </TransitionGroup>
-              
-              {filteredExercises.length === 0 && (
-                <div className="no-results">
-                  <div className="no-results-icon">
-                    <i className="fas fa-search"></i>
+                    
+                    <div className="exercise-details">
+                      <h4 className="exercise-name">{exercise.name}</h4>
+                      <div className="exercise-categories">
+                        <span className="body-part">{exercise.bodyPart}</span>
+                        <span className="category">{exercise.category}</span>
+                      </div>
+                      <p className="exercise-description">{exercise.description}</p>
+                    </div>
+                    
+                    <button 
+                      className="add-btn"
+                      onClick={() => handleAddExercise(exercise)}
+                      disabled={selectedExercises.some(e => e.id === exercise.id)}
+                      data-add-id={exercise.id}
+                    >
+                      {selectedExercises.some(e => e.id === exercise.id) ? (
+                        <>
+                          <i className="fas fa-check"></i>
+                          <span>Added</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="btn-icon">
+                            <i className="fas fa-plus"></i>
+                          </span>
+                          <span className="btn-text">Add</span>
+                          <div className="btn-glow"></div>
+                        </>
+                      )}
+                    </button>
+                    
+                    <button className="preview-btn" title="Preview">
+                      <i className="fas fa-eye"></i>
+                    </button>
                   </div>
-                  <h3>No exercises found</h3>
-                  <p>Try adjusting your filters or search query.</p>
-                  <button 
-                    className="reset-filters-btn"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setActiveBodyPart('All');
-                      setActiveCategory('All');
-                      setActiveDiscipline('All');
-                    }}
-                  >
-                    <i className="fas fa-undo"></i>
-                    <span>Reset Filters</span>
-                  </button>
+                </CSSTransition>
+              ))}
+            </TransitionGroup>
+            
+            {filteredExercises.length === 0 && (
+              <div className="no-results">
+                <div className="no-results-icon">
+                  <i className="fas fa-search"></i>
                 </div>
-              )}
-            </div>
+                <h3>No exercises found</h3>
+                <p>Try adjusting your filters or search query.</p>
+                <button 
+                  className="reset-filters-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setActiveBodyPart('All');
+                    setActiveCategory('All');
+                    setActiveDiscipline('All');
+                  }}
+                >
+                  <i className="fas fa-undo"></i>
+                  <span>Reset Filters</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
   
   // Render the edit modal
   const renderEditModal = () => {

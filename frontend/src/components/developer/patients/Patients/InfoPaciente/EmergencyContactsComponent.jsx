@@ -1,30 +1,37 @@
 import React, { useState, useEffect } from 'react';
 
-const EmergencyContactsComponent = ({ patient }) => {
+const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
   const [contacts, setContacts] = useState([]);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [newContact, setNewContact] = useState({
     name: '',
     phone: '',
     relation: ''
   });
 
-  // Inicializa los contactos desde los datos del paciente
+  // Initialize contacts from patient data (LOCAL ONLY)
   useEffect(() => {
-    if (patient?.emergencyContact) {
-      setContacts([
-        {
+    if (patient) {
+      const initialContacts = [];
+      
+      // Try to get emergency contact from patient data
+      if (patient.emergencyContact || patient.contact_info) {
+        initialContacts.push({
           id: 1,
-          name: patient.emergencyContact,
-          phone: patient.emergencyPhone,
+          name: patient.emergencyContact || 'Emergency Contact',
+          phone: patient.emergencyPhone || patient.contact_info || '',
           relation: 'Family Member'
-        }
-      ]);
+        });
+      }
+      
+      setContacts(initialContacts);
     }
   }, [patient]);
 
-  // Maneja el cambio en los inputs del formulario
+  // Handle changes in input fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewContact(prev => ({
@@ -33,10 +40,11 @@ const EmergencyContactsComponent = ({ patient }) => {
     }));
   };
 
-  // Abre el formulario para añadir un nuevo contacto
+  // Open form to add new contact
   const handleAddContactClick = () => {
     setIsAddingContact(true);
     setIsEditingContact(null);
+    setError(null);
     setNewContact({
       name: '',
       phone: '',
@@ -44,10 +52,11 @@ const EmergencyContactsComponent = ({ patient }) => {
     });
   };
 
-  // Abre el formulario para editar un contacto existente
+  // Open form to edit existing contact
   const handleEditContactClick = (contact) => {
     setIsEditingContact(contact.id);
     setIsAddingContact(false);
+    setError(null);
     setNewContact({
       name: contact.name,
       phone: contact.phone,
@@ -55,11 +64,22 @@ const EmergencyContactsComponent = ({ patient }) => {
     });
   };
 
-  // Guarda un nuevo contacto
-  const handleSaveContact = () => {
-    if (newContact.name && newContact.phone) {
+  // Save contact (LOCAL ONLY - no API calls)
+  const handleSaveContact = async () => {
+    if (!newContact.name || !newContact.phone) {
+      setError('Name and phone are required');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       if (isEditingContact) {
-        // Actualiza un contacto existente
+        // Update existing contact in local state
         setContacts(contacts.map(contact => 
           contact.id === isEditingContact 
             ? { ...contact, ...newContact } 
@@ -67,15 +87,22 @@ const EmergencyContactsComponent = ({ patient }) => {
         ));
         setIsEditingContact(null);
       } else {
-        // Añade un nuevo contacto
+        // Add new contact to local state
         const newId = contacts.length > 0 
           ? Math.max(...contacts.map(c => c.id)) + 1 
           : 1;
         
-        setContacts([...contacts, {
+        const newContactWithId = {
           id: newId,
           ...newContact
-        }]);
+        };
+        
+        setContacts([...contacts, newContactWithId]);
+      }
+      
+      // Notify parent component
+      if (onUpdateContacts) {
+        onUpdateContacts([...contacts]);
       }
       
       setIsAddingContact(false);
@@ -84,21 +111,54 @@ const EmergencyContactsComponent = ({ patient }) => {
         phone: '',
         relation: ''
       });
+      
+    } catch (err) {
+      setError('Error saving contact. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Cancela la adición/edición de contacto
+  // Cancel adding/editing contact
   const handleCancelEdit = () => {
     setIsAddingContact(false);
     setIsEditingContact(null);
+    setError(null);
+    setNewContact({
+      name: '',
+      phone: '',
+      relation: ''
+    });
   };
 
-  // Elimina un contacto
-  const handleDeleteContact = (contactId) => {
-    setContacts(contacts.filter(contact => contact.id !== contactId));
-    if (isEditingContact === contactId) {
-      setIsEditingContact(null);
-      setIsAddingContact(false);
+  // Delete contact (LOCAL ONLY)
+  const handleDeleteContact = async (contactId) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Remove from local state
+      const updatedContacts = contacts.filter(contact => contact.id !== contactId);
+      setContacts(updatedContacts);
+
+      // Close edit form if we're deleting the contact being edited
+      if (isEditingContact === contactId) {
+        setIsEditingContact(null);
+        setIsAddingContact(false);
+      }
+
+      // Notify parent component
+      if (onUpdateContacts) {
+        onUpdateContacts(updatedContacts);
+      }
+
+    } catch (err) {
+      setError('Error deleting contact. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,6 +173,7 @@ const EmergencyContactsComponent = ({ patient }) => {
           <button 
             className="add-button" 
             onClick={handleAddContactClick}
+            disabled={isLoading}
           >
             <i className="fas fa-plus"></i>
           </button>
@@ -120,6 +181,16 @@ const EmergencyContactsComponent = ({ patient }) => {
       </div>
 
       <div className="card-body">
+        {error && (
+          <div className="error-message">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>{error}</span>
+            <button onClick={() => setError(null)}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        )}
+
         {(isAddingContact || isEditingContact) ? (
           <div className="contact-form">
             <div className="form-row">
@@ -131,6 +202,7 @@ const EmergencyContactsComponent = ({ patient }) => {
                 value={newContact.name}
                 onChange={handleInputChange}
                 placeholder="Full Name"
+                disabled={isLoading}
               />
             </div>
             
@@ -143,6 +215,7 @@ const EmergencyContactsComponent = ({ patient }) => {
                 value={newContact.phone}
                 onChange={handleInputChange}
                 placeholder="Phone Number"
+                disabled={isLoading}
               />
             </div>
             
@@ -153,13 +226,17 @@ const EmergencyContactsComponent = ({ patient }) => {
                 name="relation"
                 value={newContact.relation}
                 onChange={handleInputChange}
+                disabled={isLoading}
               >
                 <option value="">Select Relation</option>
                 <option value="Family Member">Family Member</option>
                 <option value="Spouse">Spouse</option>
                 <option value="Parent">Parent</option>
                 <option value="Child">Child</option>
+                <option value="Sibling">Sibling</option>
                 <option value="Friend">Friend</option>
+                <option value="Neighbor">Neighbor</option>
+                <option value="Caregiver">Caregiver</option>
                 <option value="Other">Other</option>
               </select>
             </div>
@@ -168,15 +245,23 @@ const EmergencyContactsComponent = ({ patient }) => {
               <button 
                 className="cancel-btn" 
                 onClick={handleCancelEdit}
+                disabled={isLoading}
               >
                 Cancel
               </button>
               <button 
                 className="save-btn" 
                 onClick={handleSaveContact}
-                disabled={!newContact.name || !newContact.phone}
+                disabled={!newContact.name || !newContact.phone || isLoading}
               >
-                {isEditingContact ? 'Update Contact' : 'Add Contact'}
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    {isEditingContact ? 'Updating...' : 'Adding...'}
+                  </>
+                ) : (
+                  isEditingContact ? 'Update Contact' : 'Add Contact'
+                )}
               </button>
             </div>
           </div>
@@ -196,7 +281,7 @@ const EmergencyContactsComponent = ({ patient }) => {
                     </div>
                     <div className="contact-relation">
                       <i className="fas fa-users"></i>
-                      <span>{contact.relation}</span>
+                      <span>{contact.relation || 'Not specified'}</span>
                     </div>
                   </div>
                 </div>
@@ -204,14 +289,22 @@ const EmergencyContactsComponent = ({ patient }) => {
                   <button 
                     className="edit-btn"
                     onClick={() => handleEditContactClick(contact)}
+                    disabled={isLoading}
+                    title="Edit contact"
                   >
                     <i className="fas fa-edit"></i>
                   </button>
                   <button 
                     className="delete-btn"
                     onClick={() => handleDeleteContact(contact.id)}
+                    disabled={isLoading}
+                    title="Delete contact"
                   >
-                    <i className="fas fa-trash"></i>
+                    {isLoading ? (
+                      <i className="fas fa-spinner fa-spin"></i>
+                    ) : (
+                      <i className="fas fa-trash"></i>
+                    )}
                   </button>
                 </div>
               </div>
@@ -219,6 +312,7 @@ const EmergencyContactsComponent = ({ patient }) => {
             <button 
               className="add-more-btn"
               onClick={handleAddContactClick}
+              disabled={isLoading}
             >
               <i className="fas fa-plus-circle"></i>
               <span>Add Another Contact</span>
@@ -231,6 +325,7 @@ const EmergencyContactsComponent = ({ patient }) => {
             <button 
               className="add-contact-btn"
               onClick={handleAddContactClick}
+              disabled={isLoading}
             >
               <i className="fas fa-plus"></i>
               <span>Add Contact</span>

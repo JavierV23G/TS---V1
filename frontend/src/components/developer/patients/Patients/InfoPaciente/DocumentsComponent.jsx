@@ -19,6 +19,8 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // ============================================================================
   const { currentUser } = useAuth();
   const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadingFileName, setUploadingFileName] = useState('');
@@ -44,6 +46,9 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // Refs
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
+  
+  // API Configuration
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
   // ============================================================================
   // CONSTANTS AND CONFIGURATION
@@ -85,7 +90,8 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
         name: 'Unknown User',
         fullname: 'Unknown User',
         username: 'unknown',
-        role: 'User'
+        role: 'User',
+        id: 1
       };
     }
     return currentUser;
@@ -177,14 +183,8 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       errors.push('File name is too long (max 255 characters)');
     }
     
-    // Check for duplicate names
-    const isDuplicate = documents.some(doc => doc.name === file.name);
-    if (isDuplicate) {
-      errors.push('A file with this name already exists');
-    }
-    
     return errors;
-  }, [documents, formatFileSize]);
+  }, [formatFileSize]);
 
   const getCategoryInfo = useCallback((categoryId) => {
     return categories.find(cat => cat.id === categoryId) || categories[categories.length - 1];
@@ -206,10 +206,10 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       stats.byCategory[doc.category] = (stats.byCategory[doc.category] || 0) + 1;
       
       // Total size
-      stats.totalSize += doc.size || 0;
+      stats.totalSize += doc.file_size || doc.size || 0;
       
       // Recent uploads
-      if (new Date(doc.uploadDate) > oneWeekAgo) {
+      if (new Date(doc.upload_date || doc.uploadDate) > oneWeekAgo) {
         stats.recentUploads++;
       }
     });
@@ -218,111 +218,143 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   }, []);
 
   // ============================================================================
-  // MOCK DATA INITIALIZATION
+  // API FUNCTIONS - FIXED FOR PATIENT DOCUMENTS
   // ============================================================================
-  useEffect(() => {
-    if (patient?.documents) {
-      setDocuments(patient.documents || []);
-    } else {
-      // Enhanced mock data with more realistic documents
-      const mockDocuments = [
-        {
-          id: 1,
-          name: 'Initial_Evaluation_Report.pdf',
-          type: 'pdf',
-          size: 2456789,
-          category: 'Medical Reports',
-          uploadedBy: 'Dr. Michael Chen',
-          uploadDate: '2025-02-15T14:30:00',
-          description: 'Comprehensive initial evaluation report including patient history, current symptoms, and recommended treatment plan.',
-          url: '/documents/eval-report.pdf',
-          isProtected: false,
-          version: '1.0',
-          tags: ['evaluation', 'initial', 'therapy'],
-          lastModified: '2025-02-15T14:30:00'
-        },
-        {
-          id: 2,
-          name: 'Insurance_Approval_2025.pdf',
-          type: 'pdf',
-          size: 1245678,
-          category: 'Insurance',
-          uploadedBy: 'Admin Staff',
-          uploadDate: '2025-02-10T09:15:00',
-          description: 'Official insurance approval documentation for therapy sessions covering the period from Feb 2025 to Aug 2025.',
-          url: '/documents/insurance-approval.pdf',
-          isProtected: true,
-          version: '2.1',
-          tags: ['insurance', 'approval', '2025'],
-          lastModified: '2025-02-12T16:20:00'
-        },
-        {
-          id: 3,
-          name: 'Progress_Notes_Week_1-4.docx',
-          type: 'docx',
-          size: 356789,
-          category: 'Progress Notes',
-          uploadedBy: 'Dr. Michael Chen',
-          uploadDate: '2025-02-20T16:45:00',
-          description: 'Detailed weekly progress notes documenting patient improvements and therapy adjustments for the first month of treatment.',
-          url: '/documents/progress-notes-w1.docx',
-          isProtected: false,
-          version: '1.3',
-          tags: ['progress', 'weekly', 'month1'],
-          lastModified: '2025-02-28T11:30:00'
-        },
-        {
-          id: 4,
-          name: 'Custom_Exercise_Program.jpg',
-          type: 'jpg',
-          size: 1789456,
-          category: 'Therapy Plans',
-          uploadedBy: 'Maria Gonzalez',
-          uploadDate: '2025-02-25T10:20:00',
-          description: 'Visual guide for custom exercise program designed specifically for patient\'s rehabilitation needs.',
-          url: '/documents/exercise-program.jpg',
-          isProtected: false,
-          version: '1.0',
-          tags: ['exercise', 'visual', 'custom'],
-          lastModified: '2025-02-25T10:20:00'
-        },
-        {
-          id: 5,
-          name: 'Lab_Results_March_2025.pdf',
-          type: 'pdf',
-          size: 2134567,
-          category: 'Lab Results',
-          uploadedBy: 'Dr. Sarah Johnson',
-          uploadDate: '2025-03-01T08:30:00',
-          description: 'Latest laboratory test results including blood work, inflammatory markers, and metabolic panel.',
-          url: '/documents/lab-results-march.pdf',
-          isProtected: true,
-          version: '1.0',
-          tags: ['lab', 'blood', 'march'],
-          lastModified: '2025-03-01T08:30:00'
-        },
-        {
-          id: 6,
-          name: 'MRI_Scan_Report.pdf',
-          type: 'pdf',
-          size: 8945678,
-          category: 'Imaging',
-          uploadedBy: 'Radiology Dept',
-          uploadDate: '2025-01-28T14:15:00',
-          description: 'Detailed MRI scan report with imaging findings and radiologist interpretations.',
-          url: '/documents/mri-report.pdf',
-          isProtected: true,
-          version: '1.0',
-          tags: ['mri', 'imaging', 'radiology'],
-          lastModified: '2025-01-28T14:15:00'
-        }
-      ];
-      
-      setDocuments(mockDocuments);
+  
+  // Fetch documents from API
+  const fetchDocuments = useCallback(async () => {
+    if (!patient?.id) {
+      console.log('No patient ID available');
+      setDocuments([]);
+      setIsLoading(false);
+      return;
     }
-  }, [patient]);
 
-  // Update stats when documents change
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log(`Fetching documents for patient ${patient.id}`);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/documents/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const documentsData = await response.json();
+          console.log('Received documents data:', documentsData);
+          
+          // Filter documents by patient_id
+          const patientDocuments = Array.isArray(documentsData) ? 
+            documentsData.filter(doc => doc.patient_id === patient.id) : 
+            [];
+          
+          setDocuments(patientDocuments);
+        } else {
+          console.log('Documents endpoint not available yet, showing empty state');
+          setDocuments([]);
+        }
+      } catch (fetchError) {
+        console.log('Could not fetch documents (endpoint may not exist yet):', fetchError.message);
+        setDocuments([]);
+      }
+      
+    } catch (err) {
+      console.error('Error in fetchDocuments:', err);
+      setDocuments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [patient?.id, API_BASE_URL]);
+
+  // Upload document to API - FIXED: Only send patient_id
+  const uploadDocumentToAPI = useCallback(async (file) => {
+    if (!patient?.id) {
+      throw new Error('Patient ID is required');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    // SOLO enviar patient_id, NO staff_id ya que estamos en el perfil del paciente
+    formData.append('patient_id', patient.id.toString());
+
+    console.log('Uploading document for PATIENT with FormData:');
+    console.log('- File name:', file.name);
+    console.log('- File size:', file.size);
+    console.log('- File type:', file.type);
+    console.log('- Patient ID:', patient.id);
+    console.log('- NO staff_id (patient document upload)');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, let browser set it with boundary for FormData
+      });
+
+      console.log('Upload response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error('Upload error details:', errorData);
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          try {
+            const errorText = await response.text();
+            console.error('Upload error text:', errorText);
+            errorMessage = errorText || errorMessage;
+          } catch (e2) {
+            errorMessage = `${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('Upload request failed:', error);
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+  }, [patient?.id, API_BASE_URL]);
+
+  // Delete document from API
+  const deleteDocumentFromAPI = useCallback(async (documentId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.status} ${response.statusText}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Delete request failed:', error);
+      throw error;
+    }
+  }, [API_BASE_URL]);
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+  
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
   useEffect(() => {
     const stats = calculateStats(documents);
     setDocumentStats(stats);
@@ -332,93 +364,74 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // FILE UPLOAD HANDLERS
   // ============================================================================
   const handleFileUploadClick = useCallback(() => {
+    if (!patient?.id) {
+      alert('Patient ID is required to upload documents.');
+      return;
+    }
     fileInputRef.current?.click();
-  }, []);
+  }, [patient?.id]);
 
-// CAMBIAR TODA ESTA FUNCIÓN:
-const handleFileSelected = useCallback((e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
-  
-  const file = files[0];
-  const validationErrors = validateFile(file);
-  
-  if (validationErrors.length > 0) {
-    alert(`Upload failed:\n${validationErrors.join('\n')}`);
-    return;
-  }
-  
-  // DIRECTAMENTE INICIAR UPLOAD SIN MODAL
-  handleDirectUpload(file);
-  
-  // Clear the input
-  e.target.value = null;
-}, [validateFile]);
-
-const handleDirectUpload = useCallback(async (file) => {
-  setIsUploading(true);
-  setUploadProgress(0);
-  setUploadingFileName(file.name);
-  
-  try {
-    // Simulate upload progress
-    const uploadInterval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(uploadInterval);
-          return 100;
-        }
-        return Math.min(prev + Math.random() * 15, 95);
-      });
-    }, 150);
+  const handleFileSelected = useCallback((e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
     
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const file = files[0];
+    const validationErrors = validateFile(file);
     
-    clearInterval(uploadInterval);
-    setUploadProgress(100);
-    
-    // Create new document with default category
-    const currentUserInfo = getCurrentUser();
-    const newDocument = {
-      id: Date.now(),
-      name: file.name,
-      type: file.name.split('.').pop()?.toLowerCase() || 'unknown',
-      size: file.size,
-      category: 'Other', // Categoría por defecto
-      uploadedBy: currentUserInfo.fullname || currentUserInfo.name || currentUserInfo.username || 'Current User',
-      uploadDate: new Date().toISOString(),
-      description: `Uploaded document: ${file.name}`,
-      url: URL.createObjectURL(file),
-      isProtected: false,
-      version: '1.0',
-      tags: ['uploaded'],
-      lastModified: new Date().toISOString()
-    };
-    
-    // Update documents
-    const updatedDocs = [newDocument, ...documents];
-    setDocuments(updatedDocs);
-    
-    // Notify parent
-    if (onUpdateDocuments) {
-      onUpdateDocuments(updatedDocs);
+    if (validationErrors.length > 0) {
+      alert(`Upload validation failed:\n${validationErrors.join('\n')}`);
+      return;
     }
     
-    // Show success
-    setTimeout(() => {
-      setIsUploading(false);
-      setUploadSuccess(true);
-      setUploadingFileName('');
-    }, 500);
-    
-  } catch (error) {
-    console.error('Upload failed:', error);
-    setIsUploading(false);
-    alert('Upload failed. Please try again.');
-  }
-}, [documents, getCurrentUser, onUpdateDocuments]);
+    handleDirectUpload(file);
+    e.target.value = null;
+  }, [validateFile]);
 
+  const handleDirectUpload = useCallback(async (file) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadingFileName(file.name);
+    setError(null);
+    
+    try {
+      // Start progress animation
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            return prev;
+          }
+          return Math.min(prev + Math.random() * 10, 90);
+        });
+      }, 200);
+      
+      // Make the actual upload
+      const uploadResult = await uploadDocumentToAPI(file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      // Show completion
+      setTimeout(async () => {
+        setIsUploading(false);
+        setUploadSuccess(true);
+        setUploadingFileName('');
+        
+        // Refresh documents list
+        await fetchDocuments();
+        
+        if (onUpdateDocuments) {
+          onUpdateDocuments();
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      setUploadingFileName('');
+      setError(`Upload failed: ${error.message}`);
+    }
+  }, [uploadDocumentToAPI, fetchDocuments, onUpdateDocuments]);
 
   // ============================================================================
   // DRAG AND DROP HANDLERS
@@ -426,8 +439,10 @@ const handleDirectUpload = useCallback(async (file) => {
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(true);
-  }, []);
+    if (patient?.id) {
+      setDragActive(true);
+    }
+  }, [patient?.id]);
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
@@ -442,6 +457,11 @@ const handleDirectUpload = useCallback(async (file) => {
     e.stopPropagation();
     setDragActive(false);
     
+    if (!patient?.id) {
+      alert('Patient ID is required to upload documents.');
+      return;
+    }
+    
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
     
@@ -449,297 +469,33 @@ const handleDirectUpload = useCallback(async (file) => {
     const validationErrors = validateFile(file);
     
     if (validationErrors.length > 0) {
-      alert(`Upload failed:\n${validationErrors.join('\n')}`);
+      alert(`Upload validation failed:\n${validationErrors.join('\n')}`);
       return;
     }
     
     handleDirectUpload(file);
-
-  }, [validateFile]);
+  }, [validateFile, handleDirectUpload, patient?.id]);
 
   // ============================================================================
   // DOCUMENT ACTIONS
   // ============================================================================
   const handleViewDocument = useCallback((document) => {
-    // Open in new tab with document viewer
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${document.name} - Document Viewer</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              background: #f8fafc;
-              color: #1e293b;
-              height: 100vh;
-              overflow: hidden;
-            }
-            
-            .document-viewer {
-              height: 100vh;
-              display: flex;
-              flex-direction: column;
-            }
-            
-            .viewer-header {
-              background: #ffffff;
-              border-bottom: 1px solid #e2e8f0;
-              padding: 1rem 2rem;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-              z-index: 10;
-            }
-            
-            .document-info {
-              display: flex;
-              align-items: center;
-              gap: 1rem;
-            }
-            
-            .document-icon {
-              width: 40px;
-              height: 40px;
-              border-radius: 8px;
-              background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 1.2rem;
-            }
-            
-            .document-details h1 {
-              font-size: 1.25rem;
-              font-weight: 600;
-              margin-bottom: 0.25rem;
-              color: #1e293b;
-            }
-            
-            .document-meta {
-              font-size: 0.875rem;
-              color: #64748b;
-              display: flex;
-              gap: 1rem;
-            }
-            
-            .viewer-actions {
-              display: flex;
-              gap: 0.75rem;
-            }
-            
-            .action-btn {
-              padding: 0.625rem 1rem;
-              border: 1px solid #e2e8f0;
-              background: white;
-              color: #374151;
-              border-radius: 8px;
-              cursor: pointer;
-              font-size: 0.875rem;
-              font-weight: 500;
-              transition: all 0.2s;
-              display: flex;
-              align-items: center;
-              gap: 0.5rem;
-            }
-            
-            .action-btn:hover {
-              background: #f8fafc;
-              border-color: #cbd5e1;
-              transform: translateY(-1px);
-            }
-            
-            .action-btn.primary {
-              background: #3b82f6;
-              color: white;
-              border-color: #3b82f6;
-            }
-            
-            .action-btn.primary:hover {
-              background: #2563eb;
-            }
-            
-            .viewer-content {
-              flex: 1;
-              position: relative;
-              background: #ffffff;
-            }
-            
-            .document-frame {
-              width: 100%;
-              height: 100%;
-              border: none;
-              background: white;
-            }
-            
-            .document-preview {
-              width: 100%;
-              height: 100%;
-              object-fit: contain;
-              background: white;
-            }
-            
-            .no-preview {
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              text-align: center;
-              padding: 2rem;
-            }
-            
-            .no-preview-icon {
-              font-size: 4rem;
-              color: #cbd5e1;
-              margin-bottom: 1rem;
-            }
-            
-            .no-preview h2 {
-              font-size: 1.5rem;
-              margin-bottom: 0.5rem;
-              color: #374151;
-            }
-            
-            .no-preview p {
-              color: #6b7280;
-              margin-bottom: 2rem;
-              max-width: 400px;
-            }
-            
-            .loading {
-              height: 100%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 1.125rem;
-              color: #6b7280;
-            }
-            
-            @keyframes spin {
-              from { transform: rotate(0deg); }
-              to { transform: rotate(360deg); }
-            }
-            
-            .spinner {
-              animation: spin 1s linear infinite;
-              margin-right: 0.5rem;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="document-viewer">
-            <div class="viewer-header">
-              <div class="document-info">
-                <div class="document-icon">📄</div>
-                <div class="document-details">
-                  <h1>${document.name}</h1>
-                  <div class="document-meta">
-                    <span>Size: ${formatFileSize(document.size)}</span>
-                    <span>Category: ${document.category}</span>
-                    <span>Uploaded: ${formatDate(document.uploadDate)}</span>
-                    <span>By: ${document.uploadedBy}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="viewer-actions">
-                <button class="action-btn" onclick="window.print()">
-                  🖨️ Print
-                </button>
-                <button class="action-btn primary" onclick="downloadFile()">
-                  ⬇️ Download
-                </button>
-                <button class="action-btn" onclick="window.close()">
-                  ✕ Close
-                </button>
-              </div>
-            </div>
-            <div class="viewer-content">
-              <div id="loading" class="loading">
-                <span class="spinner">⏳</span>
-                Loading document...
-              </div>
-              <div id="content" style="display: none; height: 100%;">
-                ${document.type === 'pdf' ? `
-                  <iframe class="document-frame" src="${document.url}" title="${document.name}"></iframe>
-                ` : document.type.match(/jpe?g|png|gif/i) ? `
-                  <img class="document-preview" src="${document.url}" alt="${document.name}" />
-                ` : `
-                  <div class="no-preview">
-                    <div class="no-preview-icon">📄</div>
-                    <h2>Preview Not Available</h2>
-                    <p>This file type cannot be previewed in the browser. Click download to view the file.</p>
-                    <button class="action-btn primary" onclick="downloadFile()">
-                      ⬇️ Download File
-                    </button>
-                  </div>
-                `}
-              </div>
-            </div>
-          </div>
-          
-          <script>
-            function downloadFile() {
-              const link = document.createElement('a');
-              link.href = '${document.url}';
-              link.download = '${document.name}';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-            
-            // Show content after short delay
-            setTimeout(() => {
-              document.getElementById('loading').style.display = 'none';
-              document.getElementById('content').style.display = 'block';
-            }, 800);
-            
-            // Handle keyboard shortcuts
-            document.addEventListener('keydown', function(e) {if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
-                  case 'p':
-                    e.preventDefault();
-                    window.print();
-                    break;
-                  case 's':
-                    e.preventDefault();
-                    downloadFile();
-                    break;
-                  case 'w':
-                    e.preventDefault();
-                    window.close();
-                    break;
-                }
-              }
-              if (e.key === 'Escape') {
-                window.close();
-              }
-            });
-          </script>
-        </body>
-        </html>
-      `);
-      newWindow.document.close();
-    }
-  }, [formatFileSize, formatDate]);
+    const fileUrl = document.file_path ? 
+      `${API_BASE_URL}${document.file_path}` : 
+      document.url || '#';
+    
+    window.open(fileUrl, '_blank');
+  }, [API_BASE_URL]);
 
   const handleDownload = useCallback((document) => {
     try {
+      const fileUrl = document.file_path ? 
+        `${API_BASE_URL}${document.file_path}` : 
+        document.url || '#';
+      
       const link = document.createElement('a');
-      link.href = document.url;
-      link.download = document.name;
+      link.href = fileUrl;
+      link.download = document.file_name || document.name || 'download';
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
@@ -747,20 +503,21 @@ const handleDirectUpload = useCallback(async (file) => {
       
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback: open in new tab
-      window.open(document.url, '_blank');
+      const fileUrl = document.file_path ? 
+        `${API_BASE_URL}${document.file_path}` : 
+        document.url || '#';
+      window.open(fileUrl, '_blank');
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleDeleteClick = useCallback((document) => {
     setSelectedDocument(document);
     setIsDeleteModalOpen(true);
   }, []);
 
-  const handleConfirmDelete = useCallback(() => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!selectedDocument) return;
     
-    // Verificar checkbox de confirmación
     const checkbox = document.getElementById('confirmDelete');
     if (!checkbox?.checked) {
       alert('Please confirm that you understand this action cannot be undone.');
@@ -769,21 +526,28 @@ const handleDirectUpload = useCallback(async (file) => {
     
     setIsProcessing(true);
     
-    // Animación más elaborada
-    setTimeout(() => {
-      const updatedDocuments = documents.filter(doc => doc.id !== selectedDocument.id);
-      setDocuments(updatedDocuments);
-      setIsDeleteModalOpen(false);
-      setDeleteSuccess(true);
+    try {
+      await deleteDocumentFromAPI(selectedDocument.id);
+      
+      setTimeout(async () => {
+        setIsDeleteModalOpen(false);
+        setDeleteSuccess(true);
+        setIsProcessing(false);
+        setSelectedDocument(null);
+        
+        await fetchDocuments();
+        
+        if (onUpdateDocuments) {
+          onUpdateDocuments();
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
       setIsProcessing(false);
-      
-      if (onUpdateDocuments) {
-        onUpdateDocuments(updatedDocuments);
-      }
-      
-      setSelectedDocument(null);
-    }, 2000); // Más tiempo para mostrar procesamiento
-  }, [selectedDocument, documents, onUpdateDocuments]);
+      setError(`Delete failed: ${error.message}`);
+    }
+  }, [selectedDocument, deleteDocumentFromAPI, fetchDocuments, onUpdateDocuments]);
 
   // ============================================================================
   // BULK ACTIONS
@@ -822,19 +586,35 @@ const handleDirectUpload = useCallback(async (file) => {
     setShowBulkActions(false);
   }, [selectedDocuments, documents, handleDownload]);
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (window.confirm(`Are you sure you want to delete ${selectedDocuments.size} documents? This action cannot be undone.`)) {
-      const updatedDocuments = documents.filter(doc => !selectedDocuments.has(doc.id));
-      setDocuments(updatedDocuments);
-      setSelectedDocuments(new Set());
-      setShowBulkActions(false);
-      setDeleteSuccess(true);
+      setIsProcessing(true);
       
-      if (onUpdateDocuments) {
-        onUpdateDocuments(updatedDocuments);
+      try {
+        const selectedDocs = documents.filter(doc => selectedDocuments.has(doc.id));
+        
+        for (const doc of selectedDocs) {
+          await deleteDocumentFromAPI(doc.id);
+        }
+        
+        setSelectedDocuments(new Set());
+        setShowBulkActions(false);
+        setDeleteSuccess(true);
+        setIsProcessing(false);
+        
+        await fetchDocuments();
+        
+        if (onUpdateDocuments) {
+          onUpdateDocuments();
+        }
+        
+      } catch (error) {
+        console.error('Bulk delete failed:', error);
+        setIsProcessing(false);
+        setError(`Failed to delete some documents: ${error.message}`);
       }
     }
-  }, [selectedDocuments, documents, onUpdateDocuments]);
+  }, [selectedDocuments, documents, deleteDocumentFromAPI, fetchDocuments, onUpdateDocuments]);
 
   // ============================================================================
   // FILTERING AND SORTING
@@ -842,13 +622,19 @@ const handleDirectUpload = useCallback(async (file) => {
   const filterDocuments = useCallback(() => {
     let filteredDocs = [...documents];
     
-    // Solo aplicar filtro de categoría
     if (selectedCategory !== 'All') {
-      filteredDocs = filteredDocs.filter(doc => doc.category === selectedCategory);
+      filteredDocs = filteredDocs.filter(doc => 
+        (doc.category === selectedCategory) || 
+        (doc.document_type === selectedCategory) ||
+        (!doc.category && !doc.document_type && selectedCategory === 'Other')
+      );
     }
     
-    // Ordenar por fecha (más recientes primero)
-    filteredDocs.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    filteredDocs.sort((a, b) => {
+      const dateA = new Date(a.upload_date || a.uploadDate || 0);
+      const dateB = new Date(b.upload_date || b.uploadDate || 0);
+      return dateB - dateA;
+    });
     
     return filteredDocs;
   }, [documents, selectedCategory]);
@@ -872,12 +658,27 @@ const handleDirectUpload = useCallback(async (file) => {
     return () => clearTimeout(timer);
   }, [deleteSuccess]);
 
+  useEffect(() => {
+    let timer;
+    if (error) {
+      timer = setTimeout(() => setError(null), 8000);
+    }
+    return () => clearTimeout(timer);
+  }, [error]);
+
   // ============================================================================
   // RENDER HELPERS
   // ============================================================================
   const renderDocumentCard = useCallback((document, index) => {
-    const fileIconInfo = getFileIcon(document.type);
-    const categoryInfo = getCategoryInfo(document.category);
+    const fileName = document.file_name || document.name || 'Unknown';
+    const fileSize = document.file_size || document.size || 0;
+    const uploadDate = document.upload_date || document.uploadDate || new Date();
+    const fileType = document.file_type || document.type || fileName.split('.').pop()?.toLowerCase() || 'unknown';
+    const category = document.category || document.document_type || 'Other';
+    const uploadedBy = document.uploaded_by || document.uploadedBy || 'Unknown';
+    
+    const fileIconInfo = getFileIcon(fileType);
+    const categoryInfo = getCategoryInfo(category);
     const isSelected = selectedDocuments.has(document.id);
     const isHovered = hoveredDocument === document.id;
 
@@ -892,7 +693,6 @@ const handleDirectUpload = useCallback(async (file) => {
         onMouseEnter={() => setHoveredDocument(document.id)}
         onMouseLeave={() => setHoveredDocument(null)}
       >
-        {/* Selection Checkbox */}
         <div className="document-selector">
           <label className="checkbox-container">
             <input
@@ -906,7 +706,6 @@ const handleDirectUpload = useCallback(async (file) => {
           </label>
         </div>
 
-        {/* Document Icon with Enhanced Styling */}
         <div className="document-icon-container">
           <div 
             className="document-icon"
@@ -914,19 +713,18 @@ const handleDirectUpload = useCallback(async (file) => {
           >
             <FontAwesomeIcon icon={fileIconInfo.icon} />
           </div>
-          {document.isProtected && (
+          {document.is_protected && (
             <div className="protection-badge">
               <FontAwesomeIcon icon={faLock} />
             </div>
           )}
-          <div className="file-type-badge">{document.type.toUpperCase()}</div>
+          <div className="file-type-badge">{fileType.toUpperCase()}</div>
         </div>
 
-        {/* Document Details */}
         <div className="document-details">
           <div className="document-name-row">
-            <div className="document-name" title={document.name}>
-              {document.name}
+            <div className="document-name" title={fileName}>
+              {fileName}
             </div>
             <div 
               className="document-category"
@@ -937,30 +735,30 @@ const handleDirectUpload = useCallback(async (file) => {
               }}
             >
               <FontAwesomeIcon icon={categoryInfo.icon} />
-              {document.category}
+              {category}
             </div>
           </div>
 
           <div className="document-meta-grid">
             <div className="meta-item">
               <span className="meta-label">Uploaded by:</span>
-              <span className="meta-value">{document.uploadedBy}</span>
+              <span className="meta-value">{uploadedBy}</span>
             </div>
             <div className="meta-item">
               <FontAwesomeIcon icon={faCalendarAlt} className="meta-icon" />
               <span className="meta-label">Date:</span>
-              <span className="meta-value">{formatDate(document.uploadDate)}</span>
+              <span className="meta-value">{formatDate(uploadDate)}</span>
             </div>
             <div className="meta-item">
               <FontAwesomeIcon icon={faFile} className="meta-icon" />
               <span className="meta-label">Size:</span>
-              <span className="meta-value">{formatFileSize(document.size)}</span>
+              <span className="meta-value">{formatFileSize(fileSize)}</span>
             </div>
-            {document.version && (
+            {document.patient_id && (
               <div className="meta-item">
                 <FontAwesomeIcon icon={faTag} className="meta-icon" />
-                <span className="meta-label">Version:</span>
-                <span className="meta-value">v{document.version}</span>
+                <span className="meta-label">Patient ID:</span>
+                <span className="meta-value">{document.patient_id}</span>
               </div>
             )}
           </div>
@@ -970,22 +768,8 @@ const handleDirectUpload = useCallback(async (file) => {
               <p>{document.description}</p>
             </div>
           )}
-
-          {document.tags && document.tags.length > 0 && (
-            <div className="document-tags">
-              {document.tags.slice(0, 3).map((tag, idx) => (
-                <span key={idx} className="tag">
-                  #{tag}
-                </span>
-              ))}
-              {document.tags.length > 3 && (
-                <span className="tag-more">+{document.tags.length - 3}</span>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Enhanced Action Buttons */}
         <div className="document-actions">
           <div className="action-buttons-row">
             <button 
@@ -1020,7 +804,7 @@ const handleDirectUpload = useCallback(async (file) => {
           </div>
           
           <div className="document-status-indicators">
-            {document.isProtected && (
+            {document.is_protected && (
               <span className="status-indicator protected" title="Protected Document">
                 <FontAwesomeIcon icon={faShieldAlt} />
               </span>
@@ -1031,7 +815,6 @@ const handleDirectUpload = useCallback(async (file) => {
           </div>
         </div>
 
-        {/* Hover Overlay Effect */}
         <div className="card-overlay"></div>
       </div>
     );
@@ -1099,6 +882,7 @@ const handleDirectUpload = useCallback(async (file) => {
               <button 
                 className="primary-btn upload-btn"
                 onClick={handleFileUploadClick}
+                disabled={!patient?.id}
               >
                 <FontAwesomeIcon icon={faCloudUploadAlt} />
                 Upload Document
@@ -1124,12 +908,41 @@ const handleDirectUpload = useCallback(async (file) => {
         </div>
       </div>
     );
-  }, [selectedCategory, handleFileUploadClick]);
+  }, [selectedCategory, handleFileUploadClick, patient?.id]);
 
   // ============================================================================
   // MAIN COMPONENT RENDER
   // ============================================================================
   const filteredDocuments = filterDocuments();
+
+  if (isLoading) {
+    return (
+      <div className="documents-component loading-state">
+        <div className="documents-header">
+          <div className="header-content">
+            <div className="header-left">
+              <div className="header-icon-container">
+                <div className="header-icon">
+                  <FontAwesomeIcon icon={faFile} />
+                </div>
+              </div>
+              <div className="header-text">
+                <h2 className="header-title">Patient Documents</h2>
+                <p className="header-subtitle">Loading documents...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="loading-container">
+          <div className="loading-spinner">
+            <FontAwesomeIcon icon={faSpinner} className="fa-spin" />
+          </div>
+          <p>Loading patient documents...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -1139,6 +952,27 @@ const handleDirectUpload = useCallback(async (file) => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* ======================== ERROR NOTIFICATION ======================== */}
+      {error && (
+        <div className="notification-container error enhanced">
+          <div className="notification-icon-container">
+            <div className="notification-icon">
+              <FontAwesomeIcon icon={faExclamationTriangle} />
+            </div>
+          </div>
+          <div className="notification-content">
+            <div className="notification-title">Error</div>
+            <div className="notification-description">{error}</div>
+          </div>
+          <button 
+            className="notification-close" 
+            onClick={() => setError(null)}
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+      )}
+
       {/* ======================== MAIN HEADER ======================== */}
       <div className="documents-header">
         <div className="header-content">
@@ -1180,7 +1014,8 @@ const handleDirectUpload = useCallback(async (file) => {
           <button 
             className="action-button upload-btn premium"
             onClick={handleFileUploadClick}
-            disabled={isUploading}
+            disabled={isUploading || !patient?.id}
+            title={!patient?.id ? 'Patient ID required to upload documents' : 'Upload new document'}
           >
             <div className="btn-icon">
               <FontAwesomeIcon icon={isUploading ? faSpinner : faCloudUploadAlt} 
@@ -1205,7 +1040,6 @@ const handleDirectUpload = useCallback(async (file) => {
       {/* ======================== TOOLBAR ======================== */}
       <div className="documents-toolbar enhanced">
         <div className="toolbar-left">
-          {/* View Mode Toggle */}
           <div className="view-mode-container">
             <button 
               className={`view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
@@ -1224,6 +1058,21 @@ const handleDirectUpload = useCallback(async (file) => {
           </div>
         </div>
 
+        <div className="toolbar-right">
+          <div className="category-filter">
+            <select 
+              value={selectedCategory} 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="category-select"
+            >
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* ======================== BULK ACTIONS BAR ======================== */}
@@ -1234,11 +1083,19 @@ const handleDirectUpload = useCallback(async (file) => {
             <span>{selectedDocuments.size} document{selectedDocuments.size !== 1 ? 's' : ''} selected</span>
           </div>
           <div className="bulk-actions">
-            <button className="bulk-btn download" onClick={handleBulkDownload}>
+            <button 
+              className="bulk-btn download" 
+              onClick={handleBulkDownload}
+              disabled={isProcessing}
+            >
               <FontAwesomeIcon icon={faDownload} />
               Download All
             </button>
-            <button className="bulk-btn delete" onClick={handleBulkDelete}>
+            <button 
+              className="bulk-btn delete" 
+              onClick={handleBulkDelete}
+              disabled={isProcessing}
+            >
               <FontAwesomeIcon icon={faTrashAlt} />
               Delete Selected
             </button>
@@ -1345,7 +1202,7 @@ const handleDirectUpload = useCallback(async (file) => {
       )}
 
       {/* ======================== DRAG AND DROP OVERLAY ======================== */}
-      {dragActive && (
+      {dragActive && patient?.id && (
         <div className="drag-drop-overlay">
           <div className="drag-drop-content">
             <div className="drag-icon">
@@ -1407,51 +1264,40 @@ const handleDirectUpload = useCallback(async (file) => {
         </div>
       </div>
 
-      {/* ======================== CATEGORY SELECTION MODAL ======================== */}
-
-{/* ======================== DELETE CONFIRMATION MODAL ======================== */}
+      {/* ======================== DELETE CONFIRMATION MODAL ======================== */}
       {isDeleteModalOpen && selectedDocument && (
         <div className="delete-modal-overlay">
-          <div className="delete-modal-backdrop" onClick={() => setIsDeleteModalOpen(false)} />
+          <div className="delete-modal-backdrop" onClick={() => !isProcessing && setIsDeleteModalOpen(false)} />
           <div className="delete-modal-container">
-            {/* Warning Icon */}
             <div className="delete-modal-icon">
               <FontAwesomeIcon icon={faExclamationTriangle} />
             </div>
 
-            {/* Title */}
             <h2 className="delete-modal-title">Delete Document</h2>
+            <p className="delete-modal-subtitle">This action cannot be undone</p>
 
-            {/* Subtitle */}
-            <p className="delete-modal-subtitle">
-              This action cannot be undone
-            </p>
-
-            {/* File Info */}
             <div className="delete-file-info">
               <div className="file-preview-icon">
-                <FontAwesomeIcon icon={getFileIcon(selectedDocument.type).icon} />
+                <FontAwesomeIcon icon={getFileIcon(selectedDocument.file_type || selectedDocument.type).icon} />
               </div>
               <div className="file-preview-details">
-                <div className="file-name">{selectedDocument.name}</div>
+                <div className="file-name">{selectedDocument.file_name || selectedDocument.name}</div>
                 <div className="file-meta">
-                  <span>Size: {formatFileSize(selectedDocument.size)}</span>
+                  <span>Size: {formatFileSize(selectedDocument.file_size || selectedDocument.size || 0)}</span>
                   <span>•</span>
-                  <span>Category: {selectedDocument.category}</span>
+                  <span>Patient: {selectedDocument.patient_id || 'N/A'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Warning Message */}
             <div className="delete-warning-message">
               <FontAwesomeIcon icon={faExclamationTriangle} />
               <span>You are about to permanently delete this document. This action cannot be undone and the file will be lost forever.</span>
             </div>
 
-            {/* Confirmation Checkbox */}
             <div className="delete-confirmation">
               <label className="delete-checkbox-container">
-                <input type="checkbox" id="confirmDelete" />
+                <input type="checkbox" id="confirmDelete" disabled={isProcessing} />
                 <span className="delete-checkmark">
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
@@ -1461,7 +1307,6 @@ const handleDirectUpload = useCallback(async (file) => {
               </label>
             </div>
 
-            {/* Actions */}
             <div className="delete-modal-actions">
               <button 
                 className="delete-btn-cancel"
@@ -1493,16 +1338,18 @@ const handleDirectUpload = useCallback(async (file) => {
       )}
 
       {/* ======================== FLOATING ACTION BUTTON ======================== */}
-      <div className="floating-action-container">
-        <button 
-          className="floating-action-btn"
-          onClick={handleFileUploadClick}
-          title="Quick Upload"
-        >
-          <FontAwesomeIcon icon={faPlus} />
-          <div className="fab-ripple"></div>
-        </button>
-      </div>
+      {!isUploading && patient?.id && (
+        <div className="floating-action-container">
+          <button 
+            className="floating-action-btn"
+            onClick={handleFileUploadClick}
+            title="Quick Upload"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            <div className="fab-ripple"></div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
