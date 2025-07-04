@@ -95,8 +95,10 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
 };
 
 // Personal Information Card Component with API Integration
-const PersonalInfoCard = ({ onUpdatePatient }) => {
-  const { patientId } = useParams();
+const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     full_name: '',
     birthday: '',
@@ -104,53 +106,45 @@ const PersonalInfoCard = ({ onUpdatePatient }) => {
     address: '',
     contact_info: ''
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
-    const fetchPatientInfo = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/patients/${patientId}`);
-        if (!response.ok) throw new Error(`Failed to fetch patient: ${response.status}`);
-        const data = await response.json();
-
-        // Solo tomamos los campos que nos interesan
-        setFormData({
-          full_name: data.full_name || '',
-          birthday: data.birthday || '',
-          gender: data.gender || '',
-          address: data.address || '',
-          contact_info: data.contact_info || ''
-        });
-
-        onUpdatePatient && onUpdatePatient(data);
-      } catch (err) {
-        console.error('Error fetching patient data:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPatientInfo();
-  }, [patientId, API_BASE_URL, onUpdatePatient]);
+    if (patient) {
+      setFormData({
+        full_name: patient.full_name || '',
+        birthday: patient.birthday || '',
+        gender: patient.gender || '',
+        address: patient.address || '',
+        contact_info: patient.contact_info || ''
+      });
+    }
+  }, [patient]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
       setError(null);
+      
+      // TODO: Implement patient update API call when endpoint is available
+      // For now, just update local state
       console.log('Would update patient with:', formData);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedPatient = { ...patient, ...formData };
+      onUpdatePatient(updatedPatient);
       setIsEditing(false);
+      
     } catch (error) {
       console.error('Error updating patient:', error);
       setError(error.message);
@@ -163,11 +157,7 @@ const PersonalInfoCard = ({ onUpdatePatient }) => {
     setIsEditing(!isEditing);
     setError(null);
   };
-
-  if (loading) {
-    return <div className="info-card personal-info">Loading personal info...</div>;
-  }
-
+  
   return (
     <div className="info-card personal-info">
       <div className="card-header">
@@ -186,51 +176,102 @@ const PersonalInfoCard = ({ onUpdatePatient }) => {
             </button>
           </div>
         )}
-
+        
         {isEditing ? (
           <div className="edit-form">
-            {['full_name', 'birthday', 'gender', 'address', 'contact_info'].map((field) => (
-              <div className="form-group" key={field}>
-                <label>{field.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</label>
-                {field === 'gender' ? (
-                  <select
-                    name={field}
-                    value={formData[field]}
-                    onChange={handleInputChange}
-                    disabled={isSaving}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                ) : (
-                  <input
-                    type={field === 'birthday' ? 'date' : 'text'}
-                    name={field}
-                    value={formData[field]}
-                    onChange={handleInputChange}
-                    disabled={isSaving}
-                  />
-                )}
-              </div>
-            ))}
-
+            <div className="form-group">
+              <label>Full Name</label>
+              <input 
+                type="text" 
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="form-group">
+              <label>Date of Birth</label>
+              <input 
+                type="date" 
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="form-group">
+              <label>Gender</label>
+              <select 
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Address</label>
+              <input 
+                type="text" 
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Full Address"
+                disabled={isSaving}
+              />
+            </div>
+            <div className="form-group">
+              <label>Contact Info</label>
+              <input 
+                type="text" 
+                name="contact_info"
+                value={formData.contact_info}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
+            </div>
             <div className="form-actions">
-              <button className="cancel-btn" onClick={toggleEdit} disabled={isSaving}>Cancel</button>
+              <button className="cancel-btn" onClick={toggleEdit} disabled={isSaving}>
+                Cancel
+              </button>
               <button className="save-btn" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <><i className="fas fa-spinner fa-spin"></i> Saving...</> : 'Save Changes'}
+                {isSaving ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </div>
         ) : (
           <>
-            {Object.entries(formData).map(([key, value]) => (
-              <div className="info-row" key={key}>
-                <div className="info-label">{key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
-                <div className="info-value">{value || 'Not available'}</div>
-              </div>
-            ))}
+            <div className="info-row">
+              <div className="info-label">Full Name</div>
+              <div className="info-value">{patient?.full_name || 'Not available'}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Date of Birth</div>
+              <div className="info-value">{patient?.birthday || 'Not available'}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Gender</div>
+              <div className="info-value">{patient?.gender || 'Not available'}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Address</div>
+              <div className="info-value">{patient?.address || 'Not available'}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Contact Info</div>
+              <div className="info-value">{patient?.contact_info || 'Not available'}</div>
+            </div>
           </>
         )}
       </div>
