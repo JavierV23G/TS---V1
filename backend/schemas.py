@@ -70,10 +70,28 @@ class PatientCreate(BaseModel):
 class PatientResponse(BaseModel):
     id: int
     full_name: str
-    agency_id: int
+    birthday: Optional[date]
     gender: str
     address: str
+    contact_info: Optional[str]
+    payor_type: Optional[str]
+    physician: Optional[str]
+    agency_id: int
+    nursing_diagnosis: Optional[str]
+    urgency_level: Optional[str]
+    prior_level_of_function: Optional[str]
+    homebound_status: Optional[str]
+    weight_bearing_status: Optional[str]
+    referral_reason: Optional[str]
+    weight: Optional[str]
+    height: Optional[str]
+    past_medical_history: Optional[str]
+    clinical_grouping: Optional[str]
+    required_disciplines: Optional[str]
     is_active: Optional[bool] = True
+
+    cert_start_date: Optional[date] = None
+    cert_end_date: Optional[date] = None
 
     class Config:
         from_attributes = True

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 import os, json
+from datetime import date
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
@@ -56,6 +57,32 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
 @router.get("/patients/", response_model=List[PatientResponse])
 def get_active_patients(db: Session = Depends(get_db)):
     return db.query(Patient).filter(Patient.is_active == True).all()
+
+@router.get("/patients/{patient_id}", response_model=PatientResponse)
+def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Buscar el periodo de certificación ACTUAL (hoy dentro del rango)
+    today = date.today()
+
+    current_cert = (
+        db.query(CertificationPeriod)
+        .filter(
+            CertificationPeriod.patient_id == patient_id,
+            CertificationPeriod.start_date <= today,
+            CertificationPeriod.end_date >= today
+        )
+        .order_by(CertificationPeriod.start_date.desc())
+        .first()
+    )
+
+    response_data = patient.__dict__.copy()
+    response_data["cert_start_date"] = current_cert.start_date if current_cert else None
+    response_data["cert_end_date"] = current_cert.end_date if current_cert else None
+
+    return response_data
 
 @router.get("/staff/{staff_id}/assigned-patients", response_model=List[PatientResponse])
 def get_assigned_patients(staff_id: int, db: Session = Depends(get_db)):
