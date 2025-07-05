@@ -67,6 +67,31 @@ class PatientCreate(BaseModel):
     is_active: Optional[bool] = True
     initial_cert_start_date: date
 
+class PatientUpdate(BaseModel):
+    full_name: Optional[str] = None
+    birthday: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    contact_info: Optional[str] = None
+    payor_type: Optional[str] = None
+    physician: Optional[str] = None
+    agency_id: Optional[int] = None
+    nursing_diagnosis: Optional[str] = None
+    urgency_level: Optional[str] = None
+    prior_level_of_function: Optional[str] = None
+    homebound_status: Optional[str] = None
+    weight_bearing_status: Optional[str] = None
+    referral_reason: Optional[str] = None
+    weight: Optional[str] = None
+    height: Optional[str] = None
+    past_medical_history: Optional[str] = None
+    clinical_grouping: Optional[str] = None
+    required_disciplines: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    class Config:
+        extra = "forbid"
+
 class PatientResponse(BaseModel):
     id: int
     full_name: str
