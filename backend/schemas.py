@@ -67,13 +67,57 @@ class PatientCreate(BaseModel):
     is_active: Optional[bool] = True
     initial_cert_start_date: date
 
+class PatientUpdate(BaseModel):
+    full_name: Optional[str] = None
+    birthday: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    contact_info: Optional[str] = None
+    payor_type: Optional[str] = None
+    physician: Optional[str] = None
+    agency_id: Optional[int] = None
+    nursing_diagnosis: Optional[str] = None
+    urgency_level: Optional[str] = None
+    prior_level_of_function: Optional[str] = None
+    homebound_status: Optional[str] = None
+    weight_bearing_status: Optional[str] = None
+    referral_reason: Optional[str] = None
+    weight: Optional[str] = None
+    height: Optional[str] = None
+    past_medical_history: Optional[str] = None
+    clinical_grouping: Optional[str] = None
+    required_disciplines: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    class Config:
+        extra = "forbid"
+
 class PatientResponse(BaseModel):
     id: int
     full_name: str
-    agency_id: int
+    birthday: Optional[date]
     gender: str
     address: str
+    contact_info: Optional[str]
+    insurance: Optional[str] = None
+    physician: Optional[str]
+    agency_id: int
+    agency_name: Optional[str] = None
+    nursing_diagnosis: Optional[str]
+    urgency_level: Optional[str]
+    prior_level_of_function: Optional[str]
+    homebound_status: Optional[str]
+    weight_bearing_status: Optional[str]
+    referral_reason: Optional[str]
+    weight: Optional[str]
+    height: Optional[str]
+    past_medical_history: Optional[str]
+    clinical_grouping: Optional[str]
+    required_disciplines: Optional[str]
     is_active: Optional[bool] = True
+
+    cert_start_date: Optional[date] = None
+    cert_end_date: Optional[date] = None
 
     class Config:
         from_attributes = True

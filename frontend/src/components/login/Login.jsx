@@ -151,7 +151,7 @@ const Login = ({ onForgotPassword }) => {
         <img src={logoImg} alt="Motive Homecare Logo" className="login__logo-img" />
       </div>
 
-      <h2 className="login__title">Welcome{!isMobile ? " Back" : ""}</h2>
+      <h2 className="login__title">Welcome{!isMobile ? " " : ""}</h2>
 
       <form className="login__form" onSubmit={handleSubmit}>
         <div className={`login__form-group ${errors.username ? 'error' : ''}`} id="usernameGroup">
