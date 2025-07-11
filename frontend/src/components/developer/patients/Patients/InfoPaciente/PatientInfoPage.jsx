@@ -94,7 +94,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Personal Information Card Component with API Integration
+// Personal Information Card Component - EDIT FUNCTIONALITY FIXED
 const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -109,6 +109,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+  // Update form data when patient prop changes
   useEffect(() => {
     if (patient) {
       setFormData({
@@ -123,6 +124,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Changing ${name} to ${value}`); // Depuración
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -130,33 +132,131 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
   };
 
   const handleSave = async () => {
+    if (!patient?.id) {
+      setError('Patient ID not available');
+      return;
+    }
+
     try {
       setIsSaving(true);
       setError(null);
-      
-      // TODO: Implement patient update API call when endpoint is available
-      // For now, just update local state
-      console.log('Would update patient with:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const updatedPatient = { ...patient, ...formData };
-      onUpdatePatient(updatedPatient);
+
+      const updateData = {
+        full_name: formData.full_name || '',
+        birthday: formData.birthday || '',
+        gender: formData.gender || '',
+        address: formData.address || '',
+        contact_info: formData.contact_info || ''
+      };
+      console.log('Final update data before send:', updateData); // Depuración
+
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('Received response data:', responseData);
+
+      if (!responseData || !responseData.patient_id) {
+        throw new Error('Invalid response format from server');
+      }
+
+      const updatedPatient = {
+        id: responseData.patient_id,
+        full_name: responseData.full_name || '',
+        birthday: responseData.birthday || '',
+        gender: responseData.gender || '',
+        address: responseData.address || '',
+        contact_info: responseData.contact_info || '',
+        insurance: responseData.insurance || '',
+        physician: responseData.physician || '',
+        agency_id: responseData.agency_id || null,
+        agency_name: responseData.agency_name || '',
+        nursing_diagnosis: responseData.nursing_diagnosis || '',
+        urgency_level: responseData.urgency_level || '',
+        prior_level_of_function: responseData.prior_level_of_function || '',
+        homebound_status: responseData.homebound_status || '',
+        weight_bearing_status: responseData.weight_bearing_status || '',
+        referral_reason: responseData.referral_reason || '',
+        weight: responseData.weight || '',
+        height: responseData.height || '',
+        past_medical_history: responseData.past_medical_history || '',
+        clinical_grouping: responseData.clinical_grouping || '',
+        required_disciplines: responseData.required_disciplines || '',
+        is_active: responseData.is_active || false
+      };
+
+      setFormData({
+        full_name: updatedPatient.full_name,
+        birthday: updatedPatient.birthday,
+        gender: updatedPatient.gender,
+        address: updatedPatient.address,
+        contact_info: updatedPatient.contact_info
+      });
+
       setIsEditing(false);
-      
+      if (onUpdatePatient && typeof onUpdatePatient === 'function') {
+        onUpdatePatient(updatedPatient);
+        console.log('Patient updated in parent:', updatedPatient);
+      }
     } catch (error) {
       console.error('Error updating patient:', error);
-      setError(error.message);
+      setError(`Update failed: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
+  const handleCancel = () => {
+    // Reset form data to original patient data
+    if (patient) {
+      setFormData({
+        full_name: patient.full_name || '',
+        birthday: patient.birthday || '',
+        gender: patient.gender || '',
+        address: patient.address || '',
+        contact_info: patient.contact_info || ''
+      });
+    }
+    setIsEditing(false);
     setError(null);
   };
+
+  const toggleEdit = () => {
+    if (isEditing) {
+      handleCancel();
+    } else {
+      setIsEditing(true);
+      setError(null);
+    }
+  };
+
+  // Show loading if no patient data
+  if (!patient) {
+    return (
+      <div className="info-card personal-info">
+        <div className="card-header">
+          <h3><i className="fas fa-user-circle"></i> Personal Information</h3>
+        </div>
+        <div className="card-body">
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <span>Loading patient information...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="info-card personal-info">
@@ -168,12 +268,16 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
       </div>
       <div className="card-body">
         {error && (
-          <div className="error-message">
+          <div className="error-message" style={{ 
+            marginBottom: '15px', 
+            padding: '10px', 
+            backgroundColor: '#fee', 
+            border: '1px solid #fcc', 
+            borderRadius: '4px', 
+            color: '#c00' 
+          }}>
             <i className="fas fa-exclamation-triangle"></i>
-            <span>{error}</span>
-            <button onClick={() => setError(null)}>
-              <i className="fas fa-times"></i>
-            </button>
+            <span style={{ marginLeft: '8px' }}>{error}</span>
           </div>
         )}
         
@@ -187,6 +291,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 value={formData.full_name}
                 onChange={handleInputChange}
                 disabled={isSaving}
+                placeholder="Enter full name"
               />
             </div>
             <div className="form-group">
@@ -208,9 +313,9 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 disabled={isSaving}
               >
                 <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
             </div>
             <div className="form-group">
@@ -231,11 +336,12 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
                 name="contact_info"
                 value={formData.contact_info}
                 onChange={handleInputChange}
+                placeholder="Phone number, email, etc."
                 disabled={isSaving}
               />
             </div>
             <div className="form-actions">
-              <button className="cancel-btn" onClick={toggleEdit} disabled={isSaving}>
+              <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>
                 Cancel
               </button>
               <button className="save-btn" onClick={handleSave} disabled={isSaving}>
@@ -251,7 +357,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
             </div>
           </div>
         ) : (
-          <>
+          <div className="patient-info-display">
             <div className="info-row">
               <div className="info-label">Full Name</div>
               <div className="info-value">{patient?.full_name || 'Not available'}</div>
@@ -272,7 +378,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
               <div className="info-label">Contact Info</div>
               <div className="info-value">{patient?.contact_info || 'Not available'}</div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -538,76 +644,74 @@ const PatientInfoPage = () => {
     */
   };
 
-  // Handle patient update
   const handleUpdatePatient = (updatedPatient) => {
-    setPatient(updatedPatient);
+    console.log('handleUpdatePatient called with:', updatedPatient);
+    
+    if (!updatedPatient || !updatedPatient.id) {
+      console.error('Invalid updated patient data received');
+      return;
+    }
+
+    setPatient(prevPatient => {
+      const newPatient = {
+        ...prevPatient,
+        ...updatedPatient,
+        id: prevPatient.id // Ensure ID is preserved
+      };
+      console.log('Patient state updated:', newPatient);
+      return newPatient;
+    });
+
+    setAllPatients(prevPatients => 
+      prevPatients.map(p => 
+        p.id === updatedPatient.id ? { ...p, ...updatedPatient } : p
+      )
+    );
   };
 
-  // Fetch all patients and find the specific one
+  // Fetch specific patient by ID using the correct endpoint
   useEffect(() => {
-    const fetchPatients = async () => {
+    const fetchPatient = async () => {
       if (!patientId) {
         setError('Patient ID not provided');
         setLoading(false);
         return;
       }
-
+      
       try {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching patients from:', `${API_BASE_URL}/patients/`);
+        console.log('Fetching patient from:', `${API_BASE_URL}/patients/${patientId}`);
         
-        const response = await fetch(`${API_BASE_URL}/patients/`, {
-          method: 'GET',
+        const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+          method: 'GET',  
           headers: {
             'Content-Type': 'application/json',
           },
         });
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch patients: ${response.status} ${response.statusText}`);
+          if (response.status === 404) {
+            throw new Error('Patient not found');
+          }
+          throw new Error(`Failed to fetch patient: ${response.status} ${response.statusText}`);
         }
         
-        const patientsData = await response.json();
-        console.log('Received patients data:', patientsData);
+        const patientData = await response.json();
+        console.log('Received patient data:', patientData);
         
-        setAllPatients(patientsData);
-        
-        // Find the specific patient by ID
-        const foundPatient = patientsData.find(p => p.id.toString() === patientId.toString());
-        
-        if (!foundPatient) {
-          setError('Patient not found');
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Found patient:', foundPatient);
-        setPatient(foundPatient);
-        
-        // Set certification period dates if available
-        if (foundPatient.initial_cert_start_date) {
-          // Calculate end date (assuming 60 days certification period)
-          const startDate = new Date(foundPatient.initial_cert_start_date);
-          const endDate = new Date(startDate);
-          endDate.setDate(startDate.getDate() + 60);
-          
-          setCertPeriodDates({
-            startDate: foundPatient.initial_cert_start_date,
-            endDate: endDate.toISOString().split('T')[0]
-          });
-        }
+        setPatient(patientData);
         
       } catch (err) {
-        console.error('Error fetching patients:', err);
+        console.error('Error fetching patient:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchPatients();
+    fetchPatient();
   }, [patientId, API_BASE_URL]);
 
   // Render loading state
@@ -880,4 +984,4 @@ const PatientInfoPage = () => {
   );
 };
 
-export default PatientInfoPage;
+export default PatientInfoPage;       

@@ -16,6 +16,7 @@ from database.models import (
 from schemas import (
     StaffCreate, StaffResponse, StaffAssignmentResponse,
     PatientCreate, PatientResponse,
+    CertificationPeriodResponse,
     DocumentResponse, 
     ExerciseCreate, ExerciseResponse, PatientExerciseAssignmentCreate, 
     VisitCreate, VisitResponse,
@@ -183,7 +184,7 @@ def assign_exercises_to_patient(assignments: List[PatientExerciseAssignmentCreat
 
 #====================== CERTIFICATION PERIODS ======================#
 
-@router.post("/patients/{patient_id}/certification-period")
+@router.post("/patients/{patient_id}/certification-period", response_model=CertificationPeriodResponse)
 def create_certification_period(
     patient_id: int,
     start_date: date,
@@ -208,10 +209,7 @@ def create_certification_period(
     db.add(new_cert)
     db.commit()
     db.refresh(new_cert)
-    return {
-        "message": "New certification period created successfully.",
-        "certification_period_id": new_cert.id
-    }
+    return new_cert
 
 #====================== VISITS ======================#
 
