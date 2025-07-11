@@ -4,58 +4,64 @@ import '../../../../../styles/developer/Patients/InfoPaciente/MedicalInfoCompone
 const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [medicalData, setMedicalData] = useState({
-    weight: 0,
-    height: 0, // Height in inches (total)
-    feet: 0,   // Added feet for display
-    inches: 0, // Added inches for display
+    weight: '',
+    height: '', // Height in inches (total)
+    feet: '',   // Feet for display
+    inches: '', // Inches for display
     nursingDiagnosis: '',
     pmh: '',
     wbs: '',
     clinicalGrouping: '',
     homebound: '',
-    // New visits data
+    // Visits data - inicializado con datos por defecto
     approvedVisits: {
       pt: {
-        approved: 12,
-        used: 3,
-        status: 'active' // active, waiting, no_more
+        approved: '',
+        used: '',
+        status: 'waiting'
       },
       ot: {
-        approved: 8,
-        used: 2,
-        status: 'active'
+        approved: '',
+        used: '',
+        status: 'waiting'
       },
       st: {
-        approved: 6,
-        used: 6,
-        status: 'no_more'
+        approved: '',
+        used: '',
+        status: 'waiting'
       }
     }
   });
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Initialize with patient data
+  // Initialize with patient data - OPTIMIZADO para campos reales de la API
   useEffect(() => {
-    if (patient?.medicalInfo) {
-      // Convert total inches to feet and inches for display
-      const totalInches = patient.medicalInfo.height || 0;
-      const feet = Math.floor(totalInches / 12);
-      const inches = Math.round((totalInches % 12) * 10) / 10; // Round to 1 decimal place
+    if (patient && patient.id) {
+      console.log('Patient data received:', patient);
+      
+      // Mapear campos reales de la API del paciente
+      const totalInches = patient.height ? parseFloat(patient.height) : 0;
+      const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
+      const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
       
       setMedicalData({
-        weight: patient.medicalInfo.weight || 0,
-        height: totalInches,
+        weight: patient.weight || '',
+        height: totalInches || '',
         feet: feet,
         inches: inches,
-        nursingDiagnosis: patient.medicalInfo.nursingDiagnosis || '',
-        pmh: patient.medicalInfo.pmh || '',
-        wbs: patient.medicalInfo.wbs || '',
-        clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || '',
-        approvedVisits: patient.medicalInfo.approvedVisits || {
-          pt: { approved: 0, used: 0, status: 'waiting' },
-          ot: { approved: 0, used: 0, status: 'waiting' },
-          st: { approved: 0, used: 0, status: 'waiting' }
+        nursingDiagnosis: patient.nursing_diagnosis || '',
+        pmh: patient.past_medical_history || '',
+        wbs: patient.weight_bearing_status || '',
+        clinicalGrouping: patient.clinical_grouping || '',
+        homebound: patient.homebound_status || '',
+        // Visits data - mantener estructura por defecto ya que no viene de la API
+        approvedVisits: {
+          pt: { approved: '', used: '', status: 'waiting' },
+          ot: { approved: '', used: '', status: 'waiting' },
+          st: { approved: '', used: '', status: 'waiting' }
         }
       });
     }
@@ -64,63 +70,60 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
   // Handle input changes for text fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
   };
   
   // Handle weight input specifically
   const handleWeightChange = (e) => {
-    const value = parseFloat(e.target.value) || 0;
-    setMedicalData({
-      ...medicalData,
+    const value = e.target.value;
+    setMedicalData(prev => ({
+      ...prev,
       weight: value
-    });
+    }));
   };
   
   // Handle feet input for height
   const handleFeetChange = (e) => {
-    const feetValue = parseInt(e.target.value) || 0;
-    // Calculate total height in inches
-    const totalInches = (feetValue * 12) + medicalData.inches;
+    const feetValue = e.target.value ? parseInt(e.target.value) : '';
+    const inchesValue = medicalData.inches ? parseFloat(medicalData.inches) : 0;
+    const totalInches = feetValue ? (feetValue * 12) + inchesValue : inchesValue;
     
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       feet: feetValue,
       height: totalInches
-    });
+    }));
   };
   
   // Handle inches input for height
   const handleInchesChange = (e) => {
-    const inchesValue = parseFloat(e.target.value) || 0;
-    // Calculate total height in inches
-    const totalInches = (medicalData.feet * 12) + inchesValue;
+    const inchesValue = e.target.value ? parseFloat(e.target.value) : '';
+    const feetValue = medicalData.feet ? parseInt(medicalData.feet) : 0;
+    const totalInches = feetValue ? (feetValue * 12) + inchesValue : inchesValue;
     
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       inches: inchesValue,
       height: totalInches
-    });
+    }));
   };
 
   // Handle visits input changes
   const handleVisitsChange = (discipline, field, value) => {
-    console.log('Changing visits:', discipline, field, value); // Debug log
-    
-    // Allow empty values and handle them properly
-    const numericValue = value === '' ? '' : (parseInt(value) || 0);
+    const processedValue = value === '' ? '' : (parseInt(value) || 0);
     
     const newApprovedVisits = {
       ...medicalData.approvedVisits,
       [discipline]: {
         ...medicalData.approvedVisits[discipline],
-        [field]: numericValue
+        [field]: processedValue
       }
     };
 
-    // Auto-update status based on visits (only if not manually set)
+    // Auto-update status based on visits
     const disciplineData = newApprovedVisits[discipline];
     const approvedNum = parseInt(disciplineData.approved) || 0;
     const usedNum = parseInt(disciplineData.used) || 0;
@@ -133,99 +136,96 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       disciplineData.status = 'active';
     }
 
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       approvedVisits: newApprovedVisits
-    });
+    }));
   };
 
   // Handle status change
   const handleStatusChange = (discipline, status) => {
-    console.log('Changing status:', discipline, status); // Debug log
-    
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       approvedVisits: {
-        ...medicalData.approvedVisits,
+        ...prev.approvedVisits,
         [discipline]: {
-          ...medicalData.approvedVisits[discipline],
+          ...prev.approvedVisits[discipline],
           status: status
         }
       }
-    });
+    }));
   };
   
-  // Save changes
-  const handleSaveChanges = () => {
-    // Show saving animation
-    setIsSaving(true);
-    
-    // Prepare data for saving - we want to save the total height in inches
-    const dataToSave = {
-      ...medicalData,
-      // Ensure height is saved as total inches
-      height: (medicalData.feet * 12) + medicalData.inches
-    };
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Notify parent component
-      if (onUpdateMedicalInfo) {
-        onUpdateMedicalInfo(dataToSave);
-      }
+  // Save changes - SIMULADO por ahora
+  const handleSaveChanges = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
       
-      // Hide saving animation and exit edit mode
+      // Preparar datos para guardar
+      const dataToSave = {
+        weight: medicalData.weight ? parseFloat(medicalData.weight) : null,
+        height: medicalData.height ? parseFloat(medicalData.height) : null,
+        nursing_diagnosis: medicalData.nursingDiagnosis || null,
+        past_medical_history: medicalData.pmh || null,
+        weight_bearing_status: medicalData.wbs || null,
+        clinical_grouping: medicalData.clinicalGrouping || null,
+        homebound_status: medicalData.homebound || null
+      };
+      
+      console.log('Saving medical data:', dataToSave);
+      
+      // TODO: Implementar llamada real a la API cuando esté disponible
+      // const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/medical-info`, {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(dataToSave)
+      // });
+      
+      // Simular guardado exitoso
+      setTimeout(() => {
+        if (onUpdateMedicalInfo) {
+          onUpdateMedicalInfo(dataToSave);
+        }
+        setIsSaving(false);
+        setIsEditing(false);
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Error saving medical data:', err);
+      setError('Failed to save medical information: ' + err.message);
       setIsSaving(false);
-      setIsEditing(false);
-    }, 1500); // 1.5 seconds for animation to be visible
+    }
   };
   
   // Cancel editing
   const handleCancelEdit = () => {
-    // Restore original data
-    if (patient?.medicalInfo) {
-      const totalInches = patient.medicalInfo.height || 0;
-      const feet = Math.floor(totalInches / 12);
-      const inches = Math.round((totalInches % 12) * 10) / 10;
+    // Restaurar datos originales del paciente
+    if (patient) {
+      const totalInches = patient.height ? parseFloat(patient.height) : 0;
+      const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
+      const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
       
       setMedicalData({
-        weight: patient.medicalInfo.weight || 0,
-        height: totalInches,
+        weight: patient.weight || '',
+        height: totalInches || '',
         feet: feet,
         inches: inches,
-        nursingDiagnosis: patient.medicalInfo.nursingDiagnosis || '',
-        pmh: patient.medicalInfo.pmh || '',
-        wbs: patient.medicalInfo.wbs || '',
-        clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || '',
-        approvedVisits: patient.medicalInfo.approvedVisits || {
-          pt: { approved: 0, used: 0, status: 'waiting' },
-          ot: { approved: 0, used: 0, status: 'waiting' },
-          st: { approved: 0, used: 0, status: 'waiting' }
-        }
-      });
-    } else {
-      // Reset to defaults if no patient data
-      setMedicalData({
-        weight: 0,
-        height: 0,
-        feet: 0,
-        inches: 0,
-        nursingDiagnosis: '',
-        pmh: '',
-        wbs: '',
-        clinicalGrouping: '',
-        homebound: '',
+        nursingDiagnosis: patient.nursing_diagnosis || '',
+        pmh: patient.past_medical_history || '',
+        wbs: patient.weight_bearing_status || '',
+        clinicalGrouping: patient.clinical_grouping || '',
+        homebound: patient.homebound_status || '',
         approvedVisits: {
-          pt: { approved: 0, used: 0, status: 'waiting' },
-          ot: { approved: 0, used: 0, status: 'waiting' },
-          st: { approved: 0, used: 0, status: 'waiting' }
+          pt: { approved: '', used: '', status: 'waiting' },
+          ot: { approved: '', used: '', status: 'waiting' },
+          st: { approved: '', used: '', status: 'waiting' }
         }
       });
     }
     
-    // Exit edit mode
     setIsEditing(false);
+    setError(null);
   };
 
   // Format height for display in view mode
@@ -235,10 +235,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     const feet = Math.floor(totalInches / 12);
     const inches = Math.round((totalInches % 12) * 10) / 10;
     
-    return {
-      feet,
-      inches
-    };
+    return { feet, inches };
   };
 
   // Get icon for clinical grouping
@@ -337,6 +334,58 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     };
     return statusDetails[status];
   };
+
+  // Helper para mostrar valores o "Not provided yet"
+  const displayValue = (value, type = 'text') => {
+    if (!value || value === '' || value === 0) {
+      return <span className="no-data">Not provided yet</span>;
+    }
+    
+    if (type === 'weight') {
+      return (
+        <div className="data-display">
+          <span className="primary-data">{value}</span>
+          <span className="secondary-data">lbs</span>
+        </div>
+      );
+    }
+    
+    if (type === 'height') {
+      const heightData = formatHeight(value);
+      if (!heightData) return <span className="no-data">Not provided yet</span>;
+      
+      return (
+        <div className="data-display">
+          <span className="primary-data">
+            {heightData.feet}' {heightData.inches}"
+          </span>
+          <span className="secondary-data">({value} in)</span>
+        </div>
+      );
+    }
+    
+    return <div className="data-box">{value}</div>;
+  };
+
+  // Mostrar loading si no hay datos del paciente
+  if (!patient || !patient.id) {
+    return (
+      <div className="medical-info-component">
+        <div className="card-header">
+          <div className="header-title">
+            <i className="fas fa-notes-medical"></i>
+            <h3>Medical Information</h3>
+          </div>
+        </div>
+        <div className="card-body">
+          <div className="loading-state">
+            <i className="fas fa-notes-medical fa-2x" style={{ color: '#e5e7eb', marginBottom: '10px' }}></i>
+            <span>Loading medical information...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="medical-info-component">
@@ -351,6 +400,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               className="edit-button" 
               onClick={() => setIsEditing(true)}
               title="Edit medical information"
+              disabled={isSaving}
             >
               <i className="fas fa-edit"></i>
             </button>
@@ -359,6 +409,35 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       </div>
       
       <div className="card-body">
+        {/* Error message */}
+        {error && (
+          <div className="error-message" style={{
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fecaca',
+            borderRadius: '4px',
+            color: '#dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <i className="fas fa-exclamation-triangle"></i>
+            <span style={{ flex: 1 }}>{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#dc2626',
+                cursor: 'pointer'
+              }}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        )}
+
         {isEditing ? (
           // Edit form
           <div className="edit-form">
@@ -398,12 +477,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                     onChange={handleWeightChange}
                     min="0"
                     step="0.1"
+                    placeholder="Enter weight"
                   />
                   <span className="unit-indicator">lbs</span>
                 </div>
               </div>
               
-              {/* Updated height input with feet and inches */}
               <div className="form-group height-input">
                 <label>
                   <i className="fas fa-ruler-vertical"></i>
@@ -418,6 +497,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                       onChange={handleFeetChange}
                       min="0"
                       step="1"
+                      placeholder="Feet"
                     />
                     <span className="unit-indicator">ft</span>
                   </div>
@@ -430,6 +510,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                       min="0"
                       max="11.9"
                       step="0.1"
+                      placeholder="Inches"
                     />
                     <span className="unit-indicator">in</span>
                   </div>
@@ -503,13 +584,13 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
             <div className="form-group">
               <label>
                 <i className="fas fa-band-aid"></i>
-                WBS (Wound Bed Status)
+                WBS (Weight Bearing Status)
               </label>
               <textarea 
                 name="wbs"
                 value={medicalData.wbs} 
                 onChange={handleInputChange}
-                placeholder="Enter wound bed status"
+                placeholder="Enter weight bearing status"
                 rows="2"
               ></textarea>
             </div>
@@ -523,12 +604,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 name="homebound"
                 value={medicalData.homebound} 
                 onChange={handleInputChange}
-                placeholder="Enter homebound reason"
+                placeholder="Enter homebound status reason"
                 rows="2"
               ></textarea>
             </div>
 
-            {/* NUEVA SECCIÓN DE VISITAS APROBADAS */}
+            {/* Approved Visits Section - EDIT MODE */}
             <div style={{ marginTop: '32px', paddingTop: '28px', borderTop: '2px solid #e2e8f0' }}>
               <h5 style={{ 
                 margin: '0 0 24px 0', 
@@ -629,8 +710,6 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                               step="1"
                               value={data.approved}
                               onChange={(e) => handleVisitsChange(discipline, 'approved', e.target.value)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
                               placeholder="0"
                               style={{
                                 width: '100%',
@@ -644,10 +723,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                                 background: '#ffffff',
                                 color: '#1e293b',
                                 outline: 'none',
-                                boxSizing: 'border-box',
-                                appearance: 'none',
-                                MozAppearance: 'textfield',
-                                WebkitAppearance: 'none'
+                                boxSizing: 'border-box'
                               }}
                             />
                           </div>
@@ -667,11 +743,8 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                               type="number"
                               min="0"
                               step="1"
-                              max={parseInt(data.approved) || 999}
                               value={data.used}
                               onChange={(e) => handleVisitsChange(discipline, 'used', e.target.value)}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
                               placeholder="0"
                               style={{
                                 width: '100%',
@@ -685,10 +758,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                                 background: '#ffffff',
                                 color: '#1e293b',
                                 outline: 'none',
-                                boxSizing: 'border-box',
-                                appearance: 'none',
-                                MozAppearance: 'textfield',
-                                WebkitAppearance: 'none'
+                                boxSizing: 'border-box'
                               }}
                             />
                           </div>
@@ -709,8 +779,6 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                           <select
                             value={data.status}
                             onChange={(e) => handleStatusChange(discipline, e.target.value)}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
                             style={{
                               width: '100%',
                               height: '45px',
@@ -739,7 +807,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
             </div>
             
             <div className="form-actions">
-              <button className="cancel-btn" onClick={handleCancelEdit}>
+              <button className="cancel-btn" onClick={handleCancelEdit} disabled={isSaving}>
                 <i className="fas fa-times"></i>
                 Cancel
               </button>
@@ -748,13 +816,22 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 onClick={handleSaveChanges}
                 disabled={isSaving}
               >
-                <i className="fas fa-check"></i>
-                Save Changes
+                {isSaving ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-check"></i>
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
           </div>
         ) : (
-          // View mode
+          // View mode - OPTIMIZADO para mostrar "Not provided yet"
           <div className="medical-info-display">
             <div className="info-section weight-section">
               <div className="info-icon">
@@ -763,19 +840,11 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Weight</div>
                 <div className="info-value weight-value">
-                  {medicalData.weight > 0 ? (
-                    <div className="data-display">
-                      <span className="primary-data">{medicalData.weight}</span>
-                      <span className="secondary-data">lbs</span>
-                    </div>
-                  ) : (
-                    <span className="no-data">Not recorded</span>
-                  )}
+                  {displayValue(medicalData.weight, 'weight')}
                 </div>
               </div>
             </div>
             
-            {/* Updated height display with feet and inches */}
             <div className="info-section height-section">
               <div className="info-icon">
                 <i className="fas fa-ruler-vertical"></i>
@@ -783,21 +852,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Height</div>
                 <div className="info-value height-value">
-                  {medicalData.height > 0 ? (
-                    <div className="data-display">
-                      <span className="primary-data">
-                        {formatHeight(medicalData.height).feet}' {formatHeight(medicalData.height).inches}"
-                      </span>
-                      <span className="secondary-data">({medicalData.height} in)</span>
-                    </div>
-                  ) : (
-                    <span className="no-data">Not recorded</span>
-                  )}
+                  {displayValue(medicalData.height, 'height')}
                 </div>
               </div>
             </div>
 
-            {/* NUEVA SECCIÓN DE VISITAS APROBADAS - VIEW MODE */}
+            {/* Approved Visits Section - VIEW MODE */}
             <div className="info-section approved-visits-section-view">
               <div className="info-icon">
                 <i className="fas fa-calendar-check"></i>
@@ -809,8 +869,15 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                     {Object.entries(medicalData.approvedVisits).map(([discipline, data]) => {
                       const disciplineInfo = getDisciplineDetails(discipline);
                       const statusInfo = getStatusDetails(data.status);
-                      const remaining = Math.max(0, (parseInt(data.approved) || 0) - (parseInt(data.used) || 0));
-                      const progressPercentage = (parseInt(data.approved) || 0) > 0 ? ((parseInt(data.used) || 0) / (parseInt(data.approved) || 0)) * 100 : 0;
+                      
+                      // Calcular valores, tratando campos vacíos como 0 para display
+                      const approvedNum = data.approved === '' || data.approved === null ? 0 : parseInt(data.approved) || 0;
+                      const usedNum = data.used === '' || data.used === null ? 0 : parseInt(data.used) || 0;
+                      const remaining = Math.max(0, approvedNum - usedNum);
+                      const progressPercentage = approvedNum > 0 ? (usedNum / approvedNum) * 100 : 0;
+                      
+                      // Determinar si mostrar "Not set up yet" o los valores
+                      const isNotSetUp = approvedNum === 0 && usedNum === 0;
                       
                       return (
                         <div key={discipline} className="visit-card-view">
@@ -819,51 +886,90 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                               <i className={disciplineInfo.icon}></i>
                               <span>{disciplineInfo.shortName}</span>
                             </div>
-                            <div className="status-badge" style={{ 
-                              color: statusInfo.color, 
-                              backgroundColor: statusInfo.bgColor 
-                            }}>
-                              <i className={statusInfo.icon}></i>
-                              <span>{statusInfo.text}</span>
-                            </div>
+                            {isNotSetUp ? (
+                              <div className="status-badge not-set" style={{ 
+                                color: '#64748b', 
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0'
+                              }}>
+                                <i className="fas fa-clock"></i>
+                                <span>Not set up yet</span>
+                              </div>
+                            ) : (
+                              <div className="status-badge" style={{ 
+                                color: statusInfo.color, 
+                                backgroundColor: statusInfo.bgColor 
+                              }}>
+                                <i className={statusInfo.icon}></i>
+                                <span>{statusInfo.text}</span>
+                              </div>
+                            )}
                           </div>
                           
                           <div className="visit-stats">
-                            <div className="stats-row">
-                              <div className="stat">
-                                <span className="stat-label">Approved</span>
-                                <span className="stat-value" style={{ color: disciplineInfo.color }}>
-                                  {data.approved || 0}
-                                </span>
-                              </div>
-                              <div className="stat">
-                                <span className="stat-label">Used</span>
-                                <span className="stat-value">{data.used || 0}</span>
-                              </div>
-                              <div className="stat">
-                                <span className="stat-label">Remaining</span>
-                                <span className="stat-value remaining" style={{ 
-                                  color: remaining > 0 ? disciplineInfo.color : '#ef4444' 
+                            {isNotSetUp ? (
+                              <div className="not-configured">
+                                <i className="fas fa-plus-circle" style={{ 
+                                  fontSize: '24px', 
+                                  color: '#94a3b8', 
+                                  marginBottom: '8px' 
+                                }}></i>
+                                <p style={{ 
+                                  color: '#64748b', 
+                                  fontSize: '14px', 
+                                  margin: 0,
+                                  textAlign: 'center'
                                 }}>
-                                  {remaining}
-                                </span>
+                                  Visits not configured yet
+                                </p>
+                                <p style={{ 
+                                  color: '#94a3b8', 
+                                  fontSize: '12px', 
+                                  margin: '4px 0 0 0',
+                                  textAlign: 'center'
+                                }}>
+                                  Click edit to set up
+                                </p>
                               </div>
-                            </div>
-                            
-                            <div className="progress-container">
-                              <div className="progress-bar">
-                                <div 
-                                  className="progress-fill" 
-                                  style={{ 
-                                    width: `${progressPercentage}%`,
-                                    background: progressPercentage >= 100 ? '#ef4444' : disciplineInfo.gradient
-                                  }}
-                                ></div>
-                              </div>
-                              <span className="progress-text">
-                                {Math.round(progressPercentage)}% used
-                              </span>
-                            </div>
+                            ) : (
+                              <>
+                                <div className="stats-row">
+                                  <div className="stat">
+                                    <span className="stat-label">Approved</span>
+                                    <span className="stat-value" style={{ color: disciplineInfo.color }}>
+                                      {approvedNum}
+                                    </span>
+                                  </div>
+                                  <div className="stat">
+                                    <span className="stat-label">Used</span>
+                                    <span className="stat-value">{usedNum}</span>
+                                  </div>
+                                  <div className="stat">
+                                    <span className="stat-label">Remaining</span>
+                                    <span className="stat-value remaining" style={{ 
+                                      color: remaining > 0 ? disciplineInfo.color : '#ef4444' 
+                                    }}>
+                                      {remaining}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="progress-container">
+                                  <div className="progress-bar">
+                                    <div 
+                                      className="progress-fill" 
+                                      style={{ 
+                                        width: `${progressPercentage}%`,
+                                        background: progressPercentage >= 100 ? '#ef4444' : disciplineInfo.gradient
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <span className="progress-text">
+                                    {Math.round(progressPercentage)}% used
+                                  </span>
+                                </div>
+                              </>
+                            )}
                           </div>
                           
                           <div className="discipline-name">{disciplineInfo.name}</div>
@@ -882,13 +988,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Nursing Diagnosis</div>
                 <div className="info-value">
-                  {medicalData.nursingDiagnosis ? (
-                    <div className="data-box nursing-diagnosis">
-                      {medicalData.nursingDiagnosis}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
+                  {displayValue(medicalData.nursingDiagnosis)}
                 </div>
               </div>
             </div>
@@ -900,13 +1000,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">PMH (Past Medical History)</div>
                 <div className="info-value">
-                  {medicalData.pmh ? (
-                    <div className="data-box pmh-data">
-                      {medicalData.pmh}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
+                  {displayValue(medicalData.pmh)}
                 </div>
               </div>
             </div>
@@ -916,18 +1010,13 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 <i className="fas fa-band-aid"></i>
               </div>
               <div className="info-content">
-                <div className="info-label">WBS (Wound Bed Status)</div>
+                <div className="info-label">WBS (Weight Bearing Status)</div>
                 <div className="info-value">
-                  {medicalData.wbs ? (
-                    <div className="data-box wbs-data">
-                      {medicalData.wbs}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
+                  {displayValue(medicalData.wbs)}
                 </div>
               </div>
             </div>
+            
             <div className="info-section clinical-section">
               <div className="info-icon" style={{ 
                 color: getClinicalGroupingColor(medicalData.clinicalGrouping),
@@ -948,7 +1037,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                       <span>{medicalData.clinicalGrouping}</span>
                     </div>
                   ) : (
-                    <span className="no-data">Not assigned</span>
+                    <span className="no-data">Not provided yet</span>
                   )}
                 </div>
               </div>
@@ -961,13 +1050,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Homebound Status</div>
                 <div className="info-value">
-                  {medicalData.homebound ? (
-                    <div className="data-box homebound-data">
-                      {medicalData.homebound}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not specified</span>
-                  )}
+                  {displayValue(medicalData.homebound)}
                 </div>
               </div>
             </div>
