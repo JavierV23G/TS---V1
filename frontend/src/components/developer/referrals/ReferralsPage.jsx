@@ -236,22 +236,7 @@ const DevReferralsPage = () => {
   
   /////////////////////////// HANDLE BUTTONS /////////////////////////////////////////////////////
 
-  // FUNCIÓN PARA FILTRAR SOLO LOS VALORES SELECCIONADOS
-  const getSelectedOptions = (optionsObject) => {
-    const selected = {};
-    Object.keys(optionsObject).forEach(key => {
-      if (optionsObject[key] === true) {
-        selected[key] = true;
-      } else if (key === 'otherReason' && optionsObject.other === true && optionsObject[key]) {
-        selected[key] = optionsObject[key];
-      } else if (key === 'additional' && optionsObject[key]) {
-        selected[key] = optionsObject[key];
-      }
-    });
-    return selected;
-  };
-
-  // Form submission - ACTUALIZADO CON FILTRADO
+  // Form submission - ACTUALIZADO CON LA ESTRUCTURA CORRECTA
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLoggingOut) return;
@@ -271,12 +256,6 @@ const DevReferralsPage = () => {
         toast.error(`Please assign therapists for: ${missingTherapists.join(', ')}`);
         return;
       }
-
-      // FILTRAR HOMEBOUND: SOLO ENVIAR LOS QUE ESTÁN SELECCIONADOS
-      const selectedHomebound = getSelectedOptions(formData.homebound);
-      
-      // FILTRAR REASONS FOR REFERRAL: SOLO ENVIAR LOS QUE ESTÁN SELECCIONADOS
-      const selectedReasons = getSelectedOptions(formData.reasonsForReferral);
   
       // Paso 1: Crear paciente
       const patientPayload = {
@@ -291,17 +270,15 @@ const DevReferralsPage = () => {
         nursing_diagnosis: formData.nursingDiagnosis,
         urgency_level: formData.urgencyLevel,
         prior_level_of_function: formData.priorLevelOfFunction,
-        homebound_status: JSON.stringify(selectedHomebound), // ← SOLO LOS SELECCIONADOS
+        homebound_status: JSON.stringify(formData.homebound),
         weight_bearing_status: formData.wbs,
-        referral_reason: JSON.stringify(selectedReasons), // ← SOLO LOS SELECCIONADOS
+        referral_reason: JSON.stringify(formData.reasonsForReferral),
         weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
         height: formData.height ? `${formData.height} ${formData.heightUnit}` : '',
         past_medical_history: formData.pmh,
         initial_cert_start_date: formData.certPeriodStart,
         required_disciplines: JSON.stringify(formData.disciplines)
       };
-
-      console.log('Payload enviado:', patientPayload); // Para debugging
   
       const createRes = await fetch('http://localhost:8000/patients/', {
         method: 'POST',
@@ -1538,106 +1515,107 @@ const formatNumber = (value, decimals = 1) => {
                     </select>
                   </div>
                   
-                  {/* Weight field con diseño large */}
-                  <div className="form-group">
-                    <label htmlFor="weight">Weight</label>
-                    <div className="premium-measurement-container">
-                      <div className="measurement-input-wrapper">
-                        <input
-                          type="number"
-                          id="weight"
-                          name="weight"
-                          value={formData.weight}
-                          onChange={handleWeightChange}
-                          onBlur={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value)) {
-                              setFormData(prev => ({
-                                ...prev,
-                                weight: value.toString()
-                              }));
-                            }
-                          }}
-                          placeholder="Enter weight"
-                          min="0"
-                          max="1000"
-                          step="0.1"
-                          disabled={isLoggingOut}
-                          className="premium-number-field"
-                        />
-                      </div>
-                      <div className="measurement-unit-wrapper">
-                        <select
-                          name="weightUnit"
-                          value={formData.weightUnit}
-                          onChange={handleWeightUnitChange}
-                          disabled={isLoggingOut}
-                          className="premium-unit-selector"
-                        >
-                          <option value="lbs">lbs</option>
-                          <option value="kg">kg</option>
-                        </select>
-                      </div>
-                    </div>
-                    {formData.weightUnit === 'kg' && (
-                      <small className="form-text text-muted">
-                        Enter weight in kilograms
-                      </small>
-                    )}
-                  </div>
+                  {/* Weight field with unit selection - MEJORADO */}
+{/* Weight field con diseño large */}
+<div className="form-group">
+  <label htmlFor="weight">Weight</label>
+  <div className="premium-measurement-container">
+    <div className="measurement-input-wrapper">
+      <input
+        type="number"
+        id="weight"
+        name="weight"
+        value={formData.weight}
+        onChange={handleWeightChange}
+        onBlur={(e) => {
+          const value = parseFloat(e.target.value);
+          if (!isNaN(value)) {
+            setFormData(prev => ({
+              ...prev,
+              weight: value.toString()
+            }));
+          }
+        }}
+        placeholder="Enter weight"
+        min="0"
+        max="1000"
+        step="0.1"
+        disabled={isLoggingOut}
+        className="premium-number-field"
+      />
+    </div>
+    <div className="measurement-unit-wrapper">
+      <select
+        name="weightUnit"
+        value={formData.weightUnit}
+        onChange={handleWeightUnitChange}
+        disabled={isLoggingOut}
+        className="premium-unit-selector"
+      >
+        <option value="lbs">lbs</option>
+        <option value="kg">kg</option>
+      </select>
+    </div>
+  </div>
+  {formData.weightUnit === 'kg' && (
+    <small className="form-text text-muted">
+      Enter weight in kilograms
+    </small>
+  )}
+</div>
 
-                  {/* Height field con nuevo diseño premium */}
-                  <div className="form-group">
-                    <label htmlFor="height">Height</label>
-                    <div className="premium-measurement-container">
-                      <div className="measurement-input-wrapper">
-                        <input
-                          type="number"
-                          id="height"
-                          name="height"
-                          value={formData.height}
-                          onChange={handleHeightChange}
-                          onBlur={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value)) {
-                              setFormData(prev => ({
-                                ...prev,
-                                height: value.toString()
-                              }));
-                            }
-                          }}
-                          placeholder="Enter height"
-                          min="0"
-                          max={formData.heightUnit === 'ft' ? "10" : "300"}
-                          step="0.1"
-                          disabled={isLoggingOut}
-                          className="premium-number-field"
-                        />
-                      </div>
-                      <div className="measurement-unit-wrapper">
-                        <select
-                          name="heightUnit"
-                          value={formData.heightUnit}
-                          onChange={handleHeightUnitChange}
-                          disabled={isLoggingOut}
-                          className="premium-unit-selector"
-                        >
-                          <option value="ft">ft</option>
-                          <option value="cm">cm</option>
-                        </select>
-                      </div>
-                    </div>
-                    {formData.heightUnit === 'ft' && (
-                      <small className="form-text text-muted">
-                        Enter height in feet (e.g., 5.5 for 5 feet 6 inches)
-                      </small>
-                    )}
-                    {formData.heightUnit === 'cm' && (
-                      <small className="form-text text-muted">
-                        Enter height in centimeters
-                      </small>
-                    )}
-                  </div>
+{/* Height field con nuevo diseño premium */}
+<div className="form-group">
+  <label htmlFor="height">Height</label>
+  <div className="premium-measurement-container">
+    <div className="measurement-input-wrapper">
+      <input
+        type="number"
+        id="height"
+        name="height"
+        value={formData.height}
+        onChange={handleHeightChange}
+        onBlur={(e) => {
+          const value = parseFloat(e.target.value);
+          if (!isNaN(value)) {
+            setFormData(prev => ({
+              ...prev,
+              height: value.toString()
+            }));
+          }
+        }}
+        placeholder="Enter height"
+        min="0"
+        max={formData.heightUnit === 'ft' ? "10" : "300"}
+        step="0.1"
+        disabled={isLoggingOut}
+        className="premium-number-field"
+      />
+    </div>
+    <div className="measurement-unit-wrapper">
+      <select
+        name="heightUnit"
+        value={formData.heightUnit}
+        onChange={handleHeightUnitChange}
+        disabled={isLoggingOut}
+        className="premium-unit-selector"
+      >
+        <option value="ft">ft</option>
+        <option value="cm">cm</option>
+      </select>
+    </div>
+  </div>
+  {formData.heightUnit === 'ft' && (
+    <small className="form-text text-muted">
+      Enter height in feet (e.g., 5.5 for 5 feet 6 inches)
+    </small>
+  )}
+  {formData.heightUnit === 'cm' && (
+    <small className="form-text text-muted">
+      Enter height in centimeters
+    </small>
+  )}
+</div>
                 </div>
               </div>
               

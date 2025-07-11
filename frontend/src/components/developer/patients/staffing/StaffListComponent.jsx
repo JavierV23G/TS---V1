@@ -1,1552 +1,901 @@
-import React, { useState, useEffect } from 'react';
-import '../../../../styles/developer/Patients/Staffing/StaffEditComponent.scss';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../../components/login/AuthContext';
+import logoImg from '../../../../assets/LogoMHC.jpeg';
+import '../../../../styles/developer/Patients/Staffing/StaffingPage.scss';
+import PremiumTabs from '../Patients/PremiunTabs.jsx';
+import AddStaffForm from './AddStaffForm';
+import StaffListComponent from './StaffListComponent';
+import LogoutAnimation from '../../../../components/LogOut/LogOut';
+import CompanyRegistrationForm from './CompanyRegistrationForm';
+import CompanyListComponent from './CompanyListComponent';
 
-const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
-  // Estados para gestionar la interfaz y datos
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('Connecting to database...');
-  const [staffList, setStaffList] = useState([]);
-  const [filteredStaff, setFilteredStaff] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
-  const [selectedStaff, setSelectedStaff] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
-  const [showInactive, setShowInactive] = useState(true);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [viewMode, setViewMode] = useState('all'); // 'all', 'staff', 'agencies'
+const DevStaffingPage = () => {
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
+  const [showCompanyList, setShowCompanyList] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuTransitioning, setMenuTransitioning] = useState(false);
+  const [showMenuSwitch, setShowMenuSwitch] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [showAddStaffForm, setShowAddStaffForm] = useState(false);
+  const [showStaffList, setShowStaffList] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Estados para los datos reales de la API
+  const [staffData, setStaffData] = useState([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState(null);
 
-  // Función para construir parámetros de consulta para API
-  const buildQueryParams = (params) =>
-    Object.entries(params)
-      .filter(([, value]) => value !== null && value !== undefined && value !== '')
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&');
+  const userMenuRef = useRef(null);
 
-  // Simulación de carga con mensajes dinámicos
-  useEffect(() => {
-    setIsLoading(true);
-    setLoadingMessage('Connecting to database...');
-    
-    const loadingMessages = [
-      { message: 'Verifying user permissions...', time: 800 },
-      { message: 'Retrieving staff list...', time: 800 },
-      { message: 'Loading associated documents...', time: 500 },
-      { message: 'Preparing interface...', time: 1500 },
-      { message: 'Optimizing performance...', time: 1000 }
-    ];
-    
-    const timeouts = [];
-    
-    loadingMessages.forEach((item, index) => {
-      const timeout = setTimeout(() => {
-        setLoadingMessage(item.message);
-        if (index === loadingMessages.length - 1) {
-          const finalTimeout = setTimeout(() => {
-            setIsLoading(false);
-            fetchStaffData();
-          }, 800);
-          timeouts.push(finalTimeout);
-        }
-      }, item.time);
-      
-      timeouts.push(timeout);
-    });
-    
-    return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
+  function getInitials(name) {
+    if (!name) return "U";
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  const userData = {
+    name: currentUser?.fullname || currentUser?.username || 'Usuario',
+    avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
+    email: currentUser?.email || 'usuario@ejemplo.com',
+    role: currentUser?.role || 'Usuario',
+    status: 'online',
+  };
+
+  // Función para convertir el rol del backend al frontend (igual que en DevStaffEditComponent)
+  const convertRoleFromBackend = (role) => {
+    const roleMapping = {
+      'Developer': 'developer',
+      'Administrator': 'administrator',
+      'Agency': 'agency',
+      'PT': 'pt',
+      'PTA': 'pta',
+      'OT': 'ot',
+      'COTA': 'cota',
+      'ST': 'st',
+      'STA': 'sta'
     };
-  }, []);
+    
+    return roleMapping[role] || role.toLowerCase();
+  };
 
-  // Obtener datos del personal desde la API
+  // Función para obtener datos del personal desde la API
   const fetchStaffData = async () => {
     try {
+      setIsLoadingStats(true);
+      setStatsError(null);
+
       const response = await fetch('http://localhost:8000/staff/', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-  
+
       if (!response.ok) {
         throw new Error('Error al obtener los datos del personal');
       }
-  
+
       const data = await response.json();
-  
-      const adjustedData = data.map(staff => {
-        // Procesar el nombre completo para separarlo en nombre y apellido
-        const [firstName, ...rest] = staff.name?.split(' ') || [''];
-        const lastName = rest.join(' ');
-  
-        // Mapear el rol a su visualización correspondiente
-        const roleDisplay = roles.find(r => r.value === staff.role)?.label || staff.role;
+
+      // Procesar los datos similar a como se hace en DevStaffEditComponent
+      const processedData = data.map(staff => {
+        const frontendRole = convertRoleFromBackend(staff.role);
         
-        // Determinar el tipo basado en el rol (agency o staff)
-        const type = staff.role === 'agency' ? 'agency' : 'staff';
-        
-        // Para el tipo agency, usar el name como agencyName
-        const agencyName = type === 'agency' ? staff.name : '';
-        
-        // Para los tipos staff que pueden tener una agencia asignada, buscar si tiene agency_id 
-        // (esto depende de cómo esté estructurada tu API)
-        const agency = staff.agency_id ? {
-          id: staff.agency_id,
-          name: staff.agency_name || '',
-          address: staff.agency_address || '',
-          phone: staff.agency_phone || ''
-        } : null;
-        
-        // Procesar las sucursales si existen (esto depende de cómo esté estructurada tu API)
-        const branches = staff.branches ? JSON.parse(staff.branches) : [];
-        
-        // Inicializar documentos basados en el tipo y rol
-        const documents = staff.documents ? JSON.parse(staff.documents) : 
-          type === 'agency' ? initializeDocuments('agency', 'agency') : 
-          requiresDocuments(staff.role) ? initializeDocuments(staff.role, 'staff') : {};
-  
         return {
           id: staff.id,
-          type: type,
-          firstName: firstName || '',
-          lastName: lastName || '',
-          agencyName: agencyName,
-          dob: staff.birthday || '',
-          gender: staff.gender || '',
-          email: staff.email || '',
-          phone: staff.phone || '',
-          alternatePhone: staff.alt_phone || '',
-          zipCode: staff.postal_code || '',
-          address: staff.address || '',
-          userName: staff.username || '',
-          password: '********', // Por seguridad siempre ocultamos la contraseña
-          role: staff.role || '',
-          roleDisplay: roleDisplay,
-          agency: agency,
-          branches: branches,
-          documents: documents,
+          role: frontendRole,
           status: staff.is_active ? 'active' : 'inactive',
-          fax: staff.fax || ''
+          type: frontendRole === 'agency' ? 'agency' : 'staff',
+          name: staff.name,
+          email: staff.email,
+          phone: staff.phone,
+          // Agregar cualquier otro campo que necesites
         };
       });
-  
-      setStaffList(adjustedData);
-      setFilteredStaff(adjustedData);
+
+      setStaffData(processedData);
+      setIsLoadingStats(false);
+
     } catch (error) {
       console.error('Error al obtener la lista de personal:', error);
-      alert('Hubo un error al cargar los datos del personal. Por favor, intenta de nuevo.');
-      setStaffList([]);
-      setFilteredStaff([]);
+      setStatsError(error.message);
+      setIsLoadingStats(false);
     }
   };
 
-  // Filtrar y ordenar la lista de personal
+  // Cargar datos al montar el componente
   useEffect(() => {
-    let filtered = [...staffList];
-    
-    // Filtrar por tipo (staff/agency)
-    if (viewMode === 'staff') {
-      filtered = filtered.filter(member => member.type === 'staff');
-    } else if (viewMode === 'agencies') {
-      filtered = filtered.filter(member => member.type === 'agency');
-    }
-    
-    // Filtrar por término de búsqueda
-    if (searchTerm) {
-      filtered = filtered.filter(member => {
-        const nameField = member.type === 'agency' 
-          ? member.agencyName.toLowerCase()
-          : `${member.firstName} ${member.lastName}`.toLowerCase();
-        
-        return nameField.includes(searchTerm.toLowerCase()) ||
-          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          member.phone.includes(searchTerm);
-      });
-    }
-    
-    // Filtrar por rol (solo si está viendo staff)
-    if (filterRole !== 'all' && viewMode !== 'agencies') {
-      filtered = filtered.filter(member => member.role === filterRole);
-    }
-    
-    // Filtrar por estado si no se muestran inactivos
-    if (!showInactive) {
-      filtered = filtered.filter(member => member.status === 'active');
-    }
-    
-    setFilteredStaff(filtered);
-  }, [staffList, searchTerm, filterRole, showInactive, viewMode]);
+    fetchStaffData();
+  }, []);
 
-  // Roles disponibles con iconos mejorados
-  const roles = [
-    { value: 'developer', label: 'Developer', icon: 'fa-laptop-code', description: 'System development and technical support' },
-    { value: 'administrator', label: 'Administrator', icon: 'fa-user-shield', description: 'System administration and user management' },
-    { value: 'agency', label: 'Agency', icon: 'fa-hospital-alt', description: 'Healthcare provider organization' },
-    { value: 'pt', label: 'PT - Physical Therapist', icon: 'fa-user-md', description: 'Evaluates and treats physical mobility disorders' },
-    { value: 'pta', label: 'PTA - Physical Therapist Assistant', icon: 'fa-user-nurse', description: 'Assists physical therapists in treatment delivery' },
-    { value: 'ot', label: 'OT - Occupational Therapist', icon: 'fa-hand-holding-medical', description: 'Helps patients improve daily living activities' },
-    { value: 'cota', label: 'COTA - Occupational Therapy Assistant', icon: 'fa-hand-holding', description: 'Assists occupational therapists with treatment' },
-    { value: 'st', label: 'ST - Speech Therapist', icon: 'fa-comment-medical', description: 'Evaluates and treats communication disorders' },
-    { value: 'sta', label: 'STA - Speech Therapy Assistant', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
-  ];
-
-  // Lista de documentos requeridos con iconos mejorados
-  const documentsList = {
-    staff: [
-      { id: 'covidVaccine', name: 'Proof of COVID Vaccine', icon: 'fa-syringe', description: 'Vaccination record or certificate' },
-      { id: 'tbTest', name: 'TB Test Proof (PPD/X-Ray)', icon: 'fa-lungs', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)' },
-      { id: 'physicalExam', name: 'Annual Physical Exam Proof', icon: 'fa-stethoscope', description: 'Medical clearance for healthcare duties' },
-      { id: 'liabilityInsurance', name: 'Professional Liability Insurance', icon: 'fa-shield-alt', description: 'Malpractice insurance coverage document' },
-      { id: 'driversLicense', name: 'Driver\'s License', icon: 'fa-id-card', description: 'Valid state-issued driver\'s license' },
-      { id: 'autoInsurance', name: 'Auto Insurance', icon: 'fa-car-alt', description: 'Proof of current auto insurance coverage' },
-      { id: 'cprCertification', name: 'CPR/BLS Certification', icon: 'fa-heartbeat', description: 'Current CPR or Basic Life Support certification' },
-      { id: 'businessLicense', name: 'Copy of Business License or EIN', icon: 'fa-certificate', description: 'Business license or Employer Identification Number document' },
-    ],
-    agency: [
-      { id: 'businessLicense', name: 'Business License', icon: 'fa-building', description: 'Valid business operation license' },
-      { id: 'contractDocument', name: 'Contract with TherapySync', icon: 'fa-file-contract', description: 'Signed service agreement' },
-      { id: 'liabilityInsurance', name: 'Liability Insurance', icon: 'fa-shield-alt', description: 'Organization liability coverage documentation' },
-    ]
-  };
-
-  // Abrir modal para editar un miembro existente
-  const handleOpenProfile = (member) => {
-    setSelectedStaff({...member}); // Clonar para evitar modificaciones directas
-    setShowProfileModal(true);
-    setEditMode(true);
-    
-    // Resetear la pestaña activa según el tipo de miembro
-    if (member.type === 'agency') {
-      setActiveTab('info');
-    } else {
-      setActiveTab('info');
-    }
-    
-    setPasswordVisible(false);
-  };
-
-  // Cerrar el modal
-  const handleCloseProfile = () => {
-    setShowProfileModal(false);
-    setSelectedStaff(null);
-    setEditMode(false);
-  };
-
-  // Toggle visibilidad de contraseña
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
-  // Guardar cambios en la API
-  const handleSaveProfile = async (updatedStaff) => {
-    try {
-      // Preparar el objeto para enviar a la API
-      const staffToUpdate = {
-        name: updatedStaff.type === 'agency' 
-          ? updatedStaff.agencyName 
-          : `${updatedStaff.firstName} ${updatedStaff.lastName}`,
-        birthday: updatedStaff.dob || '',
-        gender: updatedStaff.gender || '',
-        postal_code: updatedStaff.zipCode || '',
-        email: updatedStaff.email,
-        phone: updatedStaff.phone || '',
-        alt_phone: updatedStaff.alternatePhone || '',
-        address: updatedStaff.address || '',
-        username: updatedStaff.userName,
-        role: updatedStaff.role,
-        is_active: updatedStaff.status === 'active',
-        fax: updatedStaff.fax || ''
+  // Calcular estadísticas reales basadas en los datos de la API
+  const calculateStats = () => {
+    if (!staffData || staffData.length === 0) {
+      return {
+        therapistCounts: {
+          PT: 0,
+          PTA: 0,
+          OT: 0,
+          COTA: 0,
+          ST: 0,
+          STA: 0,
+        },
+        totalTherapists: 0,
+        internalStaffCounts: {
+          Admin: 0,
+          Support: 0,
+          Developer: 0,
+        },
+        totalInternalStaff: 0,
+        agencyStats: {
+          currentMonth: 0,
+          previousMonth: 0,
+        }
       };
-      
-      // Si el password ha sido modificado (no es '********'), enviarlo
-      if (updatedStaff.password && updatedStaff.password !== '********') {
-        staffToUpdate.password = updatedStaff.password;
-      }
-      
-      // Si tiene agencia asignada, incluir esa información
-      if (updatedStaff.agency && updatedStaff.agency.id) {
-        staffToUpdate.agency_id = updatedStaff.agency.id;
-      }
-      
-      // Si es una agencia, incluir la información de sucursales
-      if (updatedStaff.type === 'agency' && updatedStaff.branches) {
-        staffToUpdate.branches = JSON.stringify(updatedStaff.branches);
-      }
-      
-      // Incluir documentos si existen
-      if (updatedStaff.documents && Object.keys(updatedStaff.documents).length > 0) {
-        staffToUpdate.documents = JSON.stringify(updatedStaff.documents);
-      }
-      
-      // Construir la cadena de consulta
-      const queryString = buildQueryParams(staffToUpdate);
-      
-      // Realizar la petición PUT a la API
-      const response = await fetch(`http://localhost:8000/staff/${updatedStaff.id}?${queryString}`, {
-        method: 'PUT'
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        const readable = error?.detail || 'Error al actualizar los datos del personal';
-        throw new Error(readable);
-      }
-      
-      const data = await response.json();
-      console.log("✅ Staff updated:", data);
-      
-      // Actualizar la lista de staff localmente con los datos actualizados
-      const updatedStaffList = staffList.map(item => 
-        item.id === updatedStaff.id ? updatedStaff : item
-      );
-      
-      setStaffList(updatedStaffList);
-      
-      // Actualizar el filtrado manteniendo los filtros actuales
-      setFilteredStaff(updatedStaffList.filter(member => {
-        let matchesFilters = true;
-        
-        if (viewMode === 'staff' && member.type !== 'staff') {
-          return false;
-        }
-        
-        if (viewMode === 'agencies' && member.type !== 'agency') {
-          return false;
-        }
-        
-        if (filterRole !== 'all' && viewMode !== 'agencies') {
-          matchesFilters = matchesFilters && member.role === filterRole;
-        }
-        
-        if (!showInactive) {
-          matchesFilters = matchesFilters && member.status === 'active';
-        }
-        
-        if (searchTerm) {
-          const nameField = member.type === 'agency' 
-            ? member.agencyName.toLowerCase()
-            : `${member.firstName} ${member.lastName}`.toLowerCase();
-          
-          matchesFilters = matchesFilters && (
-            nameField.includes(searchTerm.toLowerCase()) ||
-            member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            member.phone.includes(searchTerm)
-          );
-        }
-        
-        return matchesFilters;
-      }));
-      
-      alert('Los cambios se guardaron correctamente.');
-      handleCloseProfile();
-      
-    } catch (error) {
-      console.error('❌ Error in handleSaveProfile:', error);
-      alert(`Hubo un error al procesar la información del personal.\n${error.message}`);
     }
-  };
 
-  const handleChangeTab = (tab) => {
-    setActiveTab(tab);
-  };
+    // Filtrar solo personal activo para las estadísticas
+    const activeStaff = staffData.filter(staff => staff.status === 'active');
 
-  const handleDocumentStatusToggle = (memberId, documentId) => {
-    const updatedStaffList = staffList.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          documents: {
-            ...member.documents,
-            [documentId]: {
-              ...member.documents[documentId],
-              status: member.documents[documentId].status === 'obtained' ? 'pending' : 'obtained'
-            }
-          }
-        };
-      }
-      return member;
-    });
-    
-    setStaffList(updatedStaffList);
-    
-    if (selectedStaff && selectedStaff.id === memberId) {
-      setSelectedStaff({
-        ...selectedStaff,
-        documents: {
-          ...selectedStaff.documents,
-          [documentId]: {
-            ...selectedStaff.documents[documentId],
-            status: selectedStaff.documents[documentId].status === 'obtained' ? 'pending' : 'obtained'
-          }
-        }
-      });
-    }
-  };
-
-  const handleDocumentUpload = (memberId, documentId, e) => {
-    if (e.target.files[0]) {
-      const updatedStaffList = staffList.map(member => {
-        if (member.id === memberId) {
-          // Asegurarnos de que documents esté inicializado
-          const updatedDocuments = member.documents || {};
-          
-          return {
-            ...member,
-            documents: {
-              ...updatedDocuments,
-              [documentId]: {
-                status: 'obtained',
-                file: e.target.files[0].name
-              }
-            }
-          };
-        }
-        return member;
-      });
-      
-      setStaffList(updatedStaffList);
-      
-      if (selectedStaff && selectedStaff.id === memberId) {
-        // Asegurarnos de que documents esté inicializado
-        const updatedDocuments = selectedStaff.documents || {};
-        
-        setSelectedStaff({
-          ...selectedStaff,
-          documents: {
-            ...updatedDocuments,
-            [documentId]: {
-              status: 'obtained',
-              file: e.target.files[0].name
-            }
-          }
-        });
-      }
-    }
-  };
-
-  // Actualizar datos de miembro
-  const handleUpdateMember = (field, value) => {
-    if (!selectedStaff) return;
-    
-    setSelectedStaff(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  // Actualizar agencia para staff
-  const handleUpdateAgency = (agencyId) => {
-    if (!selectedStaff) return;
-    
-    const selectedAgency = staffList
-      .filter(item => item.type === 'agency')
-      .find(a => a.id === parseInt(agencyId));
-    
-    if (selectedAgency) {
-      setSelectedStaff(prev => ({
-        ...prev,
-        agency: {
-          id: selectedAgency.id,
-          name: selectedAgency.agencyName,
-          address: selectedAgency.address,
-          phone: selectedAgency.phone
-        }
-      }));
-    }
-  };
-
-  // Actualizar campos de agencia
-  const handleUpdateAgencyField = (field, value) => {
-    if (!selectedStaff || selectedStaff.type !== 'agency') return;
-    
-    setSelectedStaff(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Actualizar sucursal de agencia
-  const handleUpdateBranch = (index, field, value) => {
-    if (!selectedStaff || selectedStaff.type !== 'agency') return;
-    
-    const updatedBranches = [...(selectedStaff.branches || [])];
-    updatedBranches[index] = {
-      ...(updatedBranches[index] || {}),
-      [field]: value
+    // Contar terapeutas por tipo
+    const therapistCounts = {
+      PT: activeStaff.filter(staff => staff.role === 'pt').length,
+      PTA: activeStaff.filter(staff => staff.role === 'pta').length,
+      OT: activeStaff.filter(staff => staff.role === 'ot').length,
+      COTA: activeStaff.filter(staff => staff.role === 'cota').length,
+      ST: activeStaff.filter(staff => staff.role === 'st').length,
+      STA: activeStaff.filter(staff => staff.role === 'sta').length,
     };
-    
-    setSelectedStaff(prev => ({
-      ...prev,
-      branches: updatedBranches
-    }));
-  };
 
-  // Añadir nueva sucursal
-  const handleAddBranch = () => {
-    if (!selectedStaff || selectedStaff.type !== 'agency') return;
-    
-    setSelectedStaff(prev => ({
-      ...prev,
-      branches: [
-        ...(prev.branches || []),
-        { name: '', address: '', phone: '' }
-      ]
-    }));
-  };
+    const totalTherapists = Object.values(therapistCounts).reduce((sum, count) => sum + count, 0);
 
-  // Eliminar sucursal
-  const handleRemoveBranch = (index) => {
-    if (!selectedStaff || selectedStaff.type !== 'agency') return;
-    
-    const updatedBranches = [...(selectedStaff.branches || [])];
-    updatedBranches.splice(index, 1);
-    
-    setSelectedStaff(prev => ({
-      ...prev,
-      branches: updatedBranches
-    }));
-  };
+    // Contar personal interno
+    const internalStaffCounts = {
+      Admin: activeStaff.filter(staff => staff.role === 'administrator').length,
+      Support: activeStaff.filter(staff => staff.role === 'support').length,
+      Developer: activeStaff.filter(staff => staff.role === 'developer').length,
+    };
 
-  // Calcular porcentaje de documentos completados correctamente
-  const getCompletedDocsPercentage = (documents, type) => {
-    if (!documents || Object.keys(documents).length === 0) return 0;
+    const totalInternalStaff = Object.values(internalStaffCounts).reduce((sum, count) => sum + count, 0);
+
+    // Contar agencias activas
+    const currentAgencies = activeStaff.filter(staff => staff.role === 'agency').length;
     
-    // Determinar qué lista de documentos usar
-    const docList = type === 'agency' ? documentsList.agency : documentsList.staff;
-    
-    // Contar cuántos documentos requeridos hay para este tipo
-    const requiredDocsCount = docList.length;
-    
-    // Contar cuántos están completados
-    let completedCount = 0;
-    docList.forEach(doc => {
-      if (documents[doc.id] && documents[doc.id].status === 'obtained') {
-        completedCount++;
+    // Para el cálculo del mes anterior, podrías implementar una lógica más sofisticada
+    // Por ahora, usaré un valor simulado pero podrías agregar un campo de fecha de creación
+    const previousMonthAgencies = Math.max(0, currentAgencies - 1); // Simulación simple
+
+    return {
+      therapistCounts,
+      totalTherapists,
+      internalStaffCounts,
+      totalInternalStaff,
+      agencyStats: {
+        currentMonth: currentAgencies,
+        previousMonth: previousMonthAgencies,
       }
-    });
-    
-    // Calcular el porcentaje
-    return Math.round((completedCount / requiredDocsCount) * 100);
+    };
   };
 
-  // Inicializa los documentos para un tipo específico
-  const initializeDocuments = (role, type) => {
-    const documents = {};
+  // Obtener las estadísticas calculadas
+  const stats = calculateStats();
+
+  // Calcular el cambio porcentual de agencias
+  const calculateAgencyChange = () => {
+    const { currentMonth, previousMonth } = stats.agencyStats;
     
-    // Determinar qué lista de documentos usar
-    const docList = type === 'agency' ? documentsList.agency : documentsList.staff;
+    let agencyChange = 0;
+    let agencyChangeDirection = '';
     
-    // Inicializar todos como pendientes
-    docList.forEach(doc => {
-      documents[doc.id] = { status: 'pending', file: null };
-    });
-    
-    return documents;
+    if (previousMonth === 0) {
+      agencyChange = currentMonth > 0 ? 100 : 0;
+      agencyChangeDirection = currentMonth > 0 ? 'increase' : 'no-change';
+    } else {
+      agencyChange = Math.round(
+        ((currentMonth - previousMonth) / previousMonth) * 100
+      );
+      agencyChangeDirection = agencyChange > 0 ? 'increase' : agencyChange < 0 ? 'decrease' : 'no-change';
+    }
+
+    return { agencyChange, agencyChangeDirection };
   };
 
-  // Debemos inicializar documentos cuando cambia el rol
+  const { agencyChange, agencyChangeDirection } = calculateAgencyChange();
+
   useEffect(() => {
-    if (selectedStaff && editMode) {
-      // Si cambia de rol y necesita documentos diferentes, inicializamos
-      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role) && 
-          (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-        setSelectedStaff(prev => ({
-          ...prev,
-          documents: initializeDocuments(prev.role, prev.type)
-        }));
-      } else if (selectedStaff.role === 'agency' && 
-                (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-        setSelectedStaff(prev => ({
-          ...prev,
-          documents: initializeDocuments(prev.role, 'agency')
-        }));
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
       }
-    }
-  }, [selectedStaff?.role, editMode]);
+    };
 
-  // Verificar si el rol requiere afiliación a una agencia
-  const requiresAgency = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(role);
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  // Verificar si el rol requiere documentos
-  const requiresDocuments = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(role);
-  };
-
-  // Renderizar pestañas basado en el tipo de miembro seleccionado
-  const renderTabs = () => {
-    if (!selectedStaff) return null;
-    
-    const commonTabs = [
-      { id: 'info', icon: 'fa-user-circle', label: 'Personal Information' },
-      { id: 'security', icon: 'fa-shield-alt', label: 'Security' },
-    ];
-    
-    // Pestañas específicas para staff
-    if (selectedStaff.type === 'staff') {
-      const tabs = [...commonTabs];
-      
-      // Solo mostrar pestaña de documentos para roles que requieren documentos
-      if (requiresDocuments(selectedStaff.role)) {
-        tabs.splice(1, 0, { id: 'documents', icon: 'fa-file-medical-alt', label: 'Documents' });
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (e.clientX < 50) {
+        setShowMenuSwitch(true);
+      } else if (e.clientX > 100) {
+        setShowMenuSwitch(false);
       }
-      
-      // Mostrar pestaña de agencia para roles que requieren afiliación
-      if (requiresAgency(selectedStaff.role)) {
-        // Solo añadir la pestaña de agencia si no está ya
-        if (!tabs.some(tab => tab.id === 'agency')) {
-          tabs.splice(1, 0, { id: 'agency', icon: 'fa-hospital-user', label: 'Agency' });
-        }
-      }
-      
-      return tabs;
-    }
-    
-    // Pestañas específicas para agencias
-    return [
-      { id: 'info', icon: 'fa-building', label: 'Agency Information' },
-      { id: 'branches', icon: 'fa-code-branch', label: 'Branches' },
-      { id: 'documents', icon: 'fa-file-contract', label: 'Documents' },
-      { id: 'security', icon: 'fa-lock', label: 'Security' },
-    ];
-  };
+    };
 
-  // Renderizar contenido de pestañas basado en tipo y rol
-  const renderTabContent = () => {
-    if (!selectedStaff) return null;
-    
-    // Renderizar contenido para staff
-    if (selectedStaff.type === 'staff') {
-      switch (activeTab) {
-        case 'info':
-          return renderStaffInfoTab();
-        case 'documents':
-          return requiresDocuments(selectedStaff.role) ? renderDocumentsTab('staff') : null;
-        case 'security':
-          return renderSecurityTab();
-        case 'agency':
-          return requiresAgency(selectedStaff.role) ? renderAgencyTab() : null;
-        default:
-          return null;
-      }
-    }
-    
-    // Renderizar contenido para agencias
-    switch (activeTab) {
-      case 'info':
-        return renderAgencyInfoTab();
-      case 'branches':
-        return renderBranchesTab();
-      case 'documents':
-        return renderDocumentsTab('agency');
-      case 'security':
-        return renderSecurityTab();
-      default:
-        return null;
-    }
-  };
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 
-  // Pestaña de información personal para staff
-  const renderStaffInfoTab = () => (
-    <div className="info-tab-content">
-      {/* Información Personal */}
-      <div className="info-section">
-        <h3>Personal Information</h3>
-        <div className="contact-form">
-          <div className="form-row">
-            <div className="input-group">
-              <label>Date of Birth</label>
-              <input 
-                type="date" 
-                value={selectedStaff.dob || ''} 
-                onChange={(e) => handleUpdateMember('dob', e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label>Gender</label>
-              <select 
-                value={selectedStaff.gender || ''} 
-                onChange={(e) => handleUpdateMember('gender', e.target.value)}
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Información de Contacto */}
-      <div className="info-section">
-        <h3>Contact Information</h3>
-        <div className="contact-form">
-          <div className="form-row">
-            <div className="input-group">
-              <label>Email</label>
-              <input 
-                type="email" 
-                value={selectedStaff.email || ''} 
-                onChange={(e) => handleUpdateMember('email', e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label>Phone</label>
-              <input 
-                type="tel" 
-                value={selectedStaff.phone || ''} 
-                onChange={(e) => handleUpdateMember('phone', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="input-group">
-              <label>Alternative Phone (Optional)</label>
-              <input 
-                type="tel" 
-                value={selectedStaff.alternatePhone || ''} 
-                onChange={(e) => handleUpdateMember('alternatePhone', e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label>Zip Code</label>
-              <input 
-                type="text" 
-                value={selectedStaff.zipCode || ''} 
-                onChange={(e) => handleUpdateMember('zipCode', e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="input-group full-width">
-              <label>Address</label>
-              <input 
-                type="text" 
-                value={selectedStaff.address || ''} 
-                onChange={(e) => handleUpdateMember('address', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-// Pestaña de información para agencias
-const renderAgencyInfoTab = () => (
-  <div className="info-tab-content">
-    <div className="info-section">
-      <h3>Agency Information</h3>
-      <div className="contact-form">
-        <div className="form-row">
-          <div className="input-group">
-            <label>Agency Name</label>
-            <input 
-              type="text" 
-              value={selectedStaff.agencyName || ''} 
-              onChange={(e) => handleUpdateAgencyField('agencyName', e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="input-group">
-            <label>Email</label>
-            <input 
-              type="email" 
-              value={selectedStaff.email || ''} 
-              onChange={(e) => handleUpdateAgencyField('email', e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Phone</label>
-            <input 
-              type="tel" 
-              value={selectedStaff.phone || ''} 
-              onChange={(e) => handleUpdateAgencyField('phone', e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="input-group full-width">
-            <label>Main Address</label>
-            <input 
-              type="text" 
-              value={selectedStaff.address || ''} 
-              onChange={(e) => handleUpdateAgencyField('address', e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="input-group">
-            <label>Zip Code</label>
-            <input 
-              type="text" 
-              value={selectedStaff.zipCode || ''} 
-              onChange={(e) => handleUpdateAgencyField('zipCode', e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Fax (Optional)</label>
-            <input 
-              type="tel" 
-              value={selectedStaff.fax || ''} 
-              onChange={(e) => handleUpdateAgencyField('fax', e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-// Pestaña de sucursales para agencias
-const renderBranchesTab = () => (
-  <div className="branches-tab-content">
-    <div className="branches-header">
-      <h3>Agency Branches</h3>
-      <button 
-        className="add-branch-btn"
-        onClick={handleAddBranch}
-      >
-        <i className="fas fa-plus-circle"></i>
-        <span>Add New Branch</span>
-      </button>
-    </div>
-
-    {selectedStaff.branches && selectedStaff.branches.length > 0 ? (
-      <div className="branches-list">
-        {selectedStaff.branches.map((branch, index) => (
-          <div key={index} className="branch-card">
-            <div className="branch-header">
-              <h4>Branch #{index + 1}</h4>
-              <button 
-                className="remove-branch-btn"
-                onClick={() => handleRemoveBranch(index)}
-              >
-                <i className="fas fa-trash-alt"></i>
-              </button>
-            </div>
-            <div className="branch-body">
-              <div className="form-row">
-                <div className="input-group">
-                  <label>Branch Name</label>
-                  <input 
-                    type="text" 
-                    value={branch.name || ''} 
-                    onChange={(e) => handleUpdateBranch(index, 'name', e.target.value)}
-                    placeholder="Branch name"
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="input-group full-width">
-                  <label>Branch Address</label>
-                  <input 
-                    type="text" 
-                    value={branch.address || ''} 
-                    onChange={(e) => handleUpdateBranch(index, 'address', e.target.value)}
-                    placeholder="Full address"
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="input-group">
-                  <label>Branch Phone</label>
-                  <input 
-                    type="tel" 
-                    value={branch.phone || ''} 
-                    onChange={(e) => handleUpdateBranch(index, 'phone', e.target.value)}
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="no-branches">
-        <div className="no-branches-icon">
-          <i className="fas fa-code-branch"></i>
-        </div>
-        <h4>No Branches Added</h4>
-        <p>This agency doesn't have any branches yet. Add a branch using the button above.</p>
-      </div>
-    )}
-  </div>
-);
-
-// Pestaña de documentos (para ambos tipos)
-const renderDocumentsTab = (type) => {
-  // Asegurarse de que existe documents en selectedStaff
-  if (!selectedStaff.documents) {
-    selectedStaff.documents = {};
-  }
+  const handleRegisterCompanyClick = (e) => {
+    if (isLoggingOut) return;
+    if (e) e.stopPropagation();
   
-  // Determinar qué lista de documentos mostrar
-  const docList = type === 'agency' ? documentsList.agency : documentsList.staff;
+    setSelectedOption('companies');
+    setShowCompanyForm(true);
+    setShowCompanyList(false);
+    setShowAddStaffForm(false);
+    setShowStaffList(false);
+  };
   
-  // Calcular el porcentaje correcto
-  const completionPercentage = getCompletedDocsPercentage(selectedStaff.documents, type);
+  const handleCompanyFormCancel = (action) => {
+    if (isLoggingOut) return;
+    
+    setShowCompanyForm(false);
+    
+    if (action === 'viewCompanies') {
+      setShowCompanyList(true);
+    } else {
+      setSelectedOption('companies');
+    }
+  };
   
+  const handleCompanySave = (companyData) => {
+    if (isLoggingOut) return;
+    console.log('Saved company data:', companyData);
+    
+    setShowCompanyForm(false);
+    // Recargar datos después de guardar una nueva compañía
+    fetchStaffData();
+  };
+
+  const handleMainMenuTransition = () => {
+    if (isLoggingOut) return;
+
+    setMenuTransitioning(true);
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+
+    setTimeout(() => {
+      navigate(`/${baseRole}/homePage`);
+    }, 300);
+  };
+
+  const handleTabChange = (tab) => {
+    if (isLoggingOut) return;
+
+    if (tab === 'Patients') {
+      setMenuTransitioning(true);
+      const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+
+      setTimeout(() => {
+        navigate(`/${baseRole}/patients`);
+      }, 300);
+    }
+  };
+
+  const handleViewAllCompaniesClick = (e) => {
+    if (isLoggingOut) return;
+    if (e) e.stopPropagation();
+
+    setSelectedOption('companies');
+    setShowCompanyList(true);
+    setShowCompanyForm(false);
+    setShowAddStaffForm(false);
+    setShowStaffList(false);
+  };
+
+  const handleOptionSelect = (option) => {
+    if (isLoggingOut) return;
+
+    setSelectedOption(option);
+    setShowAddStaffForm(false);
+    setShowStaffList(false);
+    setShowCompanyForm(false);
+    setShowCompanyList(false);
+  };
+
+  const handleAddStaffClick = (e) => {
+    if (isLoggingOut) return;
+    if (e) e.stopPropagation();
+
+    setSelectedOption('therapists');
+    setShowAddStaffForm(true);
+    setShowStaffList(false);
+    setShowCompanyForm(false);
+    setShowCompanyList(false);
+  };
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setShowUserMenu(false);
+    document.body.classList.add('logging-out');
+  };
+
+  const handleLogoutAnimationComplete = () => {
+    logout();
+    navigate('/');
+  };
+
+  const notificationCount = 5;
+
+  const handleViewAllStaffClick = (e) => {
+    if (isLoggingOut) return;
+    if (e) e.stopPropagation();
+
+    setSelectedOption('therapists');
+    setShowStaffList(true);
+    setShowAddStaffForm(false);
+    setShowCompanyForm(false);
+    setShowCompanyList(false);
+  };
+
+  const handleCancelForm = () => {
+    if (isLoggingOut) return;
+
+    setShowAddStaffForm(false);
+    setShowStaffList(false);
+    setShowCompanyForm(false);
+    setShowCompanyList(false);
+    // Recargar datos cuando se cancela un formulario por si hubo cambios
+    fetchStaffData();
+  };
+
+  const handleBackToOptions = () => {
+    if (isLoggingOut) return;
+
+    setShowStaffList(false);
+    setShowAddStaffForm(false);
+    setShowCompanyForm(false);
+    setShowCompanyList(false);
+    // Recargar datos cuando se regresa a las opciones
+    fetchStaffData();
+  };
+
+  const handleNavigateToCreateReferral = () => {
+    if (isLoggingOut) return;
+    navigate('/developer/referrals', { state: { initialView: 'createReferral' } });
+  };
+
   return (
-    <div className="documents-tab-content">
-      <div className="documents-header">
-        <h3>Required Documents</h3>
-        <div className="documents-summary">
-          <div className="completed-percentage">
-            <div className="circular-progress">
-              <svg viewBox="0 0 36 36" className="circular-chart">
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#3498db" />
-                    <stop offset="100%" stopColor="#5dade2" />
-                  </linearGradient>
-                </defs>
-                <path className="circle-bg"
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path className="circle"
-                  strokeDasharray={`${completionPercentage}, 100`}
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <text x="18" y="20.35" className="percentage">{completionPercentage}%</text>
-              </svg>
-            </div>
-            <span className="documents-text">Completed Documents</span>
-          </div>
-        </div>
+    <div className={`staffing-dashboard ${menuTransitioning ? 'transitioning' : ''} ${isLoggingOut ? 'logging-out' : ''}`}>
+      {isLoggingOut && (
+        <LogoutAnimation 
+          isMobile={isMobile} 
+          onAnimationComplete={handleLogoutAnimationComplete} 
+        />
+      )}
+      
+      <div className="parallax-background">
+        <div className="gradient-overlay"></div>
+        <div className="animated-particles"></div>
       </div>
       
-      <div className="documents-grid">
-        {docList.map(doc => {
-          // Inicializar el documento si no existe
-          if (!selectedStaff.documents[doc.id]) {
-            selectedStaff.documents[doc.id] = { status: 'pending', file: null };
-          }
-          
-          return (
-            <div 
-              key={doc.id} 
-              className={`document-card ${selectedStaff.documents[doc.id]?.status || 'pending'}`}
-            >
-              <div className="document-card-header">
-                <div className="document-icon">
-                  <i className={`fas ${doc.icon}`}></i>
-                </div>
-                <div className="document-info">
-                  <h4>{doc.name}</h4>
-                  {doc.description && <p>{doc.description}</p>}
-                </div>
-                <div 
-                  className={`status-toggle ${selectedStaff.documents[doc.id]?.status || 'pending'}`}
-                  onClick={() => handleDocumentStatusToggle(selectedStaff.id, doc.id)}
-                >
-                  <div className="toggle-slider">
-                    <div className="toggle-circle"></div>
-                  </div>
-                  <span className="toggle-text">
-                    {selectedStaff.documents[doc.id]?.status === 'obtained' ? 'Obtained' : 'Pending'}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="document-card-body">
-                {selectedStaff.documents[doc.id]?.file ? (
-                  <div className="file-preview">
-                    <div className="file-info">
-                      <i className="fas fa-file-pdf"></i>
-                      <span className="file-name">{selectedStaff.documents[doc.id].file}</span>
-                    </div>
-                    <div className="file-actions">
-                      <button className="view-file-btn">
-                        <i className="fas fa-eye"></i>
-                        <span>View</span>
-                      </button>
-                      <div className="upload-new">
-                        <label htmlFor={`file-${selectedStaff.id}-${doc.id}`}>
-                          <i className="fas fa-sync-alt"></i>
-                          <span>Update</span>
-                        </label>
-                        <input
-                          type="file"
-                          id={`file-${selectedStaff.id}-${doc.id}`}
-                          onChange={(e) => handleDocumentUpload(selectedStaff.id, doc.id, e)}
-                          className="file-input"
-                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="no-file">
-                    <div className="upload-container">
-                      <i className="fas fa-cloud-upload-alt"></i>
-                      <p>No file uploaded. Click to upload document.</p>
-                      <label htmlFor={`file-${selectedStaff.id}-${doc.id}`} className="upload-btn">
-                        <i className="fas fa-plus"></i>
-                        <span>Upload File</span>
-                      </label>
-                      <input
-                        type="file"
-                        id={`file-${selectedStaff.id}-${doc.id}`}
-                        onChange={(e) => handleDocumentUpload(selectedStaff.id, doc.id, e)}
-                        className="file-input"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// Pestaña de seguridad para ambos tipos
-const renderSecurityTab = () => (
-  <div className="security-tab-content">
-    <div className="security-section">
-      <h3>Access Information</h3>
-      
-      <div className="security-form">
-        <div className="form-row">
-          <div className="input-group">
-            <label>Username</label>
-            <div className="input-with-icon">
-              <input 
-                type="text" 
-                value={selectedStaff.userName || ''} 
-                onChange={(e) => handleUpdateMember('userName', e.target.value)}
-              />
-              <button 
-                className="icon-button"
-                onClick={() => {
-                  navigator.clipboard.writeText(selectedStaff.userName);
-                  alert('Username copied to clipboard');
-                }}
-              >
-                <i className="fas fa-copy"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div className="form-row">
-          <div className="input-group">
-            <label>Password</label>
-            <div className="input-with-action">
-              <input 
-                type={passwordVisible ? "text" : "password"}
-                value={selectedStaff.password || ''}
-                onChange={(e) => handleUpdateMember('password', e.target.value)}
-              />
-              <button 
-                className="icon-button"
-                onClick={togglePasswordVisibility}
-              >
-                <i className={`fas fa-${passwordVisible ? 'eye-slash' : 'eye'}`}></i>
-              </button>
-            </div>
-            <p className="help-text">
-              You can view and edit the password directly, or use the reset button to generate a new one.
-            </p>
-          </div>
-        </div>
-        
-        <div className="form-row">
-          <div className="input-group">
-            <div className="button-container">
-              <button 
-                className="reset-password-btn"
-                onClick={() => {
-                  // Generar contraseña aleatoria más segura
-                  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-                  let newPassword = '';
-                  for (let i = 0; i < 12; i++) {
-                    newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-                  }
-                  handleUpdateMember('password', newPassword);
-                  setPasswordVisible(true);
-                }}
-              >
-                <i className="fas fa-key"></i>
-                <span>Generate Secure Password</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-// Pestaña de agencia para terapeutas y administradores
-const renderAgencyTab = () => {
-  const availableAgencies = staffList.filter(item => 
-    item.type === 'agency' && item.status === 'active'
-  );
-  
-  return (
-    <div className="agency-tab-content">
-      <div className="agency-section">
-        <h3>Agency Affiliation</h3>
-        
-        <div className="agency-form">
-          <div className="form-row">
-            <div className="input-group">
-              <label>Select Agency</label>
-              <select
-                value={selectedStaff.agency?.id || ''}
-                onChange={(e) => handleUpdateAgency(e.target.value)}
-                className="agency-select"
-              >
-                <option value="">-- Select an Agency --</option>
-                {availableAgencies.map(agency => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.agencyName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {selectedStaff.agency && (
-            <div className="agency-details-card">
-              <h4>Agency Details</h4>
-              <div className="agency-info">
-                <div className="agency-info-item">
-                  <span className="info-label">Name:</span>
-                  <span className="info-value">{selectedStaff.agency.name}</span>
-                </div>
-                <div className="agency-info-item">
-                  <span className="info-label">Address:</span>
-                  <span className="info-value">{selectedStaff.agency.address}</span>
-                </div>
-                <div className="agency-info-item">
-                  <span className="info-label">Phone:</span>
-                  <span className="info-value">{selectedStaff.agency.phone}</span>
-                </div>
-              </div>
-              <div className="agency-note">
-                <i className="fas fa-info-circle"></i>
-                <p>Staff member will be linked to this agency and can only access its patients and resources.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Si está cargando, mostrar pantalla de carga
-if (isLoading) {
-  return (
-    <div className="staff-edit-loading">
-      <div className="loading-container">
-        <div className="loading-hologram">
-          <div className="hologram-ring"></div>
-          <div className="hologram-circle"></div>
-          <div className="hologram-bars">
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-          </div>
-        </div>
-        
-        <div className="loading-progress">
-          <div className="progress-bar">
-            <div className="progress-fill"></div>
-          </div>
-        </div>
-        
-        <div className="loading-text">{loadingMessage}</div>
-        <div className="loading-status">TherapySync Pro <span className="status-dot"></span></div>
-      </div>
-    </div>
-  );
-}
-
-return (
-  <div className="staff-edit-container">
-    {/* Encabezado mejorado */}
-    <div className="staff-edit-header">
-      <div className="header-content">
-        <button className="back-button" onClick={onBackToOptions}>
-          <i className="fas fa-arrow-left"></i>
-          <span>Back</span>
-        </button>
-        <div className="header-title-container">
-          <h2>Staff Management</h2>
-          <p>Manage and update information for team members and agencies</p>
-        </div>
-      </div>
-      <div className="header-actions">
-        <button className="add-new-btn" onClick={onAddNewStaff}>
-          <i className="fas fa-user-plus"></i>
-          <span>Add New</span>
-        </button>
-      </div>
-    </div>
-    
-    {/* Selector de vista (staff/agencies/todos) */}
-    <div className="view-selector">
-      <button 
-        className={`view-option ${viewMode === 'all' ? 'active' : ''}`}
-        onClick={() => setViewMode('all')}
-      >
-        <i className="fas fa-th-large"></i>
-        <span>All</span>
-      </button>
-      <button 
-        className={`view-option ${viewMode === 'staff' ? 'active' : ''}`}
-        onClick={() => setViewMode('staff')}
-      >
-        <i className="fas fa-user-md"></i>
-        <span>Staff</span>
-      </button>
-      <button 
-        className={`view-option ${viewMode === 'agencies' ? 'active' : ''}`}
-        onClick={() => setViewMode('agencies')}
-      >
-        <i className="fas fa-hospital-alt"></i>
-        <span>Agencies</span>
-      </button>
-    </div>
-    
-    {/* Barra de búsqueda y filtros mejorada */}
-    <div className="search-filter-container">
-      <div className="search-bar">
-        <div className="search-input-wrapper">
-          <i className="fas fa-search"></i>
-          <input 
-            type="text" 
-            placeholder={viewMode === 'agencies' ? "Search agencies..." : "Search staff..."} 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button className="clear-search" onClick={() => setSearchTerm('')}>
-              <i className="fas fa-times"></i>
-            </button>
-          )}
-        </div>
-        
-        <div className="filter-options">
-          {/* Mostrar filtro de rol solo si no está en modo agencies */}
-          {viewMode !== 'agencies' && (
-            <div className="role-filter">
-              <div className="filter-label">
-                <i className="fas fa-filter"></i>
-                <span>Filter by role:</span>
-              </div>
-              <div className="role-options">
-                <button 
-                  className={`role-option ${filterRole === 'all' ? 'active' : ''}`}
-                  onClick={() => setFilterRole('all')}
-                >
-                  <span>All</span>
-                </button>
-                
-                {roles.filter(r => r.value !== 'agency' || viewMode === 'agencies').map(role => (
-                  <button 
-                    key={role.value}
-                    className={`role-option ${filterRole === role.value ? 'active' : ''}`}
-                    onClick={() => setFilterRole(role.value)}
-                  >
-                    <i className={`fas ${role.icon}`}></i>
-                    <span>{role.value.toUpperCase()}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Toggle para mostrar inactivos */}
-          <div className="inactive-filter">
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={showInactive}
-                onChange={() => setShowInactive(!showInactive)}
-              />
-              <span className="toggle-slider"></span>
-              <div className="toggle-label">
-                <i className="fas fa-user-slash"></i>
-                <span>Show Inactive {viewMode === 'agencies' ? 'Agencies' : viewMode === 'staff' ? 'Staff' : 'Members'}</span>
-              </div>
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    {/* Contenedor de tarjetas de personal */}
-    <div className="staff-cards-container">
-      {filteredStaff.length > 0 ? (
-        filteredStaff.map(member => {
-          // Calcular el porcentaje de documentos completados
-          const docsPercentage = member.documents ? 
-            getCompletedDocsPercentage(member.documents, member.type === 'agency' ? 'agency' : 'staff') : 0;
-          
-          // Determinar si se deben mostrar documentos
-          const shouldShowDocs = requiresDocuments(member.role);
-          
-          return (
-            <div 
-              key={member.id} 
-              className={`staff-card ${member.status}`}
-              onClick={() => handleOpenProfile(member)}
-            >
-              <div className="card-highlight"></div>
-              <div className="staff-card-header">
-                <div className="avatar-status">
-                  <div className={`avatar-container ${member.role}`}>
-                    <div className="avatar-inner">
-                      {member.type === 'agency' 
-                        ? member.agencyName.charAt(0) + (member.agencyName.split(' ')[1]?.charAt(0) || '')
-                        : member.firstName.charAt(0) + member.lastName.charAt(0)}
-                    </div>
-                    <span className={`status-indicator ${member.status}`}></span>
-                  </div>
-                </div>
-                
-                <div className="staff-identity">
-                  <h3>
-                    {member.type === 'agency' 
-                      ? member.agencyName 
-                      : `${member.firstName} ${member.lastName}`}
-                  </h3>
-                  <div className="staff-meta">
-                    <span className="staff-role">{member.roleDisplay}</span>
-                    {member.status === 'inactive' && (
-                      <span className="status-badge inactive">
-                        <i className="fas fa-user-slash"></i> Inactive
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="edit-action">
-                  <button className="edit-btn">
-                    <i className="fas fa-pen"></i>
-                  </button>
-                </div>
-              </div>
-              
-              <div className="staff-card-body">
-                <div className="contact-details">
-                  <div className="contact-item">
-                    <i className="fas fa-envelope"></i>
-                    <span>{member.email}</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fas fa-phone-alt"></i>
-                    <span>{member.phone}</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fas fa-map-marker-alt"></i>
-                    <span>Zip: {member.zipCode}</span>
-                  </div>
-                  
-                  {/* Mostrar agencia o número de sucursales */}
-                  {member.type === 'agency' ? (
-                    <div className="contact-item">
-                      <i className="fas fa-code-branch"></i>
-                      <span>{member.branches?.length || 0} Branches</span>
-                    </div>
-                  ) : member.agency && (
-                    <div className="contact-item">
-                      <i className="fas fa-hospital-alt"></i>
-                      <span>{member.agency.name}</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Mostrar progreso de documentos si aplica */}
-                {shouldShowDocs && (
-                  <div className="documents-progress">
-                    <div className="progress-label">
-                      <span>Documentation</span>
-                      <span className="percentage">{docsPercentage}%</span>
-                    </div>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${docsPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <div className="no-results">
-          <div className="no-results-icon">
-            <i className="fas fa-search"></i>
-          </div>
-          <h3>No results found</h3>
-          <p>Try different search criteria or change filters</p>
-          <button 
-            className="reset-filters-btn"
-            onClick={() => {
-              setSearchTerm('');
-              setFilterRole('all');
-              setShowInactive(true);
-              setViewMode('all');
-            }}
-          >
-            <i className="fas fa-redo-alt"></i>
-            <span>Reset Filters</span>
-          </button>
+      {showMenuSwitch && !isLoggingOut && (
+        <div 
+          className="menu-switch-indicator"
+          onClick={handleMainMenuTransition}
+          title="Back to main menu"
+        >
+          <i className="fas fa-chevron-left"></i>
         </div>
       )}
-    </div>
-    
-    {/* Modal de perfil mejorado */}
-    {showProfileModal && selectedStaff && (
-      <div className="profile-modal-overlay">
-        <div className="profile-modal">
-          <div className="modal-header">
-            <div className="staff-profile-header">
-              <div className={`modal-avatar ${selectedStaff.role}`}>
-                <span className="avatar-text">
-                  {selectedStaff.type === 'agency' 
-                    ? selectedStaff.agencyName.charAt(0) + (selectedStaff.agencyName.split(' ')[1]?.charAt(0) || '')
-                    : selectedStaff.firstName.charAt(0) + selectedStaff.lastName.charAt(0)}
-                </span>
-                <span className={`modal-status ${selectedStaff.status}`}></span>
+      
+      <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
+        <div className="header-container">
+          <div className="logo-container">
+            <div className="logo-wrapper">
+              <img src={logoImg} alt="TherapySync Logo" className="logo" />
+              <div className="logo-glow"></div>
+            </div>
+            
+            <div className="menu-navigation">
+              <button 
+                className="nav-button main-menu" 
+                onClick={handleMainMenuTransition}
+                title="Back to main menu"
+                disabled={isLoggingOut}
+              >
+                <i className="fas fa-th-large"></i>
+                <span>Main Menu</span>
+                <div className="button-effect"></div>
+              </button>
+              
+              <button 
+                className="nav-button staffing-menu active" 
+                title="Staffing Menu"
+                disabled={isLoggingOut}
+              >
+                <i className="fas fa-user-md"></i>
+                <span>Staffing</span>
+                <div className="button-effect"></div>
+              </button>
+            </div>
+          </div>
+          
+          <div className="tabs-section">
+            <PremiumTabs activeTab="Staffing" onTabChange={handleTabChange} />
+          </div>
+          
+          <div className="support-user-profile" ref={userMenuRef}>
+            <div 
+              className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
+              onClick={() => !isLoggingOut && setShowUserMenu(!showUserMenu)}
+              data-tooltip="Your profile and settings"
+            >
+              <div className="support-avatar">
+                <div className="support-avatar-text">{userData.avatar}</div>
+                <div className={`support-avatar-status ${userData.status}`}></div>
               </div>
               
-              <div className="staff-details">
-                <div className="name-inputs">
-                  {selectedStaff.type === 'agency' ? (
-                    <div className="input-group full-width">
-                      <label>Agency Name</label>
-                      <input 
-                        type="text" 
-                        value={selectedStaff.agencyName || ''} 
-                        onChange={(e) => handleUpdateAgencyField('agencyName', e.target.value)}
-                      />
+              <div className="support-profile-info">
+                <span className="support-user-name">{userData.name}</span>
+                <span className="support-user-role">{userData.role}</span>
+              </div>
+              
+              <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
+            </div>
+            
+            {showUserMenu && !isLoggingOut && (
+              <div className="support-user-menu">
+                <div className="support-menu-header">
+                  <div className="support-user-info">
+                    <div className="support-user-avatar">
+                      <span>{userData.avatar}</span>
+                      <div className={`avatar-status ${userData.status}`}></div>
                     </div>
-                  ) : (
-                    <>
-                      <div className="input-group">
-                        <label>First Name</label>
-                        <input 
-                          type="text" 
-                          value={selectedStaff.firstName || ''} 
-                          onChange={(e) => handleUpdateMember('firstName', e.target.value)}
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label>Last Name</label>
-                        <input 
-                          type="text" 
-                          value={selectedStaff.lastName || ''} 
-                          onChange={(e) => handleUpdateMember('lastName', e.target.value)}
-                        />
-                      </div>
-                    </>
-                  )}
+                    <div className="support-user-details">
+                      <h4>{userData.name}</h4>
+                      <span className="support-user-email">{userData.email}</span>
+                      <span className={`support-user-status ${userData.status}`}>
+                        <i className="fas fa-circle"></i> 
+                        {userData.status.charAt(0).toUpperCase() + userData.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="role-status-selects">
-                  <div className="input-group">
-                    <label>Role</label>
-                    <select 
-                      value={selectedStaff.role || ''} 
-                      onChange={(e) => {
-                        const newRole = e.target.value;
-                        const roleDisplay = roles.find(r => r.value === newRole)?.label || newRole;
-                        
-                        handleUpdateMember('role', newRole);
-                        handleUpdateMember('roleDisplay', roleDisplay);
-                        
-                        // Resetear la pestaña activa para evitar bugs al cambiar de rol
-                        setActiveTab('info');
-                        
-                        // Asegurarse de que los documentos se inicialicen correctamente
-                        if (requiresDocuments(newRole) && (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-                          handleUpdateMember('documents', initializeDocuments(newRole, selectedStaff.type));
-                        }
-                      }}
-                      disabled={selectedStaff.type === 'agency'} // No cambiar rol para agencias
-                    >
-                      {roles.filter(r => selectedStaff.type === 'agency' ? r.value === 'agency' : r.value !== 'agency').map(role => (
-                        <option key={role.value} value={role.value}>{role.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="input-group">
-                    <label>Status</label>
-                    <select 
-                      value={selectedStaff.status || 'active'} 
-                      onChange={(e) => handleUpdateMember('status', e.target.value)}
-                      className={`status-select ${selectedStaff.status}`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
+                <div className="support-menu-section">
+                  <div className="section-title">Account</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-user-circle"></i>
+                      <span>My Profile</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-cog"></i>
+                      <span>Settings</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>My Schedule</span>
+                    </div>
                   </div>
                 </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Preferences</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-bell"></i>
+                      <span>Notifications</span>
+                      <div className="support-notification-badge">{notificationCount}</div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-moon"></i>
+                        <span>Dark Mode</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle active"></div>
+                      </div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-volume-up"></i>
+                        <span>Sound Alerts</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Support</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-headset"></i>
+                      <span>Contact Support</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-bug"></i>
+                      <span>Report Issue</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-footer">
+                  <div className="support-menu-item logout" onClick={handleLogout}>
+                    <i className="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                  </div>
+                  <div className="version-info">
+                    <span>TherapySync™ Support</span>
+                    <span>v2.7.0</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+      
+      <main className={`staffing-content ${isLoggingOut ? 'fade-out' : ''}`}>
+        <div className="staffing-container">
+          <div className="staffing-header">
+            <div className="staffing-title-container">
+              <h1 className="staffing-title">Staffing Management Center</h1>
+              <p className="staffing-subtitle">
+                Manage your therapy team, track performance and optimize schedules
+              </p>
+            </div>
+            
+            <div className="assistant-message">
+              <div className="message-content">
+                <i className="fas fa-robot"></i>
+                <p>Need assistance? Our AI assistant is available 24/7 to help you! <span className="ask-question">Ask a question</span></p>
+              </div>
+              <div className="message-glow"></div>
+            </div>
+          </div>
+
+          <div className="staffing-options">
+            <div 
+              className={`staffing-option-card ${selectedOption === 'therapists' ? 'selected' : ''}`}
+              onClick={() => handleOptionSelect('therapists')}
+            >
+              <div className="option-icon">
+                <i className="fas fa-user-md"></i>
+              </div>
+              <div className="option-content">
+                <h3>Therapists & Office Staff</h3>
+                <p>Add or edit therapist and office staff users</p>
+                <div className="option-actions">
+                  <button 
+                    className="option-btn" 
+                    onClick={(e) => handleViewAllStaffClick(e)}
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-eye"></i> View & Edit Staff
+                  </button>
+                  <button 
+                    className="option-btn" 
+                    onClick={(e) => handleAddStaffClick(e)}
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-plus"></i> Add New
+                  </button>
+                </div>
+              </div>
+              <div className="option-glow"></div>
+              <div className="option-bg-icon">
+                <i className="fas fa-user-md"></i>
               </div>
             </div>
             
-            <div className="modal-actions">
-              <button className="close-modal-btn" onClick={handleCloseProfile}>
-                <i className="fas fa-times"></i>
-              </button>
+            {/* Opción para Companies */}
+            <div 
+              className={`staffing-option-card ${selectedOption === 'companies' ? 'selected' : ''}`}
+              onClick={() => handleOptionSelect('companies')}
+            >
+              <div className="option-icon">
+                <i className="fas fa-building"></i>
+              </div>
+              <div className="option-content">
+                <h3>Companies</h3>
+                <p>Add or manage healthcare companies and home care agencies</p>
+                <div className="option-actions">
+                  <button 
+                    className="option-btn view" 
+                    onClick={(e) => handleViewAllCompaniesClick(e)}
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-list"></i> View All Companies
+                  </button>
+                  <button 
+                    className="option-btn add" 
+                    onClick={(e) => handleRegisterCompanyClick(e)}
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-plus"></i> Add New Company
+                  </button>
+                </div>
+              </div>
+              <div className="option-glow"></div>
+              <div className="option-bg-icon">
+                <i className="fas fa-building"></i>
+              </div>
             </div>
           </div>
           
-          <div className="modal-tabs">
-            {renderTabs().map(tab => (
-              <button 
-                key={tab.id}
-                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => handleChangeTab(tab.id)}
-              >
-                <i className={`fas ${tab.icon}`}></i>
-                 <span>{tab.label}</span>
-               </button>
-             ))}
-           </div>
-           
-           <div className="modal-content">
-             {renderTabContent()}
-           </div>
-           
-           <div className="modal-footer">
-             <button className="cancel-btn" onClick={handleCloseProfile}>
-               <i className="fas fa-times"></i>
-               <span>Cancel</span>
-             </button>
-             <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
-               <i className="fas fa-save"></i>
-               <span>Save Changes</span>
-             </button>
-           </div>
-         </div>
-       </div>
-     )}
-   </div>
- );
+          {/* Sección de estadísticas con datos reales */}
+          <div className="stats-container">
+            <h2>Staffing Overview</h2>
+            {isLoadingStats ? (
+              <div className="stats-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading staffing statistics...</p>
+              </div>
+            ) : statsError ? (
+              <div className="stats-error">
+                <div className="error-icon">
+                  <i className="fas fa-exclamation-triangle"></i>
+                </div>
+                <p>Error loading statistics: {statsError}</p>
+                <button onClick={fetchStaffData} className="retry-btn">
+                  <i className="fas fa-redo"></i> Retry
+                </button>
+              </div>
+            ) : (
+              <div className="staffing-stats">
+                {/* Total Therapists con desglose real */}
+                <div className="stat-card therapists-card">
+                  <div className="stat-header">
+                    <div className="stat-icon">
+                      <i className="fas fa-users"></i>
+                    </div>
+                    <div className="stat-main-info">
+                      <h3 className="stat-value">{stats.totalTherapists}</h3>
+                      <p className="stat-label">Total Therapists</p>
+                    </div>
+                  </div>
+                  <div className="therapist-breakdown">
+                    <div className="breakdown-grid">
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">PT</span>
+                        <span className="breakdown-value">{stats.therapistCounts.PT}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">PTA</span>
+                        <span className="breakdown-value">{stats.therapistCounts.PTA}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">OT</span>
+                        <span className="breakdown-value">{stats.therapistCounts.OT}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">COTA</span>
+                        <span className="breakdown-value">{stats.therapistCounts.COTA}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">ST</span>
+                        <span className="breakdown-value">{stats.therapistCounts.ST}</span>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="breakdown-label">STA</span>
+                        <span className="breakdown-value">{stats.therapistCounts.STA}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Agencies con datos reales */}
+                <div className="stat-card agencies-card">
+                  <div className="stat-header">
+                    <div className="stat-icon">
+                      <i className="fas fa-building"></i>
+                    </div>
+                    <div className="stat-main-info">
+                      <h3 className="stat-value">{stats.agencyStats.currentMonth}</h3>
+                      <p className="stat-label">Active Agencies</p>
+                    </div>
+                  </div>
+                  <div className="stat-footer">
+                    <div className={`change-indicator ${agencyChangeDirection}`}>
+                      <i className={`fas fa-${agencyChangeDirection === 'increase' ? 'arrow-up' : agencyChangeDirection === 'decrease' ? 'arrow-down' : 'minus'}`}></i>
+                      <span>
+                        {agencyChangeDirection !== 'no-change' ? 
+                          `${Math.abs(agencyChange)}% vs last month` : 
+                          'No change'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Internal Staff con datos reales */}
+                <div className="stat-card internal-staff-card">
+                  <div className="stat-header">
+                    <div className="stat-icon">
+                      <i className="fas fa-user-tie"></i>
+                    </div>
+                    <div className="stat-main-info">
+                      <h3 className="stat-value">{stats.totalInternalStaff}</h3>
+                      <p className="stat-label">Internal Staff</p>
+                    </div>
+                  </div>
+                  <div className="internal-staff-breakdown">
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Admin</span>
+                      <span className="breakdown-value">{stats.internalStaffCounts.Admin}</span>
+                    </div>
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Support</span>
+                      <span className="breakdown-value">{stats.internalStaffCounts.Support}</span>
+                    </div>
+                    <div className="breakdown-row">
+                      <span className="breakdown-label">Developer</span>
+                      <span className="breakdown-value">{stats.internalStaffCounts.Developer}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botón para crear un nuevo paciente */}
+                <div className="stat-card action-card" onClick={handleNavigateToCreateReferral}>
+                  <div className="stat-header">
+                    <div className="stat-icon action-icon">
+                      <i className="fas fa-user-plus"></i>
+                    </div>
+                    <div className="stat-main-info">
+                      <h3 className="stat-value">Create</h3>
+                      <p className="stat-label">New Patient Referral</p>
+                    </div>
+                  </div>
+                  <div className="action-arrow">
+                    <i className="fas fa-arrow-right"></i>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Renderizado condicional de componentes */}
+          {selectedOption === 'therapists' && showAddStaffForm ? (
+            <AddStaffForm 
+              onCancel={handleCancelForm} 
+              onViewAllStaff={handleViewAllStaffClick} 
+            />
+          ) : selectedOption === 'therapists' && showStaffList ? (
+            <StaffListComponent
+              onBackToOptions={handleBackToOptions}
+              onAddNewStaff={handleAddStaffClick}  
+            />
+          ) : selectedOption === 'companies' && showCompanyForm ? (
+            <CompanyRegistrationForm onCancel={handleCompanyFormCancel} onSave={handleCompanySave} />
+          ) : selectedOption === 'companies' && showCompanyList ? (
+            <CompanyListComponent onBackToOptions={handleBackToOptions} />
+          ) : (
+            <div className="selected-content-area">
+              {selectedOption && (
+                <div className="selected-content-card">
+                  <div className="content-header">
+                    <h2>
+                      {selectedOption === 'therapists' ? 'Therapists & Office Staff' : 
+                      selectedOption === 'companies' ? 'Companies & Agencies' : 
+                      'Scheduling & Assignments'}
+                    </h2>
+                    <p>
+                      {selectedOption === 'therapists' 
+                        ? 'View and manage your therapy and office staff team members.' 
+                        : selectedOption === 'companies'
+                        ? 'Manage healthcare companies and home care agencies in the system.'
+                        : 'Manage scheduling and patient assignments for your therapy team.'}
+                    </p>
+                  </div>
+                  
+                  <div className="content-body">
+                    <div className="placeholder-content">
+                      <i className={`fas fa-${
+                        selectedOption === 'therapists' ? 'users' : 
+                        selectedOption === 'companies' ? 'building' : 
+                        'calendar-alt'}`}></i>
+                      <p>Select an action to continue with {
+                        selectedOption === 'therapists' ? 'staff management' : 
+                        selectedOption === 'companies' ? 'company management' : 
+                        'scheduling'}</p>
+                      
+                      {selectedOption === 'therapists' && (
+                        <div className="action-buttons">
+                          <button 
+                            className="action-btn add" 
+                            onClick={(e) => handleAddStaffClick(e)}
+                            disabled={isLoggingOut}
+                          >
+                            <i className="fas fa-user-plus"></i> Add New Staff
+                          </button>
+                          <button 
+                            className="action-btn view" 
+                            onClick={(e) => handleViewAllStaffClick(e)}
+                            disabled={isLoggingOut}
+                          >
+                            <i className="fas fa-list"></i> View & Edit Staff
+                          </button>
+                        </div>
+                      )}
+                      
+                      {selectedOption === 'companies' && (
+                        <div className="action-buttons">
+                          <button 
+                            className="action-btn add" 
+                            onClick={(e) => handleRegisterCompanyClick(e)}
+                            disabled={isLoggingOut}
+                          >
+                            <i className="fas fa-building"></i> Register New Company
+                          </button>
+                          <button 
+                            className="action-btn view" 
+                            onClick={(e) => handleViewAllCompaniesClick(e)}
+                            disabled={isLoggingOut}
+                          >
+                            <i className="fas fa-list"></i> View All Companies
+                          </button>
+                        </div>
+                      )}
+                      
+                      {selectedOption === 'scheduling' && (
+                        <div className="action-buttons">
+                          <button className="action-btn calendar" disabled={isLoggingOut}>
+                            <i className="fas fa-calendar-plus"></i> Create New Schedule
+                          </button>
+                          <button className="action-btn view" disabled={isLoggingOut}>
+                            <i className="fas fa-calendar-week"></i> View Calendar
+                          </button>
+                          <button className="action-btn assign" disabled={isLoggingOut}>
+                            <i className="fas fa-user-check"></i> Assign Patients
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {!selectedOption && (
+                <div className="welcome-select-message">
+                  <i className="fas fa-hand-point-up"></i>
+                  <h3>Please Select an Option Above</h3>
+                  <p>Choose an option to get started with staff or company management</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+      
+    </div>
+  );
 };
 
-export default DevStaffEditComponent;
+export default DevStaffingPage;
