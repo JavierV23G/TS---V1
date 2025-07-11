@@ -157,46 +157,134 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
   };
   
   // Save changes - SIMULADO por ahora
-  const handleSaveChanges = async () => {
-    try {
-      setIsSaving(true);
-      setError(null);
-      
-      // Preparar datos para guardar
-      const dataToSave = {
-        weight: medicalData.weight ? parseFloat(medicalData.weight) : null,
-        height: medicalData.height ? parseFloat(medicalData.height) : null,
-        nursing_diagnosis: medicalData.nursingDiagnosis || null,
-        past_medical_history: medicalData.pmh || null,
-        weight_bearing_status: medicalData.wbs || null,
-        clinical_grouping: medicalData.clinicalGrouping || null,
-        homebound_status: medicalData.homebound || null
-      };
-      
-      console.log('Saving medical data:', dataToSave);
-      
-      // TODO: Implementar llamada real a la API cuando esté disponible
-      // const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/medical-info`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(dataToSave)
-      // });
-      
-      // Simular guardado exitoso
-      setTimeout(() => {
-        if (onUpdateMedicalInfo) {
-          onUpdateMedicalInfo(dataToSave);
-        }
-        setIsSaving(false);
-        setIsEditing(false);
-      }, 1500);
-      
-    } catch (err) {
-      console.error('Error saving medical data:', err);
-      setError('Failed to save medical information: ' + err.message);
-      setIsSaving(false);
+// Save changes - IMPLEMENTACIÓN REAL CON API
+const handleSaveChanges = async () => {
+  try {
+    setIsSaving(true);
+    setError(null);
+    
+    // Validación básica
+    if (!patient?.id) {
+      throw new Error('Patient ID not available');
     }
-  };
+    
+    // Preparar datos para guardar - usando los campos exactos de la API
+    const dataToSave = {
+      // Campos básicos del paciente
+      full_name: patient.full_name, // Mantener nombre existente
+      birthday: patient.birthday, // Mantener fecha existente
+      gender: patient.gender, // Mantener género existente
+      address: patient.address, // Mantener dirección existente
+      contact_info: patient.contact_info, // Mantener contacto existente
+      
+      // Campos médicos que estamos actualizando
+      weight: medicalData.weight ? parseFloat(medicalData.weight) : null,
+      height: medicalData.height ? parseFloat(medicalData.height) : null,
+      nursing_diagnosis: medicalData.nursingDiagnosis || '',
+      past_medical_history: medicalData.pmh || '',
+      weight_bearing_status: medicalData.wbs || '',
+      clinical_grouping: medicalData.clinicalGrouping || '',
+      homebound_status: medicalData.homebound || '',
+      
+      // Campos adicionales del paciente (mantener valores existentes)
+      payor_type: patient.payor_type || '',
+      physician: patient.physician || '',
+      agency_id: patient.agency_id || null,
+      urgency_level: patient.urgency_level || '',
+      prior_level_of_function: patient.prior_level_of_function || '',
+      referral_reason: patient.referral_reason || '',
+      required_disciplines: patient.required_disciplines || '',
+      is_active: patient.is_active !== undefined ? patient.is_active : true
+    };
+    
+    console.log('Sending medical data to API:', dataToSave);
+    console.log('API URL:', `${API_BASE_URL}/patients/${patient.id}`);
+    
+    // Llamada real a la API usando PUT /patients/{patient_id}
+    const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(dataToSave)
+    });
+    
+    console.log('Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to update patient medical info: ${response.status} - ${errorText}`);
+    }
+    
+    const responseData = await response.json();
+    console.log('API Response:', responseData);
+    
+    // Verificar que la respuesta sea válida
+    if (!responseData || !responseData.patient_id) {
+      throw new Error('Invalid response format from server');
+    }
+    
+    // Crear objeto actualizado con la respuesta de la API
+    const updatedPatient = {
+      id: responseData.patient_id,
+      full_name: responseData.full_name || patient.full_name,
+      birthday: responseData.birthday || patient.birthday,
+      gender: responseData.gender || patient.gender,
+      address: responseData.address || patient.address,
+      contact_info: responseData.contact_info || patient.contact_info,
+      weight: responseData.weight || null,
+      height: responseData.height || null,
+      nursing_diagnosis: responseData.nursing_diagnosis || '',
+      past_medical_history: responseData.past_medical_history || '',
+      weight_bearing_status: responseData.weight_bearing_status || '',
+      clinical_grouping: responseData.clinical_grouping || '',
+      homebound_status: responseData.homebound_status || '',
+      payor_type: responseData.payor_type || patient.payor_type,
+      physician: responseData.physician || patient.physician,
+      agency_id: responseData.agency_id || patient.agency_id,
+      urgency_level: responseData.urgency_level || patient.urgency_level,
+      prior_level_of_function: responseData.prior_level_of_function || patient.prior_level_of_function,
+      referral_reason: responseData.referral_reason || patient.referral_reason,
+      required_disciplines: responseData.required_disciplines || patient.required_disciplines,
+      is_active: responseData.is_active !== undefined ? responseData.is_active : patient.is_active
+    };
+    
+    // Actualizar el estado local con los datos recibidos
+    const totalInches = updatedPatient.height ? parseFloat(updatedPatient.height) : 0;
+    const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
+    const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
+    
+    setMedicalData(prev => ({
+      ...prev,
+      weight: updatedPatient.weight || '',
+      height: totalInches || '',
+      feet: feet,
+      inches: inches,
+      nursingDiagnosis: updatedPatient.nursing_diagnosis || '',
+      pmh: updatedPatient.past_medical_history || '',
+      wbs: updatedPatient.weight_bearing_status || '',
+      clinicalGrouping: updatedPatient.clinical_grouping || '',
+      homebound: updatedPatient.homebound_status || ''
+    }));
+    
+    // Notificar al componente padre con los datos actualizados
+    if (onUpdateMedicalInfo && typeof onUpdateMedicalInfo === 'function') {
+      onUpdateMedicalInfo(updatedPatient);
+    }
+    
+    // Salir del modo edición
+    setIsEditing(false);
+    console.log('Medical information updated successfully');
+    
+  } catch (err) {
+    console.error('Error saving medical data:', err);
+    setError('Failed to save medical information: ' + err.message);
+  } finally {
+    setIsSaving(false);
+  }
+};
   
   // Cancel editing
   const handleCancelEdit = () => {

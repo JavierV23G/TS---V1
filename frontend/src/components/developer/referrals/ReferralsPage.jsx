@@ -237,110 +237,191 @@ const DevReferralsPage = () => {
   /////////////////////////// HANDLE BUTTONS /////////////////////////////////////////////////////
 
   // Form submission - ACTUALIZADO CON LA ESTRUCTURA CORRECTA
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isLoggingOut) return;
-  
-    try {
-      setFormSubmitting(true);
-  
-      // Validar que al menos una disciplina esté seleccionada
-      if (formData.disciplines.length === 0) {
-        toast.error('Please select at least one discipline');
-        return;
+// Form submission - CORREGIDO PARA ENVIAR TEXTO LEGIBLE
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (isLoggingOut) return;
+
+  try {
+    setFormSubmitting(true);
+
+    // Validar que al menos una disciplina esté seleccionada
+    if (formData.disciplines.length === 0) {
+      toast.error('Please select at least one discipline');
+      return;
+    }
+
+    // Validar que cada disciplina seleccionada tenga un terapeuta asignado
+    const missingTherapists = formData.disciplines.filter(discipline => !selectedTherapists[discipline]);
+    if (missingTherapists.length > 0) {
+      toast.error(`Please assign therapists for: ${missingTherapists.join(', ')}`);
+      return;
+    }
+
+    // ✅ FUNCIÓN PARA CONVERTIR HOMEBOUND A TEXTO LEGIBLE
+    const convertHomeboundToText = (homeboundData) => {
+      const selectedOptions = [];
+      
+      // Mapeo de IDs a texto legible
+      const homeboundLabels = {
+        na: 'N/A',
+        needs_assistance: 'Needs assistance for all activities',
+        residual_weakness: 'Residual weakness',
+        requires_assistance_ambulate: 'Requires assistance to ambulate',
+        confusion: 'Confusion, unable to go out of home alone',
+        safely_leave: 'Unable to safely leave home unassisted',
+        sob: 'Severe SOB, SOB upon exertion',
+        adaptive_devices: 'Dependent upon adaptive device(s)',
+        medical_restrictions: 'Medical restrictions',
+        taxing_effort: 'Requires taxing effort to leave home',
+        bedbound: 'Bedbound',
+        transfers: 'Requires assistance with transfers',
+        other: 'Other'
+      };
+
+      // Recopilar opciones seleccionadas
+      Object.keys(homeboundData).forEach(key => {
+        if (key === 'otherReason') return; // Skip otherReason field
+        
+        if (homeboundData[key] === true && homeboundLabels[key]) {
+          selectedOptions.push(homeboundLabels[key]);
+        }
+      });
+
+      // Si "Other" está seleccionado y hay una razón específica
+      if (homeboundData.other && homeboundData.otherReason) {
+        const otherIndex = selectedOptions.findIndex(option => option === 'Other');
+        if (otherIndex !== -1) {
+          selectedOptions[otherIndex] = `Other: ${homeboundData.otherReason}`;
+        }
       }
 
-      // Validar que cada disciplina seleccionada tenga un terapeuta asignado
-      const missingTherapists = formData.disciplines.filter(discipline => !selectedTherapists[discipline]);
-      if (missingTherapists.length > 0) {
-        toast.error(`Please assign therapists for: ${missingTherapists.join(', ')}`);
-        return;
-      }
-  
-      // Paso 1: Crear paciente
-      const patientPayload = {
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        birthday: formData.dob,
-        gender: formData.gender,
-        address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
-        contact_info: JSON.stringify(formData.contactNumbers),
-        payor_type: formData.payorType,
-        physician: formData.physician,
-        agency_id: parseInt(formData.agencyId),
-        nursing_diagnosis: formData.nursingDiagnosis,
-        urgency_level: formData.urgencyLevel,
-        prior_level_of_function: formData.priorLevelOfFunction,
-        homebound_status: JSON.stringify(formData.homebound),
-        weight_bearing_status: formData.wbs,
-        referral_reason: JSON.stringify(formData.reasonsForReferral),
-        weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
-        height: formData.height ? `${formData.height} ${formData.heightUnit}` : '',
-        past_medical_history: formData.pmh,
-        initial_cert_start_date: formData.certPeriodStart,
-        required_disciplines: JSON.stringify(formData.disciplines)
+      // Retornar texto legible o un valor por defecto
+      return selectedOptions.length > 0 ? selectedOptions.join('; ') : 'Not specified';
+    };
+
+    // ✅ FUNCIÓN PARA CONVERTIR REASONS FOR REFERRAL A TEXTO LEGIBLE
+    const convertReasonsToText = (reasonsData) => {
+      const selectedReasons = [];
+      
+      // Mapeo de IDs a texto legible
+      const reasonLabels = {
+        strength_balance: 'Decreased Strength / Balance',
+        gait: 'Decreased Gait Ability',
+        adls: 'ADLs',
+        orthopedic: 'Orthopedic Operation',
+        neurological: 'Neurological / Cognitive',
+        wheelchair: 'Wheelchair Evaluation'
       };
-  
-      const createRes = await fetch('http://localhost:8000/patients/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patientPayload),
-      });
-  
-      if (!createRes.ok) {
-        const errorData = await createRes.text();
-        console.error('Error creating patient:', errorData);
-        throw new Error('Failed to create patient');
-      }
-  
-      const createdPatient = await createRes.json();
-      const patientId = createdPatient.id;
-  
-      // Paso 2: Asignar terapeutas
-      const assignPromises = Object.entries(selectedTherapists).map(([discipline, staffId]) => {
-        if (staffId && formData.disciplines.includes(discipline)) {
-          return fetch(`http://localhost:8000/assign-staff?patient_id=${patientId}&staff_id=${parseInt(staffId)}`, {
-            method: 'POST'
-          });
+
+      // Recopilar razones seleccionadas
+      Object.keys(reasonsData).forEach(key => {
+        if (key === 'additional') return; // Skip additional field
+        
+        if (reasonsData[key] === true && reasonLabels[key]) {
+          selectedReasons.push(reasonLabels[key]);
         }
-        return null;
       });
-  
-      const assignmentResults = await Promise.all(assignPromises.filter(Boolean));
-      const failedAssignments = assignmentResults.filter(r => !r.ok);
-      if (failedAssignments.length > 0) {
-        console.error('Some therapist assignments failed');
-        // No fallar completamente, solo mostrar advertencia
-        toast.warning('Patient created but some therapist assignments may have failed');
+
+      // Agregar razones adicionales si existen
+      if (reasonsData.additional && reasonsData.additional.trim()) {
+        selectedReasons.push(`Additional: ${reasonsData.additional.trim()}`);
       }
-  
-      // Paso 3: Subir documentos
-      for (let file of uploadedFiles) {
-        const formDataDoc = new FormData();
-        formDataDoc.append('file', file);
-        formDataDoc.append('patient_id', patientId);
-  
-        const uploadRes = await fetch('http://localhost:8000/documents/upload', {
-          method: 'POST',
-          body: formDataDoc
-        });
-  
-        if (!uploadRes.ok) {
-          console.error('Document upload failed:', await uploadRes.text());
-          // No fallar por documentos, solo advertir
-          toast.warning('Patient created but document upload failed');
-        }
-      }
-  
-      toast.success("Patient created successfully");
-      resetForm();
-      setCurrentView("menu");
-    } catch (error) {
-      console.error('Error in form submission:', error);
-      toast.error("Error creating patient: " + error.message);
-    } finally {
-      setFormSubmitting(false);
+
+      // Retornar texto legible o un valor por defecto
+      return selectedReasons.length > 0 ? selectedReasons.join('; ') : 'Not specified';
+    };
+
+    // Paso 1: Crear paciente con datos LEGIBLES
+    const patientPayload = {
+      full_name: `${formData.firstName} ${formData.lastName}`,
+      birthday: formData.dob,
+      gender: formData.gender,
+      address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
+      contact_info: JSON.stringify(formData.contactNumbers), // Este sí puede ir como JSON
+      payor_type: formData.payorType,
+      physician: formData.physician,
+      agency_id: parseInt(formData.agencyId),
+      nursing_diagnosis: formData.nursingDiagnosis,
+      urgency_level: formData.urgencyLevel,
+      prior_level_of_function: formData.priorLevelOfFunction,
+      
+      // ✅ CORREGIDO: Enviar como texto legible en lugar de JSON
+      homebound_status: convertHomeboundToText(formData.homebound),
+      referral_reason: convertReasonsToText(formData.reasonsForReferral),
+      
+      weight_bearing_status: formData.wbs,
+      weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
+      height: formData.height ? `${formData.height} ${formData.heightUnit}` : '',
+      past_medical_history: formData.pmh,
+      initial_cert_start_date: formData.certPeriodStart,
+      required_disciplines: JSON.stringify(formData.disciplines) // Este sí puede ir como JSON
+    };
+
+    console.log('Sending patient data with readable homebound:', {
+      homebound_status: patientPayload.homebound_status,
+      referral_reason: patientPayload.referral_reason
+    });
+
+    const createRes = await fetch('http://localhost:8000/patients/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patientPayload),
+    });
+
+    if (!createRes.ok) {
+      const errorData = await createRes.text();
+      console.error('Error creating patient:', errorData);
+      throw new Error('Failed to create patient');
     }
-  };
+
+    const createdPatient = await createRes.json();
+    const patientId = createdPatient.id;
+
+    // Paso 2: Asignar terapeutas (sin cambios)
+    const assignPromises = Object.entries(selectedTherapists).map(([discipline, staffId]) => {
+      if (staffId && formData.disciplines.includes(discipline)) {
+        return fetch(`http://localhost:8000/assign-staff?patient_id=${patientId}&staff_id=${parseInt(staffId)}`, {
+          method: 'POST'
+        });
+      }
+      return null;
+    });
+
+    const assignmentResults = await Promise.all(assignPromises.filter(Boolean));
+    const failedAssignments = assignmentResults.filter(r => !r.ok);
+    if (failedAssignments.length > 0) {
+      console.error('Some therapist assignments failed');
+      toast.warning('Patient created but some therapist assignments may have failed');
+    }
+
+    // Paso 3: Subir documentos (sin cambios)
+    for (let file of uploadedFiles) {
+      const formDataDoc = new FormData();
+      formDataDoc.append('file', file);
+      formDataDoc.append('patient_id', patientId);
+
+      const uploadRes = await fetch('http://localhost:8000/documents/upload', {
+        method: 'POST',
+        body: formDataDoc
+      });
+
+      if (!uploadRes.ok) {
+        console.error('Document upload failed:', await uploadRes.text());
+        toast.warning('Patient created but document upload failed');
+      }
+    }
+
+    toast.success("Patient created successfully with readable homebound status");
+    resetForm();
+    setCurrentView("menu");
+  } catch (error) {
+    console.error('Error in form submission:', error);
+    toast.error("Error creating patient: " + error.message);
+  } finally {
+    setFormSubmitting(false);
+  }
+};
 
   // Handle logout with animation
   const handleLogout = () => {
