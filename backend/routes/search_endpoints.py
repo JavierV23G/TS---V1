@@ -78,9 +78,18 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
         .first()
     )
 
+    # Obtener el nombre de la agencia
+    agency_name = None
+    if patient.agency_id:
+        agency = db.query(Staff).filter(Staff.id == patient.agency_id).first()
+        if agency:
+            agency_name = agency.name
+
     response_data = patient.__dict__.copy()
     response_data["cert_start_date"] = current_cert.start_date if current_cert else None
     response_data["cert_end_date"] = current_cert.end_date if current_cert else None
+    response_data["insurance"] = patient.payor_type  # Mapeo de payor_type a insurance
+    response_data["agency_name"] = agency_name
 
     return response_data
 

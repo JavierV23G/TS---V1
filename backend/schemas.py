@@ -99,9 +99,10 @@ class PatientResponse(BaseModel):
     gender: str
     address: str
     contact_info: Optional[str]
-    payor_type: Optional[str]
+    insurance: Optional[str] = None
     physician: Optional[str]
     agency_id: int
+    agency_name: Optional[str] = None
     nursing_diagnosis: Optional[str]
     urgency_level: Optional[str]
     prior_level_of_function: Optional[str]
