@@ -5,51 +5,38 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [medicalData, setMedicalData] = useState({
     weight: '',
-    height: '', // Height in inches (total)
-    feet: '',   // Feet for display
-    inches: '', // Inches for display
+    height: '',
+    feet: '',
+    inches: '',
     nursingDiagnosis: '',
     pmh: '',
     wbs: '',
     clinicalGrouping: '',
     homebound: '',
-    // Visits data - inicializado con datos por defecto
     approvedVisits: {
-      pt: {
-        approved: '',
-        used: '',
-        status: 'waiting'
-      },
-      ot: {
-        approved: '',
-        used: '',
-        status: 'waiting'
-      },
-      st: {
-        approved: '',
-        used: '',
-        status: 'waiting'
-      }
+      pt: { approved: '', used: '', status: 'waiting' },
+      ot: { approved: '', used: '', status: 'waiting' },
+      st: { approved: '', used: '', status: 'waiting' }
     }
   });
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Initialize with patient data - OPTIMIZADO para campos reales de la API
+  // Initialize with patient data
   useEffect(() => {
     if (patient && patient.id) {
       console.log('Patient data received:', patient);
       
-      // Mapear campos reales de la API del paciente
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
       const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
       
       setMedicalData({
         weight: patient.weight || '',
-        height: totalInches || '',
+        height: totalInches.toString() || '',
         feet: feet,
         inches: inches,
         nursingDiagnosis: patient.nursing_diagnosis || '',
@@ -57,7 +44,6 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         wbs: patient.weight_bearing_status || '',
         clinicalGrouping: patient.clinical_grouping || '',
         homebound: patient.homebound_status || '',
-        // Visits data - mantener estructura por defecto ya que no viene de la API
         approvedVisits: {
           pt: { approved: '', used: '', status: 'waiting' },
           ot: { approved: '', used: '', status: 'waiting' },
@@ -66,6 +52,25 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       });
     }
   }, [patient]);
+
+  // Clear messages after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
   
   // Handle input changes for text fields
   const handleInputChange = (e) => {
@@ -156,139 +161,237 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     }));
   };
   
-  // Save changes - SIMULADO por ahora
-// Save changes - IMPLEMENTACIÓN REAL CON API
-const handleSaveChanges = async () => {
-  try {
-    setIsSaving(true);
-    setError(null);
+  // Validate data before saving
+  const validateMedicalData = () => {
+    const errors = [];
     
-    // Validación básica
-    if (!patient?.id) {
-      throw new Error('Patient ID not available');
+    // Validate weight (should be a valid number string)
+    if (medicalData.weight && (isNaN(medicalData.weight) || parseFloat(medicalData.weight) < 0)) {
+      errors.push('Weight must be a valid positive number');
     }
     
-    // Preparar datos para guardar - usando los campos exactos de la API
-    const dataToSave = {
-      // Campos básicos del paciente
-      full_name: patient.full_name, // Mantener nombre existente
-      birthday: patient.birthday, // Mantener fecha existente
-      gender: patient.gender, // Mantener género existente
-      address: patient.address, // Mantener dirección existente
-      contact_info: patient.contact_info, // Mantener contacto existente
-      
-      // Campos médicos que estamos actualizando
-      weight: medicalData.weight ? parseFloat(medicalData.weight) : null,
-      height: medicalData.height ? parseFloat(medicalData.height) : null,
-      nursing_diagnosis: medicalData.nursingDiagnosis || '',
-      past_medical_history: medicalData.pmh || '',
-      weight_bearing_status: medicalData.wbs || '',
-      clinical_grouping: medicalData.clinicalGrouping || '',
-      homebound_status: medicalData.homebound || '',
-      
-      // Campos adicionales del paciente (mantener valores existentes)
-      payor_type: patient.payor_type || '',
-      physician: patient.physician || '',
-      agency_id: patient.agency_id || null,
-      urgency_level: patient.urgency_level || '',
-      prior_level_of_function: patient.prior_level_of_function || '',
-      referral_reason: patient.referral_reason || '',
-      required_disciplines: patient.required_disciplines || '',
-      is_active: patient.is_active !== undefined ? patient.is_active : true
-    };
+    // Validate height (should be a valid number string) 
+    if (medicalData.height && (isNaN(medicalData.height) || parseFloat(medicalData.height) < 0)) {
+      errors.push('Height must be a valid positive number');
+    }
     
-    console.log('Sending medical data to API:', dataToSave);
-    console.log('API URL:', `${API_BASE_URL}/patients/${patient.id}`);
+    // Validate feet and inches inputs
+    if (medicalData.feet && (isNaN(medicalData.feet) || parseInt(medicalData.feet) < 0)) {
+      errors.push('Feet must be a valid positive number');
+    }
     
-    // Llamada real a la API usando PUT /patients/{patient_id}
-    const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(dataToSave)
+    if (medicalData.inches && (isNaN(medicalData.inches) || parseFloat(medicalData.inches) < 0 || parseFloat(medicalData.inches) >= 12)) {
+      errors.push('Inches must be between 0 and 11.9');
+    }
+    
+    // Validate visits
+    Object.entries(medicalData.approvedVisits).forEach(([discipline, data]) => {
+      const disciplineInfo = getDisciplineDetails(discipline);
+      
+      if (data.approved && (isNaN(data.approved) || parseInt(data.approved) < 0)) {
+        errors.push(`${disciplineInfo.shortName} approved visits must be a positive number`);
+      }
+      
+      if (data.used && (isNaN(data.used) || parseInt(data.used) < 0)) {
+        errors.push(`${disciplineInfo.shortName} used visits must be a positive number`);
+      }
+      
+      const approvedNum = parseInt(data.approved) || 0;
+      const usedNum = parseInt(data.used) || 0;
+      
+      if (usedNum > approvedNum && approvedNum > 0) {
+        errors.push(`${disciplineInfo.shortName} used visits cannot exceed approved visits`);
+      }
     });
     
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error Response:', errorText);
-      throw new Error(`Failed to update patient medical info: ${response.status} - ${errorText}`);
+    return errors;
+  };
+
+  // Save changes with improved error handling and validation
+  const handleSaveChanges = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccessMessage(null);
+      
+      // Validation
+      if (!patient?.id) {
+        throw new Error('Patient ID not available');
+      }
+      
+      const validationErrors = validateMedicalData();
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join('; '));
+      }
+      
+      // Prepare data for API
+      const dataToSave = {
+        // Keep existing patient data
+        full_name: patient.full_name,
+        birthday: patient.birthday,
+        gender: patient.gender,
+        address: patient.address,
+        contact_info: patient.contact_info,
+        payor_type: patient.payor_type || '',
+        physician: patient.physician || '',
+        agency_id: patient.agency_id || null,
+        urgency_level: patient.urgency_level || '',
+        prior_level_of_function: patient.prior_level_of_function || '',
+        referral_reason: patient.referral_reason || '',
+        required_disciplines: patient.required_disciplines || '',
+        is_active: patient.is_active !== undefined ? patient.is_active : true,
+        
+        // Medical data being updated - clean the data
+        weight: medicalData.weight ? medicalData.weight.toString() : null,
+        height: medicalData.height ? medicalData.height.toString() : null,
+        nursing_diagnosis: medicalData.nursingDiagnosis ? medicalData.nursingDiagnosis.trim() : '',
+        past_medical_history: medicalData.pmh ? medicalData.pmh.trim() : '',
+        weight_bearing_status: medicalData.wbs ? medicalData.wbs.trim() : '',
+        clinical_grouping: medicalData.clinicalGrouping ? medicalData.clinicalGrouping.trim() : '',
+        homebound_status: medicalData.homebound ? medicalData.homebound.trim() : ''
+      };
+      
+      // Remove null/undefined fields to avoid API issues
+      const cleanedData = Object.fromEntries(
+        Object.entries(dataToSave).filter(([_, value]) => value !== null && value !== undefined && value !== '')
+      );
+      
+      console.log('Original patient data:', patient);
+      console.log('Medical form data:', medicalData);
+      console.log('Data to save (before cleaning):', dataToSave);
+      console.log('Data to save (after cleaning):', cleanedData);
+      console.log('API URL:', `${API_BASE_URL}/patients/${patient.id}`);
+      
+      // Validate required fields
+      const requiredFields = ['full_name'];
+      const missingFields = requiredFields.filter(field => !cleanedData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      }
+      
+      // Make API call
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(cleanedData)
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        console.error('Response status:', response.status);
+        console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        let errorMessage;
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.error('Parsed error JSON:', errorJson);
+          
+          // Handle different error formats
+          if (errorJson.detail) {
+            if (Array.isArray(errorJson.detail)) {
+              // FastAPI validation errors
+              errorMessage = errorJson.detail.map(err => {
+                const location = err.loc ? err.loc.join('.') : 'unknown';
+                return `${location}: ${err.msg}`;
+              }).join('; ');
+            } else if (typeof errorJson.detail === 'string') {
+              errorMessage = errorJson.detail;
+            } else {
+              errorMessage = JSON.stringify(errorJson.detail);
+            }
+          } else if (errorJson.message) {
+            errorMessage = errorJson.message;
+          } else if (errorJson.error) {
+            errorMessage = errorJson.error;
+          } else {
+            errorMessage = JSON.stringify(errorJson);
+          }
+        } catch (parseError) {
+          console.error('Error parsing JSON response:', parseError);
+          errorMessage = errorText || `HTTP ${response.status} error`;
+        }
+        
+        throw new Error(`Failed to update patient medical info (${response.status}): ${errorMessage}`);
+      }
+      
+      const responseData = await response.json();
+      console.log('API Response:', responseData);
+      
+      // Validate response
+      if (!responseData || !responseData.patient_id) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      // Update local state with API response
+      const updatedPatient = {
+        id: responseData.patient_id,
+        full_name: responseData.full_name || patient.full_name,
+        birthday: responseData.birthday || patient.birthday,
+        gender: responseData.gender || patient.gender,
+        address: responseData.address || patient.address,
+        contact_info: responseData.contact_info || patient.contact_info,
+        weight: responseData.weight || null,
+        height: responseData.height || null,
+        nursing_diagnosis: responseData.nursing_diagnosis || '',
+        past_medical_history: responseData.past_medical_history || '',
+        weight_bearing_status: responseData.weight_bearing_status || '',
+        clinical_grouping: responseData.clinical_grouping || '',
+        homebound_status: responseData.homebound_status || '',
+        payor_type: responseData.payor_type || patient.payor_type,
+        physician: responseData.physician || patient.physician,
+        agency_id: responseData.agency_id || patient.agency_id,
+        urgency_level: responseData.urgency_level || patient.urgency_level,
+        prior_level_of_function: responseData.prior_level_of_function || patient.prior_level_of_function,
+        referral_reason: responseData.referral_reason || patient.referral_reason,
+        required_disciplines: responseData.required_disciplines || patient.required_disciplines,
+        is_active: responseData.is_active !== undefined ? responseData.is_active : patient.is_active
+      };
+      
+      // Update local medical data
+      const totalInches = updatedPatient.height ? parseFloat(updatedPatient.height) : 0;
+      const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
+      const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
+      
+      setMedicalData(prev => ({
+        ...prev,
+        weight: updatedPatient.weight || '',
+        height: totalInches.toString() || '',
+        feet: feet,
+        inches: inches,
+        nursingDiagnosis: updatedPatient.nursing_diagnosis || '',
+        pmh: updatedPatient.past_medical_history || '',
+        wbs: updatedPatient.weight_bearing_status || '',
+        clinicalGrouping: updatedPatient.clinical_grouping || '',
+        homebound: updatedPatient.homebound_status || ''
+      }));
+      
+      // Notify parent component
+      if (onUpdateMedicalInfo && typeof onUpdateMedicalInfo === 'function') {
+        onUpdateMedicalInfo(updatedPatient);
+      }
+      
+      // Success feedback
+      setIsEditing(false);
+      setSuccessMessage('Medical information updated successfully!');
+      console.log('Medical information updated successfully');
+      
+    } catch (err) {
+      console.error('Error saving medical data:', err);
+      setError(err.message || 'Failed to save medical information');
+    } finally {
+      setIsSaving(false);
     }
-    
-    const responseData = await response.json();
-    console.log('API Response:', responseData);
-    
-    // Verificar que la respuesta sea válida
-    if (!responseData || !responseData.patient_id) {
-      throw new Error('Invalid response format from server');
-    }
-    
-    // Crear objeto actualizado con la respuesta de la API
-    const updatedPatient = {
-      id: responseData.patient_id,
-      full_name: responseData.full_name || patient.full_name,
-      birthday: responseData.birthday || patient.birthday,
-      gender: responseData.gender || patient.gender,
-      address: responseData.address || patient.address,
-      contact_info: responseData.contact_info || patient.contact_info,
-      weight: responseData.weight || null,
-      height: responseData.height || null,
-      nursing_diagnosis: responseData.nursing_diagnosis || '',
-      past_medical_history: responseData.past_medical_history || '',
-      weight_bearing_status: responseData.weight_bearing_status || '',
-      clinical_grouping: responseData.clinical_grouping || '',
-      homebound_status: responseData.homebound_status || '',
-      payor_type: responseData.payor_type || patient.payor_type,
-      physician: responseData.physician || patient.physician,
-      agency_id: responseData.agency_id || patient.agency_id,
-      urgency_level: responseData.urgency_level || patient.urgency_level,
-      prior_level_of_function: responseData.prior_level_of_function || patient.prior_level_of_function,
-      referral_reason: responseData.referral_reason || patient.referral_reason,
-      required_disciplines: responseData.required_disciplines || patient.required_disciplines,
-      is_active: responseData.is_active !== undefined ? responseData.is_active : patient.is_active
-    };
-    
-    // Actualizar el estado local con los datos recibidos
-    const totalInches = updatedPatient.height ? parseFloat(updatedPatient.height) : 0;
-    const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
-    const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
-    
-    setMedicalData(prev => ({
-      ...prev,
-      weight: updatedPatient.weight || '',
-      height: totalInches || '',
-      feet: feet,
-      inches: inches,
-      nursingDiagnosis: updatedPatient.nursing_diagnosis || '',
-      pmh: updatedPatient.past_medical_history || '',
-      wbs: updatedPatient.weight_bearing_status || '',
-      clinicalGrouping: updatedPatient.clinical_grouping || '',
-      homebound: updatedPatient.homebound_status || ''
-    }));
-    
-    // Notificar al componente padre con los datos actualizados
-    if (onUpdateMedicalInfo && typeof onUpdateMedicalInfo === 'function') {
-      onUpdateMedicalInfo(updatedPatient);
-    }
-    
-    // Salir del modo edición
-    setIsEditing(false);
-    console.log('Medical information updated successfully');
-    
-  } catch (err) {
-    console.error('Error saving medical data:', err);
-    setError('Failed to save medical information: ' + err.message);
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
   
   // Cancel editing
   const handleCancelEdit = () => {
-    // Restaurar datos originales del paciente
     if (patient) {
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
@@ -296,7 +399,7 @@ const handleSaveChanges = async () => {
       
       setMedicalData({
         weight: patient.weight || '',
-        height: totalInches || '',
+        height: totalInches.toString() || '',
         feet: feet,
         inches: inches,
         nursingDiagnosis: patient.nursing_diagnosis || '',
@@ -314,6 +417,7 @@ const handleSaveChanges = async () => {
     
     setIsEditing(false);
     setError(null);
+    setSuccessMessage(null);
   };
 
   // Format height for display in view mode
@@ -439,15 +543,16 @@ const handleSaveChanges = async () => {
     }
     
     if (type === 'height') {
-      const heightData = formatHeight(value);
-      if (!heightData) return <span className="no-data">Not provided yet</span>;
+      const heightValue = parseFloat(value);
+      const heightData = formatHeight(heightValue);
+      if (!heightData || heightValue <= 0) return <span className="no-data">Not provided yet</span>;
       
       return (
         <div className="data-display">
           <span className="primary-data">
             {heightData.feet}' {heightData.inches}"
           </span>
-          <span className="secondary-data">({value} in)</span>
+          <span className="secondary-data">({heightValue} in)</span>
         </div>
       );
     }
@@ -455,7 +560,7 @@ const handleSaveChanges = async () => {
     return <div className="data-box">{value}</div>;
   };
 
-  // Mostrar loading si no hay datos del paciente
+  // Show loading if no patient data
   if (!patient || !patient.id) {
     return (
       <div className="medical-info-component">
@@ -497,18 +602,50 @@ const handleSaveChanges = async () => {
       </div>
       
       <div className="card-body">
+        {/* Success message */}
+        {successMessage && (
+          <div className="success-message" style={{
+            marginBottom: '15px',
+            padding: '12px',
+            backgroundColor: '#dcfce7',
+            border: '1px solid #bbf7d0',
+            borderRadius: '8px',
+            color: '#166534',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontWeight: '500'
+          }}>
+            <i className="fas fa-check-circle"></i>
+            <span style={{ flex: 1 }}>{successMessage}</span>
+            <button 
+              onClick={() => setSuccessMessage(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#166534',
+                cursor: 'pointer',
+                padding: '4px'
+              }}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="error-message" style={{
             marginBottom: '15px',
-            padding: '10px',
+            padding: '12px',
             backgroundColor: '#fee2e2',
             border: '1px solid #fecaca',
-            borderRadius: '4px',
+            borderRadius: '8px',
             color: '#dc2626',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '10px',
+            fontWeight: '500'
           }}>
             <i className="fas fa-exclamation-triangle"></i>
             <span style={{ flex: 1 }}>{error}</span>
@@ -518,7 +655,8 @@ const handleSaveChanges = async () => {
                 background: 'none',
                 border: 'none',
                 color: '#dc2626',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                padding: '4px'
               }}
             >
               <i className="fas fa-times"></i>
@@ -919,7 +1057,7 @@ const handleSaveChanges = async () => {
             </div>
           </div>
         ) : (
-          // View mode - OPTIMIZADO para mostrar "Not provided yet"
+          // View mode
           <div className="medical-info-display">
             <div className="info-section weight-section">
               <div className="info-icon">
