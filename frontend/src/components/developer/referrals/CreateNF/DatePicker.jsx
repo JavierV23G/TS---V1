@@ -1,6 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../../../../styles/developer/Referrals/CreateNF/DatePicker.scss';
 
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Crear fecha desde string sin problemas de timezone
+const createDateFromString = (dateString) => {
+  if (!dateString) return null;
+  
+  const [year, month, day] = dateString.split('-').map(Number);
+  // Crear fecha en timezone local
+  return new Date(year, month - 1, day);
+};
+
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Formatear fecha para input sin problemas de timezone
+const formatInputDate = (date) => {
+  if (!date) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const DevCustomDatePicker = ({ 
   selectedDate, 
   onChange, 
@@ -11,7 +30,7 @@ const DevCustomDatePicker = ({
 }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [localDate, setLocalDate] = useState(selectedDate ? new Date(selectedDate) : null);
+  const [localDate, setLocalDate] = useState(selectedDate ? createDateFromString(selectedDate) : null);
   const [animation, setAnimation] = useState('');
   const calendarRef = useRef(null);
   
@@ -22,15 +41,6 @@ const DevCustomDatePicker = ({
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
-  };
-  
-  // Formatear la fecha para el valor del formulario (YYYY-MM-DD)
-  const formatInputDate = (date) => {
-    if (!date) return '';
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
   };
   
   // Obtener el nombre del mes y año para el encabezado del calendario
@@ -139,18 +149,24 @@ const DevCustomDatePicker = ({
         goToPrevMonth();
         setTimeout(() => {
           setLocalDate(day.date);
-          onChange(formatInputDate(day.date));
+          const formattedDate = formatInputDate(day.date);
+          console.log('Date selected in CustomDatePicker:', { date: day.date, formatted: formattedDate });
+          onChange(formattedDate);
         }, 300);
       } else {
         goToNextMonth();
         setTimeout(() => {
           setLocalDate(day.date);
-          onChange(formatInputDate(day.date));
+          const formattedDate = formatInputDate(day.date);
+          console.log('Date selected in CustomDatePicker:', { date: day.date, formatted: formattedDate });
+          onChange(formattedDate);
         }, 300);
       }
     } else {
       setLocalDate(day.date);
-      onChange(formatInputDate(day.date));
+      const formattedDate = formatInputDate(day.date);
+      console.log('Date selected in CustomDatePicker:', { date: day.date, formatted: formattedDate });
+      onChange(formattedDate);
       
       // Añadir una pequeña animación al calendario antes de cerrarlo
       setTimeout(() => {
@@ -175,7 +191,9 @@ const DevCustomDatePicker = ({
     e.stopPropagation();
     const today = new Date();
     setLocalDate(today);
-    onChange(formatInputDate(today));
+    const formattedDate = formatInputDate(today);
+    console.log('Today selected in CustomDatePicker:', { date: today, formatted: formattedDate });
+    onChange(formattedDate);
     setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setAnimation('pulse');
     setTimeout(() => {
@@ -220,11 +238,16 @@ const DevCustomDatePicker = ({
     };
   }, [showCalendar]);
   
-  // Actualizar el estado local si cambia la fecha seleccionada externamente
+  // USEEFFECT CORREGIDO - Actualizar el estado local si cambia la fecha seleccionada externamente
   useEffect(() => {
     if (selectedDate) {
-      setLocalDate(new Date(selectedDate));
-      setCurrentMonth(new Date(new Date(selectedDate).getFullYear(), new Date(selectedDate).getMonth(), 1));
+      console.log('CustomDatePicker received selectedDate:', selectedDate);
+      const date = createDateFromString(selectedDate);
+      console.log('CustomDatePicker parsed date:', date);
+      setLocalDate(date);
+      if (date) {
+        setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+      }
     } else {
       setLocalDate(null);
     }

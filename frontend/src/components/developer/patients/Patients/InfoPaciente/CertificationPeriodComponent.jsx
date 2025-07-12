@@ -960,18 +960,6 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
               )}
             </div>
             
-            <div className="form-group">
-              <label>Notes (Optional)</label>
-              <textarea 
-                name="notes"
-                value={editData.notes || ''} 
-                onChange={handleInputChange}
-                placeholder="Additional notes about this certification period..."
-                disabled={isLoading}
-                maxLength="500"
-                rows="3"
-              />
-            </div>
             
             <div className="form-actions">
               <button 
