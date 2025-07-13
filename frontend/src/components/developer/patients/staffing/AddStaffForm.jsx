@@ -1322,14 +1322,7 @@ const isTherapistOrAdmin = () => {
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Opción para cargar documento adicional */}
-                    <div className="document-card add-document">
-                      <div className="add-document-content">
-                        <i className="fas fa-plus-circle"></i>
-                        <span>Add additional document</span>
-                      </div>
-                    </div>
+                  
                   </div>
                 </div>
               )}

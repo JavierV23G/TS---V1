@@ -3,6 +3,226 @@ import '../../../../../styles/developer/Patients/InfoPaciente/ExercisesComponent
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import gsap from 'gsap';
 
+// Import all exercise images - TODAS LAS QUE EXISTEN REALMENTE
+// Ankle exercises
+import AnkleDorsiflexionBalance from '../../../../../assets/exercises/Ankle-Dorsiflexion-Balance.png';
+import AnkleDorsiflexionCoordination from '../../../../../assets/exercises/Ankle-Dorsiflexion-Coordinatio.png';
+import AnkleDorsiflexionStrengthening from '../../../../../assets/exercises/Ankle-Dorsiflexion-Strengthening.png';
+import AnkleEversionBalance from '../../../../../assets/exercises/Ankle-Eversion-Balance.png';
+import AnkleEversionCoordination from '../../../../../assets/exercises/Ankle-Eversion-Coordination.png';
+import AnkleEversionFunctional from '../../../../../assets/exercises/Ankle-Eversion-Functional.png';
+import AnkleEversionStretching from '../../../../../assets/exercises/Ankle-Eversion-Stretching.png';
+import AnkleInversionBalance from '../../../../../assets/exercises/Ankle-Inversion-Balance.png';
+import AnkleInversionCoordination from '../../../../../assets/exercises/Ankle-Inversion-Coordination.png';
+import AnkleInversionStrengthening from '../../../../../assets/exercises/Ankle-Inversion-Strengthening.png';
+import AnkleInversionStretching from '../../../../../assets/exercises/Ankle-Inversion-Stretching.png';
+import AnklePlantarflexionCoordination from '../../../../../assets/exercises/Ankle-Plantarflexion-Coordination.png';
+import AnklePlantarflexionStrengthening from '../../../../../assets/exercises/Ankle-Plantarflexion-Strengthening.png';
+
+// Arm exercises
+import ArmChairPush from '../../../../../assets/exercises/Arm-Chair-Push.png';
+
+// Back exercises
+import BackLowerBalance from '../../../../../assets/exercises/Back-Lower-Balance.png';
+import BackLowerCoordination from '../../../../../assets/exercises/Back-Lower-Coordination.png';
+import BackLowerStretching from '../../../../../assets/exercises/Back-Lower-Stretching.png';
+import BackMiddleBalance from '../../../../../assets/exercises/Back-Middle-Balance.png';
+import BackMiddleCoordination from '../../../../../assets/exercises/Back-Middle-Coordination.png';
+import BackMiddleEndurance from '../../../../../assets/exercises/Back-Middle-Endurance.png';
+import BackMiddleStrengthening from '../../../../../assets/exercises/Back-Middle-Strengthening.png';
+import BackMiddleStretching from '../../../../../assets/exercises/Back-Middle-Stretching.png';
+import BackStabilizationBalance from '../../../../../assets/exercises/Back-Stabilization-Balance.png';
+import BackStabilizationCoordination from '../../../../../assets/exercises/Back-Stabilization-Coordination.png';
+import BackStabilizationStrengthening from '../../../../../assets/exercises/Back-Stabilization-Strengthening.png';
+import BackStabilizationStretching from '../../../../../assets/exercises/Back-Stabilization-Stretching.png';
+import BackUpperBalance from '../../../../../assets/exercises/Back-Upper-Balance.png';
+import BackUpperCoordination from '../../../../../assets/exercises/Back-Upper-Coordination.png';
+import BackUpperStretching from '../../../../../assets/exercises/Back-Upper-Stretching.png';
+
+// Core exercises
+import CoreAbdominalBalance from '../../../../../assets/exercises/Core-Abdominal-Balance.png';
+import CoreAbdominalCoordination from '../../../../../assets/exercises/Core-Abdominal-Coordination.png';
+import CoreAbdominalStrengthening from '../../../../../assets/exercises/Core-Abdominal-Strengthening.png';
+import CoreAbdominalStretching from '../../../../../assets/exercises/Core-Abdominal-Stretching.png';
+import CoreLumbarBalance from '../../../../../assets/exercises/Core-Lumbar-Balance.png';
+import CoreLumbarCoordination from '../../../../../assets/exercises/Core-Lumbar-Coordination.png';
+import CoreLumbarStrengthening from '../../../../../assets/exercises/Core-Lumbar-Strengthening.png';
+import CoreLumbarStretching from '../../../../../assets/exercises/Core-Lumbar-Stretching.png';
+import CoreObliqueBalance from '../../../../../assets/exercises/Core-Oblique-Balance.png';
+import CoreObliqueCoordination from '../../../../../assets/exercises/Core-Oblique-Coordination.png';
+import CoreObliqueStrengthening from '../../../../../assets/exercises/Core-Oblique-Strengthening.png';
+import CoreObliqueStretching from '../../../../../assets/exercises/Core-Oblique-Stretching.png';
+import CorePelvicBalance from '../../../../../assets/exercises/Core-Pelvic-Balance.png';
+import CorePelvicCoordination from '../../../../../assets/exercises/Core-Pelvic-Coordination.png';
+import CorePelvicStrengthening from '../../../../../assets/exercises/Core-Pelvic-Strengthening.png';
+import CorePelvicStretching from '../../../../../assets/exercises/Core-Pelvic-Stretching.png';
+
+// Special exercises
+import DeepSquat from '../../../../../assets/exercises/Deep-Squat.png';
+
+// Elbow exercises
+import ElbowExtensionBalance from '../../../../../assets/exercises/Elbow-Extension-Balance.png';
+import ElbowExtensionCoordination from '../../../../../assets/exercises/Elbow-Extension-Coordination.png';
+import ElbowExtensionStrengthening from '../../../../../assets/exercises/Elbow-Extension-Strengthening.png';
+import ElbowExtensionStretching from '../../../../../assets/exercises/Elbow-Extension-Stretching.png';
+import ElbowFlexionBalance from '../../../../../assets/exercises/Elbow-Flexion-Balance.png';
+import ElbowFlexionCoordination from '../../../../../assets/exercises/Elbow-Flexion-Coordination.png';
+import ElbowFlexionStrengthening from '../../../../../assets/exercises/Elbow-Flexion-Strengthening.png';
+import ElbowFlexionStretching from '../../../../../assets/exercises/Elbow-Flexion-Stretching.png';
+import ElbowPronationBalance from '../../../../../assets/exercises/Elbow-Pronation-Balance.png';
+import ElbowPronationCoordination from '../../../../../assets/exercises/Elbow-Pronation-Coordination.png';
+import ElbowPronationStrengthening from '../../../../../assets/exercises/Elbow-Pronation-Strengthening.png';
+import ElbowPronationStretching from '../../../../../assets/exercises/Elbow-Pronation-Stretching.png';
+import ElbowSupinationBalance from '../../../../../assets/exercises/Elbow-Supination-Balance.png';
+import ElbowSupinationCoordination from '../../../../../assets/exercises/Elbow-Supination-Coordination.png';
+import ElbowSupinationEndurance from '../../../../../assets/exercises/Elbow-Supination-Endurance.png';
+import ElbowSupinationStretching from '../../../../../assets/exercises/Elbow-Supination-Stretching.png';
+
+// Special exercises
+import FlexionExtensionMobilization from '../../../../../assets/exercises/Flexion-Extension-Mobilization-of-Knee.png';
+
+// Foot exercises
+import FootArchBalance from '../../../../../assets/exercises/Foot-Arch-Balance.png';
+import FootArchCoordination from '../../../../../assets/exercises/Foot-Arch-Coordination.png';
+import FootArchFunctional from '../../../../../assets/exercises/Foot-Arch-Functional.png';
+import FootArchStrengthening from '../../../../../assets/exercises/Foot-Arch-Strengthening.png';
+import FootArchStretching from '../../../../../assets/exercises/Foot-Arch-Stretching.png';
+import FootIntrinsicBalance from '../../../../../assets/exercises/Foot-Intrinsic-Balance.png';
+import FootIntrinsicCoordination from '../../../../../assets/exercises/Foot-Intrinsic-Coordination.png';
+import FootIntrinsicEndurance from '../../../../../assets/exercises/Foot-Intrinsic-Endurance.png';
+import FootIntrinsicFunctional from '../../../../../assets/exercises/Foot-Intrinsic-Functional.png';
+import FootIntrinsicStretching from '../../../../../assets/exercises/Foot-Intrinsic-Stretching.png';
+import FootToeExtensionBalance from '../../../../../assets/exercises/Foot-Toe-Extension-Balance.png';
+import FootToeExtensionCoordination from '../../../../../assets/exercises/Foot-Toe-Extension-Coordination.png';
+import FootToeExtensionEndurance from '../../../../../assets/exercises/Foot-Toe-Extension-Endurance.png';
+import FootToeExtensionFunctional from '../../../../../assets/exercises/Foot-Toe-Extension-Functional.png';
+import FootToeExtensionStretching from '../../../../../assets/exercises/Foot-Toe-Extension-Stretching.png';
+import FootToeFlexionBalance from '../../../../../assets/exercises/Foot-Toe-Flexion-Balance.png';
+import FootToeFlexionCoordination from '../../../../../assets/exercises/Foot-Toe-Flexion-Coordination.png';
+import FootToeFlexionStretching from '../../../../../assets/exercises/Foot-Toe-Flexion-Stretching.png';
+
+// Special exercises
+import ForwardLunge from '../../../../../assets/exercises/Forward-Lunge-in-Standing.png';
+
+// Full Body exercises
+import FullBodyCoordinationCoordination from '../../../../../assets/exercises/Full-Body-Coordination-Coordination.png';
+import FullBodyFunctionalCoordination from '../../../../../assets/exercises/Full-Body-Functional-Coordination.png';
+
+// Hand exercises
+import HandFingerExtensionBalance from '../../../../../assets/exercises/Hand-Finger-Extension-Balance.png';
+import HandFingerExtensionCoordination from '../../../../../assets/exercises/Hand-Finger-Extension-Coordination.png';
+import HandFingerExtensionEndurance from '../../../../../assets/exercises/Hand-Finger-Extension-Endurance.png';
+import HandFingerExtensionStretching from '../../../../../assets/exercises/Hand-Finger-Extension-Stretching.png';
+import HandGripBalance from '../../../../../assets/exercises/Hand-Grip-Balance.png';
+import HandGripCoordination from '../../../../../assets/exercises/Hand-Grip-Coordination.png';
+import HandGripEndurance from '../../../../../assets/exercises/Hand-Grip-Endurance.png';
+import HandGripStrengthening from '../../../../../assets/exercises/Hand-Grip-Strengthening.png';
+import HandGripStretching from '../../../../../assets/exercises/Hand-Grip-Stretching.png';
+import HandOppositionBalance from '../../../../../assets/exercises/Hand-Opposition-Balance.png';
+import HandOppositionCoordination from '../../../../../assets/exercises/Hand-Opposition-Coordination.png';
+import HandOppositionStrengthening from '../../../../../assets/exercises/Hand-Opposition-Strengthening.png';
+import HandPinchBalance from '../../../../../assets/exercises/Hand-Pinch-Balance.png';
+import HandPinchCoordination from '../../../../../assets/exercises/Hand-Pinch-Coordination.png';
+import HandPinchFunctional from '../../../../../assets/exercises/Hand-Pinch-Functional.png';
+import HandPinchStretching from '../../../../../assets/exercises/Hand-Pinch-Stretching.png';
+
+// Hip exercises
+import HipAbductionBalance from '../../../../../assets/exercises/Hip-Abduction-Balance.png';
+import HipAbductionCoordination from '../../../../../assets/exercises/Hip-Abduction-Coordination.png';
+import HipAbductionStrengthening from '../../../../../assets/exercises/Hip-Abduction-Strengthening.png';
+import HipAbductionStretching from '../../../../../assets/exercises/Hip-Abduction-Stretching.png';
+import HipAdductionBalance from '../../../../../assets/exercises/Hip-Adduction-Balance.png';
+import HipAdductionCoordination from '../../../../../assets/exercises/Hip-Adduction-Coordination.png';
+import HipAdductionStrengthening from '../../../../../assets/exercises/Hip-Adduction-Strengthening.png';
+import HipAdductionStretching from '../../../../../assets/exercises/Hip-Adduction-Stretching.png';
+import HipExtensionBalance from '../../../../../assets/exercises/Hip-Extension-Balance.png';
+import HipExtensionCoordination from '../../../../../assets/exercises/Hip-Extension-Coordination.png';
+import HipExtensionStretching from '../../../../../assets/exercises/Hip-Extension-Stretching.png';
+import HipFlexionBalance from '../../../../../assets/exercises/Hip-Flexion-Balance.png';
+import HipFlexionCoordination from '../../../../../assets/exercises/Hip-Flexion-Coordination.png';
+import HipFlexionFunctional from '../../../../../assets/exercises/Hip-Flexion-Functional.png';
+import HipRotationBalance from '../../../../../assets/exercises/Hip-Rotation-Balance.png';
+import HipRotationStrengthening from '../../../../../assets/exercises/Hip-Rotation-Strengthening.png';
+import HipRotationStretching from '../../../../../assets/exercises/Hip-Rotation-Stretching.png';
+
+// Knee exercises
+import KneeExtensionBalance from '../../../../../assets/exercises/Knee-Extension-Balance.png';
+import KneeExtensionCoordination from '../../../../../assets/exercises/Knee-Extension-Coordination.png';
+import KneeExtensionFunctional from '../../../../../assets/exercises/Knee-Extension-Functional.png';
+import KneeExtensionStretching from '../../../../../assets/exercises/Knee-Extension-Stretching.png';
+import KneeFlexionBalance from '../../../../../assets/exercises/Knee-Flexion-Balance.png';
+import KneeFlexionCoordination from '../../../../../assets/exercises/Knee-Flexion-Coordination.png';
+import KneeFlexionFunctional from '../../../../../assets/exercises/Knee-Flexion-Functional.png';
+import KneeFlexionRangeOfMotion from '../../../../../assets/exercises/Knee-Flexion-Range-of-Motion.png';
+import KneeFlexionStrengthening from '../../../../../assets/exercises/Knee-Flexion-Strengthening.png';
+import KneeFlexionStretching from '../../../../../assets/exercises/Knee-Flexion-Stretching.png';
+import KneeStabilityBalance from '../../../../../assets/exercises/Knee-Stability-Balance.png';
+import KneeStabilityCoordination from '../../../../../assets/exercises/Knee-Stability-Coordination.png';
+import KneeStabilityStrengthening from '../../../../../assets/exercises/Knee-Stability-Strengthening.png';
+import KneeStabilityStretching from '../../../../../assets/exercises/Knee-Stability-Stretching.png';
+
+// Neck exercises
+import NeckExtensionBalance from '../../../../../assets/exercises/Neck-Extension-Balance.png';
+import NeckExtensionCoordination from '../../../../../assets/exercises/Neck-Extension-Coordination.png';
+import NeckExtensionStrengthening from '../../../../../assets/exercises/Neck-Extension-Strengthening.png';
+import NeckExtensionStretching from '../../../../../assets/exercises/Neck-Extension-Stretching.png';
+import NeckFlexionBalance from '../../../../../assets/exercises/Neck-Flexion-Balance.png';
+import NeckFlexionCoordination from '../../../../../assets/exercises/Neck-Flexion-Coordination.png';
+import NeckFlexionStrengthening from '../../../../../assets/exercises/Neck-Flexion-Strengthening.png';
+import NeckFlexionStretching from '../../../../../assets/exercises/Neck-Flexion-Stretching.png';
+import NeckLateralFlexionBalance from '../../../../../assets/exercises/Neck-Lateral-Flexion-Balance.png';
+import NeckLateralFlexionStrengthening from '../../../../../assets/exercises/Neck-Lateral-Flexion-Strengthening.png';
+import NeckLateralFlexionStretching from '../../../../../assets/exercises/Neck-Lateral-Flexion-Stretching.png';
+import NeckRotationBalance from '../../../../../assets/exercises/Neck-Rotation-Balance.png';
+import NeckRotationCoordination from '../../../../../assets/exercises/Neck-Rotation-Coordination.png';
+import NeckRotationStrengthening from '../../../../../assets/exercises/Neck-Rotation-Strengthening.png';
+import NeckRotationStretching from '../../../../../assets/exercises/Neck-Rotatio-Stretching.png';
+
+// Shoulder exercises
+import ShoulderAbductionBalance from '../../../../../assets/exercises/Shoulder-Abduction-Balance.png';
+import ShoulderAbductionCoordination from '../../../../../assets/exercises/Shoulder-Abduction-Coordination.png';
+import ShoulderAbductionFunctional from '../../../../../assets/exercises/Shoulder-Abduction-Functional.png';
+import ShoulderAbductionRangeOfMotion from '../../../../../assets/exercises/Shoulder-Abduction-Range-of-Motion.png';
+import ShoulderAbductionStretching from '../../../../../assets/exercises/Shoulder-Abduction-Stretching.png';
+import ShoulderAdductionCoordination from '../../../../../assets/exercises/Shoulder-Adduction-Coordination.png';
+import ShoulderAdductionStrengthening from '../../../../../assets/exercises/Shoulder-Adduction-Strengthening.png';
+import ShoulderAdductionStretching from '../../../../../assets/exercises/Shoulder-Adduction-Stretching.png';
+import ShoulderExtensionBalance from '../../../../../assets/exercises/Shoulder-Extension-Balance.png';
+import ShoulderExtensionCoordination from '../../../../../assets/exercises/Shoulder-Extension-Coordination.png';
+import ShoulderExtensionEndurance from '../../../../../assets/exercises/Shoulder-Extension-Endurance.png';
+import ShoulderExtensionStrengthening from '../../../../../assets/exercises/Shoulder-Extension-Strengthening.png';
+import ShoulderExtensionStretching from '../../../../../assets/exercises/Shoulder-Extension-Stretching.png';
+import ShoulderFlexion from '../../../../../assets/exercises/Shoulder-Flexion.png';
+import ShoulderFlexionBalance from '../../../../../assets/exercises/Shoulder-Flexion-Balance.png';
+import ShoulderFlexionCoordination from '../../../../../assets/exercises/Shoulder-Flexion-Coordination.png';
+import ShoulderFlexionRangeOfMotion from '../../../../../assets/exercises/Shoulder-Flexion-Range-of-Motion.png';
+import ShoulderFlexionStrengthening from '../../../../../assets/exercises/Shoulder-Flexion-Strengthening.png';
+import ShoulderFlexionStretching from '../../../../../assets/exercises/Shoulder-Flexion-Stretching.png';
+import ShoulderRotationBalance from '../../../../../assets/exercises/Shoulder-Rotation-Balance.png';
+import ShoulderRotationCoordination from '../../../../../assets/exercises/Shoulder-Rotation-Coordination.png';
+import ShoulderRotationEndurance from '../../../../../assets/exercises/Shoulder-Rotation-Endurance.png';
+import ShoulderRotationStrengthening from '../../../../../assets/exercises/Shoulder-Rotation-Strengthening.png';
+import ShoulderRotationStretching from '../../../../../assets/exercises/Shoulder-Rotation-Stretching.png';
+
+// Wrist exercises
+import WristExtensionBalance from '../../../../../assets/exercises/Wrist-Extension-Balance.png';
+import WristExtensionCoordination from '../../../../../assets/exercises/Wrist-Extension-Coordination.png';
+import WristExtensionStrengthening from '../../../../../assets/exercises/Wrist-Extension-Strengthening.png';
+import WristExtensionStretching from '../../../../../assets/exercises/Wrist-Extension-Stretching.png';
+import WristFlexionBalance from '../../../../../assets/exercises/Wrist-Flexion-Balance.png';
+import WristFlexionCoordination from '../../../../../assets/exercises/Wrist-Flexion-Coordination.png';
+import WristFlexionStrengthening from '../../../../../assets/exercises/Wrist-Flexion-Strengthening.png';
+import WristFlexionStretching from '../../../../../assets/exercises/Wrist-Flexion-Stretching.png';
+import WristRadialDeviationBalance from '../../../../../assets/exercises/Wrist-Radial-Deviation-Balance.png';
+import WristRadialDeviationCoordination from '../../../../../assets/exercises/Wrist-Radial-Deviation-Coordination.png';
+import WristRadialDeviationEndurance from '../../../../../assets/exercises/Wrist-Radial-Deviation-Endurance.png';
+import WristRadialDeviationStretching from '../../../../../assets/exercises/Wrist-Radial-Deviation-Stretching.png';
+import WristUlnarDeviationBalance from '../../../../../assets/exercises/Wrist-Ulnar-Deviation-Balance.png';
+import WristUlnarDeviationCoordination from '../../../../../assets/exercises/Wrist-Ulnar-Deviation-Coordination.png';
+import WristUlnarDeviationEndurance from '../../../../../assets/exercises/Wrist-Ulnar-Deviation-Endurance.png';
+import WristUlnarDeviationStrengthening from '../../../../../assets/exercises/Wrist-Ulnar-Deviation-Strengthening.png';
+import WristUlnarDeviationStretching from '../../../../../assets/exercises/Wrist-Ulnar-Deviation-Stretching.png';
+
 const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   // States for interface control and data
   const [isLoading, setIsLoading] = useState(false);
@@ -40,8 +260,271 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   
   // Filter options
   const bodyParts = ['All', 'Shoulder', 'Elbow', 'Wrist', 'Hand', 'Hip', 'Knee', 'Ankle', 'Foot', 'Neck', 'Back', 'Core', 'Full Body'];
-  const categories = ['All', 'Strengthening', 'Stretching', 'Balance', 'Coordination', 'Range of Motion', 'Endurance', 'Functional'];
+  const categories = ['All', 'Strengthening', 'Stretching', 'Balance', 'Coordination', 'Endurance', 'Functional'];
   const disciplines = ['All', 'PT', 'OT', 'ST'];
+  
+  // Exercise images mapping - TODAS LAS IMÁGENES CORRECTAS
+  const exerciseImages = {
+    // Ankle exercises
+    'Ankle-Dorsiflexion-Balance': AnkleDorsiflexionBalance,
+    'Ankle-Dorsiflexion-Coordination': AnkleDorsiflexionCoordination,
+    'Ankle-Dorsiflexion-Strengthening': AnkleDorsiflexionStrengthening,
+    'Ankle-Eversion-Balance': AnkleEversionBalance,
+    'Ankle-Eversion-Coordination': AnkleEversionCoordination,
+    'Ankle-Eversion-Functional': AnkleEversionFunctional,
+    'Ankle-Eversion-Stretching': AnkleEversionStretching,
+    'Ankle-Inversion-Balance': AnkleInversionBalance,
+    'Ankle-Inversion-Coordination': AnkleInversionCoordination,
+    'Ankle-Inversion-Strengthening': AnkleInversionStrengthening,
+    'Ankle-Inversion-Stretching': AnkleInversionStretching,
+    'Ankle-Plantarflexion-Coordination': AnklePlantarflexionCoordination,
+    'Ankle-Plantarflexion-Strengthening': AnklePlantarflexionStrengthening,
+    
+    // Arm exercises
+    'Arm-Chair-Push': ArmChairPush,
+    
+    // Back exercises
+    'Back-Lower-Balance': BackLowerBalance,
+    'Back-Lower-Coordination': BackLowerCoordination,
+    'Back-Lower-Stretching': BackLowerStretching,
+    'Back-Middle-Balance': BackMiddleBalance,
+    'Back-Middle-Coordination': BackMiddleCoordination,
+    'Back-Middle-Endurance': BackMiddleEndurance,
+    'Back-Middle-Strengthening': BackMiddleStrengthening,
+    'Back-Middle-Stretching': BackMiddleStretching,
+    'Back-Stabilization-Balance': BackStabilizationBalance,
+    'Back-Stabilization-Coordination': BackStabilizationCoordination,
+    'Back-Stabilization-Strengthening': BackStabilizationStrengthening,
+    'Back-Stabilization-Stretching': BackStabilizationStretching,
+    'Back-Upper-Balance': BackUpperBalance,
+    'Back-Upper-Coordination': BackUpperCoordination,
+    'Back-Upper-Stretching': BackUpperStretching,
+    
+    // Core exercises
+    'Core-Abdominal-Balance': CoreAbdominalBalance,
+    'Core-Abdominal-Coordination': CoreAbdominalCoordination,
+    'Core-Abdominal-Strengthening': CoreAbdominalStrengthening,
+    'Core-Abdominal-Stretching': CoreAbdominalStretching,
+    'Core-Lumbar-Balance': CoreLumbarBalance,
+    'Core-Lumbar-Coordination': CoreLumbarCoordination,
+    'Core-Lumbar-Strengthening': CoreLumbarStrengthening,
+    'Core-Lumbar-Stretching': CoreLumbarStretching,
+    'Core-Oblique-Balance': CoreObliqueBalance,
+    'Core-Oblique-Coordination': CoreObliqueCoordination,
+    'Core-Oblique-Strengthening': CoreObliqueStrengthening,
+    'Core-Oblique-Stretching': CoreObliqueStretching,
+    'Core-Pelvic-Balance': CorePelvicBalance,
+    'Core-Pelvic-Coordination': CorePelvicCoordination,
+    'Core-Pelvic-Strengthening': CorePelvicStrengthening,
+    'Core-Pelvic-Stretching': CorePelvicStretching,
+    
+    // Special exercises
+    'Deep-Squat': DeepSquat,
+    
+    // Elbow exercises
+    'Elbow-Extension-Balance': ElbowExtensionBalance,
+    'Elbow-Extension-Coordination': ElbowExtensionCoordination,
+    'Elbow-Extension-Strengthening': ElbowExtensionStrengthening,
+    'Elbow-Extension-Stretching': ElbowExtensionStretching,
+    'Elbow-Flexion-Balance': ElbowFlexionBalance,
+    'Elbow-Flexion-Coordination': ElbowFlexionCoordination,
+    'Elbow-Flexion-Strengthening': ElbowFlexionStrengthening,
+    'Elbow-Flexion-Stretching': ElbowFlexionStretching,
+    'Elbow-Pronation-Balance': ElbowPronationBalance,
+    'Elbow-Pronation-Coordination': ElbowPronationCoordination,
+    'Elbow-Pronation-Strengthening': ElbowPronationStrengthening,
+    'Elbow-Pronation-Stretching': ElbowPronationStretching,
+    'Elbow-Supination-Balance': ElbowSupinationBalance,
+    'Elbow-Supination-Coordination': ElbowSupinationCoordination,
+    'Elbow-Supination-Endurance': ElbowSupinationEndurance,
+    'Elbow-Supination-Stretching': ElbowSupinationStretching,
+    
+    // Special exercises
+    'Flexion-Extension-Mobilization-of-Knee': FlexionExtensionMobilization,
+    
+    // Foot exercises
+    'Foot-Arch-Balance': FootArchBalance,
+    'Foot-Arch-Coordination': FootArchCoordination,
+    'Foot-Arch-Functional': FootArchFunctional,
+    'Foot-Arch-Strengthening': FootArchStrengthening,
+    'Foot-Arch-Stretching': FootArchStretching,
+    'Foot-Intrinsic-Balance': FootIntrinsicBalance,
+    'Foot-Intrinsic-Coordination': FootIntrinsicCoordination,
+    'Foot-Intrinsic-Endurance': FootIntrinsicEndurance,
+    'Foot-Intrinsic-Functional': FootIntrinsicFunctional,
+    'Foot-Intrinsic-Stretching': FootIntrinsicStretching,
+    'Foot-Toe-Extension-Balance': FootToeExtensionBalance,
+    'Foot-Toe-Extension-Coordination': FootToeExtensionCoordination,
+    'Foot-Toe-Extension-Endurance': FootToeExtensionEndurance,
+    'Foot-Toe-Extension-Functional': FootToeExtensionFunctional,
+  'Foot-Toe-Extension-Stretching': FootToeExtensionStretching,
+    'Foot-Toe-Flexion-Balance': FootToeFlexionBalance,
+    'Foot-Toe-Flexion-Coordination': FootToeFlexionCoordination,
+    'Foot-Toe-Flexion-Stretching': FootToeFlexionStretching,
+    
+    // Special exercises
+    'Forward-Lunge-in-Standing': ForwardLunge,
+    
+    // Full Body exercises
+    'Full-Body-Coordination-Coordination': FullBodyCoordinationCoordination,
+    'Full-Body-Functional-Coordination': FullBodyFunctionalCoordination,
+    
+    // Hand exercises
+    'Hand-Finger-Extension-Balance': HandFingerExtensionBalance,
+    'Hand-Finger-Extension-Coordination': HandFingerExtensionCoordination,
+    'Hand-Finger-Extension-Endurance': HandFingerExtensionEndurance,
+    'Hand-Finger-Extension-Stretching': HandFingerExtensionStretching,
+    'Hand-Grip-Balance': HandGripBalance,
+    'Hand-Grip-Coordination': HandGripCoordination,
+    'Hand-Grip-Endurance': HandGripEndurance,
+    'Hand-Grip-Strengthening': HandGripStrengthening,
+    'Hand-Grip-Stretching': HandGripStretching,
+    'Hand-Opposition-Balance': HandOppositionBalance,
+    'Hand-Opposition-Coordination': HandOppositionCoordination,
+    'Hand-Opposition-Strengthening': HandOppositionStrengthening,
+    'Hand-Pinch-Balance': HandPinchBalance,
+    'Hand-Pinch-Coordination': HandPinchCoordination,
+    'Hand-Pinch-Functional': HandPinchFunctional,
+    'Hand-Pinch-Stretching': HandPinchStretching,
+    
+    // Hip exercises
+    'Hip-Abduction-Balance': HipAbductionBalance,
+    'Hip-Abduction-Coordination': HipAbductionCoordination,
+    'Hip-Abduction-Strengthening': HipAbductionStrengthening,
+    'Hip-Abduction-Stretching': HipAbductionStretching,
+    'Hip-Adduction-Balance': HipAdductionBalance,
+    'Hip-Adduction-Coordination': HipAdductionCoordination,
+    'Hip-Adduction-Strengthening': HipAdductionStrengthening,
+    'Hip-Adduction-Stretching': HipAdductionStretching,
+    'Hip-Extension-Balance': HipExtensionBalance,
+    'Hip-Extension-Coordination': HipExtensionCoordination,
+    'Hip-Extension-Stretching': HipExtensionStretching,
+    'Hip-Flexion-Balance': HipFlexionBalance,
+    'Hip-Flexion-Coordination': HipFlexionCoordination,
+    'Hip-Flexion-Functional': HipFlexionFunctional,
+    'Hip-Rotation-Balance': HipRotationBalance,
+    'Hip-Rotation-Strengthening': HipRotationStrengthening,
+    'Hip-Rotation-Stretching': HipRotationStretching,
+    
+    // Knee exercises
+    'Knee-Extension-Balance': KneeExtensionBalance,
+    'Knee-Extension-Coordination': KneeExtensionCoordination,
+    'Knee-Extension-Functional': KneeExtensionFunctional,
+    'Knee-Extension-Stretching': KneeExtensionStretching,
+    'Knee-Flexion-Balance': KneeFlexionBalance,
+    'Knee-Flexion-Coordination': KneeFlexionCoordination,
+    'Knee-Flexion-Functional': KneeFlexionFunctional,
+    'Knee-Flexion-Range-of-Motion': KneeFlexionRangeOfMotion,
+    'Knee-Flexion-Strengthening': KneeFlexionStrengthening,
+    'Knee-Flexion-Stretching': KneeFlexionStretching,
+    'Knee-Stability-Balance': KneeStabilityBalance,
+    'Knee-Stability-Coordination': KneeStabilityCoordination,
+    'Knee-Stability-Strengthening': KneeStabilityStrengthening,
+    'Knee-Stability-Stretching': KneeStabilityStretching,
+    
+    // Neck exercises
+    'Neck-Extension-Balance': NeckExtensionBalance,
+    'Neck-Extension-Coordination': NeckExtensionCoordination,
+    'Neck-Extension-Strengthening': NeckExtensionStrengthening,
+    'Neck-Extension-Stretching': NeckExtensionStretching,
+    'Neck-Flexion-Balance': NeckFlexionBalance,
+    'Neck-Flexion-Coordination': NeckFlexionCoordination,
+    'Neck-Flexion-Strengthening': NeckFlexionStrengthening,
+    'Neck-Flexion-Stretching': NeckFlexionStretching,
+    'Neck-Lateral-Flexion-Balance': NeckLateralFlexionBalance,
+    'Neck-Lateral-Flexion-Strengthening': NeckLateralFlexionStrengthening,
+    'Neck-Lateral-Flexion-Stretching': NeckLateralFlexionStretching,
+    'Neck-Rotation-Balance': NeckRotationBalance,
+    'Neck-Rotation-Coordination': NeckRotationCoordination,
+    'Neck-Rotation-Strengthening': NeckRotationStrengthening,
+    'Neck-Rotation-Stretching': NeckRotationStretching,
+    
+    // Shoulder exercises
+    'Shoulder-Abduction-Balance': ShoulderAbductionBalance,
+    'Shoulder-Abduction-Coordination': ShoulderAbductionCoordination,
+    'Shoulder-Abduction-Functional': ShoulderAbductionFunctional,
+    'Shoulder-Abduction-Range-of-Motion': ShoulderAbductionRangeOfMotion,
+    'Shoulder-Abduction-Stretching': ShoulderAbductionStretching,
+    'Shoulder-Adduction-Coordination': ShoulderAdductionCoordination,
+    'Shoulder-Adduction-Strengthening': ShoulderAdductionStrengthening,
+    'Shoulder-Adduction-Stretching': ShoulderAdductionStretching,
+    'Shoulder-Extension-Balance': ShoulderExtensionBalance,
+    'Shoulder-Extension-Coordination': ShoulderExtensionCoordination,
+    'Shoulder-Extension-Endurance': ShoulderExtensionEndurance,
+    'Shoulder-Extension-Strengthening': ShoulderExtensionStrengthening,
+    'Shoulder-Extension-Stretching': ShoulderExtensionStretching,
+    'Shoulder-Flexion': ShoulderFlexion,
+    'Shoulder-Flexion-Balance': ShoulderFlexionBalance,
+    'Shoulder-Flexion-Coordination': ShoulderFlexionCoordination,
+    'Shoulder-Flexion-Range-of-Motion': ShoulderFlexionRangeOfMotion,
+    'Shoulder-Flexion-Strengthening': ShoulderFlexionStrengthening,
+    'Shoulder-Flexion-Stretching': ShoulderFlexionStretching,
+    'Shoulder-Rotation-Balance': ShoulderRotationBalance,
+    'Shoulder-Rotation-Coordination': ShoulderRotationCoordination,
+    'Shoulder-Rotation-Endurance': ShoulderRotationEndurance,
+    'Shoulder-Rotation-Strengthening': ShoulderRotationStrengthening,
+    'Shoulder-Rotation-Stretching': ShoulderRotationStretching,
+    
+    // Wrist exercises
+    'Wrist-Extension-Balance': WristExtensionBalance,
+    'Wrist-Extension-Coordination': WristExtensionCoordination,
+    'Wrist-Extension-Strengthening': WristExtensionStrengthening,
+    'Wrist-Extension-Stretching': WristExtensionStretching,
+    'Wrist-Flexion-Balance': WristFlexionBalance,
+    'Wrist-Flexion-Coordination': WristFlexionCoordination,
+    'Wrist-Flexion-Strengthening': WristFlexionStrengthening,
+    'Wrist-Flexion-Stretching': WristFlexionStretching,
+    'Wrist-Radial-Deviation-Balance': WristRadialDeviationBalance,
+    'Wrist-Radial-Deviation-Coordination': WristRadialDeviationCoordination,
+    'Wrist-Radial-Deviation-Endurance': WristRadialDeviationEndurance,
+    'Wrist-Radial-Deviation-Stretching': WristRadialDeviationStretching,
+    'Wrist-Ulnar-Deviation-Balance': WristUlnarDeviationBalance,
+    'Wrist-Ulnar-Deviation-Coordination': WristUlnarDeviationCoordination,
+    'Wrist-Ulnar-Deviation-Endurance': WristUlnarDeviationEndurance,
+    'Wrist-Ulnar-Deviation-Strengthening': WristUlnarDeviationStrengthening,
+    'Wrist-Ulnar-Deviation-Stretching': WristUlnarDeviationStretching,
+  };
+
+  // Function to get exercise image
+  const getExerciseImage = (exerciseName, bodyPart, category) => {
+    // Try to find exact match first
+    const exactKey = exerciseName.replace(/\s+/g, '-');
+    if (exerciseImages[exactKey]) {
+      return exerciseImages[exactKey];
+    }
+    
+    // Try to construct key from bodyPart and category
+    const constructedKey = `${bodyPart}-${category}`.replace(/\s+/g, '-');
+    if (exerciseImages[constructedKey]) {
+      return exerciseImages[constructedKey];
+    }
+    
+    // Try variations for special exercises
+    if (exerciseName.includes('Forward Lunge')) {
+      return exerciseImages['Forward-Lunge-in-Standing'];
+    }
+    if (exerciseName.includes('Arm Chair Push')) {
+      return exerciseImages['Arm-Chair-Push'];
+    }
+    if (exerciseName.includes('Deep Squat')) {
+      return exerciseImages['Deep-Squat'];
+    }
+    if (exerciseName.includes('Flexion-Extension Mobilization')) {
+      return exerciseImages['Flexion-Extension-Mobilization-of-Knee'];
+    }
+    
+    // Default fallback - try to match by body part and movement
+    const bodyPartKey = bodyPart.replace(/\s+/g, '-');
+    const categoryKey = category.replace(/\s+/g, '-');
+    const fallbackKey = `${bodyPartKey}-${categoryKey}`;
+    
+    if (exerciseImages[fallbackKey]) {
+      return exerciseImages[fallbackKey];
+    }
+    
+    // Last resort - return a default placeholder or first available image
+    return Object.values(exerciseImages)[0] || '/exercise-images/default.jpg';
+  };
   
   // Initialize with patient data
   useEffect(() => {
@@ -71,16 +554,16 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
           setLoadingText('Processing exercise data...');
           setTimeout(() => {
             setExerciseLibrary(mockExercises);
-            setLoadingProgress(10);
+            setLoadingProgress(100);
             
             // Completion animation
             setTimeout(() => {
               setIsLoading(false);
               setLoadingProgress(0);
               setLoadingAnimation(null);
-            }, 2);
-          }, 5);
-        }, 5);
+            }, 200);
+          }, 500);
+        }, 500);
       }
     }, 50);
     
@@ -101,41 +584,40 @@ const ExercisesComponent = ({ patient, onUpdateExercises }) => {
   }, [patient]);
 
   // Effect for animating modal appearance
-useEffect(() => {
-  if (showEditModal || showDeleteModal || showExerciseLibrary) {
-    // NO bloquear el scroll del body, solo del modal principal
-    const mainContent = document.querySelector('.exercises-component');
-    if (mainContent) {
-      mainContent.style.overflow = 'hidden';
-    }
-    
-    setModalTransition('opening');
-    
-    if (modalRef.current) {
-      const modal = modalRef.current;
+  useEffect(() => {
+    if (showEditModal || showDeleteModal || showExerciseLibrary) {
+      // NO bloquear el scroll del body, solo del modal principal
+      const mainContent = document.querySelector('.exercises-component');
+      if (mainContent) {
+        mainContent.style.overflow = 'hidden';
+      }
       
-      gsap.fromTo(modal, 
-        { y: 20, opacity: 0 }, 
-        { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.4)" }
-      );
+      setModalTransition('opening');
       
-      setTimeout(() => {
+      if (modalRef.current) {
+        const modal = modalRef.current;
+        
+        gsap.fromTo(modal, 
+          { y: 20, opacity: 0 }, 
+          { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.4)" }
+        );
+        
+        setTimeout(() => {
+          setModalTransition('');
+        }, 400);
+      }
+    } else {
+      // Restaurar el scroll cuando se cierre
+      const mainContent = document.querySelector('.exercises-component');
+      if (mainContent) {
+        mainContent.style.overflow = '';
+      }
+      
+      if (modalTransition !== 'closing') {
         setModalTransition('');
-      }, 10);
+      }
     }
-  } else {
-    // Restaurar el scroll cuando se cierre
-    const mainContent = document.querySelector('.exercises-component');
-    if (mainContent) {
-      mainContent.style.overflow = '';
-    }
-    
-    if (modalTransition !== 'closing') {
-      setModalTransition('');
-    }
-  }
-}, [showEditModal, showDeleteModal, showExerciseLibrary]);
-
+  }, [showEditModal, showDeleteModal, showExerciseLibrary]);
 
   // Effect for animating notifications
   useEffect(() => {
@@ -164,151 +646,75 @@ useEffect(() => {
         
         setTimeout(() => {
           setAnimatedExerciseId(null);
-        }, 25);
+        }, 600);
       }
     }
   }, [animatedExerciseId]);
 
   // Generate mock exercises for the library
   const generateMockExercises = () => {
-    const mockCategories = {
-      'Strengthening': ['Resistance', 'Isometric', 'Isotonic', 'Progressive'],
-      'Stretching': ['Static', 'Dynamic', 'PNF', 'Passive'],
-      'Balance': ['Static', 'Dynamic', 'Proprioceptive'],
-      'Coordination': ['Fine Motor', 'Gross Motor', 'Bilateral'],
-      'Endurance': ['Aerobic', 'Interval', 'Circuit'],
-      'Functional': ['ADL', 'Mobility', 'Transfer'],
-      'Range of Motion': ['Active', 'Passive', 'Active-Assisted']
-    };
-    
-    const mockBodyParts = {
-      'Shoulder': ['Flexion', 'Extension', 'Abduction', 'Adduction', 'Rotation'],
-      'Elbow': ['Flexion', 'Extension', 'Pronation', 'Supination'],
-      'Wrist': ['Flexion', 'Extension', 'Radial Deviation', 'Ulnar Deviation'],
-      'Hand': ['Grip', 'Pinch', 'Opposition', 'Finger Extension'],
-      'Hip': ['Flexion', 'Extension', 'Abduction', 'Adduction', 'Rotation'],
-      'Knee': ['Flexion', 'Extension', 'Stability'],
-      'Ankle': ['Dorsiflexion', 'Plantarflexion', 'Inversion', 'Eversion'],
-      'Foot': ['Arch', 'Toe Flexion', 'Toe Extension', 'Intrinsic'],
-      'Neck': ['Flexion', 'Extension', 'Rotation', 'Lateral Flexion'],
-      'Back': ['Lower', 'Middle', 'Upper', 'Stabilization'],
-      'Core': ['Abdominal', 'Oblique', 'Lumbar', 'Pelvic'],
-      'Full Body': ['Functional', 'Coordination', 'Balance']
-    };
-    
-    const result = [];
+    const exercises = [];
     let id = 1;
     
-    // Generate a variety of exercises combining categories and body parts
-    Object.keys(mockCategories).forEach(category => {
-      Object.keys(mockBodyParts).forEach(bodyPart => {
-        mockBodyParts[bodyPart].forEach(movement => {
-          // Create a subset of possible combinations to keep a reasonable number
-          if (Math.random() > 0.7) return;
-          
-          const subCategory = mockCategories[category][Math.floor(Math.random() * mockCategories[category].length)];
-          const discipline = disciplines[Math.floor(Math.random() * (disciplines.length - 1)) + 1]; // Exclude 'All'
-          
-          result.push({
-            id: id++,
-            name: `${bodyPart} ${movement} ${category}`,
-            description: `${subCategory} exercise for ${movement.toLowerCase()} of the ${bodyPart.toLowerCase()}.`,
-            bodyPart,
-            category,
-            subCategory,
-            discipline,
-            imageUrl: `/exercise-images/${bodyPart.toLowerCase()}-${id % 5 + 1}.jpg`,
-            defaultSets: 3,
-            defaultReps: 10,
-            defaultSessions: 1
-          });
-        });
+    // Generate exercises based on available images
+    Object.keys(exerciseImages).forEach(imageKey => {
+      const parts = imageKey.split('-');
+      const bodyPart = parts[0];
+      const movement = parts.slice(1, -1).join(' ');
+      const category = parts[parts.length - 1];
+      
+      // Map category names
+      const categoryMap = {
+        'Balance': 'Balance',
+        'Coordination': 'Coordination',
+        'Strengthening': 'Strengthening',
+        'Stretching': 'Stretching',
+        'Endurance': 'Endurance',
+        'Functional': 'Functional',
+      };
+      
+      const mappedCategory = categoryMap[category] || 'Strengthening';
+      
+      // Map body parts
+      const bodyPartMap = {
+        'Ankle': 'Ankle',
+        'Arm': 'Shoulder',
+        'Back': 'Back',
+        'Core': 'Core',
+        'Deep': 'Full Body',
+        'Elbow': 'Elbow',
+        'Flexion': 'Knee',
+        'Foot': 'Foot',
+        'Forward': 'Hip',
+        'Full': 'Full Body',
+        'Hand': 'Hand',
+        'Hip': 'Hip',
+        'Knee': 'Knee',
+        'Neck': 'Neck',
+        'Shoulder': 'Shoulder',
+        'Wrist': 'Wrist'
+      };
+      
+      const mappedBodyPart = bodyPartMap[bodyPart] || bodyPart;
+      
+      const exerciseName = imageKey.replace(/-/g, ' ');
+      
+      exercises.push({
+        id: id++,
+        name: exerciseName,
+        description: `${mappedCategory} exercise for ${movement.toLowerCase()} of the ${mappedBodyPart.toLowerCase()}.`,
+        bodyPart: mappedBodyPart,
+        category: mappedCategory,
+        subCategory: mappedCategory,
+        discipline: ['PT', 'OT', 'ST'][Math.floor(Math.random() * 3)],
+        imageUrl: exerciseImages[imageKey],
+        defaultSets: Math.floor(Math.random() * 3) + 2,
+        defaultReps: Math.floor(Math.random() * 10) + 10,
+        defaultSessions: Math.floor(Math.random() * 2) + 1
       });
     });
     
-    // Add some special exercises with common names
-    const specialExercises = [
-      {
-        id: id++,
-        name: 'Forward Lunge in Standing',
-        description: 'Lower body strengthening exercise for hip and knee muscles.',
-        bodyPart: 'Hip',
-        category: 'Strengthening',
-        subCategory: 'Functional',
-        discipline: 'PT',
-        imageUrl: '/exercise-images/forward-lunge.jpg',
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultSessions: 1
-      },
-      {
-        id: id++,
-        name: 'Arm Chair Push',
-        description: 'Upper body strengthening exercise using a chair for support.',
-        bodyPart: 'Shoulder',
-        category: 'Strengthening',
-        subCategory: 'Functional',
-        discipline: 'PT',
-        imageUrl: '/exercise-images/arm-chair-push.jpg',
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultSessions: 1
-      },
-      {
-        id: id++,
-        name: 'Deep Squat',
-        description: 'Lower body strengthening exercise for multiple muscle groups.',
-        bodyPart: 'Knee',
-        category: 'Strengthening',
-        subCategory: 'Functional',
-        discipline: 'PT',
-        imageUrl: '/exercise-images/deep-squat.jpg',
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultSessions: 1
-      },
-      {
-        id: id++,
-        name: 'Flexion-Extension Mobilization of Knee',
-        description: 'Range of motion exercise for the knee joint.',
-        bodyPart: 'Knee',
-        category: 'Range of Motion',
-        subCategory: 'Passive',
-        discipline: 'PT',
-        imageUrl: '/exercise-images/knee-flex-ext.jpg',
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultSessions: 1
-      },
-      {
-        id: id++,
-        name: 'Shoulder Flexion',
-        description: 'Range of motion exercise for the shoulder joint.',
-        bodyPart: 'Shoulder',
-        category: 'Range of Motion',
-        subCategory: 'Active',
-        discipline: 'OT',
-        imageUrl: '/exercise-images/shoulder-flexion.jpg',
-        defaultSets: 2,
-        defaultReps: 15,
-        defaultSessions: 2
-      },
-      {
-        id: id++,
-        name: 'Wrist Extension',
-        description: 'Stretching exercise for the wrist extensors.',
-        bodyPart: 'Wrist',
-        category: 'Stretching',
-        subCategory: 'Static',
-        discipline: 'OT',
-        imageUrl: '/exercise-images/wrist-extension.jpg',
-        defaultSets: 3,
-        defaultReps: 10,
-        defaultSessions: 2
-      }
-    ];
-    
-    return [...result, ...specialExercises];
+    return exercises;
   };
   
   // Filter exercises for the library view
@@ -391,8 +797,8 @@ useEffect(() => {
           setSaveSuccess(true);
           successTimeoutRef.current = setTimeout(() => {
             setSaveSuccess(false);
-          }, 50);
-        }, 40);
+          }, 3000);
+        }, 400);
       }
     }, 30);
   };
@@ -439,7 +845,7 @@ useEffect(() => {
             setSaveSuccess(true);
             successTimeoutRef.current = setTimeout(() => {
               setSaveSuccess(false);
-            }, 200);
+            }, 3000);
             
             // Animate the updated exercise
             setAnimatedExerciseId(selectedExercise.id);
@@ -448,67 +854,64 @@ useEffect(() => {
       }
     }, 40);
   };
-  
+
   // Handle closing modals with animations
-const handleCloseModal = (modalType, callback) => {
-  setModalTransition('closing');
-  
-  if (modalRef.current) {
-    const modal = modalRef.current;
+  const handleCloseModal = (modalType, callback) => {
+    setModalTransition('closing');
     
-    gsap.to(modal, {
-      y: 20, 
-      opacity: 0, 
-      duration: 0.3, 
-      ease: "power2.in",
-      onComplete: () => {
-        // Restaurar scroll antes de cerrar
-        const mainContent = document.querySelector('.exercises-component');
-        if (mainContent) {
-          mainContent.style.overflow = '';
+    if (modalRef.current) {
+      const modal = modalRef.current;
+      
+      gsap.to(modal, {
+        y: 20, 
+        opacity: 0, 
+        duration: 0.3, 
+        ease: "power2.in",
+        onComplete: () => {
+          // Restaurar scroll antes de cerrar
+          const mainContent = document.querySelector('.exercises-component');
+          if (mainContent) {
+            mainContent.style.overflow = '';
+          }
+          
+          // Reset the modal state after animation
+          if (modalType === 'edit') {
+            setShowEditModal(false);
+          } else if (modalType === 'delete') {
+            setShowDeleteModal(false);
+            setExerciseToDelete(null);
+          } else if (modalType === 'library') {
+            setShowExerciseLibrary(false);
+          }
+          
+          // Execute callback if provided
+          if (callback) callback();
+          
+          setTimeout(() => {
+            setModalTransition('');
+          }, 300);
         }
-        
-        // Reset the modal state after animation
-        if (modalType === 'edit') {
-          setShowEditModal(false);
-        } else if (modalType === 'delete') {
-          setShowDeleteModal(false);
-          setExerciseToDelete(null);
-        } else if (modalType === 'library') {
-          setShowExerciseLibrary(false);
-        }
-        
-        // Execute callback if provided
-        if (callback) callback();
-        
-        setTimeout(() => {
-          setModalTransition('');
-        }, 300);
+      });
+    } else {
+      // Fallback if ref is not available
+      const mainContent = document.querySelector('.exercises-component');
+      if (mainContent) {
+        mainContent.style.overflow = '';
       }
-    });
-  } else {
-    // Fallback if ref is not available
-    const mainContent = document.querySelector('.exercises-component');
-    if (mainContent) {
-      mainContent.style.overflow = '';
+      
+      if (modalType === 'edit') {
+        setShowEditModal(false);
+      } else if (modalType === 'delete') {
+        setShowDeleteModal(false);
+        setExerciseToDelete(null);
+      } else if (modalType === 'library') {
+        setShowExerciseLibrary(false);
+      }
+      
+      if (callback) callback();
     }
-    
-    if (modalType === 'edit') {
-      setShowEditModal(false);
-    } else if (modalType === 'delete') {
-      setShowDeleteModal(false);
-      setExerciseToDelete(null);
-    } else if (modalType === 'library') {
-      setShowExerciseLibrary(false);
-    }
-    
-    if (callback) callback();
-  }
-};
+  };
 
-
-
-  
   // Handle initiating the delete process
   const handleInitiateDelete = (exercise) => {
     setExerciseToDelete(exercise);
@@ -562,7 +965,7 @@ const handleCloseModal = (modalType, callback) => {
             setSaveSuccess(true);
             successTimeoutRef.current = setTimeout(() => {
               setSaveSuccess(false);
-            }, 500);
+            }, 3000);
           });
         }, 500);
       }
@@ -622,7 +1025,7 @@ const handleCloseModal = (modalType, callback) => {
               setSaveSuccess(true);
               successTimeoutRef.current = setTimeout(() => {
                 setSaveSuccess(false);
-              }, 500);
+              }, 3000);
               
               // Animate the exercises grid to show changes are applied
               if (exercisesGridRef.current) {
@@ -648,7 +1051,7 @@ const handleCloseModal = (modalType, callback) => {
             setSaveError(true);
             errorTimeoutRef.current = setTimeout(() => {
               setSaveError(false);
-            }, 500);
+            }, 3000);
           }
         }, 300);
       }
@@ -843,8 +1246,6 @@ const handleCloseModal = (modalType, callback) => {
                 >
                   <div className="exercise-header">
                     <h4>{exercise.name}</h4>
-                    
-                    
                   </div>
                   
                   <div className="exercise-image">
@@ -967,192 +1368,191 @@ const handleCloseModal = (modalType, callback) => {
       </div>
     );
   };
-  
+
   // Render the exercise library modal
-const renderExerciseLibrary = () => {
-  const filteredExercises = getFilteredExercises();
-  
-  return (
-    <div className={`exercise-library-overlay ${modalTransition}`}>
-      <div className="exercise-library-modal" ref={modalRef}>
-        <div className="library-header">
-          <h3>Exercise Library</h3>
-          <div className="library-header-actions">
-            <button 
-              className="close-library-btn"
-              onClick={() => handleCloseModal('library')}
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-        
-        <div className="library-filters">
-          <div className="search-box">
-            <i className="fas fa-search"></i>
-            <input
-              type="text"
-              placeholder="Search exercises..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
+  const renderExerciseLibrary = () => {
+    const filteredExercises = getFilteredExercises();
+    
+    return (
+      <div className={`exercise-library-overlay ${modalTransition}`}>
+        <div className="exercise-library-modal" ref={modalRef}>
+          <div className="library-header">
+            <h3>Exercise Library</h3>
+            <div className="library-header-actions">
               <button 
-                className="clear-search" 
-                onClick={() => setSearchQuery('')}
+                className="close-library-btn"
+                onClick={() => handleCloseModal('library')}
               >
                 <i className="fas fa-times"></i>
               </button>
-            )}
-          </div>
-          
-          <div className="filter-groups">
-            <div className="filter-group">
-              <label>Body Part</label>
-              <div className="filter-options">
-                {bodyParts.map(part => (
-                  <button
-                    key={part}
-                    className={`filter-option ${activeBodyPart === part ? 'active' : ''}`}
-                    onClick={() => setActiveBodyPart(part)}
-                  >
-                    {part}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="filter-group">
-              <label>Category</label>
-              <div className="filter-options">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    className={`filter-option ${activeCategory === category ? 'active' : ''}`}
-                    onClick={() => setActiveCategory(category)}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="filter-group">
-              <label>Discipline</label>
-              <div className="filter-options">
-                {disciplines.map(discipline => (
-                  <button
-                    key={discipline}
-                    className={`filter-option ${activeDiscipline === discipline ? 'active' : ''}`}
-                    onClick={() => setActiveDiscipline(discipline)}
-                  >
-                    {discipline}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Contenedor de resultados con scroll forzado */}
-        <div className="library-results" style={{ overflowY: 'auto', flex: 1 }}>
-          <div className="results-header">
-            <span className="results-count">{filteredExercises.length} exercises found</span>
-            <div className="results-actions">
-              <button className="results-view-btn active" title="Grid view">
-                <i className="fas fa-th-large"></i>
-              </button>
-              <button className="results-view-btn" title="List view">
-                <i className="fas fa-list"></i>
-              </button>
             </div>
           </div>
           
-          <div className="results-grid">
-            <TransitionGroup component={null}>
-              {filteredExercises.map((exercise, index) => (
-                <CSSTransition
-                  key={exercise.id}
-                  timeout={400}
-                  classNames="library-item"
-                >
-                  <div 
-                    className="library-exercise-card"
-                    style={{animationDelay: `${index * 0.03}s`}}
-                  >
-                    <div className="exercise-image">
-                      <img src={exercise.imageUrl} alt={exercise.name} />
-                      <div className="exercise-discipline" data-discipline={exercise.discipline}>
-                        {exercise.discipline}
-                      </div>
-                    </div>
-                    
-                    <div className="exercise-details">
-                      <h4 className="exercise-name">{exercise.name}</h4>
-                      <div className="exercise-categories">
-                        <span className="body-part">{exercise.bodyPart}</span>
-                        <span className="category">{exercise.category}</span>
-                      </div>
-                      <p className="exercise-description">{exercise.description}</p>
-                    </div>
-                    
-                    <button 
-                      className="add-btn"
-                      onClick={() => handleAddExercise(exercise)}
-                      disabled={selectedExercises.some(e => e.id === exercise.id)}
-                      data-add-id={exercise.id}
-                    >
-                      {selectedExercises.some(e => e.id === exercise.id) ? (
-                        <>
-                          <i className="fas fa-check"></i>
-                          <span>Added</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="btn-icon">
-                            <i className="fas fa-plus"></i>
-                          </span>
-                          <span className="btn-text">Add</span>
-                          <div className="btn-glow"></div>
-                        </>
-                      )}
-                    </button>
-                    
-                    <button className="preview-btn" title="Preview">
-                      <i className="fas fa-eye"></i>
-                    </button>
-                  </div>
-                </CSSTransition>
-              ))}
-            </TransitionGroup>
-            
-            {filteredExercises.length === 0 && (
-              <div className="no-results">
-                <div className="no-results-icon">
-                  <i className="fas fa-search"></i>
-                </div>
-                <h3>No exercises found</h3>
-                <p>Try adjusting your filters or search query.</p>
+          <div className="library-filters">
+            <div className="search-box">
+              <i className="fas fa-search"></i>
+              <input
+                type="text"
+                placeholder="Search exercises..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
                 <button 
-                  className="reset-filters-btn"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setActiveBodyPart('All');
-                    setActiveCategory('All');
-                    setActiveDiscipline('All');
-                  }}
+                  className="clear-search" 
+                  onClick={() => setSearchQuery('')}
                 >
-                  <i className="fas fa-undo"></i>
-                  <span>Reset Filters</span>
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            
+            <div className="filter-groups">
+              <div className="filter-group">
+                <label>Body Part</label>
+                <div className="filter-options">
+                  {bodyParts.map(part => (
+                    <button
+                      key={part}
+                      className={`filter-option ${activeBodyPart === part ? 'active' : ''}`}
+                      onClick={() => setActiveBodyPart(part)}
+                    >
+                      {part}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="filter-group">
+                <label>Category</label>
+                <div className="filter-options">
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      className={`filter-option ${activeCategory === category ? 'active' : ''}`}
+                      onClick={() => setActiveCategory(category)}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="filter-group">
+                <label>Discipline</label>
+                <div className="filter-options">
+                  {disciplines.map(discipline => (
+                    <button
+                      key={discipline}
+                      className={`filter-option ${activeDiscipline === discipline ? 'active' : ''}`}
+                      onClick={() => setActiveDiscipline(discipline)}
+                    >
+                      {discipline}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="library-results" style={{ overflowY: 'auto', flex: 1 }}>
+            <div className="results-header">
+              <span className="results-count">{filteredExercises.length} exercises found</span>
+              <div className="results-actions">
+                <button className="results-view-btn active" title="Grid view">
+                  <i className="fas fa-th-large"></i>
+                </button>
+                <button className="results-view-btn" title="List view">
+                  <i className="fas fa-list"></i>
                 </button>
               </div>
-            )}
+            </div>
+            
+            <div className="results-grid">
+              <TransitionGroup component={null}>
+                {filteredExercises.map((exercise, index) => (
+                  <CSSTransition
+                    key={exercise.id}
+                    timeout={400}
+                    classNames="library-item"
+                  >
+                    <div 
+                      className="library-exercise-card"
+                      style={{animationDelay: `${index * 0.03}s`}}
+                    >
+                      <div className="exercise-image">
+                        <img src={exercise.imageUrl} alt={exercise.name} />
+                        <div className="exercise-discipline" data-discipline={exercise.discipline}>
+                          {exercise.discipline}
+                        </div>
+                      </div>
+                      
+                      <div className="exercise-details">
+                        <h4 className="exercise-name">{exercise.name}</h4>
+                        <div className="exercise-categories">
+                          <span className="body-part">{exercise.bodyPart}</span>
+                          <span className="category">{exercise.category}</span>
+                        </div>
+                        <p className="exercise-description">{exercise.description}</p>
+                      </div>
+                      
+                      <button 
+                        className="add-btn"
+                        onClick={() => handleAddExercise(exercise)}
+                        disabled={selectedExercises.some(e => e.id === exercise.id)}
+                        data-add-id={exercise.id}
+                      >
+                        {selectedExercises.some(e => e.id === exercise.id) ? (
+                          <>
+                            <i className="fas fa-check"></i>
+                            <span>Added</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="btn-icon">
+                              <i className="fas fa-plus"></i>
+                            </span>
+                            <span className="btn-text">Add</span>
+                            <div className="btn-glow"></div>
+                          </>
+                        )}
+                      </button>
+                      
+                      <button className="preview-btn" title="Preview">
+                        <i className="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </CSSTransition>
+                ))}
+              </TransitionGroup>
+              
+              {filteredExercises.length === 0 && (
+                <div className="no-results">
+                  <div className="no-results-icon">
+                    <i className="fas fa-search"></i>
+                  </div>
+                  <h3>No exercises found</h3>
+                  <p>Try adjusting your filters or search query.</p>
+                  <button 
+                    className="reset-filters-btn"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveBodyPart('All');
+                      setActiveCategory('All');
+                      setActiveDiscipline('All');
+                    }}
+                  >
+                    <i className="fas fa-undo"></i>
+                    <span>Reset Filters</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
   
   // Render the edit modal
   const renderEditModal = () => {

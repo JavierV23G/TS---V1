@@ -549,7 +549,7 @@
               
               .document-description {
                 font-size: $font-xs;
-                color: $medium-gray;
+                color: #002850;
                 margin-bottom: $spacing-4;
                 padding-left: calc(36px + 0.8rem);
               }
@@ -6027,7 +6027,7 @@ $upload-zone-hover: rgba(255, 255, 255, 0.08);
 
                 .upload-icon {
                   font-size: 2rem;
-                  color: rgba(255, 255, 255, 0.4);
+                  color: rgb(0 159 255 / 67%);
                   transition: all 0.3s ease;
                 }
 
@@ -6039,12 +6039,12 @@ $upload-zone-hover: rgba(255, 255, 255, 0.08);
                   .upload-main {
                     font-size: 0.9rem;
                     font-weight: 500;
-                    color: rgba(255, 255, 255, 0.8);
+                    color: rgb(33 68 102);
                   }
 
                   .upload-sub {
                     font-size: 0.75rem;
-                    color: rgba(255, 255, 255, 0.5);
+                    color: rgb(33 68 102);
                   }
                 }
               }
@@ -6068,7 +6068,7 @@ $upload-zone-hover: rgba(255, 255, 255, 0.08);
 
             small {
               font-size: 0.7rem;
-              color: rgba(255, 255, 255, 0.4);
+              color: rgb(69 177 243 / 75%);
             }
           }
         }
@@ -6114,7 +6114,7 @@ $upload-zone-hover: rgba(255, 255, 255, 0.08);
               .file-name {
                 font-size: 0.85rem;
                 font-weight: 500;
-                color: white;
+                color: rgb(0, 0, 0);
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -6123,7 +6123,8 @@ $upload-zone-hover: rgba(255, 255, 255, 0.08);
 
               .file-size {
                 font-size: 0.7rem;
-                color: rgba(255, 255, 255, 0.6);
+                color: rgb(0 0 0 / 60%);
+
               }
             }
 
