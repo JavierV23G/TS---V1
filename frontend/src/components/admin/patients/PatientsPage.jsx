@@ -1201,21 +1201,7 @@ const AdminPatientsPage = () => {
         </div>
       </main>
       
-      {/* AI Assistant */}
-      {showAIAssistant && !isLoggingOut && <AIAssistant />}
-      
-      {/* Floating Quick Action Button with Menu */}
-      {!isLoggingOut && (
-        <div className="quick-action-btn">
-          <button 
-            className="add-patient-btn"
-            onClick={handleNavigateToCreatePatient}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="btn-tooltip">Add New Patient</span>
-          </button>
-        </div>
-      )}
+     
       
       {/* Quick Tour */}
       {showQuickTour && !isLoggingOut && (

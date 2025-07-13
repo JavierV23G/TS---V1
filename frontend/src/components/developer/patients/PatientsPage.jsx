@@ -1261,18 +1261,7 @@ const DevPatientsPage = () => {
         </div>
       </main>
       
-      {!isLoggingOut && (
-        <div className="quick-action-btn">
-          <button 
-            className="add-patient-btn"
-            onClick={handleNavigateToCreatePatient}
-            disabled={isLoadingPatients}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="btn-tooltip">Add New Patient</span>
-          </button>
-        </div>
-      )}
+      
     </div>
   );
 };
