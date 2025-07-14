@@ -5350,3 +5350,624 @@
     }
   }
 }
+
+
+// -----------------------------------
+// Current Certification Period Styles
+// -----------------------------------
+
+.cert-period-info, .current-cert-period {
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+  border: 1px solid var(--primary-200);
+  border-left: 4px solid var(--primary-500);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5) var(--spacing-6);
+  margin: var(--spacing-4) 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+    opacity: 0.5;
+  }
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-left-color: var(--primary-600);
+  }
+  
+  .info-label {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--primary-700);
+    margin-bottom: var(--spacing-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    
+    i {
+      font-size: 1.125rem;
+      margin-right: var(--spacing-2);
+      padding: var(--spacing-1);
+      background: var(--primary-100);
+      border-radius: var(--radius-lg);
+      color: var(--primary-600);
+      box-shadow: inset 0 1px 2px rgba(79, 70, 229, 0.1);
+    }
+  }
+  
+  .info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--neutral-800);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--primary-100);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: inline-block;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.05), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    
+    &:hover::before {
+      opacity: 1;
+    }
+  }
+}
+
+// -----------------------------------
+// Quick Status Change Section 
+// -----------------------------------
+
+.quick-status-section {
+  background: var(--neutral-50);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5);
+  margin-top: var(--spacing-6);
+  border: 1px solid var(--neutral-200);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500), var(--success-500));
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+  }
+  
+  h5 {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--spacing-4);
+    
+    i {
+      font-size: 1.125rem;
+      margin-right: var(--spacing-2);
+      color: var(--primary-600);
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  }
+  
+  .quick-status-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+    
+    .quick-status-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-3) var(--spacing-2);
+      border-radius: var(--radius-xl);
+      border: 2px solid transparent;
+      background: white;
+      color: var(--neutral-600);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: all var(--transition-bounce);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      
+      i {
+        font-size: 1.25rem;
+        transition: all var(--transition-normal);
+      }
+      
+      // Hover effect
+      &:hover:not(.active) {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--neutral-300);
+        color: var(--neutral-700);
+        
+        i {
+          transform: scale(1.1);
+        }
+      }
+      
+      // Active state base
+      &.active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        font-weight: 700;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, currentColor 0%, transparent 100%);
+          opacity: 0.1;
+          z-index: var(--z-0);
+        }
+        
+        i {
+          transform: scale(1.2);
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+      }
+      
+      // Scheduled status
+      &.scheduled {
+        &.active {
+          background: var(--success-50);
+          border-color: var(--success-400);
+          color: var(--success-700);
+          
+          i {
+            color: var(--success-600);
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--success-25, #f0fdf4);
+          border-color: var(--success-200);
+          color: var(--success-600);
+        }
+      }
+      
+      // Pending status
+      &.pending {
+        &.active {
+          background: var(--warning-50);
+          border-color: var(--warning-400);
+          color: var(--warning-700);
+          
+          i {
+            color: var(--warning-600);
+            animation: pendingPulse 2s infinite;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--warning-25, #fffbeb);
+          border-color: var(--warning-200);
+          color: var(--warning-600);
+        }
+        
+        @keyframes pendingPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      }
+      
+      // Completed status
+      &.completed {
+        &.active {
+          background: var(--primary-50);
+          border-color: var(--primary-400);
+          color: var(--primary-700);
+          
+          i {
+            color: var(--primary-600);
+            animation: completedBounce 0.6s ease-in-out;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--primary-25, #eef2ff);
+          border-color: var(--primary-200);
+          color: var(--primary-600);
+        }
+        
+        @keyframes completedBounce {
+          0%, 100% { transform: scale(1.2); }
+          50% { transform: scale(1.4); }
+        }
+      }
+      
+      // Missed status
+      &.missed {
+        &.active {
+          background: var(--danger-50);
+          border-color: var(--danger-400);
+          color: var(--danger-700);
+          
+          i {
+            color: var(--danger-600);
+            animation: missedShake 0.5s ease-in-out;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--danger-25, #fef2f2);
+          border-color: var(--danger-200);
+          color: var(--danger-600);
+        }
+        
+        @keyframes missedShake {
+          0%, 100% { transform: scale(1.2) rotate(0deg); }
+          25% { transform: scale(1.2) rotate(-3deg); }
+          75% { transform: scale(1.2) rotate(3deg); }
+        }
+      }
+      
+      // Cancelled status
+      &.cancelled {
+        &.active {
+          background: var(--neutral-100);
+          border-color: var(--neutral-400);
+          color: var(--neutral-700);
+          
+          i {
+            color: var(--neutral-600);
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--neutral-75, #f9fafb);
+          border-color: var(--neutral-300);
+          color: var(--neutral-600);
+        }
+      }
+      
+      // Click effect
+      &:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+    }
+  }
+  
+  .quick-status-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    font-size: 0.875rem;
+    color: var(--neutral-600);
+    
+    i {
+      color: var(--primary-500);
+      font-size: 1rem;
+    }
+    
+    span {
+      font-weight: 500;
+    }
+  }
+}
+
+// -----------------------------------
+// Certification Period Indicator (Header)
+// -----------------------------------
+
+.cert-period-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: white;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary-200);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary-700);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  
+  i {
+    color: var(--primary-600);
+    font-size: 0.875rem;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+  
+  &:hover {
+    background: var(--primary-50);
+    border-color: var(--primary-300);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+// -----------------------------------
+// Header Loading State
+// -----------------------------------
+
+.header-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  i {
+    animation: spin 1s linear infinite;
+  }
+  
+  span {
+    opacity: 0.9;
+  }
+}
+
+// -----------------------------------
+// No Certification Period Warning
+// -----------------------------------
+
+.no-cert-period-warning {
+  background: linear-gradient(135deg, var(--warning-50) 0%, var(--danger-50) 100%);
+  border: 1px solid var(--warning-200);
+  border-left: 4px solid var(--warning-500);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-8) var(--spacing-6);
+  margin: var(--spacing-6) var(--spacing-8);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(245, 158, 11, 0.05) 10px,
+      rgba(245, 158, 11, 0.05) 20px
+    );
+    z-index: var(--z-0);
+  }
+  
+  .warning-content {
+    position: relative;
+    z-index: var(--z-10);
+    
+    i {
+      font-size: 3rem;
+      color: var(--warning-500);
+      margin-bottom: var(--spacing-4);
+      animation: warningBounce 2s infinite ease-in-out;
+    }
+    
+    h4 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--warning-800);
+      margin: 0 0 var(--spacing-3);
+    }
+    
+    p {
+      font-size: 1rem;
+      color: var(--warning-700);
+      margin: 0 0 var(--spacing-5);
+      line-height: 1.6;
+    }
+    
+    .warning-actions {
+      .setup-cert-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-3) var(--spacing-6);
+        background: var(--warning-600);
+        color: white;
+        border: none;
+        border-radius: var(--radius-xl);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all var(--transition-bounce);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        position: relative;
+        overflow: hidden;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: all 0.5s ease;
+        }
+        
+        &:hover {
+          background: var(--warning-700);
+          transform: translateY(-3px);
+          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+          
+          &::before {
+            left: 100%;
+          }
+          
+          i {
+            transform: rotate(15deg) scale(1.1);
+          }
+        }
+        
+        &:active {
+          transform: translateY(-1px) scale(0.98);
+        }
+        
+        i {
+          font-size: 1.125rem;
+          transition: all var(--transition-normal);
+        }
+      }
+    }
+  }
+  
+  @keyframes warningBounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+// -----------------------------------
+// Responsive Styles
+// -----------------------------------
+
+@media (max-width: 768px) {
+  .cert-period-info, .current-cert-period {
+    padding: var(--spacing-4) var(--spacing-5);
+    margin: var(--spacing-3) 0;
+    
+    .info-label {
+      font-size: 0.875rem;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+    
+    .info-value {
+      font-size: 0.9375rem;
+      padding: var(--spacing-2) var(--spacing-3);
+    }
+  }
+  
+  .quick-status-section {
+    padding: var(--spacing-4);
+    
+    .quick-status-buttons {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-2);
+      
+      .quick-status-btn {
+        padding: var(--spacing-2);
+        font-size: 0.75rem;
+        
+        i {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+  
+  .no-cert-period-warning {
+    padding: var(--spacing-6) var(--spacing-4);
+    margin: var(--spacing-4);
+    
+    .warning-content {
+      i {
+        font-size: 2.5rem;
+        margin-bottom: var(--spacing-3);
+      }
+      
+      h4 {
+        font-size: 1.125rem;
+      }
+      
+      p {
+        font-size: 0.9375rem;
+      }
+      
+      .setup-cert-btn {
+        padding: var(--spacing-2) var(--spacing-4);
+        font-size: 0.9375rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .cert-period-indicator {
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: 0.75rem;
+    
+    i {
+      font-size: 0.75rem;
+    }
+  }
+  
+  .quick-status-section {
+    .quick-status-buttons {
+      grid-template-columns: 1fr;
+      
+      .quick-status-btn {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--spacing-3);
+        padding: var(--spacing-3);
+        
+        i {
+          font-size: 1.125rem;
+        }
+      }
+    }
+    
+    .quick-status-info {
+      flex-direction: column;
+      gap: var(--spacing-1);
+      text-align: center;
+    }
+  }
+}

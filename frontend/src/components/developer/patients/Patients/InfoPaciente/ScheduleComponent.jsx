@@ -1250,13 +1250,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                     <i className="fas fa-calendar-times"></i>
                     Missed Visit
                   </button>
-                  <button
-                    className={`tab-button ${activeTab === 'reschedule' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('reschedule')}
-                  >
-                    <i className="fas fa-calendar-alt"></i>
-                    Reschedule
-                  </button>
                 </div>
                 <div className="tab-content">
                   {activeTab === 'details' && (
@@ -1382,77 +1375,8 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                           </div>
                         </div>
                       )}
-                      
-                      {/* Quick Status Change Buttons - MEJORADO */}
-                      {selectedVisit && (
-                        <div className="quick-status-section">
-                          <h5>
-                            <i className="fas fa-bolt"></i>
-                            Quick Status Change
-                          </h5>
-                          <div className="quick-status-buttons">
-                            <button
-                              className={`quick-status-btn scheduled ${formData.status === 'Scheduled' ? 'active' : ''}`}
-                              onClick={() => {
-                                console.log('Quick change to Scheduled');
-                                setFormData({...formData, status: 'Scheduled'});
-                              }}
-                              type="button"
-                            >
-                              <i className="fas fa-calendar-check"></i>
-                              Scheduled
-                            </button>
-                            <button
-                              className={`quick-status-btn pending ${formData.status === 'Pending' ? 'active' : ''}`}
-                              onClick={() => {
-                                console.log('Quick change to Pending');
-                                setFormData({...formData, status: 'Pending'});
-                              }}
-                              type="button"
-                            >
-                              <i className="fas fa-clock"></i>
-                              Pending
-                            </button>
-                            <button
-                              className={`quick-status-btn completed ${formData.status === 'Completed' ? 'active' : ''}`}
-                              onClick={() => {
-                                console.log('Quick change to Completed');
-                                setFormData({...formData, status: 'Completed'});
-                              }}
-                              type="button"
-                            >
-                              <i className="fas fa-check-circle"></i>
-                              Completed
-                            </button>
-                            <button
-                              className={`quick-status-btn missed ${formData.status === 'Missed' ? 'active' : ''}`}
-                              onClick={() => {
-                                console.log('Quick change to Missed');
-                                setFormData({...formData, status: 'Missed'});
-                              }}
-                              type="button"
-                            >
-                              <i className="fas fa-times-circle"></i>
-                              Missed
-                            </button>
-                            <button
-                              className={`quick-status-btn cancelled ${formData.status === 'Cancelled' ? 'active' : ''}`}
-                              onClick={() => {
-                                console.log('Quick change to Cancelled');
-                                setFormData({...formData, status: 'Cancelled'});
-                              }}
-                              type="button"
-                            >
-                              <i className="fas fa-ban"></i>
-                              Cancelled
-                            </button>
-                          </div>
-                          <div className="quick-status-info">
-                            <i className="fas fa-info-circle"></i>
-                            <span>Click a status above, then click "Update Visit" to save</span>
-                          </div>
-                        </div>
-                      )}
+                     
+                     
                     </div>
                   )}
                   {activeTab === 'missedVisit' && (
@@ -1500,38 +1424,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                       </div>
                     </div>
                   )}
-                  {activeTab === 'reschedule' && (
-                    <div className="reschedule-tab">
-                      <h4>Reschedule Visit</h4>
-                      <div className="form-group">
-                        <label>New Date:</label>
-                        <input
-                          type="date"
-                          value={rescheduleDate}
-                          onChange={(e) => setRescheduleDate(e.target.value)}
-                          className="form-input"
-                          min={currentCertPeriod?.start_date || undefined}
-                          max={currentCertPeriod?.end_date || undefined}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>New Time:</label>
-                        <input
-                          type="time"
-                          name="time"
-                          value={formData.time}
-                          onChange={handleInputChange}
-                          className="form-input"
-                        />
-                      </div>
-                      <div className="reschedule-info">
-                        <p><strong>Original Date:</strong> {selectedVisit?.visit_date}</p>
-                        {selectedVisit?.scheduled_time && (
-                          <p><strong>Original Time:</strong> {formatTime(selectedVisit.scheduled_time)}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  
                 </div>
               </div>
             )}
