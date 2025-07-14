@@ -104,12 +104,34 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
     birthday: '',
     gender: '',
     address: '',
-    contact_info: ''
   });
+  const [primaryContactPhone, setPrimaryContactPhone] = useState('');
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  // Update form data when patient prop changes
+  const formatPhoneNumber = (phoneStr) => {
+    if (!phoneStr) return '';
+    const cleaned = ('' + phoneStr).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return phoneStr;
+  };
+  
+  const getPrimaryContactPhoneDisplay = (contactInfo) => {
+    if (!contactInfo) return 'Not available';
+    try {
+      const contacts = JSON.parse(contactInfo);
+      if (Array.isArray(contacts) && contacts.length > 0 && contacts[0].phone) {
+        return formatPhoneNumber(contacts[0].phone);
+      }
+    } catch (e) {
+      return formatPhoneNumber(contactInfo);
+    }
+    return 'Not available';
+  };
+
   useEffect(() => {
     if (patient) {
       setFormData({
@@ -117,18 +139,31 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
         birthday: patient.birthday || '',
         gender: patient.gender || '',
         address: patient.address || '',
-        contact_info: patient.contact_info || ''
       });
+      
+      let phone = '';
+      if (patient.contact_info) {
+        try {
+          const contacts = JSON.parse(patient.contact_info);
+          if (Array.isArray(contacts) && contacts.length > 0) {
+            phone = contacts[0].phone || '';
+          }
+        } catch {
+          phone = patient.contact_info;
+        }
+      }
+      setPrimaryContactPhone(phone);
     }
   }, [patient]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Changing ${name} to ${value}`); // Depuración
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhoneInputChange = (e) => {
+    const cleaned = e.target.value.replace(/\D/g, '');
+    setPrimaryContactPhone(cleaned);
   };
 
   const handleSave = async () => {
@@ -136,183 +171,99 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
       setError('Patient ID not available');
       return;
     }
-
     try {
       setIsSaving(true);
       setError(null);
 
-      const updateData = {
-        full_name: formData.full_name || '',
-        birthday: formData.birthday || '',
-        gender: formData.gender || '',
-        address: formData.address || '',
-        contact_info: formData.contact_info || ''
-      };
-      console.log('Final update data before send:', updateData); // Depuración
+      let contacts = [];
+      try {
+        contacts = patient.contact_info ? JSON.parse(patient.contact_info) : [];
+        if (!Array.isArray(contacts)) contacts = [];
+      } catch {
+        contacts = [];
+      }
+
+      if (contacts.length > 0) {
+        contacts[0].phone = primaryContactPhone;
+      } else {
+        contacts.push({ id: Date.now(), name: 'Primary Contact', phone: primaryContactPhone, relation: 'Unknown' });
+      }
 
       const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(updateData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          contact_info: JSON.stringify(contacts),
+        }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      if (!response.ok) throw new Error('Update failed');
+      
+      const updatedPatientData = await response.json();
+      if (onUpdatePatient) {
+        onUpdatePatient({ ...patient, ...updatedPatientData });
       }
-
-      const responseData = await response.json();
-      console.log('Received response data:', responseData);
-
-      if (!responseData || !responseData.patient_id) {
-        throw new Error('Invalid response format from server');
-      }
-
-      const updatedPatient = {
-        id: responseData.patient_id,
-        full_name: responseData.full_name || '',
-        birthday: responseData.birthday || '',
-        gender: responseData.gender || '',
-        address: responseData.address || '',
-        contact_info: responseData.contact_info || '',
-        insurance: responseData.insurance || '',
-        physician: responseData.physician || '',
-        agency_id: responseData.agency_id || null,
-        agency_name: responseData.agency_name || '',
-        nursing_diagnosis: responseData.nursing_diagnosis || '',
-        urgency_level: responseData.urgency_level || '',
-        prior_level_of_function: responseData.prior_level_of_function || '',
-        homebound_status: responseData.homebound_status || '',
-        weight_bearing_status: responseData.weight_bearing_status || '',
-        referral_reason: responseData.referral_reason || '',
-        weight: responseData.weight || '',
-        height: responseData.height || '',
-        past_medical_history: responseData.past_medical_history || '',
-        clinical_grouping: responseData.clinical_grouping || '',
-        required_disciplines: responseData.required_disciplines || '',
-        is_active: responseData.is_active || false
-      };
-
-      setFormData({
-        full_name: updatedPatient.full_name,
-        birthday: updatedPatient.birthday,
-        gender: updatedPatient.gender,
-        address: updatedPatient.address,
-        contact_info: updatedPatient.contact_info
-      });
-
       setIsEditing(false);
-      if (onUpdatePatient && typeof onUpdatePatient === 'function') {
-        onUpdatePatient(updatedPatient);
-        console.log('Patient updated in parent:', updatedPatient);
-      }
-    } catch (error) {
-      console.error('Error updating patient:', error);
-      setError(`Update failed: ${error.message}`);
+
+    } catch (err) {
+      setError(err.message);
     } finally {
       setIsSaving(false);
     }
   };
-
+  
   const handleCancel = () => {
-    // Reset form data to original patient data
-    if (patient) {
-      setFormData({
-        full_name: patient.full_name || '',
-        birthday: patient.birthday || '',
-        gender: patient.gender || '',
-        address: patient.address || '',
-        contact_info: patient.contact_info || ''
-      });
-    }
     setIsEditing(false);
     setError(null);
-  };
-
-  const toggleEdit = () => {
-    if (isEditing) {
-      handleCancel();
-    } else {
-      setIsEditing(true);
-      setError(null);
+    // Reset state from patient prop
+    if (patient) {
+        setFormData({
+            full_name: patient.full_name || '',
+            birthday: patient.birthday || '',
+            gender: patient.gender || '',
+            address: patient.address || '',
+        });
+        let phone = '';
+        if (patient.contact_info) {
+            try {
+                const contacts = JSON.parse(patient.contact_info);
+                if (Array.isArray(contacts) && contacts.length > 0) {
+                    phone = contacts[0].phone || '';
+                }
+            } catch {
+                phone = patient.contact_info;
+            }
+        }
+        setPrimaryContactPhone(phone);
     }
   };
 
-  // Show loading if no patient data
-  if (!patient) {
-    return (
-      <div className="info-card personal-info">
-        <div className="card-header">
-          <h3><i className="fas fa-user-circle"></i> Personal Information</h3>
-        </div>
-        <div className="card-body">
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <span>Loading patient information...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
+  if (!patient) return <div>Loading...</div>;
+
   return (
     <div className="info-card personal-info">
       <div className="card-header">
         <h3><i className="fas fa-user-circle"></i> Personal Information</h3>
-        <button className="edit-button" onClick={toggleEdit} disabled={isSaving}>
+        <button className="edit-button" onClick={() => setIsEditing(!isEditing)} disabled={isSaving}>
           <i className={`fas ${isEditing ? 'fa-times' : 'fa-pen'}`}></i>
         </button>
       </div>
       <div className="card-body">
-        {error && (
-          <div className="error-message" style={{ 
-            marginBottom: '15px', 
-            padding: '10px', 
-            backgroundColor: '#fee', 
-            border: '1px solid #fcc', 
-            borderRadius: '4px', 
-            color: '#c00' 
-          }}>
-            <i className="fas fa-exclamation-triangle"></i>
-            <span style={{ marginLeft: '8px' }}>{error}</span>
-          </div>
-        )}
-        
+        {error && <div className="error-message">{error}</div>}
         {isEditing ? (
           <div className="edit-form">
             <div className="form-group">
               <label>Full Name</label>
-              <input 
-                type="text" 
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleInputChange}
-                disabled={isSaving}
-                placeholder="Enter full name"
-              />
+              <input type="text" name="full_name" value={formData.full_name} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
               <label>Date of Birth</label>
-              <input 
-                type="date" 
-                name="birthday"
-                value={formData.birthday}
-                onChange={handleInputChange}
-                disabled={isSaving}
-              />
+              <input type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
               <label>Gender</label>
-              <select 
-                name="gender"
-                value={formData.gender}
-                onChange={handleInputChange}
-                disabled={isSaving}
-              >
-                <option value="">Select Gender</option>
+              <select name="gender" value={formData.gender} onChange={handleInputChange} disabled={isSaving}>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -320,39 +271,16 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
             </div>
             <div className="form-group">
               <label>Address</label>
-              <input 
-                type="text" 
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                placeholder="Full Address"
-                disabled={isSaving}
-              />
+              <input type="text" name="address" value={formData.address} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
-              <label>Contact Info</label>
-              <input 
-                type="text" 
-                name="contact_info"
-                value={formData.contact_info}
-                onChange={handleInputChange}
-                placeholder="Phone number, email, etc."
-                disabled={isSaving}
-              />
+              <label>Primary Contact Phone</label>
+              <input type="tel" value={formatPhoneNumber(primaryContactPhone)} onChange={handlePhoneInputChange} disabled={isSaving} placeholder="(XXX) XXX-XXXX" />
             </div>
             <div className="form-actions">
-              <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>
-                Cancel
-              </button>
+              <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>Cancel</button>
               <button className="save-btn" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -360,23 +288,23 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
           <div className="patient-info-display">
             <div className="info-row">
               <div className="info-label">Full Name</div>
-              <div className="info-value">{patient?.full_name || 'Not available'}</div>
+              <div className="info-value">{patient.full_name || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Date of Birth</div>
-              <div className="info-value">{patient?.birthday || 'Not available'}</div>
+              <div className="info-value">{patient.birthday || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Gender</div>
-              <div className="info-value">{patient?.gender || 'Not available'}</div>
+              <div className="info-value">{patient.gender || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Address</div>
-              <div className="info-value">{patient?.address || 'Not available'}</div>
+              <div className="info-value">{patient.address || 'Not available'}</div>
             </div>
             <div className="info-row">
-              <div className="info-label">Contact Info</div>
-              <div className="info-value">{patient?.contact_info || 'Not available'}</div>
+              <div className="info-label">Primary Contact</div>
+              <div className="info-value">{getPrimaryContactPhoneDisplay(patient.contact_info)}</div>
             </div>
           </div>
         )}

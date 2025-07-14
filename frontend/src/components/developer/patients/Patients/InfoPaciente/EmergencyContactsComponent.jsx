@@ -1,166 +1,186 @@
 import React, { useState, useEffect } from 'react';
 
 const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
-  const [contacts, setContacts] = useState([]);
-  const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isEditingContact, setIsEditingContact] = useState(null);
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [newContact, setNewContact] = useState({
-    name: '',
-    phone: '',
-    relation: ''
-  });
+  const [formState, setFormState] = useState({ name: '', phone: '', relation: '' });
 
-  // Initialize contacts from patient data (LOCAL ONLY)
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  const formatPhoneNumber = (phoneStr) => {
+    if (!phoneStr) return '';
+    const cleaned = ('' + phoneStr).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return cleaned.slice(0, 10);
+  };
+
   useEffect(() => {
-    if (patient) {
-      const initialContacts = [];
-      
-      // Try to get emergency contact from patient data
-      if (patient.emergencyContact || patient.contact_info) {
-        initialContacts.push({
-          id: 1,
-          name: patient.emergencyContact || 'Emergency Contact',
-          phone: patient.emergencyPhone || patient.contact_info || '',
-          relation: 'Family Member'
-        });
+    if (patient?.contact_info) {
+      try {
+        const allContacts = JSON.parse(patient.contact_info);
+        if (Array.isArray(allContacts)) {
+          setEmergencyContacts(allContacts.slice(1)); // Get all contacts except the first one
+        }
+      } catch (e) {
+        console.error("Failed to parse contacts:", e);
       }
-      
-      setContacts(initialContacts);
+    } else {
+      setEmergencyContacts([]);
     }
   }, [patient]);
 
-  // Handle changes in input fields
+  const handlePhoneInputChange = (e) => {
+    const cleaned = e.target.value.replace(/\D/g, '');
+    setFormState(prev => ({ ...prev, phone: cleaned.slice(0, 10) }));
+  };
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewContact(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormState(prev => ({ ...prev, [name]: value }));
   };
 
-  // Open form to add new contact
-  const handleAddContactClick = () => {
-    setIsAddingContact(true);
-    setIsEditingContact(null);
+  const handleAddNew = () => {
+    setIsAdding(true);
+    setEditingId(null);
+    setFormState({ name: '', phone: '', relation: '' });
+  };
+
+  const handleEdit = (contact) => {
+    setEditingId(contact.id);
+    setIsAdding(false);
+    setFormState({ name: contact.name, phone: contact.phone, relation: contact.relation });
+  };
+
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingId(null);
     setError(null);
-    setNewContact({
-      name: '',
-      phone: '',
-      relation: ''
-    });
   };
 
-  // Open form to edit existing contact
-  const handleEditContactClick = (contact) => {
-    setIsEditingContact(contact.id);
-    setIsAddingContact(false);
-    setError(null);
-    setNewContact({
-      name: contact.name,
-      phone: contact.phone,
-      relation: contact.relation
-    });
-  };
-
-  // Save contact (LOCAL ONLY - no API calls)
-  const handleSaveContact = async () => {
-    if (!newContact.name || !newContact.phone) {
-      setError('Name and phone are required');
+  const handleSave = () => {
+    if (!formState.name || !formState.phone) {
+      setError('Name and phone are required.');
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (isEditingContact) {
-        // Update existing contact in local state
-        setContacts(contacts.map(contact => 
-          contact.id === isEditingContact 
-            ? { ...contact, ...newContact } 
-            : contact
-        ));
-        setIsEditingContact(null);
-      } else {
-        // Add new contact to local state
-        const newId = contacts.length > 0 
-          ? Math.max(...contacts.map(c => c.id)) + 1 
-          : 1;
-        
-        const newContactWithId = {
-          id: newId,
-          ...newContact
-        };
-        
-        setContacts([...contacts, newContactWithId]);
-      }
-      
-      // Notify parent component
-      if (onUpdateContacts) {
-        onUpdateContacts([...contacts]);
-      }
-      
-      setIsAddingContact(false);
-      setNewContact({
-        name: '',
-        phone: '',
-        relation: ''
-      });
-      
-    } catch (err) {
-      setError('Error saving contact. Please try again.');
-    } finally {
-      setIsLoading(false);
+    let updatedEmergencyContacts;
+    if (isAdding) {
+      updatedEmergencyContacts = [...emergencyContacts, { ...formState, id: Date.now() }];
+    } else {
+      updatedEmergencyContacts = emergencyContacts.map(c => c.id === editingId ? { ...formState, id: c.id } : c);
     }
+    
+    saveContactsToApi(updatedEmergencyContacts);
   };
 
-  // Cancel adding/editing contact
-  const handleCancelEdit = () => {
-    setIsAddingContact(false);
-    setIsEditingContact(null);
+  const handleDelete = (contactId) => {
+    const updatedEmergencyContacts = emergencyContacts.filter(c => c.id !== contactId);
+    saveContactsToApi(updatedEmergencyContacts);
+  };
+
+  const saveContactsToApi = async (updatedEmergencyContacts) => {
+    setIsLoading(true);
     setError(null);
-    setNewContact({
-      name: '',
-      phone: '',
-      relation: ''
-    });
-  };
-
-  // Delete contact (LOCAL ONLY)
-  const handleDeleteContact = async (contactId) => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Remove from local state
-      const updatedContacts = contacts.filter(contact => contact.id !== contactId);
-      setContacts(updatedContacts);
-
-      // Close edit form if we're deleting the contact being edited
-      if (isEditingContact === contactId) {
-        setIsEditingContact(null);
-        setIsAddingContact(false);
+      let primaryContact = null;
+      if (patient.contact_info) {
+        try {
+          const allContacts = JSON.parse(patient.contact_info);
+          if (Array.isArray(allContacts) && allContacts.length > 0) {
+            primaryContact = allContacts[0];
+          }
+        } catch (e) { console.error(e); }
+      }
+      
+      if (!primaryContact) {
+          primaryContact = { id: Date.now(), name: 'Primary Contact', phone: '', relation: 'Unknown' };
       }
 
-      // Notify parent component
-      if (onUpdateContacts) {
-        onUpdateContacts(updatedContacts);
-      }
+      const fullContactList = [primaryContact, ...updatedEmergencyContacts];
+
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contact_info: JSON.stringify(fullContactList) }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update contacts.');
+
+      setEmergencyContacts(updatedEmergencyContacts);
+      if (onUpdateContacts) onUpdateContacts(fullContactList);
+      
+      setIsAdding(false);
+      setEditingId(null);
 
     } catch (err) {
-      setError('Error deleting contact. Please try again.');
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const renderForm = () => (
+    <div className="contact-form">
+      <div className="form-row">
+        <label htmlFor="contact-name">Name</label>
+        <input id="contact-name" type="text" name="name" value={formState.name} onChange={handleInputChange} placeholder="Full Name" disabled={isLoading} />
+      </div>
+      <div className="form-row">
+        <label htmlFor="contact-phone">Phone</label>
+        <input id="contact-phone" type="tel" value={formatPhoneNumber(formState.phone)} onChange={handlePhoneInputChange} placeholder="(XXX) XXX-XXXX" disabled={isLoading} />
+      </div>
+      <div className="form-row">
+        <label htmlFor="contact-relation">Relation</label>
+        <select id="contact-relation" name="relation" value={formState.relation} onChange={handleInputChange} disabled={isLoading}>
+          <option value="">Select Relation</option>
+          <option value="Family Member">Family Member</option>
+          <option value="Spouse">Spouse</option>
+          <option value="Parent">Parent</option>
+          <option value="Child">Child</option>
+          <option value="Sibling">Sibling</option>
+          <option value="Friend">Friend</option>
+          <option value="Neighbor">Neighbor</option>
+          <option value="Caregiver">Caregiver</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div className="form-actions">
+        <button className="cancel-btn" onClick={handleCancel} disabled={isLoading}>Cancel</button>
+        <button className="save-btn" onClick={handleSave} disabled={!formState.name || !formState.phone || isLoading}>
+          {isLoading ? <><i className="fas fa-spinner fa-spin"></i> Saving...</> : 'Save Contact'}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderContactList = () => (
+    <div className="contacts-list">
+      {emergencyContacts.map(contact => (
+        <div className="contact-item" key={contact.id}>
+          <div className="contact-details">
+            <div className="contact-name"><i className="fas fa-user"></i><span>{contact.name}</span></div>
+            <div className="contact-info">
+              <div className="contact-phone"><i className="fas fa-phone"></i><span>{formatPhoneNumber(contact.phone)}</span></div>
+              <div className="contact-relation"><i className="fas fa-users"></i><span>{contact.relation || 'Not specified'}</span></div>
+            </div>
+          </div>
+          <div className="contact-actions">
+            <button className="edit-btn" onClick={() => handleEdit(contact)} disabled={isLoading} title="Edit contact"><i className="fas fa-edit"></i></button>
+            <button className="delete-btn" onClick={() => handleDelete(contact.id)} disabled={isLoading} title="Delete contact">
+              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-trash"></i>}
+            </button>
+          </div>
+        </div>
+      ))}
+      <button className="add-more-btn" onClick={handleAddNew} disabled={isLoading}><i className="fas fa-plus-circle"></i><span>Add Another Contact</span></button>
+    </div>
+  );
 
   return (
     <div className="emergency-contacts-card">
@@ -169,167 +189,17 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
           <i className="fas fa-phone-alt"></i>
           <h3>Emergency Contacts</h3>
         </div>
-        {!isAddingContact && !isEditingContact && (
-          <button 
-            className="add-button" 
-            onClick={handleAddContactClick}
-            disabled={isLoading}
-          >
-            <i className="fas fa-plus"></i>
-          </button>
+        {!isAdding && editingId === null && (
+          <button className="add-button" onClick={handleAddNew} disabled={isLoading}><i className="fas fa-plus"></i></button>
         )}
       </div>
-
       <div className="card-body">
-        {error && (
-          <div className="error-message">
-            <i className="fas fa-exclamation-triangle"></i>
-            <span>{error}</span>
-            <button onClick={() => setError(null)}>
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-        )}
-
-        {(isAddingContact || isEditingContact) ? (
-          <div className="contact-form">
-            <div className="form-row">
-              <label htmlFor="contact-name">Name</label>
-              <input
-                id="contact-name"
-                type="text"
-                name="name"
-                value={newContact.name}
-                onChange={handleInputChange}
-                placeholder="Full Name"
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="form-row">
-              <label htmlFor="contact-phone">Phone</label>
-              <input
-                id="contact-phone"
-                type="text"
-                name="phone"
-                value={newContact.phone}
-                onChange={handleInputChange}
-                placeholder="Phone Number"
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="form-row">
-              <label htmlFor="contact-relation">Relation</label>
-              <select
-                id="contact-relation"
-                name="relation"
-                value={newContact.relation}
-                onChange={handleInputChange}
-                disabled={isLoading}
-              >
-                <option value="">Select Relation</option>
-                <option value="Family Member">Family Member</option>
-                <option value="Spouse">Spouse</option>
-                <option value="Parent">Parent</option>
-                <option value="Child">Child</option>
-                <option value="Sibling">Sibling</option>
-                <option value="Friend">Friend</option>
-                <option value="Neighbor">Neighbor</option>
-                <option value="Caregiver">Caregiver</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            
-            <div className="form-actions">
-              <button 
-                className="cancel-btn" 
-                onClick={handleCancelEdit}
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button 
-                className="save-btn" 
-                onClick={handleSaveContact}
-                disabled={!newContact.name || !newContact.phone || isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    {isEditingContact ? 'Updating...' : 'Adding...'}
-                  </>
-                ) : (
-                  isEditingContact ? 'Update Contact' : 'Add Contact'
-                )}
-              </button>
-            </div>
-          </div>
-        ) : contacts.length > 0 ? (
-          <div className="contacts-list">
-            {contacts.map((contact) => (
-              <div className="contact-item" key={contact.id}>
-                <div className="contact-details">
-                  <div className="contact-name">
-                    <i className="fas fa-user"></i>
-                    <span>{contact.name}</span>
-                  </div>
-                  <div className="contact-info">
-                    <div className="contact-phone">
-                      <i className="fas fa-phone"></i>
-                      <span>{contact.phone}</span>
-                    </div>
-                    <div className="contact-relation">
-                      <i className="fas fa-users"></i>
-                      <span>{contact.relation || 'Not specified'}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="contact-actions">
-                  <button 
-                    className="edit-btn"
-                    onClick={() => handleEditContactClick(contact)}
-                    disabled={isLoading}
-                    title="Edit contact"
-                  >
-                    <i className="fas fa-edit"></i>
-                  </button>
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDeleteContact(contact.id)}
-                    disabled={isLoading}
-                    title="Delete contact"
-                  >
-                    {isLoading ? (
-                      <i className="fas fa-spinner fa-spin"></i>
-                    ) : (
-                      <i className="fas fa-trash"></i>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button 
-              className="add-more-btn"
-              onClick={handleAddContactClick}
-              disabled={isLoading}
-            >
-              <i className="fas fa-plus-circle"></i>
-              <span>Add Another Contact</span>
-            </button>
-          </div>
-        ) : (
+        {error && <div className="error-message"><i className="fas fa-exclamation-triangle"></i><span>{error}</span><button onClick={() => setError(null)}><i className="fas fa-times"></i></button></div>}
+        {isAdding || editingId !== null ? renderForm() : emergencyContacts.length > 0 ? renderContactList() : (
           <div className="no-contacts">
             <i className="fas fa-exclamation-circle"></i>
             <p>No emergency contacts available</p>
-            <button 
-              className="add-contact-btn"
-              onClick={handleAddContactClick}
-              disabled={isLoading}
-            >
-              <i className="fas fa-plus"></i>
-              <span>Add Contact</span>
-            </button>
+            <button className="add-contact-btn" onClick={handleAddNew} disabled={isLoading}><i className="fas fa-plus"></i><span>Add Contact</span></button>
           </div>
         )}
       </div>
