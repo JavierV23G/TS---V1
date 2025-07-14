@@ -12,7 +12,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     startDate: '',
     endDate: '',
     insurance: '',
-    agency: ''
+    agency: '',
+    notes: ''
   });
   
   // Estados simplificados
@@ -145,22 +146,77 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     }
   };
   
-  // Crear nuevo período de certificación
-  const createCertificationPeriod = async (startDate, endDate, insurance = '', notes = '') => {
+  // Función para controlar el período activo localmente
+  const setActiveCertificationPeriod = async (periodId) => {
     try {
-      console.log('Creating certification period with:', { startDate, endDate, insurance, notes });
+      console.log('Setting active certification period:', periodId);
       
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/certification-period`, {
-        method: 'POST',
+      // Solo actualizar el estado local - no modificar fechas en el backend
+      const updatedPeriods = certPeriods.map(p => ({
+        ...p,
+        status: p.id === periodId ? 'active' : 'expired'
+      }));
+      
+      setCertPeriods(updatedPeriods);
+      setActivePeriodId(periodId);
+      
+      // Opcionalmente, podrías guardar la preferencia del usuario en localStorage
+      // o en un campo específico del paciente
+      localStorage.setItem(`active_cert_period_${patient.id}`, periodId.toString());
+      
+      return true;
+      
+    } catch (err) {
+      console.error('Error setting active certification period:', err);
+      throw err;
+    }
+  };
+  const updatePatientInsurance = async (insurance) => {
+    try {
+      console.log('Updating patient insurance:', insurance);
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          start_date: startDate,
-          end_date: endDate,
-          insurance: insurance || null,
-          notes: notes || null
+          payor_type: insurance
         })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to update patient insurance: ${response.status} - ${errorText}`);
+      }
+      
+      const updatedPatient = await response.json();
+      console.log('Updated patient insurance:', updatedPatient);
+      return updatedPatient;
+      
+    } catch (err) {
+      console.error('Error updating patient insurance:', err);
+      throw err;
+    }
+  };
+  const createCertificationPeriod = async (startDate) => {
+    try {
+      console.log('Creating certification period with:', { 
+        patient_id: patient.id, 
+        start_date: startDate
+      });
+      
+      // CORRECCIÓN: El backend espera start_date como query parameter, no en el body
+      const url = new URL(`${API_BASE_URL}/patients/${patient.id}/certification-period`);
+      url.searchParams.append('start_date', startDate);
+      
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+        // No enviamos body porque el backend solo necesita start_date como query param
       });
       
       if (!response.ok) {
@@ -179,7 +235,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     }
   };
   
-  // Actualizar período de certificación
+  // Actualizar período de certificación - CORREGIDO
   const updateCertificationPeriod = async (certId, startDate, endDate, insurance = '', notes = '') => {
     try {
       console.log('Updating certification period:', { certId, startDate, endDate, insurance, notes });
@@ -269,27 +325,65 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
           const processedPeriods = certPeriodsData.map(period => ({
             id: period.id,
             period: `${formatDateForDisplay(period.start_date)} to ${formatDateForDisplay(period.end_date)}`,
-            status: period.is_active ? 'active' : 'expired',
+            status: 'expired', // Por defecto todos expired, luego determinaremos el activo
             startDate: period.start_date,
             endDate: period.end_date,
-            insurance: period.insurance || 'Not available',
+            insurance: patient.payor_type || 'Not available', // Usar payor_type del paciente
             agency: agencyName,
             notes: period.notes || ''
           }));
 
-          // Encontrar el período activo
-          const activePeriod = processedPeriods.find(p => p.status === 'active') || processedPeriods[0];
+          // Determinar cuál período debe estar activo
+          let activeId = null;
           
-          setCertPeriods(processedPeriods);
-          setActivePeriodId(activePeriod.id);
+          // 1. Verificar si hay una preferencia guardada del usuario
+          const savedActiveId = localStorage.getItem(`active_cert_period_${patient.id}`);
+          if (savedActiveId) {
+            const savedPeriod = processedPeriods.find(p => p.id.toString() === savedActiveId);
+            if (savedPeriod) {
+              activeId = savedPeriod.id;
+            }
+          }
+          
+          // 2. Si no hay preferencia guardada, usar el período más reciente que contenga la fecha actual
+          if (!activeId) {
+            const today = new Date();
+            const validPeriod = processedPeriods.find(period => {
+              const startDate = new Date(period.startDate);
+              const endDate = new Date(period.endDate);
+              return startDate <= today && today <= endDate;
+            });
+            
+            if (validPeriod) {
+              activeId = validPeriod.id;
+            } else {
+              // 3. Si ninguno es válido para hoy, usar el más reciente
+              const sortedByDate = [...processedPeriods].sort((a, b) => 
+                new Date(b.startDate) - new Date(a.startDate)
+              );
+              activeId = sortedByDate[0]?.id;
+            }
+          }
+          
+          // Establecer solo el período seleccionado como activo
+          const finalPeriods = processedPeriods.map(p => ({
+            ...p,
+            status: p.id === activeId ? 'active' : 'expired'
+          }));
+          
+          const activePeriod = finalPeriods.find(p => p.status === 'active');
+          
+          setCertPeriods(finalPeriods);
+          setActivePeriodId(activePeriod?.id);
           
           // Establecer datos de edición
           if (activePeriod) {
             setEditData({
               startDate: formatDateForInput(activePeriod.startDate),
               endDate: formatDateForInput(activePeriod.endDate),
-              insurance: activePeriod.insurance,
-              agency: agencyName
+              insurance: patient.payor_type || 'Not available', // Usar payor_type del paciente
+              agency: agencyName,
+              notes: activePeriod.notes || ''
             });
           }
         } else {
@@ -302,7 +396,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
             status: 'active',
             startDate: patient.cert_start_date || '',
             endDate: patient.cert_end_date || '',
-            insurance: patient.insurance || 'Not available',
+            insurance: patient.payor_type || 'Not available',
             agency: agencyName
           };
 
@@ -314,7 +408,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
               startDate: formatDateForInput(basicCertPeriod.startDate),
               endDate: formatDateForInput(basicCertPeriod.endDate),
               insurance: basicCertPeriod.insurance,
-              agency: agencyName
+              agency: agencyName,
+              notes: ''
             });
           }
         }
@@ -416,15 +511,15 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     }
   };
   
-  // Guardar cambios en el período de certificación
+  // Guardar cambios en el período de certificación - CORREGIDO
   const handleSaveChanges = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
       // Validaciones básicas
-      if (!editData.startDate || !editData.endDate) {
-        setError('Start date and end date are required');
+      if (!editData.startDate) {
+        setError('Start date is required');
         return;
       }
       
@@ -438,36 +533,42 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       if (isAddingNew) {
         // Crear nuevo período de certificación
         try {
+          // Primero actualizar el insurance del paciente si se proporcionó
+          if (editData.insurance && editData.insurance !== 'Not available') {
+            await updatePatientInsurance(editData.insurance);
+          }
+          
           const apiResponse = await createCertificationPeriod(
-            editData.startDate, 
-            editData.endDate,
-            editData.insurance,
-            editData.notes || ''
+            editData.startDate
+            // Solo enviamos startDate, el backend calcula automáticamente end_date (+60 días)
           );
           
           console.log('API created period:', apiResponse);
           
-          // Transformar respuesta de API a nuestro formato
+          // Crear el objeto del nuevo período
           const newPeriod = {
             id: apiResponse.id,
             period: `${formatDateForDisplay(apiResponse.start_date)} to ${formatDateForDisplay(apiResponse.end_date)}`,
-            status: 'active',
+            status: 'active', // El nuevo período siempre será activo
             startDate: apiResponse.start_date,
             endDate: apiResponse.end_date,
-            insurance: apiResponse.insurance || editData.insurance,
+            insurance: editData.insurance || 'Not available',
             agency: realAgencyName,
-            notes: apiResponse.notes || ''
+            notes: editData.notes || ''
           };
           
           // Establecer todos los otros períodos como expirados y agregar el nuevo
           const updatedPeriods = certPeriods.map(p => ({
             ...p,
-            status: 'expired'
+            status: 'expired' // Desactivar todos los períodos existentes
           }));
           
           const newPeriods = [...updatedPeriods, newPeriod];
           setCertPeriods(newPeriods);
           setActivePeriodId(newPeriod.id);
+          
+          // Guardar la preferencia del usuario
+          localStorage.setItem(`active_cert_period_${patient.id}`, newPeriod.id.toString());
           
         } catch (apiError) {
           console.error('API failed:', apiError);
@@ -480,6 +581,11 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         
         if (activePeriod && activePeriod.id !== 'current') {
           try {
+            // Actualizar el insurance del paciente si cambió
+            if (editData.insurance && editData.insurance !== 'Not available') {
+              await updatePatientInsurance(editData.insurance);
+            }
+            
             const apiResponse = await updateCertificationPeriod(
               activePeriod.id,
               editData.startDate,
@@ -498,9 +604,9 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                     period: `${formatDateForDisplay(apiResponse.start_date)} to ${formatDateForDisplay(apiResponse.end_date)}`,
                     startDate: apiResponse.start_date,
                     endDate: apiResponse.end_date,
-                    insurance: apiResponse.insurance || editData.insurance,
+                    insurance: editData.insurance || 'Not available',
                     agency: realAgencyName,
-                    notes: apiResponse.notes || ''
+                    notes: editData.notes || ''
                   } 
                 : p
             );
@@ -522,7 +628,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                   startDate: editData.startDate,
                   endDate: editData.endDate,
                   insurance: editData.insurance,
-                  agency: realAgencyName
+                  agency: realAgencyName,
+                  notes: editData.notes || ''
                 } 
               : p
           );
@@ -534,11 +641,12 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       // Notificar al componente padre
       if (onUpdateCertPeriod) {
         onUpdateCertPeriod({
-          certPeriod: `${formatDateForDisplay(editData.startDate)} to ${formatDateForDisplay(editData.endDate)}`,
+          certPeriod: `${formatDateForDisplay(editData.startDate)} to ${formatDateForDisplay(editData.endDate || editData.startDate)}`,
           insurance: editData.insurance,
           agency: realAgencyName,
           startDate: editData.startDate,
-          endDate: editData.endDate   
+          endDate: editData.endDate || editData.startDate,
+          notes: editData.notes
         });
       }
       
@@ -566,7 +674,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         startDate: formatDateForInput(activePeriod.startDate),
         endDate: formatDateForInput(activePeriod.endDate),
         insurance: activePeriod.insurance || '',
-        agency: activePeriod.agency || ''
+        agency: activePeriod.agency || '',
+        notes: activePeriod.notes || ''
       });
     }
     
@@ -600,45 +709,53 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     setEditData({
       startDate: formattedToday,
       endDate: formattedEndDate,
-      insurance: patient?.insurance || 'Not available',
-      agency: realAgencyName
+      insurance: patient?.payor_type || 'Not available',
+      agency: realAgencyName,
+      notes: ''
     });
   };
   
   // Cambiar a un período de certificación diferente
-  const handleSelectPeriod = (periodId) => {
-    const selectedPeriod = certPeriods.find(p => p.id === periodId);
-    if (!selectedPeriod) return;
-    
-    // Actualizar estado local para mostrar este período como activo
-    const updatedPeriods = certPeriods.map(p => ({
-      ...p,
-      status: p.id === periodId ? 'active' : 'expired'
-    }));
-    
-    setCertPeriods(updatedPeriods);
-    setActivePeriodId(periodId);
-    
-    // Actualizar datos de edición
-    setEditData({
-      startDate: formatDateForInput(selectedPeriod.startDate),
-      endDate: formatDateForInput(selectedPeriod.endDate),
-      insurance: selectedPeriod.insurance,
-      agency: selectedPeriod.agency
-    });
-    
-    // Notificar al componente padre
-    if (onUpdateCertPeriod) {
-      onUpdateCertPeriod({
-        certPeriod: selectedPeriod.period,
-        insurance: selectedPeriod.insurance,
+  const handleSelectPeriod = async (periodId) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const selectedPeriod = certPeriods.find(p => p.id === periodId);
+      if (!selectedPeriod) return;
+      
+      // Usar la función para cambiar el período activo localmente
+      await setActiveCertificationPeriod(periodId);
+      
+      // Actualizar datos de edición
+      setEditData({
+        startDate: formatDateForInput(selectedPeriod.startDate),
+        endDate: formatDateForInput(selectedPeriod.endDate),
+        insurance: patient.payor_type || 'Not available',
         agency: selectedPeriod.agency,
-        startDate: selectedPeriod.startDate,
-        endDate: selectedPeriod.endDate
+        notes: selectedPeriod.notes || ''
       });
+      
+      // Notificar al componente padre
+      if (onUpdateCertPeriod) {
+        onUpdateCertPeriod({
+          certPeriod: selectedPeriod.period,
+          insurance: selectedPeriod.insurance,
+          agency: selectedPeriod.agency,
+          startDate: selectedPeriod.startDate,
+          endDate: selectedPeriod.endDate,
+          notes: selectedPeriod.notes
+        });
+      }
+      
+      setIsViewingHistory(false);
+      
+    } catch (err) {
+      console.error('Error selecting period:', err);
+      setError('Failed to activate period: ' + err.message);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsViewingHistory(false);
   };
   
   // Iniciar proceso de confirmación de eliminación
@@ -713,7 +830,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         startDate: formatDateForInput(newActivePeriod.startDate),
         endDate: formatDateForInput(newActivePeriod.endDate),
         insurance: newActivePeriod.insurance,
-        agency: newActivePeriod.agency
+        agency: newActivePeriod.agency,
+        notes: newActivePeriod.notes || ''
       });
       
       // Notificar al componente padre
@@ -723,7 +841,8 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
           insurance: newActivePeriod.insurance,
           agency: newActivePeriod.agency,
           startDate: newActivePeriod.startDate,
-          endDate: newActivePeriod.endDate
+          endDate: newActivePeriod.endDate,
+          notes: newActivePeriod.notes
         });
       }
     }
@@ -864,14 +983,14 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                 <i className="fas fa-arrow-right"></i>
               </div>
               <div className="form-group">
-                <label>End Date</label>
+                <label>End Date {isAddingNew && <span style={{fontSize: '0.8em', color: '#6b7280'}}>(Auto-calculated: +60 days)</span>}</label>
                 <input 
                   type="date" 
                   name="endDate"
                   value={editData.endDate} 
                   onChange={handleInputChange}
-                  disabled={isLoading}
-                  required
+                  disabled={isLoading || isAddingNew}
+                  required={!isAddingNew}
                 />
               </div>
             </div>
@@ -960,6 +1079,26 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
               )}
             </div>
             
+            <div className="form-group">
+              <label>Notes (Optional)</label>
+              <textarea 
+                name="notes"
+                value={editData.notes} 
+                onChange={handleInputChange}
+                placeholder="Additional notes about this certification period..."
+                disabled={isLoading}
+                maxLength="500"
+                rows="3"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
             
             <div className="form-actions">
               <button 
@@ -973,7 +1112,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
               <button 
                 className="save-btn" 
                 onClick={handleSaveChanges}
-                disabled={!editData.startDate || !editData.endDate || isLoading}
+                disabled={!editData.startDate || isLoading}
               >
                 {isLoading ? (
                   <>
@@ -1023,16 +1162,24 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                           {period.status === 'active' ? 'Current' : 'Expired'}
                         </div>
                         
-                        {period.status !== 'active' && (
-                          <button
-                            className="select-btn"
-                            onClick={() => handleSelectPeriod(period.id)}
-                            title="Use this period"
-                            disabled={isLoading}
-                          >
-                            <i className="fas fa-check-circle"></i>
-                          </button>
-                        )}
+                        <button
+                          className={period.status === 'active' ? 'active-btn' : 'activate-btn'}
+                          onClick={() => period.status !== 'active' ? handleSelectPeriod(period.id) : null}
+                          title={period.status === 'active' ? 'Currently active period' : 'Click to activate this period'}
+                          disabled={isLoading}
+                          style={{
+                            backgroundColor: period.status === 'active' ? '#10b981' : '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: period.status === 'active' ? 'default' : 'pointer',
+                            opacity: period.status === 'active' ? 1 : 0.8
+                          }}
+                        >
+                          <i className={period.status === 'active' ? 'fas fa-check-circle' : 'fas fa-circle'}></i>
+                          {period.status === 'active' ? ' Active' : ' Activate'}
+                        </button>
                         
                         {confirmDelete === period.id ? (
                           <div className="delete-confirmation">
