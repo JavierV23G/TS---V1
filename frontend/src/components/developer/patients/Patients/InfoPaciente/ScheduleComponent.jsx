@@ -272,27 +272,30 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   const updateVisit = async (visitId, visitData) => {
     try {
       console.log(`Updating visit ${visitId} with data:`, visitData);
-      
-      // Prepare update payload - USAR SCHEMA CORRECTO
-      const updatePayload = {
-        patient_id: parseInt(patient.id),
-        staff_id: parseInt(visitData.therapist),
-        certification_period_id: parseInt(visitData.certPeriod || currentCertPeriod?.id),
+  
+      const params = {
+        patient_id: patient.id,
+        staff_id: visitData.therapist,
+        certification_period_id: visitData.certPeriod || currentCertPeriod?.id,
         visit_date: visitData.date,
         visit_type: visitData.visitType,
         therapy_type: getTherapyTypeFromStaff(visitData.therapist),
         status: visitData.status,
-        scheduled_time: visitData.time || null
+        scheduled_time: visitData.time || undefined,
       };
-
-      console.log('Update payload for backend:', updatePayload);
-
-      const response = await fetch(`${API_BASE_URL}/visits/${visitId}`, {
+  
+      // Filter out null or undefined values so they aren't sent as query parameters
+      Object.keys(params).forEach(key => (params[key] === null || params[key] === undefined) && delete params[key]);
+  
+      const queryParams = new URLSearchParams(params);
+  
+      console.log('Update URL query params:', queryParams.toString());
+  
+      const response = await fetch(`${API_BASE_URL}/visits/${visitId}?${queryParams.toString()}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatePayload),
       });
-
+  
       if (response.ok) {
         const updatedVisit = await response.json();
         console.log('Visit updated successfully:', updatedVisit);
