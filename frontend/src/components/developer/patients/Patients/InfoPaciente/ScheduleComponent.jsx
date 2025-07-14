@@ -81,11 +81,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   // DISCIPLINE MAPPING - CORREGIDO
   const disciplineMapping = {
     'PT': 'PT',
-    'PTA': 'PTA', 
+    'PTA': 'PT', // En el backend PTA también se clasifica como PT
     'OT': 'OT',
-    'COTA': 'COTA',
+    'COTA': 'OT', // En el backend COTA también se clasifica como OT
     'ST': 'ST',
-    'STA': 'STA'
+    'STA': 'ST' // En el backend STA también se clasifica como ST
   };
 
   // ===== API FUNCTIONS =====
@@ -152,8 +152,33 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       
       setCertPeriods(certData);
       
-      // Find current active period
-      const activePeriod = certData.find(period => period.is_active) || certData[0];
+      // CORREGIDO: Determinar período activo basado en localStorage o el más reciente
+      let activePeriod = null;
+      
+      // 1. Verificar si hay una preferencia guardada del usuario
+      const savedActiveId = localStorage.getItem(`active_cert_period_${patient.id}`);
+      if (savedActiveId) {
+        activePeriod = certData.find(period => period.id.toString() === savedActiveId);
+      }
+      
+      // 2. Si no hay preferencia guardada, usar el período más reciente que contenga la fecha actual
+      if (!activePeriod && certData.length > 0) {
+        const today = new Date();
+        activePeriod = certData.find(period => {
+          const startDate = new Date(period.start_date);
+          const endDate = new Date(period.end_date);
+          return startDate <= today && today <= endDate;
+        });
+        
+        // 3. Si ninguno es válido para hoy, usar el más reciente
+        if (!activePeriod) {
+          const sortedByDate = [...certData].sort((a, b) => 
+            new Date(b.start_date) - new Date(a.start_date)
+          );
+          activePeriod = sortedByDate[0];
+        }
+      }
+      
       setCurrentCertPeriod(activePeriod);
       
       if (activePeriod) {
@@ -167,6 +192,33 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       setCurrentCertPeriod(null);
     } finally {
       setIsLoadingCertPeriods(false);
+    }
+  };
+
+  // CORREGIDO: Función para escuchar cambios en el período de certificación activo
+  const handleCertPeriodChange = (newCertPeriodData) => {
+    console.log('Certificate period changed:', newCertPeriodData);
+    
+    // Buscar el período correspondiente en la lista
+    const matchingPeriod = certPeriods.find(period => {
+      const periodStart = new Date(period.start_date).toDateString();
+      const newStart = new Date(newCertPeriodData.startDate).toDateString();
+      return periodStart === newStart;
+    });
+    
+    if (matchingPeriod && matchingPeriod.id !== currentCertPeriod?.id) {
+      console.log('Switching to certification period:', matchingPeriod);
+      setCurrentCertPeriod(matchingPeriod);
+      
+      // Actualizar localStorage para recordar la preferencia del usuario
+      localStorage.setItem(`active_cert_period_${patient.id}`, matchingPeriod.id.toString());
+      
+      // Limpiar visitas actuales y cargar las del nuevo período
+      setVisits([]);
+      setSelectedVisit(null);
+      setShowVisitModal(false);
+      
+      // Las visitas se cargarán automáticamente por el useEffect que observa currentCertPeriod
     }
   };
 
@@ -194,7 +246,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
           visit.patient_id === patient.id
         );
         
-        console.log(`Filtered to ${patientVisits.length} visits for patient ${patient.id}`);
+        console.log(`Filtered to ${patientVisits.length} visits for patient ${patient.id} in cert period ${certPeriodId}`);
         setVisits(patientVisits);
         
       } else if (response.status === 404) {
@@ -229,7 +281,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   };
 
-  // Create visit - SIMPLIFICADO Y CORREGIDO
+  // Create visit - CORREGIDO PARA USAR EL ENDPOINT CORRECTO
   const createVisit = async (visitData) => {
     try {
       console.log('Creating visit with data:', visitData);
@@ -246,7 +298,8 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
       console.log('Create payload for backend:', createPayload);
 
-      const response = await fetch(`${API_BASE_URL}/visits/`, {
+      // CORREGIDO: usar /visits/assign en lugar de /visits/
+      const response = await fetch(`${API_BASE_URL}/visits/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(createPayload),
@@ -344,7 +397,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     if (!therapist) return 'Other';
     
     const role = therapist.role.toUpperCase();
-    return disciplineMapping[role] || 'Other';
+    return disciplineMapping[role] || role; // Usa el rol directo si no está en el mapping
   };
 
   const formatDateToLocalISOString = (date) => {
@@ -442,10 +495,21 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   }, [patient?.id]);
 
+  // CORREGIDO: Escuchar cambios en el período de certificación desde el componente padre
+  useEffect(() => {
+    if (certPeriodDates && onUpdateSchedule) {
+      handleCertPeriodChange(certPeriodDates);
+    }
+  }, [certPeriodDates]);
+
   // Load visits when certification period changes
   useEffect(() => {
     if (currentCertPeriod?.id) {
+      console.log('Loading visits for certification period:', currentCertPeriod);
       fetchVisitsForCertPeriod(currentCertPeriod.id);
+    } else {
+      console.log('No certification period selected, clearing visits');
+      setVisits([]);
     }
   }, [currentCertPeriod?.id, patient?.id]);
 
@@ -1744,7 +1808,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
             <i className="fas fa-calendar-times"></i>
             <h3>No Visits Found</h3>
             {currentCertPeriod ? (
-              <p>No therapy visits have been scheduled for the current certification period yet.</p>
+              <p>No therapy visits have been scheduled for this certification period yet.</p>
             ) : (
               <p>Please ensure a certification period is set up before scheduling visits.</p>
             )}
