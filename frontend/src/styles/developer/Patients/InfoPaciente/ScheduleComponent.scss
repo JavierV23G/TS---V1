@@ -4740,3 +4740,1234 @@
     }
   }
 }
+
+
+/* 
+ * Premium Alert Styles for ScheduleComponent
+ * Healthcare Management System 2025
+ * Version: 2.0.0
+ * 
+ * Comprehensive alert and notification styles with animations
+ */
+
+// -----------------------------------
+// Alert Base Styles
+// -----------------------------------
+.error-banner, .warning-banner, .success-banner, .info-banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: var(--spacing-4) var(--spacing-5);
+  margin-bottom: var(--spacing-4);
+  border-radius: var(--radius-xl);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid;
+  backdrop-filter: blur(10px);
+  animation: alertSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  
+  // Slide in animation
+  @keyframes alertSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  // Icon container
+  i {
+    font-size: 1.25rem;
+    margin-right: var(--spacing-3);
+    margin-top: 2px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: var(--z-10);
+    transition: all var(--transition-normal);
+    
+    // Glow effect for icons
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      opacity: 0;
+      transition: all var(--transition-normal);
+      z-index: -1;
+    }
+  }
+  
+  // Text content
+  span {
+    flex: 1;
+    position: relative;
+    z-index: var(--z-10);
+  }
+  
+  // Close button
+  .close-error {
+    background: none;
+    border: none;
+    padding: var(--spacing-1);
+    margin-left: var(--spacing-3);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-bounce);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    
+    i {
+      font-size: 0.875rem;
+      margin: 0;
+      transition: all var(--transition-normal);
+    }
+    
+    &:hover {
+      transform: scale(1.1) rotate(90deg);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  // Animated background gradient
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: all 1s ease;
+    z-index: var(--z-0);
+  }
+  
+  // Floating particles effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: var(--z-0);
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    &::after {
+      opacity: 1;
+    }
+    
+    i::after {
+      opacity: 0.3;
+    }
+  }
+}
+
+// -----------------------------------
+// Error Banner (Red)
+// -----------------------------------
+.error-banner {
+  background: linear-gradient(135deg, var(--danger-50) 0%, rgba(254, 242, 242, 0.8) 100%);
+  color: var(--danger-800);
+  border-left-color: var(--danger-500);
+  border: 1px solid var(--danger-200);
+  
+  i {
+    color: var(--danger-600);
+    
+    &::after {
+      background: var(--danger-400);
+    }
+  }
+  
+  .close-error {
+    color: var(--danger-500);
+    
+    &:hover {
+      background: var(--danger-100);
+      color: var(--danger-700);
+    }
+  }
+  
+  // Pulsing border for critical errors
+  &.critical {
+    animation: alertSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+               criticalPulse 2s infinite;
+    
+    @keyframes criticalPulse {
+      0%, 100% {
+        border-left-color: var(--danger-500);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+      }
+      50% {
+        border-left-color: var(--danger-700);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// Warning Banner (Amber/Yellow)
+// -----------------------------------
+.warning-banner {
+  background: linear-gradient(135deg, var(--warning-50) 0%, rgba(255, 251, 235, 0.8) 100%);
+  color: var(--warning-800);
+  border-left-color: var(--warning-500);
+  border: 1px solid var(--warning-200);
+  
+  i {
+    color: var(--warning-600);
+    
+    &::after {
+      background: var(--warning-400);
+    }
+  }
+  
+  .close-error {
+    color: var(--warning-500);
+    
+    &:hover {
+      background: var(--warning-100);
+      color: var(--warning-700);
+    }
+  }
+  
+  // Gentle glow for warnings
+  &::before {
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.1), transparent);
+  }
+}
+
+// -----------------------------------
+// Success Banner (Green)
+// -----------------------------------
+.success-banner {
+  background: linear-gradient(135deg, var(--success-50) 0%, rgba(236, 253, 245, 0.8) 100%);
+  color: var(--success-800);
+  border-left-color: var(--success-500);
+  border: 1px solid var(--success-200);
+  
+  i {
+    color: var(--success-600);
+    
+    &::after {
+      background: var(--success-400);
+    }
+  }
+  
+  .close-error {
+    color: var(--success-500);
+    
+    &:hover {
+      background: var(--success-100);
+      color: var(--success-700);
+    }
+  }
+  
+  // Celebration effect for success
+  &.celebration {
+    &::after {
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+      animation: celebrationGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes celebrationGlow {
+      0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// Info Banner (Blue)
+// -----------------------------------
+.info-banner {
+  background: linear-gradient(135deg, var(--primary-50) 0%, rgba(238, 242, 255, 0.8) 100%);
+  color: var(--primary-800);
+  border-left-color: var(--primary-500);
+  border: 1px solid var(--primary-200);
+  
+  i {
+    color: var(--primary-600);
+    
+    &::after {
+      background: var(--primary-400);
+    }
+  }
+  
+  .close-error {
+    color: var(--primary-500);
+    
+    &:hover {
+      background: var(--primary-100);
+      color: var(--primary-700);
+    }
+  }
+}
+
+// -----------------------------------
+// Special Alert Variants
+// -----------------------------------
+
+// Loading Alert
+.loading-banner {
+  @extend .info-banner;
+  
+  i {
+    animation: spin 1.5s linear infinite;
+  }
+  
+  &::before {
+    left: 100%;
+    transition: none;
+    animation: loadingShimmer 2s linear infinite;
+  }
+  
+  @keyframes loadingShimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+}
+
+// Template Alert (Special styling for template-related messages)
+.template-banner {
+  background: linear-gradient(135deg, var(--secondary-50) 0%, rgba(240, 249, 255, 0.8) 100%);
+  color: var(--secondary-800);
+  border-left-color: var(--secondary-500);
+  border: 1px solid var(--secondary-200);
+  
+  i {
+    color: var(--secondary-600);
+    
+    &::after {
+      background: var(--secondary-400);
+    }
+  }
+  
+  .close-error {
+    color: var(--secondary-500);
+    
+    &:hover {
+      background: var(--secondary-100);
+      color: var(--secondary-700);
+    }
+  }
+  
+  // Special icon animation for template creation
+  &.template-created {
+    i {
+      animation: templateSuccess 0.6s ease-in-out;
+    }
+    
+    @keyframes templateSuccess {
+      0%, 100% {
+        transform: scale(1);
+      }
+      25% {
+        transform: scale(1.2) rotate(-5deg);
+      }
+      75% {
+        transform: scale(1.1) rotate(5deg);
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// Alert with Actions
+// -----------------------------------
+.alert-with-actions {
+  .alert-content {
+    flex: 1;
+    margin-bottom: var(--spacing-3);
+  }
+  
+  .alert-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    
+    button {
+      padding: var(--spacing-2) var(--spacing-4);
+      border-radius: var(--radius-lg);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-bounce);
+      position: relative;
+      overflow: hidden;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: var(--radius-full);
+        transform: translate(-50%, -50%);
+        transition: all 0.6s ease;
+      }
+      
+      &:active::after {
+        width: 200px;
+        height: 200px;
+        opacity: 0;
+        transition: 0s;
+      }
+      
+      &.primary {
+        background: var(--primary-600);
+        color: white;
+        border: none;
+        
+        &:hover {
+          background: var(--primary-700);
+          transform: translateY(-1px);
+        }
+      }
+      
+      &.secondary {
+        background: transparent;
+        color: inherit;
+        border: 1px solid currentColor;
+        
+        &:hover {
+          background: rgba(0, 0, 0, 0.05);
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// Alert Position Variants
+// -----------------------------------
+
+// Fixed position alerts (for global notifications)
+.alert-fixed {
+  position: fixed;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+  width: 400px;
+  max-width: calc(100vw - var(--spacing-8));
+  z-index: var(--z-toast);
+  animation: alertSlideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  @keyframes alertSlideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+  
+  // Auto-dismiss animation
+  &.dismissing {
+    animation: alertSlideOutRight 0.3s ease-in forwards;
+  }
+  
+  @keyframes alertSlideOutRight {
+    from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%) scale(0.95);
+    }
+  }
+}
+
+// Bottom position alerts
+.alert-bottom {
+  position: fixed;
+  bottom: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  z-index: var(--z-toast);
+  animation: alertSlideInBottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  @keyframes alertSlideInBottom {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(100%) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+  }
+}
+
+// -----------------------------------
+// Alert Icons (Font Awesome)
+// -----------------------------------
+.error-banner i:before { content: "\f06a"; } // exclamation-triangle
+.warning-banner i:before { content: "\f071"; } // exclamation-triangle  
+.success-banner i:before { content: "\f058"; } // check-circle
+.info-banner i:before { content: "\f05a"; } // info-circle
+.template-banner i:before { content: "\f15c"; } // file-text
+.loading-banner i:before { content: "\f110"; } // spinner
+
+// -----------------------------------
+// Responsive Styles
+// -----------------------------------
+@media (max-width: 768px) {
+  .error-banner, .warning-banner, .success-banner, .info-banner {
+    padding: var(--spacing-3) var(--spacing-4);
+    font-size: 0.875rem;
+    border-radius: var(--radius-lg);
+    
+    i {
+      font-size: 1rem;
+      margin-right: var(--spacing-2);
+    }
+    
+    .close-error {
+      width: 24px;
+      height: 24px;
+      margin-left: var(--spacing-2);
+      
+      i {
+        font-size: 0.75rem;
+      }
+    }
+  }
+  
+  .alert-fixed {
+    top: var(--spacing-2);
+    right: var(--spacing-2);
+    width: calc(100vw - var(--spacing-4));
+  }
+  
+  .alert-with-actions {
+    .alert-actions {
+      flex-direction: column;
+      
+      button {
+        width: 100%;
+        padding: var(--spacing-2) 0;
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// Auto-dismiss functionality
+// -----------------------------------
+.alert-auto-dismiss {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.3;
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    animation: progressBar var(--dismiss-duration, 5s) linear forwards;
+  }
+  
+  @keyframes progressBar {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+}
+
+// -----------------------------------
+// Stacked alerts container
+// -----------------------------------
+.alerts-container {
+  position: fixed;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  
+  .error-banner, .warning-banner, .success-banner, .info-banner {
+    pointer-events: auto;
+    margin-bottom: var(--spacing-2);
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    top: var(--spacing-2);
+    right: var(--spacing-2);
+    left: var(--spacing-2);
+    
+    .error-banner, .warning-banner, .success-banner, .info-banner {
+      width: 100%;
+    }
+  }
+}
+
+
+// -----------------------------------
+// Current Certification Period Styles
+// -----------------------------------
+
+.cert-period-info, .current-cert-period {
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+  border: 1px solid var(--primary-200);
+  border-left: 4px solid var(--primary-500);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5) var(--spacing-6);
+  margin: var(--spacing-4) 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+    opacity: 0.5;
+  }
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-left-color: var(--primary-600);
+  }
+  
+  .info-label {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--primary-700);
+    margin-bottom: var(--spacing-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    
+    i {
+      font-size: 1.125rem;
+      margin-right: var(--spacing-2);
+      padding: var(--spacing-1);
+      background: var(--primary-100);
+      border-radius: var(--radius-lg);
+      color: var(--primary-600);
+      box-shadow: inset 0 1px 2px rgba(79, 70, 229, 0.1);
+    }
+  }
+  
+  .info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--neutral-800);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--primary-100);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: inline-block;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.05), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    
+    &:hover::before {
+      opacity: 1;
+    }
+  }
+}
+
+// -----------------------------------
+// Quick Status Change Section 
+// -----------------------------------
+
+.quick-status-section {
+  background: var(--neutral-50);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5);
+  margin-top: var(--spacing-6);
+  border: 1px solid var(--neutral-200);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-500), var(--secondary-500), var(--success-500));
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+  }
+  
+  h5 {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--spacing-4);
+    
+    i {
+      font-size: 1.125rem;
+      margin-right: var(--spacing-2);
+      color: var(--primary-600);
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  }
+  
+  .quick-status-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+    
+    .quick-status-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-3) var(--spacing-2);
+      border-radius: var(--radius-xl);
+      border: 2px solid transparent;
+      background: white;
+      color: var(--neutral-600);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: all var(--transition-bounce);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      
+      i {
+        font-size: 1.25rem;
+        transition: all var(--transition-normal);
+      }
+      
+      // Hover effect
+      &:hover:not(.active) {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--neutral-300);
+        color: var(--neutral-700);
+        
+        i {
+          transform: scale(1.1);
+        }
+      }
+      
+      // Active state base
+      &.active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        font-weight: 700;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, currentColor 0%, transparent 100%);
+          opacity: 0.1;
+          z-index: var(--z-0);
+        }
+        
+        i {
+          transform: scale(1.2);
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+      }
+      
+      // Scheduled status
+      &.scheduled {
+        &.active {
+          background: var(--success-50);
+          border-color: var(--success-400);
+          color: var(--success-700);
+          
+          i {
+            color: var(--success-600);
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--success-25, #f0fdf4);
+          border-color: var(--success-200);
+          color: var(--success-600);
+        }
+      }
+      
+      // Pending status
+      &.pending {
+        &.active {
+          background: var(--warning-50);
+          border-color: var(--warning-400);
+          color: var(--warning-700);
+          
+          i {
+            color: var(--warning-600);
+            animation: pendingPulse 2s infinite;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--warning-25, #fffbeb);
+          border-color: var(--warning-200);
+          color: var(--warning-600);
+        }
+        
+        @keyframes pendingPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      }
+      
+      // Completed status
+      &.completed {
+        &.active {
+          background: var(--primary-50);
+          border-color: var(--primary-400);
+          color: var(--primary-700);
+          
+          i {
+            color: var(--primary-600);
+            animation: completedBounce 0.6s ease-in-out;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--primary-25, #eef2ff);
+          border-color: var(--primary-200);
+          color: var(--primary-600);
+        }
+        
+        @keyframes completedBounce {
+          0%, 100% { transform: scale(1.2); }
+          50% { transform: scale(1.4); }
+        }
+      }
+      
+      // Missed status
+      &.missed {
+        &.active {
+          background: var(--danger-50);
+          border-color: var(--danger-400);
+          color: var(--danger-700);
+          
+          i {
+            color: var(--danger-600);
+            animation: missedShake 0.5s ease-in-out;
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--danger-25, #fef2f2);
+          border-color: var(--danger-200);
+          color: var(--danger-600);
+        }
+        
+        @keyframes missedShake {
+          0%, 100% { transform: scale(1.2) rotate(0deg); }
+          25% { transform: scale(1.2) rotate(-3deg); }
+          75% { transform: scale(1.2) rotate(3deg); }
+        }
+      }
+      
+      // Cancelled status
+      &.cancelled {
+        &.active {
+          background: var(--neutral-100);
+          border-color: var(--neutral-400);
+          color: var(--neutral-700);
+          
+          i {
+            color: var(--neutral-600);
+          }
+        }
+        
+        &:hover:not(.active) {
+          background: var(--neutral-75, #f9fafb);
+          border-color: var(--neutral-300);
+          color: var(--neutral-600);
+        }
+      }
+      
+      // Click effect
+      &:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+    }
+  }
+  
+  .quick-status-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neutral-200);
+    font-size: 0.875rem;
+    color: var(--neutral-600);
+    
+    i {
+      color: var(--primary-500);
+      font-size: 1rem;
+    }
+    
+    span {
+      font-weight: 500;
+    }
+  }
+}
+
+// -----------------------------------
+// Certification Period Indicator (Header)
+// -----------------------------------
+
+.cert-period-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: white;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary-200);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary-700);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  
+  i {
+    color: var(--primary-600);
+    font-size: 0.875rem;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+  
+  &:hover {
+    background: var(--primary-50);
+    border-color: var(--primary-300);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+// -----------------------------------
+// Header Loading State
+// -----------------------------------
+
+.header-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  i {
+    animation: spin 1s linear infinite;
+  }
+  
+  span {
+    opacity: 0.9;
+  }
+}
+
+// -----------------------------------
+// No Certification Period Warning
+// -----------------------------------
+
+.no-cert-period-warning {
+  background: linear-gradient(135deg, var(--warning-50) 0%, var(--danger-50) 100%);
+  border: 1px solid var(--warning-200);
+  border-left: 4px solid var(--warning-500);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-8) var(--spacing-6);
+  margin: var(--spacing-6) var(--spacing-8);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(245, 158, 11, 0.05) 10px,
+      rgba(245, 158, 11, 0.05) 20px
+    );
+    z-index: var(--z-0);
+  }
+  
+  .warning-content {
+    position: relative;
+    z-index: var(--z-10);
+    
+    i {
+      font-size: 3rem;
+      color: var(--warning-500);
+      margin-bottom: var(--spacing-4);
+      animation: warningBounce 2s infinite ease-in-out;
+    }
+    
+    h4 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--warning-800);
+      margin: 0 0 var(--spacing-3);
+    }
+    
+    p {
+      font-size: 1rem;
+      color: var(--warning-700);
+      margin: 0 0 var(--spacing-5);
+      line-height: 1.6;
+    }
+    
+    .warning-actions {
+      .setup-cert-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        padding: var(--spacing-3) var(--spacing-6);
+        background: var(--warning-600);
+        color: white;
+        border: none;
+        border-radius: var(--radius-xl);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all var(--transition-bounce);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        position: relative;
+        overflow: hidden;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: all 0.5s ease;
+        }
+        
+        &:hover {
+          background: var(--warning-700);
+          transform: translateY(-3px);
+          box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+          
+          &::before {
+            left: 100%;
+          }
+          
+          i {
+            transform: rotate(15deg) scale(1.1);
+          }
+        }
+        
+        &:active {
+          transform: translateY(-1px) scale(0.98);
+        }
+        
+        i {
+          font-size: 1.125rem;
+          transition: all var(--transition-normal);
+        }
+      }
+    }
+  }
+  
+  @keyframes warningBounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+// -----------------------------------
+// Responsive Styles
+// -----------------------------------
+
+@media (max-width: 768px) {
+  .cert-period-info, .current-cert-period {
+    padding: var(--spacing-4) var(--spacing-5);
+    margin: var(--spacing-3) 0;
+    
+    .info-label {
+      font-size: 0.875rem;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+    
+    .info-value {
+      font-size: 0.9375rem;
+      padding: var(--spacing-2) var(--spacing-3);
+    }
+  }
+  
+  .quick-status-section {
+    padding: var(--spacing-4);
+    
+    .quick-status-buttons {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-2);
+      
+      .quick-status-btn {
+        padding: var(--spacing-2);
+        font-size: 0.75rem;
+        
+        i {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+  
+  .no-cert-period-warning {
+    padding: var(--spacing-6) var(--spacing-4);
+    margin: var(--spacing-4);
+    
+    .warning-content {
+      i {
+        font-size: 2.5rem;
+        margin-bottom: var(--spacing-3);
+      }
+      
+      h4 {
+        font-size: 1.125rem;
+      }
+      
+      p {
+        font-size: 0.9375rem;
+      }
+      
+      .setup-cert-btn {
+        padding: var(--spacing-2) var(--spacing-4);
+        font-size: 0.9375rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .cert-period-indicator {
+    padding: var(--spacing-1) var(--spacing-3);
+    font-size: 0.75rem;
+    
+    i {
+      font-size: 0.75rem;
+    }
+  }
+  
+  .quick-status-section {
+    .quick-status-buttons {
+      grid-template-columns: 1fr;
+      
+      .quick-status-btn {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--spacing-3);
+        padding: var(--spacing-3);
+        
+        i {
+          font-size: 1.125rem;
+        }
+      }
+    }
+    
+    .quick-status-info {
+      flex-direction: column;
+      gap: var(--spacing-1);
+      text-align: center;
+    }
+  }
+}

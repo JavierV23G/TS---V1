@@ -549,7 +549,7 @@
               
               .document-description {
                 font-size: $font-xs;
-                color: $medium-gray;
+                color: #002850;
                 margin-bottom: $spacing-4;
                 padding-left: calc(36px + 0.8rem);
               }
@@ -5826,4 +5826,584 @@ $breakpoint-xl: 1200px;
 .generate-password-btn:focus {
   outline: 2px solid #4f46e5;
   outline-offset: 2px;
+}
+
+
+// Variables específicas para documentos
+$document-card-bg: rgba(255, 255, 255, 0.03);
+$document-card-border: rgba(255, 255, 255, 0.1);
+$document-card-hover: rgba(255, 255, 255, 0.05);
+$upload-zone-bg: rgba(255, 255, 255, 0.02);
+$upload-zone-border: rgba(255, 255, 255, 0.15);
+$upload-zone-hover: rgba(255, 255, 255, 0.08);
+
+// Sección principal de documentos
+.documents-section {
+  .section-header {
+    .section-subtitle {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+      margin-left: 1rem;
+    }
+  }
+
+  .section-content.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+
+    // Tarjeta individual de documento
+    .document-card {
+      background: $document-card-bg;
+      border-radius: 12px;
+      border: 1px solid $document-card-border;
+      padding: 1.5rem;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+
+      // Borde lateral de estado
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #6c757d;
+        transition: background 0.3s ease;
+      }
+
+      &.obtained::before {
+        background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      }
+
+      &.pending::before {
+        background: linear-gradient(to bottom, #f39c12, #e67e22);
+      }
+
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: 
+          0 15px 35px rgba(0, 0, 0, 0.2),
+          0 0 20px rgba(44, 123, 229, 0.1);
+        border-color: rgba(44, 123, 229, 0.3);
+        background: $document-card-hover;
+      }
+
+      // Header del documento
+      .document-header {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+        .document-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          background: rgba(44, 123, 229, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 0.75rem;
+          flex-shrink: 0;
+
+          i {
+            color: #5dade2;
+            font-size: 1.1rem;
+          }
+        }
+
+        .document-name {
+          flex: 1;
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: white;
+          line-height: 1.3;
+          margin-right: 0.5rem;
+        }
+
+        .document-status {
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+          border: 1px solid transparent;
+
+          i {
+            font-size: 0.7rem;
+          }
+
+          &.obtained {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            border-color: rgba(46, 204, 113, 0.3);
+
+            &:hover {
+              background: rgba(46, 204, 113, 0.25);
+              transform: scale(1.05);
+            }
+          }
+
+          &.pending {
+            background: rgba(243, 156, 18, 0.15);
+            color: #f39c12;
+            border-color: rgba(243, 156, 18, 0.3);
+
+            &:hover {
+              background: rgba(243, 156, 18, 0.25);
+              transform: scale(1.05);
+            }
+          }
+        }
+      }
+
+      // Descripción del documento
+      .document-description {
+        margin: 0 0 1.25rem 0;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.4;
+        font-style: italic;
+      }
+
+      // Área de acciones del documento
+      .document-actions {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+
+        // ✅ Zona de upload mejorada
+        .upload-zone {
+          .upload-area {
+            position: relative;
+            border: 2px dashed $upload-zone-border;
+            border-radius: 8px;
+            background: $upload-zone-bg;
+            transition: all 0.3s ease;
+            overflow: hidden;
+
+            &:hover {
+              border-color: rgba(44, 123, 229, 0.4);
+              background: $upload-zone-hover;
+              transform: translateY(-2px);
+            }
+
+            .file-input {
+              position: absolute;
+              opacity: 0;
+              width: 100%;
+              height: 100%;
+              cursor: pointer;
+            }
+
+            .upload-label {
+              display: block;
+              padding: 1.5rem 1rem;
+              cursor: pointer;
+              text-align: center;
+
+              .upload-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.75rem;
+
+                .upload-icon {
+                  font-size: 2rem;
+                  color: rgb(0 159 255 / 67%);
+                  transition: all 0.3s ease;
+                }
+
+                .upload-text {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 0.25rem;
+
+                  .upload-main {
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    color: rgb(33 68 102);
+                  }
+
+                  .upload-sub {
+                    font-size: 0.75rem;
+                    color: rgb(33 68 102);
+                  }
+                }
+              }
+
+              &:hover {
+                .upload-icon {
+                  color: #5dade2;
+                  transform: scale(1.1);
+                }
+
+                .upload-main {
+                  color: white;
+                }
+              }
+            }
+          }
+
+          .upload-info {
+            margin-top: 0.5rem;
+            text-align: center;
+
+            small {
+              font-size: 0.7rem;
+              color: rgb(69 177 243 / 75%);
+            }
+          }
+        }
+
+        // ✅ Vista previa del archivo
+        .file-preview {
+          .file-info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.08);
+              transform: translateY(-2px);
+            }
+
+            .file-icon {
+              width: 36px;
+              height: 36px;
+              background: rgba(220, 53, 69, 0.15);
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+
+              i {
+                color: #dc3545;
+                font-size: 1rem;
+              }
+            }
+
+            .file-details {
+              flex: 1;
+              min-width: 0;
+
+              .file-name {
+                font-size: 0.85rem;
+                font-weight: 500;
+                color: rgb(0, 0, 0);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 0.25rem;
+              }
+
+              .file-size {
+                font-size: 0.7rem;
+                color: rgb(0 0 0 / 60%);
+
+              }
+            }
+
+            .file-actions {
+              .remove-file-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: rgba(220, 53, 69, 0.15);
+                color: #dc3545;
+                border: 1px solid rgba(220, 53, 69, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                flex-shrink: 0;
+
+                &:hover {
+                  background: rgba(220, 53, 69, 0.25);
+                  transform: rotate(90deg) scale(1.1);
+                }
+
+                i {
+                  font-size: 0.8rem;
+                }
+              }
+            }
+          }
+
+          .change-file {
+            .change-file-btn {
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+              background: rgba(44, 123, 229, 0.15);
+              color: #5dade2;
+              border: 1px solid rgba(44, 123, 229, 0.3);
+              border-radius: 6px;
+              padding: 0.5rem 1rem;
+              font-size: 0.8rem;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              text-decoration: none;
+
+              &:hover {
+                background: rgba(44, 123, 229, 0.25);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(44, 123, 229, 0.2);
+              }
+
+              i {
+                font-size: 0.75rem;
+              }
+            }
+          }
+        }
+      }
+
+      // Tarjeta especial para agregar documentos adicionales
+      &.add-document {
+        height: 200px;
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.02);
+        min-height: 200px;
+
+        &::before {
+          display: none;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(44, 123, 229, 0.3);
+          transform: translateY(-5px);
+        }
+
+        .add-document-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          color: rgba(255, 255, 255, 0.5);
+
+          i {
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+          }
+
+          span {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+          }
+        }
+
+        &:hover .add-document-content {
+          i {
+            color: #5dade2;
+            transform: scale(1.1);
+          }
+
+          span {
+            color: white;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Mejoras responsivas para documentos
+@media (max-width: 1200px) {
+  .documents-section {
+    .section-content.documents-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .documents-section {
+    .section-content.documents-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+
+      .document-card {
+        padding: 1.25rem;
+        min-height: 260px;
+
+        .document-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.75rem;
+
+          .document-icon {
+            margin-right: 0;
+          }
+
+          .document-status {
+            align-self: flex-end;
+          }
+        }
+
+        .document-actions {
+          .upload-zone .upload-area .upload-label {
+            padding: 1.25rem 0.75rem;
+
+            .upload-content .upload-icon {
+              font-size: 1.75rem;
+            }
+          }
+
+          .file-preview .file-info-card {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+
+            .file-details .file-name {
+              white-space: normal;
+              text-overflow: initial;
+              overflow: visible;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .documents-section {
+    .section-content.documents-grid {
+      .document-card {
+        padding: 1rem;
+
+        .document-header {
+          .document-name {
+            font-size: 0.85rem;
+          }
+
+          .document-status {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+          }
+        }
+
+        .document-description {
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+}
+
+// Animaciones específicas para documentos
+@keyframes documentCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fileUploadSuccess {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Aplicar animación de entrada a las tarjetas
+.document-card {
+  animation: documentCardEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+
+  // Delay escalonado para múltiples tarjetas
+  @for $i from 1 through 10 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 0.1}s;
+    }
+  }
+}
+
+// Animación para archivo subido exitosamente
+.file-info-card.success {
+  animation: fileUploadSuccess 0.6s ease;
+}
+
+// Estados de drag and drop
+.upload-area {
+  &.drag-over {
+    border-color: #5dade2 !important;
+    background: rgba(44, 123, 229, 0.1) !important;
+    transform: scale(1.02);
+
+    .upload-icon {
+      color: #5dade2 !important;
+      transform: scale(1.2);
+    }
+  }
+}
+
+// Indicador de carga para uploads
+.uploading {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #5dade2, transparent);
+    animation: uploadProgress 1.5s infinite;
+  }
+}
+
+@keyframes uploadProgress {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }

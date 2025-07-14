@@ -1,5 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Crear fecha desde string sin problemas de timezone
+const createDateFromString = (dateString) => {
+  if (!dateString) return null;
+  
+  const [year, month, day] = dateString.split('-').map(Number);
+  // Crear fecha en timezone local
+  return new Date(year, month - 1, day);
+};
+
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Formatear fecha para input sin problemas de timezone
+const formatInputDate = (date) => {
+  if (!date) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Componente de DatePicker específico para fecha de nacimiento
 const DevDOBDatePicker = ({ 
   selectedDate, 
@@ -12,11 +31,11 @@ const DevDOBDatePicker = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentDecade, setCurrentDecade] = useState(Math.floor(new Date().getFullYear() / 10) * 10);
-  const [localDate, setLocalDate] = useState(selectedDate ? new Date(selectedDate) : null);
+  const [localDate, setLocalDate] = useState(selectedDate ? createDateFromString(selectedDate) : null);
   const [viewMode, setViewMode] = useState('days'); // 'days', 'months', 'years', 'decades'
   const [animation, setAnimation] = useState('');
   const calendarRef = useRef(null);
-  
+
   // Formatear la fecha para mostrar en el input (DD/MM/YYYY)
   const formatDisplayDate = (date) => {
     if (!date) return '';
@@ -25,6 +44,8 @@ const DevDOBDatePicker = ({
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  // Resto del código igual...
   
   // Formatear la fecha para el valor del formulario (YYYY-MM-DD)
   const formatInputDate = (date) => {
