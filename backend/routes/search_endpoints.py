@@ -59,6 +59,8 @@ def get_active_patients(db: Session = Depends(get_db)):
     patients = db.query(Patient).filter(Patient.is_active == True).all()
     
     response_patients = []
+    today = date.today()
+
     for patient in patients:
         agency_name = None
         if patient.agency_id:
@@ -66,8 +68,22 @@ def get_active_patients(db: Session = Depends(get_db)):
             if agency:
                 agency_name = agency.name
         
+        current_cert = (
+            db.query(CertificationPeriod)
+            .filter(
+                CertificationPeriod.patient_id == patient.id,
+                CertificationPeriod.start_date <= today,
+                CertificationPeriod.end_date >= today
+            )
+            .order_by(CertificationPeriod.start_date.desc())
+            .first()
+        )
+
         patient_data = patient.__dict__.copy()
         patient_data['agency_name'] = agency_name
+        patient_data['cert_start_date'] = current_cert.start_date if current_cert else None
+        patient_data['cert_end_date'] = current_cert.end_date if current_cert else None
+        
         response_patients.append(PatientResponse(**patient_data))
 
     return response_patients

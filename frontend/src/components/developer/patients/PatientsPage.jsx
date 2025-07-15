@@ -367,10 +367,11 @@ const DevPatientsPage = () => {
         fetchAllCertPeriods()
       ]);
       
-      // CORRECCIÓN: Mapeo correcto del campo is_active al status
-      const normalizedPatients = data.map(patient => {
-        const agencyName = patient.agency_name || 'Unknown Agency';
-      });
+      const normalizedPatients = data.map(patient => ({
+        ...patient,
+        status: patient.is_active ? 'Active' : 'Inactive',
+        agency_name: patient.agency_name || 'Unknown Agency'
+      }));
       
       console.log('Normalized patients:', normalizedPatients);
       console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));

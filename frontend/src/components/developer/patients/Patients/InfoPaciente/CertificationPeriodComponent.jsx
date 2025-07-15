@@ -179,7 +179,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          payor_type: insurance
+          insurance: insurance
         })
       });
       
@@ -245,9 +245,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         },
         body: JSON.stringify({
           start_date: startDate,
-          end_date: endDate,
-          insurance: insurance || null,
-          notes: notes || null
+          end_date: endDate
         })
       });
       
