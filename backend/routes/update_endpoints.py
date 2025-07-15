@@ -88,156 +88,13 @@ def update_staff_info(
 def update_patient_info(
     patient_id: int,
     patient_update: PatientUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
-    # Depuración: Inspecciona los datos recibidos del esquema
-    print(f"Received patient_update: {patient_update.dict(exclude_unset=True)}")
-
-    update_data = patient_update.dict(exclude_unset=True)  # Obtiene solo los campos proporcionados
-
-    print(f"Update data: {update_data}")
-
-    original_gender = patient.gender
-    for key, value in update_data.items():
-        setattr(patient, key, value)
-
-    print(f"Patient after setattr: gender={patient.gender}")
-
-    db.commit()
-    db.refresh(patient)
-
-    print(f"Patient after commit and refresh: gender={patient.gender}")
-
-    return {
-        "message": "Patient updated successfully.",
-        "patient_id": patient.id,
-        "full_name": patient.full_name,
-        "birthday": patient.birthday,
-        "gender": patient.gender,
-        "address": patient.address,
-        "contact_info": patient.contact_info,
-        "payor_type": patient.payor_type,
-        "physician": patient.physician,
-        "agency_id": patient.agency_id,
-        "nursing_diagnosis": patient.nursing_diagnosis,
-        "urgency_level": patient.urgency_level,
-        "prior_level_of_function": patient.prior_level_of_function,
-        "homebound_status": patient.homebound_status,
-        "weight_bearing_status": patient.weight_bearing_status,
-        "referral_reason": patient.referral_reason,
-        "weight": patient.weight,
-        "height": patient.height,
-        "past_medical_history": patient.past_medical_history,
-        "clinical_grouping": patient.clinical_grouping,
-        "required_disciplines": patient.required_disciplines,
-        "is_active": patient.is_active
-    }
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    # Depuración: Valores recibidos
-    print(f"Received data: gender={gender}, full_name={full_name}, address={address}, contact_info={contact_info}")
-
-    update_data = {
-        k: v for k, v in {
-            "full_name": full_name,
-            "birthday": birthday,
-            "gender": gender,
-            "address": address,
-            "contact_info": contact_info,
-            "payor_type": payor_type,
-            "physician": physician,
-            "agency_id": agency_id,
-            "nursing_diagnosis": nursing_diagnosis,
-            "urgency_level": urgency_level,
-            "prior_level_of_function": prior_level_of_function,
-            "homebound_status": homebound_status,
-            "weight_bearing_status": weight_bearing_status,
-            "referral_reason": referral_reason,
-            "weight": weight,
-            "height": height,
-            "past_medical_history": past_medical_history,
-            "clinical_grouping": clinical_grouping,
-            "required_disciplines": required_disciplines,
-            "is_active": is_active
-        }.items() if v is not None
-    }
-
-    # Depuración: Datos a actualizar
-    print(f"Update data: {update_data}")
-
-    # Guardar el estado original para comparación
-    original_gender = patient.gender
-
-    for key, value in update_data.items():
-        setattr(patient, key, value)
-
-    # Depuración: Estado después de setattr
-    print(f"Patient after setattr: gender={patient.gender}")
-
-    db.commit()
-    db.refresh(patient)
-
-    # Depuración: Estado final después de commit y refresh
-    print(f"Patient after commit and refresh: gender={patient.gender}")
-
-    return {
-        "message": "Patient updated successfully.",
-        "patient_id": patient.id,
-        "full_name": patient.full_name,
-        "birthday": patient.birthday,
-        "gender": patient.gender,
-        "address": patient.address,
-        "contact_info": patient.contact_info,
-        "payor_type": patient.payor_type,
-        "physician": patient.physician,
-        "agency_id": patient.agency_id,
-        "nursing_diagnosis": patient.nursing_diagnosis,
-        "urgency_level": patient.urgency_level,
-        "prior_level_of_function": patient.prior_level_of_function,
-        "homebound_status": patient.homebound_status,
-        "weight_bearing_status": patient.weight_bearing_status,
-        "referral_reason": patient.referral_reason,
-        "weight": patient.weight,
-        "height": patient.height,
-        "past_medical_history": patient.past_medical_history,
-        "clinical_grouping": patient.clinical_grouping,
-        "required_disciplines": patient.required_disciplines,
-        "is_active": patient.is_active
-    }
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    update_data = {
-        k: v for k, v in {
-            "full_name": full_name,
-            "birthday": birthday,
-            "gender": gender,
-            "address": address,
-            "contact_info": contact_info,
-            "payor_type": payor_type,
-            "physician": physician,
-            "agency_id": agency_id,
-            "nursing_diagnosis": nursing_diagnosis,
-            "urgency_level": urgency_level,
-            "prior_level_of_function": prior_level_of_function,
-            "homebound_status": homebound_status,
-            "weight_bearing_status": weight_bearing_status,
-            "referral_reason": referral_reason,
-            "weight": weight,
-            "height": height,
-            "past_medical_history": past_medical_history,
-            "clinical_grouping": clinical_grouping,
-            "required_disciplines": required_disciplines,
-            "is_active": is_active
-        }.items() if v is not None
-    }
+    update_data = patient_update.dict(exclude_unset=True)
 
     for key, value in update_data.items():
         setattr(patient, key, value)
@@ -245,30 +102,7 @@ def update_patient_info(
     db.commit()
     db.refresh(patient)
 
-    return {
-        "message": "Patient updated successfully.",
-        "patient_id": patient.id,
-        "full_name": patient.full_name,
-        "birthday": patient.birthday,
-        "gender": patient.gender,
-        "address": patient.address,
-        "contact_info": patient.contact_info,
-        "payor_type": patient.payor_type,
-        "physician": patient.physician,
-        "agency_id": patient.agency_id,
-        "nursing_diagnosis": patient.nursing_diagnosis,
-        "urgency_level": patient.urgency_level,
-        "prior_level_of_function": patient.prior_level_of_function,
-        "homebound_status": patient.homebound_status,
-        "weight_bearing_status": patient.weight_bearing_status,
-        "referral_reason": patient.referral_reason,
-        "weight": patient.weight,
-        "height": patient.height,
-        "past_medical_history": patient.past_medical_history,
-        "clinical_grouping": patient.clinical_grouping,
-        "required_disciplines": patient.required_disciplines,
-        "is_active": patient.is_active
-    }
+    return {"message": "Patient updated successfully.", "patient": patient}
 
 @router.put("/patients/{patient_id}/activate")
 def activate_patient(patient_id: int, db: Session = Depends(get_db)):

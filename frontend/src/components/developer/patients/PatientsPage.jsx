@@ -100,7 +100,7 @@ const PatientCard = ({ patient, onView, certPeriods = [] }) => {
         </div>
         <div className="info-row">
           <i className="fas fa-phone"></i>
-          <span>{patient.contact_info || 'No phone available'}</span>
+          <span>{getPrimaryPhoneNumber(patient.contact_info)}</span>
         </div>
         <div className="info-row">
           <i className="fas fa-map-marker-alt"></i>
@@ -215,6 +215,32 @@ const calculateStats = (patients) => {
     { title: "Active Patients", value: active, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: inactive, icon: "fa-user-times", color: "red" },
   ];
+};
+
+// Función para obtener el número de teléfono principal del diccionario
+const getPrimaryPhoneNumber = (contactInfo) => {
+  if (!contactInfo) return 'No phone available';
+  
+  // Si es diccionario (nueva estructura)
+  if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+    return contactInfo.primary || contactInfo.secondary || 
+           Object.values(contactInfo)[0] || 'No phone available';
+  }
+  
+  // Compatibilidad con estructura antigua
+  if (typeof contactInfo === 'string') {
+    try {
+      const parsed = JSON.parse(contactInfo);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0].phone || parsed[0] || 'No phone available';
+      }
+      return contactInfo;
+    } catch (e) {
+      return contactInfo;
+    }
+  }
+  
+  return 'No phone available';
 };
 
 const DevPatientsPage = () => {
@@ -367,39 +393,11 @@ const DevPatientsPage = () => {
         fetchAllCertPeriods()
       ]);
       
-      // CORRECCIÓN: Mapeo correcto del campo is_active al status
-      const normalizedPatients = data.map(patient => {
-        const agency = agenciesData.find(a => a.id === patient.agency_id);
-        
-        // Debug detallado para cada paciente
-        console.log(`Patient ${patient.id}:`, {
-          full_name: patient.full_name,
-          is_active: patient.is_active,
-          is_active_type: typeof patient.is_active,
-          is_active_value: patient.is_active
-        });
-        
-        // CORRECCIÓN: Mapeo directo del campo is_active de la API
-        let status;
-        if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
-          status = 'Active';
-        } else if (patient.is_active === false || patient.is_active === 'false' || patient.is_active === 0) {
-          status = 'Inactive';
-        } else {
-          // Si el campo no existe o es null/undefined, asumir activo por defecto
-          status = 'Active';
-          console.warn(`Patient ${patient.id} has undefined is_active, defaulting to Active`);
-        }
-        
-        console.log(`Patient ${patient.id} final status: ${status}`);
-        
-        return {
-          ...patient,
-          name: patient.full_name,
-          agency_name: agency ? agency.name : 'Unknown Agency',
-          status: status, // Este campo se usa en toda la aplicación para filtros y display
-        };
-      });
+      const normalizedPatients = data.map(patient => ({
+        ...patient,
+        status: patient.is_active ? 'Active' : 'Inactive',
+        agency_name: patient.agency_name || 'Unknown Agency'
+      }));
       
       console.log('Normalized patients:', normalizedPatients);
       console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));
@@ -438,7 +436,7 @@ const DevPatientsPage = () => {
     const filtered = patients.filter(patient => {
       const searchFields = [
         patient.full_name,
-        patient.contact_info,
+        getPrimaryPhoneNumber(patient.contact_info),
         patient.address,
         patient.agency_name
       ].filter(Boolean).join(' ').toLowerCase();

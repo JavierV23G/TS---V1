@@ -292,21 +292,31 @@ const DevReferralsPage = () => {
     return selected;
   };
 
-  // FUNCIÓN PARA PROCESAR NÚMEROS DE TELÉFONO - NUEVA
-// FUNCIÓN CORREGIDA PARA PROCESAR NÚMEROS DE TELÉFONO
+  // FUNCIÓN PARA PROCESAR NÚMEROS DE TELÉFONO - NUEVA ESTRUCTURA DICCIONARIO
 const processContactNumbers = (contactNumbers) => {
   // Filtrar números vacíos y obtener solo los números válidos
   const validNumbers = contactNumbers.filter(number => 
     number && number.trim() !== '' && number.replace(/[^\d]/g, '').length >= 10
   );
   
-  // SIEMPRE devolver como string separado por comas para consistencia
-  if (validNumbers.length > 0) {
-    return validNumbers.join(', '); // ✅ Siempre string con comas
+  if (validNumbers.length === 0) {
+    return null;
   }
   
-  // Si no hay números válidos, retornar string vacío
-  return '';
+  // Crear diccionario con identificadores únicos
+  const contactDict = {};
+  
+  validNumbers.forEach((number, index) => {
+    if (index === 0) {
+      contactDict['primary'] = number;
+    } else if (index === 1) {
+      contactDict['secondary'] = number;
+    } else {
+      contactDict[`emergency_${index - 1}`] = number;
+    }
+  });
+  
+  return contactDict;
 };
 
 // CORRECCIÓN EN EL HANDLESUBMIT - REEMPLAZA TU FUNCIÓN COMPLETA CON ESTA:
@@ -1278,9 +1288,9 @@ const handleSubmit = async (e) => {
                      disabled={isLoggingOut}
                    >
                      <option value="">Select Gender</option>
-                     <option value="male">Male</option>
-                     <option value="female">Female</option>
-                     <option value="other">Other</option>
+                     <option value="Male">Male</option>
+                     <option value="Female">Female</option>
+                     <option value="Other">Other</option>
                    </select>
                  </div>
                  
