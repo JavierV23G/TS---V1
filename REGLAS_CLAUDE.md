@@ -1,10 +1,84 @@
-# Reglas de Interacción con el Asistente Claude
+# CLAUDE.md
 
-1.  **Rol Principal:** Actuar como un asistente personal y desarrollador experto en backend y frontend para el proyecto TherapySync.
-2.  **Análisis Proactivo:** Analizar continuamente el código, indagar en su estructura y funcionamiento para identificar áreas de mejora, proponer soluciones y resolver problemas de forma eficiente.
-3.  **Permiso Explícito:** Solicitar permiso explícito al usuario antes de ejecutar cualquier acción que modifique el código, los archivos o la configuración del proyecto (ej: escribir/borrar archivos, instalar dependencias, ejecutar comandos de build/test).
-4.  **Comunicación Clara:** Al finalizar una tarea, detallar de forma clara y concisa los cambios realizados y el razonamiento detrás de ellos.
-5.  **No usar `taskkill`:** Nunca utilizar el comando `taskkill` para detener procesos.
-6.  **Directorio de Trabajo:** Siempre trabajar desde el directorio raíz del proyecto `TS---V1` (C:/Users/user/OneDrive/Documentos/GitHub/TS---V1/), y no desde subdirectorios como `admin`, `PT`, `frontend`, `backend`, etc., a menos que se especifique lo contrario para una operación puntual.
-7.  **Actualización de Reglas:** Cuando se me indique añadir una nueva regla a este archivo (`REGLAS_CLAUDE.md`), lo haré directamente sin solicitar confirmación previa.
-8.  **Idioma y Tratamiento:** Siempre hablar en español y dirigirse al usuario como "Doctor Luis" en cada interacción.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Communication Protocol
+- Always address the user as "Doctor Luis"
+
+## Development Commands
+
+### Frontend (React)
+- **Start development server**: `cd frontend && npm start` (runs on port 3000)
+- **Build for production**: `cd frontend && npm run build`
+- **Run tests**: `cd frontend && npm test`
+- **Lint JavaScript**: `cd frontend && npm run lint:js`
+- **Deploy to GitHub Pages**: `cd frontend && npm run deploy`
+
+### Backend (FastAPI/Python)
+- **Start development server**: `cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000`
+- **Install dependencies**: `cd backend && pip install -r requirements.txt`
+
+### Docker Development
+- **Start all services**: `docker-compose up --build`
+- **Stop all services**: `docker-compose down`
+- Services:
+  - Frontend: http://localhost:3000
+  - Backend: http://localhost:8000
+  - PostgreSQL Database: localhost:5432
+
+## Architecture Overview
+
+### Backend Structure
+- **FastAPI** application with PostgreSQL database
+- **Authentication**: JWT-based with role-based access control
+- **Database**: SQLAlchemy ORM with models for Staff, Patient, CertificationPeriod, Document
+- **API Routes**: Organized by CRUD operations (create, search, update, delete)
+- **Roles**: Developer, Administrator, PT/OT/ST/PTA/COTA/STA, Supportive, Support, Agency
+
+### Frontend Structure
+- **React 18** with React Router for navigation
+- **Role-based routing**: Different components for each user role
+- **Authentication**: AuthContext manages user sessions
+- **Styling**: SCSS with component-specific stylesheets
+- **UI Libraries**: FontAwesome, Chart.js, Framer Motion, GSAP
+
+### Key Components by Role
+- **Developer**: Full access with support modal integration
+- **Administrator**: Management features including support dashboard
+- **Therapists (PT/OT/ST/PTA/COTA/STA)**: Patient care and documentation
+- **Support/Agency**: Limited access for specific workflows
+
+### Database Models
+- **Staff**: User accounts with role-based permissions
+- **Patient**: Healthcare patient records with medical info
+- **CertificationPeriod**: Treatment period tracking
+- **Document**: File storage and management
+- **Visit**: Treatment session records
+- **StaffAssignment**: Staff-to-patient assignments
+
+### Patient Management System
+- **Patient Information**: Demographics, medical history, insurance
+- **Certification Periods**: Treatment authorization tracking
+- **Disciplines**: PT/OT/ST service coordination
+- **Emergency Contacts**: Contact information management
+- **Exercises**: Therapy exercise library with images
+- **Documentation**: Notes, evaluations, signatures
+- **Scheduling**: Visit planning and tracking
+
+### Authentication & Security
+- JWT tokens for session management
+- Password hashing with bcrypt
+- Role-based route protection
+- CORS configured for localhost:3000
+
+### File Storage
+- Documents stored in `/app/storage/docs` (Docker volume: `E:/documents_uploaded`)
+- Exercise images in `frontend/src/assets/exercises/`
+
+## Development Notes
+
+- Frontend uses HashRouter for GitHub Pages deployment
+- Database connection requires environment variables in docker-compose
+- SCSS styling follows component-based organization
+- Role-based components are duplicated across admin/developer/pt-ot-st folders
+- Support system integrated only for Developer role via FloatingSupportButton

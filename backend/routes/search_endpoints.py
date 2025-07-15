@@ -35,19 +35,14 @@ def get_active_staff(db: Session = Depends(get_db)):
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
-    assignments = db.query(StaffAssignment).filter(StaffAssignment.patient_id == patient_id).all()
+    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
     
     return [
         StaffAssignmentResponse(
             id=a.id,
             assigned_at=a.assigned_at,
             assigned_role=a.assigned_role,
-            staff=StaffResponse(
-                id=a.staff.id,
-                name=a.staff.name,
-                email=a.staff.email,
-                role=a.staff.role
-            )
+            staff=StaffResponse.model_validate(a.staff)
         )
         for a in assignments
     ]

@@ -217,30 +217,65 @@ const calculateStats = (patients) => {
   ];
 };
 
+// Función para formatear número telefónico
+const formatPhoneNumber = (phoneStr) => {
+  if (!phoneStr) return '';
+  
+  // Limpiar el string - solo números
+  const cleaned = phoneStr.replace(/\D/g, '');
+  
+  // Validar que tiene al menos 10 dígitos
+  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+  
+  // Formatear como (123) 456-7890
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  
+  return phoneStr; // Devolver original si no coincide el patrón
+};
+
 // Función para obtener el número de teléfono principal del diccionario
 const getPrimaryPhoneNumber = (contactInfo) => {
   if (!contactInfo) return 'No phone available';
   
+  let phoneNumber = '';
+  
   // Si es diccionario (nueva estructura)
   if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
-    return contactInfo.primary || contactInfo.secondary || 
-           Object.values(contactInfo)[0] || 'No phone available';
-  }
-  
-  // Compatibilidad con estructura antigua
-  if (typeof contactInfo === 'string') {
+    phoneNumber = contactInfo.primary || contactInfo.secondary;
+    
+    // Si no hay primary ni secondary, buscar en emergency contacts
+    if (!phoneNumber) {
+      const emergencyContacts = Object.entries(contactInfo).filter(([key]) => key.startsWith('emergency_'));
+      if (emergencyContacts.length > 0) {
+        const firstEmergency = emergencyContacts[0][1];
+        if (typeof firstEmergency === 'string' && firstEmergency.includes('|')) {
+          phoneNumber = firstEmergency.split('|')[1]; // Obtener el teléfono del formato codificado
+        } else if (typeof firstEmergency === 'object') {
+          phoneNumber = firstEmergency.phone;
+        } else {
+          phoneNumber = firstEmergency;
+        }
+      }
+    }
+  } else if (typeof contactInfo === 'string') {
+    // Compatibilidad con estructura antigua
     try {
       const parsed = JSON.parse(contactInfo);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0].phone || parsed[0] || 'No phone available';
+        phoneNumber = parsed[0].phone || parsed[0] || '';
+      } else {
+        phoneNumber = contactInfo;
       }
-      return contactInfo;
     } catch (e) {
-      return contactInfo;
+      phoneNumber = contactInfo;
     }
   }
   
-  return 'No phone available';
+  // Formatear el número o devolver mensaje por defecto
+  return phoneNumber ? formatPhoneNumber(phoneNumber) : 'No phone available';
 };
 
 const DevPatientsPage = () => {

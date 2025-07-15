@@ -292,6 +292,25 @@ const DevReferralsPage = () => {
     return selected;
   };
 
+// Función para formatear número telefónico
+const formatPhoneNumber = (phoneStr) => {
+  if (!phoneStr) return '';
+  
+  // Limpiar el string - solo números
+  const cleaned = phoneStr.replace(/\D/g, '');
+  
+  // Validar que tiene al menos 10 dígitos
+  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+  
+  // Formatear como (123) 456-7890
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  
+  return phoneStr; // Devolver original si no coincide el patrón
+};
+
   // FUNCIÓN PARA PROCESAR NÚMEROS DE TELÉFONO - NUEVA ESTRUCTURA DICCIONARIO
 const processContactNumbers = (contactNumbers) => {
   // Filtrar números vacíos y obtener solo los números válidos
@@ -307,12 +326,14 @@ const processContactNumbers = (contactNumbers) => {
   const contactDict = {};
   
   validNumbers.forEach((number, index) => {
+    const formattedNumber = formatPhoneNumber(number);
     if (index === 0) {
-      contactDict['primary'] = number;
-    } else if (index === 1) {
-      contactDict['secondary'] = number;
+      // Primer número siempre es primary contact
+      contactDict['primary'] = formattedNumber;
     } else {
-      contactDict[`emergency_${index - 1}`] = number;
+      // Todos los demás números son emergency contacts (empezando desde emergency_1)
+      // Codificar como string: name|phone|relationship
+      contactDict[`emergency_${index}`] = `|${formattedNumber}|Emergency`;
     }
   });
   
@@ -687,17 +708,6 @@ const handleSubmit = async (e) => {
   const formatNumber = (value, decimals = 1) => {
     if (!value || isNaN(parseFloat(value))) return '';
     return parseFloat(value).toFixed(decimals);
-  };
-
-  // Función para formatear número de teléfono
-  const formatPhoneNumber = (value) => {
-    if (!value) return value;
-    const phoneNumber = value.replace(/[^\d]/g, '');
-    if (phoneNumber.length < 4) return phoneNumber;
-    if (phoneNumber.length < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
   };
 
   // Handle contact number changes

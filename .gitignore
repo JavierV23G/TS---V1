@@ -43,3 +43,7 @@ yarn-error.log*
 
 database_data/
 documents_uploaded/REGLAS_GEMINI.md 
+
+database_data/
+documents_uploaded/
+REGLAS_CLAUDE.md 
