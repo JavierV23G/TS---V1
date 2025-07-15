@@ -50,7 +50,7 @@ class PatientCreate(BaseModel):
     gender: str
     address: str
     contact_info: Optional[str] = None  
-    payor_type: Optional[str] = None
+    insurance: Optional[str] = None
     physician: Optional[str] = None
     agency_id: int
     nursing_diagnosis: Optional[str] = None
@@ -73,7 +73,7 @@ class PatientUpdate(BaseModel):
     gender: Optional[str] = None
     address: Optional[str] = None
     contact_info: Optional[str] = None
-    payor_type: Optional[str] = None
+    insurance: Optional[str] = None
     physician: Optional[str] = None
     agency_id: Optional[int] = None
     nursing_diagnosis: Optional[str] = None
@@ -101,7 +101,6 @@ class PatientResponse(BaseModel):
     contact_info: Optional[str]
     insurance: Optional[str] = None
     physician: Optional[str]
-    agency_id: int
     agency_name: Optional[str] = None
     nursing_diagnosis: Optional[str]
     urgency_level: Optional[str]

@@ -369,36 +369,7 @@ const DevPatientsPage = () => {
       
       // CORRECCIÓN: Mapeo correcto del campo is_active al status
       const normalizedPatients = data.map(patient => {
-        const agency = agenciesData.find(a => a.id === patient.agency_id);
-        
-        // Debug detallado para cada paciente
-        console.log(`Patient ${patient.id}:`, {
-          full_name: patient.full_name,
-          is_active: patient.is_active,
-          is_active_type: typeof patient.is_active,
-          is_active_value: patient.is_active
-        });
-        
-        // CORRECCIÓN: Mapeo directo del campo is_active de la API
-        let status;
-        if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
-          status = 'Active';
-        } else if (patient.is_active === false || patient.is_active === 'false' || patient.is_active === 0) {
-          status = 'Inactive';
-        } else {
-          // Si el campo no existe o es null/undefined, asumir activo por defecto
-          status = 'Active';
-          console.warn(`Patient ${patient.id} has undefined is_active, defaulting to Active`);
-        }
-        
-        console.log(`Patient ${patient.id} final status: ${status}`);
-        
-        return {
-          ...patient,
-          name: patient.full_name,
-          agency_name: agency ? agency.name : 'Unknown Agency',
-          status: status, // Este campo se usa en toda la aplicación para filtros y display
-        };
+        const agencyName = patient.agency_name || 'Unknown Agency';
       });
       
       console.log('Normalized patients:', normalizedPatients);

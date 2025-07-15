@@ -32,7 +32,7 @@ class Patient(Base):
     gender = Column(String, nullable=False)
     address = Column(String, nullable=False)
     contact_info = Column(Text, nullable=True)
-    payor_type = Column(String, nullable=True)
+    insurance = Column(String, nullable=True)
     physician = Column(String, nullable=True)
     agency_id = Column(Integer, nullable=False)
     nursing_diagnosis = Column(Text, nullable=True)
