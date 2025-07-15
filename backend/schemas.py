@@ -49,7 +49,7 @@ class PatientCreate(BaseModel):
     birthday: date
     gender: str
     address: str
-    contact_info: Optional[str] = None  
+    contact_info: Optional[Dict[str, str]] = None  
     insurance: Optional[str] = None
     physician: Optional[str] = None
     agency_id: int
@@ -72,7 +72,7 @@ class PatientUpdate(BaseModel):
     birthday: Optional[str] = None
     gender: Optional[str] = None
     address: Optional[str] = None
-    contact_info: Optional[str] = None
+    contact_info: Optional[Dict[str, str]] = None
     insurance: Optional[str] = None
     physician: Optional[str] = None
     agency_id: Optional[int] = None
@@ -98,7 +98,7 @@ class PatientResponse(BaseModel):
     birthday: Optional[date]
     gender: str
     address: str
-    contact_info: Optional[str]
+    contact_info: Optional[Dict[str, str]]
     insurance: Optional[str] = None
     physician: Optional[str]
     agency_name: Optional[str] = None

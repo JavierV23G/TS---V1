@@ -31,7 +31,7 @@ class Patient(Base):
     birthday = Column(Date, nullable=False)
     gender = Column(String, nullable=False)
     address = Column(String, nullable=False)
-    contact_info = Column(Text, nullable=True)
+    contact_info = Column(JSON, nullable=True)
     insurance = Column(String, nullable=True)
     physician = Column(String, nullable=True)
     agency_id = Column(Integer, nullable=False)

@@ -100,7 +100,7 @@ const PatientCard = ({ patient, onView, certPeriods = [] }) => {
         </div>
         <div className="info-row">
           <i className="fas fa-phone"></i>
-          <span>{patient.contact_info || 'No phone available'}</span>
+          <span>{getPrimaryPhoneNumber(patient.contact_info)}</span>
         </div>
         <div className="info-row">
           <i className="fas fa-map-marker-alt"></i>
@@ -215,6 +215,32 @@ const calculateStats = (patients) => {
     { title: "Active Patients", value: active, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: inactive, icon: "fa-user-times", color: "red" },
   ];
+};
+
+// Función para obtener el número de teléfono principal del diccionario
+const getPrimaryPhoneNumber = (contactInfo) => {
+  if (!contactInfo) return 'No phone available';
+  
+  // Si es diccionario (nueva estructura)
+  if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+    return contactInfo.primary || contactInfo.secondary || 
+           Object.values(contactInfo)[0] || 'No phone available';
+  }
+  
+  // Compatibilidad con estructura antigua
+  if (typeof contactInfo === 'string') {
+    try {
+      const parsed = JSON.parse(contactInfo);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0].phone || parsed[0] || 'No phone available';
+      }
+      return contactInfo;
+    } catch (e) {
+      return contactInfo;
+    }
+  }
+  
+  return 'No phone available';
 };
 
 const DevPatientsPage = () => {
@@ -410,7 +436,7 @@ const DevPatientsPage = () => {
     const filtered = patients.filter(patient => {
       const searchFields = [
         patient.full_name,
-        patient.contact_info,
+        getPrimaryPhoneNumber(patient.contact_info),
         patient.address,
         patient.agency_name
       ].filter(Boolean).join(' ').toLowerCase();
