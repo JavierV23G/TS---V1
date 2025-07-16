@@ -50,8 +50,8 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
 #====================== PATIENTS ======================#
 
 @router.get("/patients/", response_model=List[PatientResponse])
-def get_active_patients(db: Session = Depends(get_db)):
-    patients = db.query(Patient).filter(Patient.is_active == True).all()
+def get_all_patients(db: Session = Depends(get_db)):
+    patients = db.query(Patient).all()
     
     response_patients = []
     today = date.today()

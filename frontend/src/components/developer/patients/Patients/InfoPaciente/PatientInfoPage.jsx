@@ -40,25 +40,15 @@ const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus, i
         <div className="patient-id">#{patient?.id || '0'}</div>
       </div>
       <div className="header-actions">
-        {/* BOTÓN DE ACTIVAR/DESACTIVAR - TEMPORALMENTE DESHABILITADO */}
         <button 
           className={`action-button status-toggle ${isActive ? 'deactivate' : 'activate'}`} 
-          onClick={() => {
-            alert('Patient status update feature will be available when the PATCH /patients/{id} endpoint is implemented.');
-          }}
-          title="Feature coming soon - requires API endpoint"
+          onClick={onToggleStatus}
+          disabled={isUpdatingStatus}
+          title={isActive ? 'Deactivate patient' : 'Activate patient'}
         >
           <i className={`fas ${isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
-          <span>{isActive ? 'Deactivate' : 'Activate'} (Coming Soon)</span>
+          <span>{isUpdatingStatus ? 'Updating...' : (isActive ? 'Deactivate' : 'Activate')}</span>
         </button>
-        
-        {/* BOTÓN DE IMPRIMIR - REMOVIDO */}
-        {/* 
-        <button className="action-button print">
-          <i className="fas fa-print"></i>
-          <span>Print</span>
-        </button>
-        */}
       </div>
     </div>
   );
@@ -480,8 +470,7 @@ const PatientInfoPage = () => {
   const { patientId } = useParams();
   const [activeTab, setActiveTab] = useState('general');
   const [patient, setPatient] = useState(null);
-  const [allPatients, setAllPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { currentUser, logout } = useAuth();
@@ -560,57 +549,51 @@ const PatientInfoPage = () => {
     };
   }, []);
 
-  // Handle patient status toggle - DESHABILITADO TEMPORALMENTE
-  const handleToggleStatus = async () => {
-    // Esta función estará disponible cuando se implemente el endpoint PATCH /patients/{id}
-    console.log('Toggle status feature disabled - waiting for API endpoint implementation');
-    return;
-    
-    /* 
-    // CÓDIGO PARA CUANDO TENGAS EL ENDPOINT LISTO:
-    
-    if (!patient || isUpdatingStatus) return;
+  // Handle patient status toggle
+  const handleStatusChange = async (patientId, action) => {
+    if (isLoggingOut) return;
     
     try {
       setIsUpdatingStatus(true);
       setError(null);
+      const isActive = action === 'activate';
       
-      const newStatus = !patient.is_active;
+      // Primero actualizar el estado
+      const params = new URLSearchParams();
+      params.append('is_active', isActive.toString());
       
-      console.log(`Updating patient ${patient.id} status from ${patient.is_active} to ${newStatus}`);
-      
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
-        method: 'PATCH',
+      const updateResponse = await fetch(`${API_BASE_URL}/patients/${patientId}?${params.toString()}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          is_active: newStatus
-        }),
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update patient status: ${response.status} ${response.statusText}`);
+
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to ${action} patient`);
       }
-      
-      const updatedPatient = await response.json();
-      console.log('Patient status updated successfully:', updatedPatient);
-      
-      setPatient(updatedPatient);
-      
-      setAllPatients(prevPatients => 
-        prevPatients.map(p => 
-          p.id === patient.id ? updatedPatient : p
-        )
-      );
+
+      // Luego obtener los datos completos del paciente
+      const getResponse = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!getResponse.ok) {
+        throw new Error('Failed to fetch updated patient data');
+      }
+
+      const completePatientData = await getResponse.json();
+      setPatient(completePatientData);
       
     } catch (error) {
-      console.error('Error updating patient status:', error);
-      setError(`Failed to ${patient.is_active ? 'deactivate' : 'activate'} patient: ${error.message}`);
+      console.error(`Error ${action}ing patient:`, error);
+      setError(`Failed to ${action} patient: ${error.message}`);
     } finally {
       setIsUpdatingStatus(false);
     }
-    */
   };
 
   const handleUpdatePatient = (updatedPatient) => {
@@ -631,11 +614,6 @@ const PatientInfoPage = () => {
       return newPatient;
     });
 
-    setAllPatients(prevPatients => 
-      prevPatients.map(p => 
-        p.id === updatedPatient.id ? { ...p, ...updatedPatient } : p
-      )
-    );
   };
 
   // Fetch specific patient by ID using the correct endpoint
@@ -903,7 +881,7 @@ const PatientInfoPage = () => {
             patient={patient} 
             activeTab={activeTab} 
             setActiveTab={setActiveTab}
-            onToggleStatus={handleToggleStatus}
+            onToggleStatus={() => handleStatusChange(patient.id, patient.is_active ? 'deactivate' : 'activate')}
             isUpdatingStatus={isUpdatingStatus}
           />
           
