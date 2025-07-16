@@ -157,37 +157,30 @@ def update_patient_info(
         if value is not None:
             setattr(patient, key, value)
 
+    # Si se está actualizando is_active, manejar certification periods
+    if is_active is not None:
+        from datetime import datetime
+        today = datetime.utcnow().date()
+        cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
+        
+        if is_active:
+            # Activando paciente: activar períodos de certificación válidos para hoy
+            for cert in cert_periods:
+                if cert.start_date <= today <= cert.end_date:
+                    cert.is_active = True
+                else:
+                    cert.is_active = False
+        else:
+            # Desactivando paciente: desactivar todos los períodos de certificación activos
+            for cert in cert_periods:
+                if cert.is_active:
+                    cert.is_active = False
+
     db.commit()
     db.refresh(patient)
 
     return {"message": "Patient updated successfully.", "patient_id": patient.id}
 
-@router.put("/patients/{patient_id}/activate")
-def activate_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    patient.is_active = True
-    today = datetime.utcnow().date()
-
-    cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
-
-    found_valid = False
-
-    for cert in cert_periods:
-        if cert.start_date <= today <= cert.end_date:
-            cert.is_active = True
-            found_valid = True
-        else:
-            cert.is_active = False 
-
-    db.commit()
-    return {
-        "message": "Patient reactivated successfully.",
-        "patient_id": patient_id,
-        "valid_cert_found": found_valid
-    }
 
 #////////////////////////// VISITS //////////////////////////#
 

@@ -36,7 +36,7 @@ const PremiumTabs = ({ activeTab, onChangeTab }) => {
 };
 
 // Patient Card component
-const PatientCard = ({ patient, onView, certPeriods = [] }) => {
+const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
   const getStatusClass = (status) => {
     switch(status?.toLowerCase()) {
       case 'active': 
@@ -121,6 +121,23 @@ const PatientCard = ({ patient, onView, certPeriods = [] }) => {
           <i className="fas fa-eye"></i> View Profile
           <span className="btn-highlight"></span>
         </button>
+        {patient.status === 'Active' ? (
+          <button 
+            className="card-btn deactivate-btn" 
+            title="Deactivate Patient" 
+            onClick={() => onStatusChange(patient.id, 'deactivate')}
+          >
+            <i className="fas fa-user-times"></i> Deactivate
+          </button>
+        ) : (
+          <button 
+            className="card-btn activate-btn" 
+            title="Activate Patient" 
+            onClick={() => onStatusChange(patient.id, 'activate')}
+          >
+            <i className="fas fa-user-check"></i> Activate
+          </button>
+        )}
       </div>
     </div>
   );
@@ -656,6 +673,35 @@ const DevPatientsPage = () => {
     if (isLoggingOut) return;
     fetchPatients();
   }, [fetchPatients, isLoggingOut]);
+
+  const handleStatusChange = useCallback(async (patientId, action) => {
+    if (isLoggingOut) return;
+    
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const isActive = action === 'activate';
+      
+      const params = new URLSearchParams();
+      params.append('is_active', isActive.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patientId}?${params.toString()}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} patient`);
+      }
+
+      // Refresh the patients list to show updated status
+      await fetchPatients();
+      
+    } catch (error) {
+      console.error(`Error ${action}ing patient:`, error);
+    }
+  }, [isLoggingOut, fetchPatients]);
 
   const formatCertPeriodForTable = useCallback((patientId) => {
     try {
@@ -1231,6 +1277,7 @@ const DevPatientsPage = () => {
                         patient={patient}
                         certPeriods={certPeriods}
                         onView={() => !isLoggingOut && handleActionClick('view', patient)}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                   </div>

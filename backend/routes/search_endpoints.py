@@ -35,6 +35,11 @@ def get_active_staff(db: Session = Depends(get_db)):
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
+    # First check if patient exists
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
     assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
     
     return [
@@ -50,8 +55,8 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
 #====================== PATIENTS ======================#
 
 @router.get("/patients/", response_model=List[PatientResponse])
-def get_active_patients(db: Session = Depends(get_db)):
-    patients = db.query(Patient).filter(Patient.is_active == True).all()
+def get_all_patients(db: Session = Depends(get_db)):
+    patients = db.query(Patient).all()
     
     response_patients = []
     today = date.today()

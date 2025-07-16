@@ -40,6 +40,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   
   // DYNAMIC STATE
   const [therapists, setTherapists] = useState([]);
+  const [assignedStaff, setAssignedStaff] = useState([]);
   const [certPeriods, setCertPeriods] = useState([]);
   const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
   const [isLoadingTherapists, setIsLoadingTherapists] = useState(true);
@@ -71,11 +72,10 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   // VISIT TYPES CONFIGURATION
   const visitTypes = [
     'Initial Evaluation',
-    'Treatment Visit',
-    'Re-evaluation',
-    'Discharge Visit',
-    'Maintenance Visit',
-    'Assessment Visit'
+    'Standard',
+    'Reassessment (RA)',
+    'Discharge (DC)',
+    'Recert-Eval'
   ];
 
   // DISCIPLINE MAPPING - CORREGIDO
@@ -125,6 +125,38 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       setTherapists([]);
     } finally {
       setIsLoadingTherapists(false);
+    }
+  };
+
+  // Fetch assigned staff for patient
+  const fetchAssignedStaff = async () => {
+    if (!patient?.id) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/assigned-staff`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setAssignedStaff([]);
+          return;
+        }
+        throw new Error(`Failed to fetch assigned staff: ${response.status} ${response.statusText}`);
+      }
+      
+      const assignedData = await response.json();
+      
+      // Extract staff information from assignments
+      const assignedStaffList = assignedData.map(assignment => assignment.staff).filter(staff => staff);
+      setAssignedStaff(assignedStaffList);
+      
+    } catch (err) {
+      console.error('Error fetching assigned staff:', err);
+      setAssignedStaff([]);
     }
   };
 
@@ -482,6 +514,15 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  // Organize therapists: assigned first, then separator, then all others
+  const getOrganizedTherapists = () => {
+    const assignedIds = assignedStaff.map(staff => staff.id);
+    const assignedTherapists = therapists.filter(therapist => assignedIds.includes(therapist.id));
+    const unassignedTherapists = therapists.filter(therapist => !assignedIds.includes(therapist.id));
+    
+    return { assignedTherapists, unassignedTherapists };
+  };
+
   // ===== USEEFFECTS =====
 
   // Initialize data loading
@@ -492,6 +533,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   useEffect(() => {
     if (patient?.id) {
       fetchCertificationPeriods();
+      fetchAssignedStaff();
     }
   }, [patient?.id]);
 
@@ -1352,11 +1394,31 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                             required
                           >
                             <option value="">Select Therapist</option>
-                            {therapists.map((therapist) => (
-                              <option key={therapist.id} value={therapist.id}>
-                                {therapist.name} ({therapist.role.toUpperCase()})
-                              </option>
-                            ))}
+                            {(() => {
+                              const { assignedTherapists, unassignedTherapists } = getOrganizedTherapists();
+                              return (
+                                <>
+                                  {assignedTherapists.length > 0 && (
+                                    <optgroup label="Assigned Therapists">
+                                      {assignedTherapists.map((therapist) => (
+                                        <option key={`assigned-${therapist.id}`} value={therapist.id}>
+                                          {therapist.name} ({therapist.role.toUpperCase()})
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  )}
+                                  {unassignedTherapists.length > 0 && (
+                                    <optgroup label="All Available Therapists">
+                                      {unassignedTherapists.map((therapist) => (
+                                        <option key={`unassigned-${therapist.id}`} value={therapist.id}>
+                                          {therapist.name} ({therapist.role.toUpperCase()})
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </select>
                         )}
                         {therapists.length === 0 && !isLoadingTherapists && (
@@ -1391,22 +1453,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                           />
                         </div>
                       </div>
-                      <div className="form-group">
-                        <label>Status <span className="required">*</span></label>
-                        <select
-                          name="status"
-                          value={formData.status}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          required
-                        >
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Missed">Missed</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
                       {formData.status === 'Missed' && (
                         <div className="form-group">
                           <label>Reason for Missing</label>
@@ -1421,14 +1467,14 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                         </div>
                       )}
                       <div className="form-group">
-                        <label>Notes</label>
+                        <label>Comments</label>
                         <textarea
                           name="notes"
                           value={formData.notes}
                           onChange={handleInputChange}
                           className="form-input"
                           rows="3"
-                          placeholder="Add any additional notes about this visit..."
+                          placeholder="Add any additional comments about this visit..."
                         ></textarea>
                       </div>
                       {currentCertPeriod && (

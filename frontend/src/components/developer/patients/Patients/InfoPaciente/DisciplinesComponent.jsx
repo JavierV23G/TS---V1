@@ -357,10 +357,10 @@ const DisciplineCard = ({
                             <span>{therapist.email}</span>
                           </div>
                         )}
-                        {therapist.role && (
+                        {therapist.alt_phone && (
                           <div className="info-item glass-item">
-                            <i className="fas fa-id-card"></i>
-                            <span>Role: {therapist.role.toUpperCase()}</span>
+                            <i className="fas fa-phone"></i>
+                            <span>Alt #: {therapist.alt_phone}</span>
                           </div>
                         )}
                       </div>
@@ -416,10 +416,10 @@ const DisciplineCard = ({
                             <span>{assistant.email}</span>
                           </div>
                         )}
-                        {assistant.role && (
+                        {assistant.alt_phone && (
                           <div className="info-item glass-item">
-                            <i className="fas fa-id-card"></i>
-                            <span>Role: {assistant.role.toUpperCase()}</span>
+                            <i className="fas fa-phone"></i>
+                            <span>Alt #: {assistant.alt_phone}</span>
                           </div>
                         )}
                       </div>
