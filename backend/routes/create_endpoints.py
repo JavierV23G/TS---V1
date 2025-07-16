@@ -59,12 +59,28 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found.")
 
-    assigned_role = staff.role
+    # Normalize role to uppercase for consistency
+    assigned_role = staff.role.upper()
+    
+    # Find existing assignment for the same discipline
+    # PT/PTA should replace each other, OT/COTA should replace each other, ST/STA should replace each other
+    discipline_groups = {
+        'PT': ['PT', 'PTA'],
+        'PTA': ['PT', 'PTA'],
+        'OT': ['OT', 'COTA'], 
+        'COTA': ['OT', 'COTA'],
+        'ST': ['ST', 'STA'],
+        'STA': ['ST', 'STA']
+    }
+    
+    roles_to_replace = discipline_groups.get(assigned_role, [assigned_role])
+    
     existing_assignment = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
         StaffAssignment.patient_id == patient_id,
-        StaffAssignment.assigned_role == assigned_role
+        StaffAssignment.assigned_role.in_(roles_to_replace)
     ).first()
 
+    # If same staff is already assigned, return existing assignment
     if existing_assignment and existing_assignment.staff_id == staff_id:
         return StaffAssignmentResponse(
             id=existing_assignment.id,
@@ -73,8 +89,10 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
             staff=StaffResponse.model_validate(existing_assignment.staff)
         )
 
+    # If there's an existing assignment for this discipline group, replace it
     if existing_assignment:
         existing_assignment.staff_id = staff_id
+        existing_assignment.assigned_role = assigned_role
         existing_assignment.assigned_at = datetime.utcnow()
         db.commit()
         db.refresh(existing_assignment)
@@ -85,6 +103,7 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
             staff=StaffResponse.model_validate(staff)
         )
 
+    # Create new assignment if none exists for this discipline group
     new_assignment = StaffAssignment(
         patient_id=patient_id,
         staff_id=staff_id,
