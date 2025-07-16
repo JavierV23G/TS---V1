@@ -12,24 +12,89 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
 
   const formatPhoneNumber = (phoneStr) => {
     if (!phoneStr) return '';
-    const cleaned = ('' + phoneStr).replace(/\D/g, '');
+    
+    // Limpiar el string - solo números
+    const cleaned = phoneStr.replace(/\D/g, '');
+    
+    // Validar que tiene al menos 10 dígitos
+    if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+    
+    // Formatear como (123) 456-7890
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
       return `(${match[1]}) ${match[2]}-${match[3]}`;
     }
-    return cleaned.slice(0, 10);
+    
+    return phoneStr; // Devolver original si no coincide el patrón
   };
 
   useEffect(() => {
     if (patient?.contact_info) {
-      try {
-        const allContacts = JSON.parse(patient.contact_info);
-        if (Array.isArray(allContacts)) {
-          setEmergencyContacts(allContacts.slice(1)); // Get all contacts except the first one
+      let contacts = [];
+      
+      // Si es diccionario (nueva estructura)
+      if (typeof patient.contact_info === 'object' && !Array.isArray(patient.contact_info)) {
+        // Extraer contactos del diccionario (excluir primary# y primary)
+        Object.entries(patient.contact_info).forEach(([key, value], index) => {
+          if (key !== 'primary#' && key !== 'primary' && key !== 'secondary') {
+            let contactData;
+            
+            // Verificar si el valor está codificado con formato (phone|relation) o (name|phone|relation)
+            if (typeof value === 'string' && value.includes('|')) {
+              const parts = value.split('|');
+              
+              if (parts.length === 2) {
+                // Nuevo formato: phone|relation (nombre en la key)
+                const [phone, relation] = parts;
+                contactData = {
+                  id: index + 1,
+                  name: key || `Contact ${index + 1}`,
+                  phone: phone,
+                  relation: relation || 'Contact'
+                };
+              } else if (parts.length === 3) {
+                // Formato anterior: name|phone|relation
+                const [name, phone, relation] = parts;
+                contactData = {
+                  id: index + 1,
+                  name: name || `Contact ${index + 1}`,
+                  phone: phone,
+                  relation: relation || 'Contact'
+                };
+              }
+            } else if (typeof value === 'object' && value.phone) {
+              // Compatibilidad con estructura de objeto (por si acaso)
+              contactData = {
+                id: index + 1,
+                name: value.name || `Emergency Contact ${index + 1}`,
+                phone: value.phone,
+                relation: value.relationship || 'Emergency'
+              };
+            } else {
+              // Solo teléfono
+              contactData = {
+                id: index + 1,
+                name: `Emergency Contact ${index + 1}`,
+                phone: value,
+                relation: 'Emergency'
+              };
+            }
+            contacts.push(contactData);
+          }
+        });
+      } else {
+        // Compatibilidad con estructura antigua
+        try {
+          const allContacts = JSON.parse(patient.contact_info);
+          if (Array.isArray(allContacts)) {
+            contacts = allContacts.slice(1); // Get all contacts except the first one
+          }
+        } catch (e) {
+          console.error("Failed to parse contacts:", e);
         }
-      } catch (e) {
-        console.error("Failed to parse contacts:", e);
       }
+      
+      setEmergencyContacts(contacts);
     } else {
       setEmergencyContacts([]);
     }
@@ -88,32 +153,48 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
     setIsLoading(true);
     setError(null);
     try {
-      let primaryContact = null;
-      if (patient.contact_info) {
-        try {
-          const allContacts = JSON.parse(patient.contact_info);
-          if (Array.isArray(allContacts) && allContacts.length > 0) {
-            primaryContact = allContacts[0];
-          }
-        } catch (e) { console.error(e); }
+      // Crear estructura de diccionario para contactos
+      let contactDict = {};
+      
+      // Preservar contactos principales existentes
+      if (patient.contact_info && typeof patient.contact_info === 'object') {
+        if (patient.contact_info['primary#']) {
+          contactDict['primary#'] = patient.contact_info['primary#'];
+        } else if (patient.contact_info.primary) {
+          contactDict['primary#'] = patient.contact_info.primary; // Migrar formato anterior
+        }
+        if (patient.contact_info.secondary) {
+          contactDict.secondary = patient.contact_info.secondary;
+        }
       }
       
-      if (!primaryContact) {
-          primaryContact = { id: Date.now(), name: 'Primary Contact', phone: '', relation: 'Unknown' };
-      }
-
-      const fullContactList = [primaryContact, ...updatedEmergencyContacts];
-
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contact_info: JSON.stringify(fullContactList) }),
+      // Agregar contactos de emergencia al diccionario (nuevo formato: nombre como key, phone|relation como value)
+      updatedEmergencyContacts.forEach((contact, index) => {
+        const contactName = contact.name || `Emergency_${index + 1}`;
+        const contactData = `${formatPhoneNumber(contact.phone)}|${contact.relation || 'Emergency'}`;
+        contactDict[contactName] = contactData;
       });
 
-      if (!response.ok) throw new Error('Failed to update contacts.');
+      console.log('Sending contact_info:', contactDict);
+      
+      const params = new URLSearchParams();
+      params.append('contact_info', JSON.stringify(contactDict));
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to update contacts: ${response.status} - ${errorText}`);
+      }
 
       setEmergencyContacts(updatedEmergencyContacts);
-      if (onUpdateContacts) onUpdateContacts(fullContactList);
+      if (onUpdateContacts) onUpdateContacts(contactDict);
       
       setIsAdding(false);
       setEditingId(null);

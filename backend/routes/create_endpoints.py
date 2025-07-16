@@ -1,6 +1,6 @@
 import os, shutil, re
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from datetime import datetime, timedelta, date
 from database.connection import get_db
@@ -60,20 +60,30 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
         raise HTTPException(status_code=404, detail="Staff not found.")
 
     assigned_role = staff.role
-    existing_assignment = db.query(StaffAssignment).filter(
+    existing_assignment = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
         StaffAssignment.patient_id == patient_id,
         StaffAssignment.assigned_role == assigned_role
     ).first()
 
     if existing_assignment and existing_assignment.staff_id == staff_id:
-        return existing_assignment
+        return StaffAssignmentResponse(
+            id=existing_assignment.id,
+            assigned_at=existing_assignment.assigned_at,
+            assigned_role=existing_assignment.assigned_role,
+            staff=StaffResponse.model_validate(existing_assignment.staff)
+        )
 
     if existing_assignment:
         existing_assignment.staff_id = staff_id
         existing_assignment.assigned_at = datetime.utcnow()
         db.commit()
         db.refresh(existing_assignment)
-        return existing_assignment
+        return StaffAssignmentResponse(
+            id=existing_assignment.id,
+            assigned_at=existing_assignment.assigned_at,
+            assigned_role=existing_assignment.assigned_role,
+            staff=StaffResponse.model_validate(staff)
+        )
 
     new_assignment = StaffAssignment(
         patient_id=patient_id,
@@ -84,7 +94,13 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     db.add(new_assignment)
     db.commit()
     db.refresh(new_assignment)
-    return new_assignment
+    
+    return StaffAssignmentResponse(
+        id=new_assignment.id,
+        assigned_at=new_assignment.assigned_at,
+        assigned_role=new_assignment.assigned_role,
+        staff=StaffResponse.model_validate(staff)
+    )
 
 #====================== PATIENTS ======================#
 

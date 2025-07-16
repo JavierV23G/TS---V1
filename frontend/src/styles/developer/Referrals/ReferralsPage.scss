@@ -1612,7 +1612,68 @@ body {
         align-items: center;
         gap: 0.75rem;
         
-        input {
+        .contact-inputs {
+          display: flex;
+          gap: 0.75rem;
+          flex: 1;
+          align-items: center;
+          
+          .contact-phone {
+            width: 140px; // Suficiente para (123) 456-7890
+            min-width: 140px;
+            flex-shrink: 0;
+          }
+          
+          .contact-name {
+            flex: 2; // El más grande: 2 partes
+            min-width: 120px;
+          }
+          
+          .contact-relationship {
+            flex: 1; // El resto del espacio: 1 parte
+            min-width: 100px;
+          }
+          
+          // Estilos base para todos los inputs y selects
+          input, select {
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            
+            &::placeholder {
+              color: rgba(255, 255, 255, 0.6);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: rgba(99, 102, 241, 0.5);
+              background: rgba(255, 255, 255, 0.1);
+              box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            }
+            
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+          
+          select {
+            cursor: pointer;
+            
+            option {
+              background: #1f2937;
+              color: white;
+              padding: 0.5rem;
+            }
+          }
+        }
+        
+        // Fallback para inputs sin contenedor (contacto primario)
+        > input {
           flex: 1;
         }
         
@@ -2818,7 +2879,20 @@ body {
         flex-direction: column;
         gap: 0.5rem;
         
-        input {
+        .contact-inputs {
+          flex-direction: column;
+          gap: 0.5rem;
+          
+          .contact-phone,
+          .contact-name,
+          .contact-relationship {
+            width: 100%;
+            flex: none;
+            min-width: auto;
+          }
+        }
+        
+        > input {
           width: 100%;
         }
         

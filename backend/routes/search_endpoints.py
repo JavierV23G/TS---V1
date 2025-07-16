@@ -35,19 +35,14 @@ def get_active_staff(db: Session = Depends(get_db)):
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
-    assignments = db.query(StaffAssignment).filter(StaffAssignment.patient_id == patient_id).all()
+    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
     
     return [
         StaffAssignmentResponse(
             id=a.id,
             assigned_at=a.assigned_at,
             assigned_role=a.assigned_role,
-            staff=StaffResponse(
-                id=a.staff.id,
-                name=a.staff.name,
-                email=a.staff.email,
-                role=a.staff.role
-            )
+            staff=StaffResponse.model_validate(a.staff)
         )
         for a in assignments
     ]
@@ -56,7 +51,37 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
 
 @router.get("/patients/", response_model=List[PatientResponse])
 def get_active_patients(db: Session = Depends(get_db)):
-    return db.query(Patient).filter(Patient.is_active == True).all()
+    patients = db.query(Patient).filter(Patient.is_active == True).all()
+    
+    response_patients = []
+    today = date.today()
+
+    for patient in patients:
+        agency_name = None
+        if patient.agency_id:
+            agency = db.query(Staff).filter(Staff.id == patient.agency_id).first()
+            if agency:
+                agency_name = agency.name
+        
+        current_cert = (
+            db.query(CertificationPeriod)
+            .filter(
+                CertificationPeriod.patient_id == patient.id,
+                CertificationPeriod.start_date <= today,
+                CertificationPeriod.end_date >= today
+            )
+            .order_by(CertificationPeriod.start_date.desc())
+            .first()
+        )
+
+        patient_data = patient.__dict__.copy()
+        patient_data['agency_name'] = agency_name
+        patient_data['cert_start_date'] = current_cert.start_date if current_cert else None
+        patient_data['cert_end_date'] = current_cert.end_date if current_cert else None
+        
+        response_patients.append(PatientResponse(**patient_data))
+
+    return response_patients
 
 @router.get("/patients/{patient_id}", response_model=PatientResponse)
 def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
@@ -64,7 +89,6 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
 
-    # Buscar el periodo de certificación ACTUAL (hoy dentro del rango)
     today = date.today()
 
     current_cert = (
@@ -78,20 +102,39 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
         .first()
     )
 
-    # Obtener el nombre de la agencia
     agency_name = None
     if patient.agency_id:
         agency = db.query(Staff).filter(Staff.id == patient.agency_id).first()
         if agency:
             agency_name = agency.name
 
-    response_data = patient.__dict__.copy()
-    response_data["cert_start_date"] = current_cert.start_date if current_cert else None
-    response_data["cert_end_date"] = current_cert.end_date if current_cert else None
-    response_data["insurance"] = patient.payor_type  # Mapeo de payor_type a insurance
-    response_data["agency_name"] = agency_name
+    response_data = {
+        "id": patient.id,
+        "full_name": patient.full_name,
+        "birthday": patient.birthday,
+        "gender": patient.gender,
+        "address": patient.address,
+        "contact_info": patient.contact_info,
+        "insurance": patient.insurance,
+        "physician": patient.physician,
+        "agency_name": agency_name,
+        "nursing_diagnosis": patient.nursing_diagnosis,
+        "urgency_level": patient.urgency_level,
+        "prior_level_of_function": patient.prior_level_of_function,
+        "homebound_status": patient.homebound_status,
+        "weight_bearing_status": patient.weight_bearing_status,
+        "referral_reason": patient.referral_reason,
+        "weight": patient.weight,
+        "height": patient.height,
+        "past_medical_history": patient.past_medical_history,
+        "clinical_grouping": patient.clinical_grouping,
+        "required_disciplines": patient.required_disciplines,
+        "is_active": patient.is_active,
+        "cert_start_date": current_cert.start_date if current_cert else None,
+        "cert_end_date": current_cert.end_date if current_cert else None,
+    }
 
-    return response_data
+    return PatientResponse(**response_data)
 
 @router.get("/staff/{staff_id}/assigned-patients", response_model=List[PatientResponse])
 def get_assigned_patients(staff_id: int, db: Session = Depends(get_db)):

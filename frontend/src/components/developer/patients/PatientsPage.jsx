@@ -100,7 +100,7 @@ const PatientCard = ({ patient, onView, certPeriods = [] }) => {
         </div>
         <div className="info-row">
           <i className="fas fa-phone"></i>
-          <span>{patient.contact_info || 'No phone available'}</span>
+          <span>{getPrimaryPhoneNumber(patient.contact_info)}</span>
         </div>
         <div className="info-row">
           <i className="fas fa-map-marker-alt"></i>
@@ -215,6 +215,67 @@ const calculateStats = (patients) => {
     { title: "Active Patients", value: active, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: inactive, icon: "fa-user-times", color: "red" },
   ];
+};
+
+// Función para formatear número telefónico
+const formatPhoneNumber = (phoneStr) => {
+  if (!phoneStr) return '';
+  
+  // Limpiar el string - solo números
+  const cleaned = phoneStr.replace(/\D/g, '');
+  
+  // Validar que tiene al menos 10 dígitos
+  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+  
+  // Formatear como (123) 456-7890
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  
+  return phoneStr; // Devolver original si no coincide el patrón
+};
+
+// Función para obtener el número de teléfono principal del diccionario
+const getPrimaryPhoneNumber = (contactInfo) => {
+  if (!contactInfo) return 'No phone available';
+  
+  let phoneNumber = '';
+  
+  // Si es diccionario (nueva estructura)
+  if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+    phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
+    
+    // Si no hay primary ni secondary, buscar en emergency contacts
+    if (!phoneNumber) {
+      const emergencyContacts = Object.entries(contactInfo).filter(([key]) => key.startsWith('emergency_'));
+      if (emergencyContacts.length > 0) {
+        const firstEmergency = emergencyContacts[0][1];
+        if (typeof firstEmergency === 'string' && firstEmergency.includes('|')) {
+          phoneNumber = firstEmergency.split('|')[1]; // Obtener el teléfono del formato codificado
+        } else if (typeof firstEmergency === 'object') {
+          phoneNumber = firstEmergency.phone;
+        } else {
+          phoneNumber = firstEmergency;
+        }
+      }
+    }
+  } else if (typeof contactInfo === 'string') {
+    // Compatibilidad con estructura antigua
+    try {
+      const parsed = JSON.parse(contactInfo);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        phoneNumber = parsed[0].phone || parsed[0] || '';
+      } else {
+        phoneNumber = contactInfo;
+      }
+    } catch (e) {
+      phoneNumber = contactInfo;
+    }
+  }
+  
+  // Formatear el número o devolver mensaje por defecto
+  return phoneNumber ? formatPhoneNumber(phoneNumber) : 'No phone available';
 };
 
 const DevPatientsPage = () => {
@@ -367,39 +428,11 @@ const DevPatientsPage = () => {
         fetchAllCertPeriods()
       ]);
       
-      // CORRECCIÓN: Mapeo correcto del campo is_active al status
-      const normalizedPatients = data.map(patient => {
-        const agency = agenciesData.find(a => a.id === patient.agency_id);
-        
-        // Debug detallado para cada paciente
-        console.log(`Patient ${patient.id}:`, {
-          full_name: patient.full_name,
-          is_active: patient.is_active,
-          is_active_type: typeof patient.is_active,
-          is_active_value: patient.is_active
-        });
-        
-        // CORRECCIÓN: Mapeo directo del campo is_active de la API
-        let status;
-        if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
-          status = 'Active';
-        } else if (patient.is_active === false || patient.is_active === 'false' || patient.is_active === 0) {
-          status = 'Inactive';
-        } else {
-          // Si el campo no existe o es null/undefined, asumir activo por defecto
-          status = 'Active';
-          console.warn(`Patient ${patient.id} has undefined is_active, defaulting to Active`);
-        }
-        
-        console.log(`Patient ${patient.id} final status: ${status}`);
-        
-        return {
-          ...patient,
-          name: patient.full_name,
-          agency_name: agency ? agency.name : 'Unknown Agency',
-          status: status, // Este campo se usa en toda la aplicación para filtros y display
-        };
-      });
+      const normalizedPatients = data.map(patient => ({
+        ...patient,
+        status: patient.is_active ? 'Active' : 'Inactive',
+        agency_name: patient.agency_name || 'Unknown Agency'
+      }));
       
       console.log('Normalized patients:', normalizedPatients);
       console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));
@@ -438,7 +471,7 @@ const DevPatientsPage = () => {
     const filtered = patients.filter(patient => {
       const searchFields = [
         patient.full_name,
-        patient.contact_info,
+        getPrimaryPhoneNumber(patient.contact_info),
         patient.address,
         patient.agency_name
       ].filter(Boolean).join(' ').toLowerCase();
