@@ -156,15 +156,34 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
       }
       
       // Actualizar el número principal (formateado)
-      contactDict.primary = formatPhoneNumber(primaryContactPhone);
+      contactDict['primary#'] = formatPhoneNumber(primaryContactPhone);
 
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      // Crear parámetros de URL solo para campos que han cambiado
+      const params = new URLSearchParams();
+      
+      // Solo agregar campos que son diferentes a los originales
+      if (formData.full_name !== patient.full_name) {
+        params.append('full_name', formData.full_name);
+      }
+      if (formData.birthday !== patient.birthday) {
+        params.append('birthday', formData.birthday);
+      }
+      if (formData.gender !== patient.gender) {
+        params.append('gender', formData.gender);
+      }
+      if (formData.address !== patient.address) {
+        params.append('address', formData.address);
+      }
+      
+      // Solo actualizar contact_info si el teléfono principal cambió
+      const currentPrimaryPhone = getPrimaryPhoneNumber(patient.contact_info);
+      if (formatPhoneNumber(primaryContactPhone) !== currentPrimaryPhone) {
+        params.append('contact_info', JSON.stringify(contactDict));
+      }
+
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          contact_info: contactDict,
-        }),
       });
 
       if (!response.ok) throw new Error('Update failed');
@@ -420,19 +439,21 @@ const getPrimaryPhoneNumber = (contactInfo) => {
   
   // Si es diccionario (nueva estructura)
   if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
-    phoneNumber = contactInfo.primary || contactInfo.secondary;
+    phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
     
-    // Si no hay primary ni secondary, buscar en emergency contacts
+    // Si no hay primary ni secondary, buscar en otros contactos
     if (!phoneNumber) {
-      const emergencyContacts = Object.entries(contactInfo).filter(([key]) => key.startsWith('emergency_'));
-      if (emergencyContacts.length > 0) {
-        const firstEmergency = emergencyContacts[0][1];
-        if (typeof firstEmergency === 'string' && firstEmergency.includes('|')) {
-          phoneNumber = firstEmergency.split('|')[1]; // Obtener el teléfono del formato codificado
-        } else if (typeof firstEmergency === 'object') {
-          phoneNumber = firstEmergency.phone;
+      const otherContacts = Object.entries(contactInfo).filter(([key]) => 
+        key !== 'primary#' && key !== 'primary' && key !== 'secondary'
+      );
+      if (otherContacts.length > 0) {
+        const firstContact = otherContacts[0][1];
+        if (typeof firstContact === 'string' && firstContact.includes('|')) {
+          phoneNumber = firstContact.split('|')[0]; // Obtener el teléfono del formato phone|relation
+        } else if (typeof firstContact === 'object') {
+          phoneNumber = firstContact.phone;
         } else {
-          phoneNumber = firstEmergency;
+          phoneNumber = firstContact;
         }
       }
     }

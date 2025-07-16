@@ -49,7 +49,7 @@ const DevReferralsPage = () => {
     address: '',
     city: '',
     zipCode: '',
-    contactNumbers: [''],
+    contactNumbers: [{ number: '', name: '', relationship: '' }],
     
     // Care Period
     payorType: '',
@@ -313,27 +313,28 @@ const formatPhoneNumber = (phoneStr) => {
 
   // FUNCIÓN PARA PROCESAR NÚMEROS DE TELÉFONO - NUEVA ESTRUCTURA DICCIONARIO
 const processContactNumbers = (contactNumbers) => {
-  // Filtrar números vacíos y obtener solo los números válidos
-  const validNumbers = contactNumbers.filter(number => 
-    number && number.trim() !== '' && number.replace(/[^\d]/g, '').length >= 10
+  // Filtrar contactos con números válidos
+  const validContacts = contactNumbers.filter(contact => 
+    contact.number && contact.number.trim() !== '' && contact.number.replace(/[^\d]/g, '').length >= 10
   );
   
-  if (validNumbers.length === 0) {
+  if (validContacts.length === 0) {
     return null;
   }
   
   // Crear diccionario con identificadores únicos
   const contactDict = {};
   
-  validNumbers.forEach((number, index) => {
-    const formattedNumber = formatPhoneNumber(number);
+  validContacts.forEach((contact, index) => {
+    const formattedNumber = formatPhoneNumber(contact.number);
     if (index === 0) {
       // Primer número siempre es primary contact
-      contactDict['primary'] = formattedNumber;
+      contactDict['primary#'] = formattedNumber;
     } else {
-      // Todos los demás números son emergency contacts (empezando desde emergency_1)
-      // Codificar como string: name|phone|relationship
-      contactDict[`emergency_${index}`] = `|${formattedNumber}|Emergency`;
+      // Contactos adicionales con formato: nombre:numero|relationship
+      const name = contact.name || '';
+      const relationship = contact.relationship || '';
+      contactDict[name || `Contact_${index}`] = `${formattedNumber}|${relationship}`;
     }
   });
   
@@ -427,7 +428,7 @@ const handleSubmit = async (e) => {
       gender: formData.gender,
       address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
       contact_info: processContactNumbers(formData.contactNumbers), // ✅ CORREGIDO
-      payor_type: formData.payorType,
+      insurance: formData.payorType,
       physician: formData.physician,
       agency_id: parseInt(formData.agencyId),
       nursing_diagnosis: formData.nursingDiagnosis,
@@ -711,12 +712,15 @@ const handleSubmit = async (e) => {
   };
 
   // Handle contact number changes
-  const handleContactNumberChange = (index, value) => {
+  const handleContactNumberChange = (index, field, value) => {
     if (isLoggingOut) return;
-    const formattedNumber = formatPhoneNumber(value);
-    const updatedNumbers = [...formData.contactNumbers];
-    updatedNumbers[index] = formattedNumber;
-    setFormData(prev => ({ ...prev, contactNumbers: updatedNumbers }));
+    const updatedContacts = [...formData.contactNumbers];
+    if (field === 'number') {
+      updatedContacts[index][field] = formatPhoneNumber(value);
+    } else {
+      updatedContacts[index][field] = value;
+    }
+    setFormData(prev => ({ ...prev, contactNumbers: updatedContacts }));
   };
   
   // Add a new contact number
@@ -724,7 +728,7 @@ const handleSubmit = async (e) => {
     if (isLoggingOut) return;
     setFormData(prev => ({
       ...prev,
-      contactNumbers: [...prev.contactNumbers, '']
+      contactNumbers: [...prev.contactNumbers, { number: '', name: '', relationship: '' }]
     }));
   };
   
@@ -732,9 +736,9 @@ const handleSubmit = async (e) => {
   const removeContactNumber = (index) => {
     if (isLoggingOut) return;
     if (formData.contactNumbers.length > 1) {
-      const updatedNumbers = [...formData.contactNumbers];
-      updatedNumbers.splice(index, 1);
-      setFormData(prev => ({ ...prev, contactNumbers: updatedNumbers }));
+      const updatedContacts = [...formData.contactNumbers];
+      updatedContacts.splice(index, 1);
+      setFormData(prev => ({ ...prev, contactNumbers: updatedContacts }));
     }
   };
   
@@ -822,7 +826,7 @@ const handleSubmit = async (e) => {
       address: '',
       city: '',
       zipCode: '',
-      contactNumbers: [''],
+      contactNumbers: [{ number: '', name: '', relationship: '' }],
       payorType: '',
       certPeriodStart: '',
       certPeriodEnd: '',
@@ -1346,16 +1350,47 @@ const handleSubmit = async (e) => {
                  <div className="form-group full-width">
                    <label>Contact Numbers</label>
                    <div className="contact-numbers">
-                     {formData.contactNumbers.map((number, index) => (
+                     {formData.contactNumbers.map((contact, index) => (
                        <div key={index} className="contact-number-row">
-                         <input
-                           type="tel"
-                           value={number}
-                           onChange={(e) => handleContactNumberChange(index, e.target.value)}
-                           placeholder="(___) ___-____"
-                           maxLength="14"
-                           disabled={isLoggingOut}
-                         />
+                         <div className="contact-inputs">
+                           <input
+                             type="tel"
+                             value={contact.number}
+                             onChange={(e) => handleContactNumberChange(index, 'number', e.target.value)}
+                             placeholder={index === 0 ? "Primary: (___) ___-____" : "(___) ___-____"}
+                             maxLength="14"
+                             disabled={isLoggingOut}
+                             className="contact-phone"
+                           />
+                           
+                           {index > 0 && (
+                             <>
+                               <input
+                                 type="text"
+                                 value={contact.name}
+                                 onChange={(e) => handleContactNumberChange(index, 'name', e.target.value)}
+                                 placeholder="Contact Name"
+                                 disabled={isLoggingOut}
+                                 className="contact-name"
+                               />
+                               <select
+                                 value={contact.relationship}
+                                 onChange={(e) => handleContactNumberChange(index, 'relationship', e.target.value)}
+                                 disabled={isLoggingOut}
+                                 className="contact-relationship"
+                               >
+                                 <option value="">Relationship</option>
+                                 <option value="Spouse">Spouse</option>
+                                 <option value="Child">Child</option>
+                                 <option value="Parent">Parent</option>
+                                 <option value="Sibling">Sibling</option>
+                                 <option value="Friend">Friend</option>
+                                 <option value="Caregiver">Caregiver</option>
+                                 <option value="Other">Other</option>
+                               </select>
+                             </>
+                           )}
+                         </div>
                          
                          <div className="contact-actions">
                            {index === formData.contactNumbers.length - 1 && (
@@ -1406,11 +1441,11 @@ const handleSubmit = async (e) => {
                      disabled={isLoggingOut}
                    >
                      <option value="">Select Payor Type</option>
-                     <option value="medicare">Medicare</option>
-                     <option value="medicaid">Medicaid</option>
-                     <option value="private">Private Insurance</option>
-                     <option value="self">Self Pay</option>
-                     <option value="other">Other</option>
+                     <option value="Medicare">Medicare</option>
+                     <option value="Medicaid">Medicaid</option>
+                     <option value="Private">Private Insurance</option>
+                     <option value="Self">Self Pay</option>
+                     <option value="Other">Other</option>
                    </select>
                  </div>
                  

@@ -102,22 +102,6 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
         staff=StaffResponse.model_validate(staff)
     )
 
-@router.delete("/unassign-staff")
-def unassign_staff_from_patient(patient_id: int, staff_role: str, db: Session = Depends(get_db)):
-    """Remove staff assignment from patient based on role"""
-    assignment = db.query(StaffAssignment).filter(
-        StaffAssignment.patient_id == patient_id,
-        StaffAssignment.assigned_role.ilike(staff_role)
-    ).first()
-    
-    if not assignment:
-        raise HTTPException(status_code=404, detail=f"No {staff_role} assignment found for patient")
-    
-    db.delete(assignment)
-    db.commit()
-    
-    return {"message": f"Successfully unassigned {staff_role} from patient {patient_id}"}
-
 #====================== PATIENTS ======================#
 
 @router.post("/patients/", response_model=PatientResponse)

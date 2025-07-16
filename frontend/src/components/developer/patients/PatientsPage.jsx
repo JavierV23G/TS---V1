@@ -244,7 +244,7 @@ const getPrimaryPhoneNumber = (contactInfo) => {
   
   // Si es diccionario (nueva estructura)
   if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
-    phoneNumber = contactInfo.primary || contactInfo.secondary;
+    phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
     
     // Si no hay primary ni secondary, buscar en emergency contacts
     if (!phoneNumber) {

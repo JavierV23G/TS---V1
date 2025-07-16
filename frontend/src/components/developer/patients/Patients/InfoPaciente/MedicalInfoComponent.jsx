@@ -224,26 +224,10 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         throw new Error(validationErrors.join('; '));
       }
       
-      // Prepare data for API
-      const dataToSave = {
-        // Keep existing patient data
-        full_name: patient.full_name,
-        birthday: patient.birthday,
-        gender: patient.gender,
-        address: patient.address,
-        contact_info: patient.contact_info,
-        payor_type: patient.payor_type || '',
-        physician: patient.physician || '',
-        agency_id: patient.agency_id || null,
-        urgency_level: patient.urgency_level || '',
-        prior_level_of_function: patient.prior_level_of_function || '',
-        referral_reason: patient.referral_reason || '',
-        required_disciplines: patient.required_disciplines || '',
-        is_active: patient.is_active !== undefined ? patient.is_active : true,
-        
-        // Medical data being updated - clean the data
-        weight: medicalData.weight ? medicalData.weight.toString() : null,
-        height: medicalData.height ? medicalData.height.toString() : null,
+      // Prepare only medical data to save (no patient basic info)
+      const medicalDataToSave = {
+        weight: medicalData.weight ? medicalData.weight.toString() : '',
+        height: medicalData.height ? medicalData.height.toString() : '',
         nursing_diagnosis: medicalData.nursingDiagnosis ? medicalData.nursingDiagnosis.trim() : '',
         past_medical_history: medicalData.pmh ? medicalData.pmh.trim() : '',
         weight_bearing_status: medicalData.wbs ? medicalData.wbs.trim() : '',
@@ -251,32 +235,26 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         homebound_status: medicalData.homebound ? medicalData.homebound.trim() : ''
       };
       
-      // Remove null/undefined fields to avoid API issues
-      const cleanedData = Object.fromEntries(
-        Object.entries(dataToSave).filter(([_, value]) => value !== null && value !== undefined && value !== '')
-      );
-      
       console.log('Original patient data:', patient);
       console.log('Medical form data:', medicalData);
-      console.log('Data to save (before cleaning):', dataToSave);
-      console.log('Data to save (after cleaning):', cleanedData);
+      console.log('Medical data to save:', medicalDataToSave);
       console.log('API URL:', `${API_BASE_URL}/patients/${patient.id}`);
       
-      // Validate required fields
-      const requiredFields = ['full_name'];
-      const missingFields = requiredFields.filter(field => !cleanedData[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-      }
+      // Create URL parameters for only the medical fields that have values
+      const params = new URLSearchParams();
+      Object.entries(medicalDataToSave).forEach(([key, value]) => {
+        if (value && value.trim() !== '') {
+          params.append(key, value);
+        }
+      });
       
       // Make API call
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        },
-        body: JSON.stringify(cleanedData)
+        }
       });
       
       console.log('Response status:', response.status);
@@ -344,7 +322,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         weight_bearing_status: responseData.weight_bearing_status || '',
         clinical_grouping: responseData.clinical_grouping || '',
         homebound_status: responseData.homebound_status || '',
-        payor_type: responseData.payor_type || patient.payor_type,
+        insurance: responseData.insurance || patient.insurance,
         physician: responseData.physician || patient.physician,
         agency_id: responseData.agency_id || patient.agency_id,
         urgency_level: responseData.urgency_level || patient.urgency_level,
