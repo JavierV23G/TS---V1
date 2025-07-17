@@ -657,8 +657,8 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
     setSelectedDate(date);
     setSelectedVisit(null);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       date: formatDateToLocalISOString(date),
       time: '',
       visitType: '',
@@ -666,7 +666,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       notes: '',
       status: 'Scheduled',
       missedReason: '',
-    });
+    }));
     setShowVisitModal(true);
   };
 

@@ -59,18 +59,15 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found.")
 
-    # Normalize role to uppercase for consistency
     assigned_role = staff.role.upper()
     
-    # Find existing assignment for the same discipline
-    # PT/PTA should replace each other, OT/COTA should replace each other, ST/STA should replace each other
     discipline_groups = {
-        'PT': ['PT', 'PTA'],
-        'PTA': ['PT', 'PTA'],
-        'OT': ['OT', 'COTA'], 
-        'COTA': ['OT', 'COTA'],
-        'ST': ['ST', 'STA'],
-        'STA': ['ST', 'STA']
+        'PT': ['PT'],     
+        'PTA': ['PTA'],  
+        'OT': ['OT'],    
+        'COTA': ['COTA'], 
+        'ST': ['ST'],    
+        'STA': ['STA']  
     }
     
     roles_to_replace = discipline_groups.get(assigned_role, [assigned_role])
@@ -80,7 +77,6 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
         StaffAssignment.assigned_role.in_(roles_to_replace)
     ).first()
 
-    # If same staff is already assigned, return existing assignment
     if existing_assignment and existing_assignment.staff_id == staff_id:
         return StaffAssignmentResponse(
             id=existing_assignment.id,
@@ -89,7 +85,6 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
             staff=StaffResponse.model_validate(existing_assignment.staff)
         )
 
-    # If there's an existing assignment for this discipline group, replace it
     if existing_assignment:
         existing_assignment.staff_id = staff_id
         existing_assignment.assigned_role = assigned_role
@@ -103,7 +98,6 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
             staff=StaffResponse.model_validate(staff)
         )
 
-    # Create new assignment if none exists for this discipline group
     new_assignment = StaffAssignment(
         patient_id=patient_id,
         staff_id=staff_id,
@@ -301,7 +295,44 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     db.refresh(visit)
     return visit
 
-#====================== NOTES ======================#
+#====================== NOTES ======================
+    discipline = discipline.upper()
+    visit_type = visit_type.replace('-', ' ').title()
+    
+    template = db.query(NoteTemplate).filter(
+        NoteTemplate.discipline == discipline,
+        NoteTemplate.note_type == visit_type,
+        NoteTemplate.is_active == True
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail=f"No active template found for {discipline} {visit_type}")
+    
+    sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).order_by(NoteTemplateSection.position.asc()).all()
+    
+    section_details = []
+    for section in sections:
+        section_info = db.query(NoteSection).filter(
+            NoteSection.id == section.section_id
+        ).first()
+        if section_info:
+            section_details.append({
+                "id": section_info.id,
+                "name": section_info.section_name,
+                "fields": section_info.fields,
+                "position": section.position
+            })
+    
+    template_response = {
+        "id": template.id,
+        "discipline": template.discipline,
+        "note_type": template.note_type,
+        "sections": section_details
+    }
+    
+    return template_response
 
 @router.post("/note-templates", response_model=NoteTemplateResponse)
 def create_template(template_data: NoteTemplateCreate, db: Session = Depends(get_db)):

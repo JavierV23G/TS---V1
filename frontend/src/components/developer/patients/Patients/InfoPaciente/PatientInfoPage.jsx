@@ -85,7 +85,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
 };
 
 // Personal Information Card Component - EDIT FUNCTIONALITY FIXED
-const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
+const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -179,10 +179,18 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
       if (!response.ok) throw new Error('Update failed');
       
       const updatedPatientData = await response.json();
-      if (onUpdatePatient) {
-        onUpdatePatient({ ...patient, ...updatedPatientData });
-      }
+      const updatedPatient = { ...patient, ...updatedPatientData };
+      onUpdatePatient(updatedPatient);
       setIsEditing(false);
+      
+      // Update local state with new data
+      setFormData({
+        full_name: updatedPatientData.full_name || '',
+        birthday: updatedPatientData.birthday || '',
+        gender: updatedPatientData.gender || '',
+        address: updatedPatientData.address || '',
+      });
+      setPrimaryContactPhone(getPrimaryPhoneNumber(updatedPatientData.contact_info));
 
     } catch (err) {
       setError(err.message);
@@ -282,7 +290,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
 };
 
 // General Information Section Component
-const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient }) => {
+const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient, setCurrentCertPeriod }) => {
   // Handler for certification period updates
   const handleUpdateCertPeriod = (updatedCertData) => {
     console.log('Certification period updated:', updatedCertData);
@@ -291,6 +299,21 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
         startDate: updatedCertData.startDate, 
         endDate: updatedCertData.endDate 
       });
+      
+      // Update currentCertPeriod when certification period is updated
+      const activeCertPeriod = patient?.certification_periods?.find(cp => 
+        cp.start_date === updatedCertData.startDate && 
+        cp.end_date === updatedCertData.endDate && 
+        cp.is_active
+      );
+      
+      if (activeCertPeriod) {
+        setCurrentCertPeriod({
+          id: activeCertPeriod.id,
+          startDate: updatedCertData.startDate,
+          endDate: updatedCertData.endDate
+        });
+      }
     }
   };
 
@@ -301,7 +324,7 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
   
   return (
     <div className="general-info-section">
-      <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} />
+      <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} setPatient={setPatient} />
       <CertificationPeriodComponent 
         patient={patient} 
         onUpdateCertPeriod={handleUpdateCertPeriod}
@@ -347,7 +370,7 @@ const DisciplinesSection = ({ patient, onUpdatePatient }) => {
 };
 
 // Schedule Section Component
-const ScheduleSection = ({ patient, certPeriodDates }) => {
+const ScheduleSection = ({ patient, certPeriodDates, currentCertPeriod }) => {
   const handleUpdateSchedule = (updatedSchedule) => {
     console.log('Schedule updated:', updatedSchedule);
   };
@@ -358,6 +381,7 @@ const ScheduleSection = ({ patient, certPeriodDates }) => {
         patient={patient} 
         onUpdateSchedule={handleUpdateSchedule} 
         certPeriodDates={certPeriodDates}
+        currentCertPeriod={currentCertPeriod}
       />
     </div>
   );
@@ -482,6 +506,26 @@ const PatientInfoPage = () => {
   const [isMobile, setIsMobile] = useState(false);
   const userMenuRef = useRef(null);
   const [certPeriodDates, setCertPeriodDates] = useState({ startDate: '', endDate: '' });
+  const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
+
+  useEffect(() => {
+    if (patient?.certification_periods?.length > 0) {
+      const activeCertPeriod = patient.certification_periods.find(cp => 
+        new Date(cp.end_date) >= new Date() && cp.is_active
+      );
+      if (activeCertPeriod) {
+        setCurrentCertPeriod({
+          id: activeCertPeriod.id,
+          startDate: activeCertPeriod.start_date,
+          endDate: activeCertPeriod.end_date
+        });
+        setCertPeriodDates({
+          startDate: activeCertPeriod.start_date,
+          endDate: activeCertPeriod.end_date
+        });
+      }
+    }
+  }, [patient]);
 
   // API Configuration
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -596,24 +640,28 @@ const PatientInfoPage = () => {
     }
   };
 
-  const handleUpdatePatient = (updatedPatient) => {
-    console.log('handleUpdatePatient called with:', updatedPatient);
-    
+  const handleUpdatePatient = async (updatedPatient) => {
     if (!updatedPatient || !updatedPatient.id) {
       console.error('Invalid updated patient data received');
       return;
     }
 
-    setPatient(prevPatient => {
-      const newPatient = {
-        ...prevPatient,
-        ...updatedPatient,
-        id: prevPatient.id // Ensure ID is preserved
-      };
-      console.log('Patient state updated:', newPatient);
-      return newPatient;
-    });
+    try {
+      // Primero actualizar el estado local inmediatamente
+      setPatient(updatedPatient);
 
+      // Luego refrescar los datos del backend
+      const response = await fetch(`${API_BASE_URL}/patients/${updatedPatient.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch updated patient data');
+      const latestPatientData = await response.json();
+      setPatient(latestPatientData);
+    } catch (err) {
+      console.error('Error updating patient:', err);
+    }
   };
 
   // Fetch specific patient by ID using the correct endpoint
@@ -895,6 +943,8 @@ const PatientInfoPage = () => {
                 patient={patient} 
                 setCertPeriodDates={setCertPeriodDates}
                 onUpdatePatient={handleUpdatePatient}
+                setPatient={setPatient}
+                setCurrentCertPeriod={setCurrentCertPeriod}
               />
             )}
             {activeTab === 'medical' && (
@@ -912,7 +962,8 @@ const PatientInfoPage = () => {
             {activeTab === 'schedule' && (
               <ScheduleSection 
                 patient={patient} 
-                certPeriodDates={certPeriodDates} 
+                certPeriodDates={certPeriodDates}
+                currentCertPeriod={currentCertPeriod}
               />
             )}
             {activeTab === 'exercises' && (
