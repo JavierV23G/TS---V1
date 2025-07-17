@@ -1057,42 +1057,32 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
     }
   };
 
-  // Change therapist - MEJORADO CON API Y REFRESH
+  // Change therapist
   const handleChangeTherapist = async (type, therapist) => {
     console.log(`[handleChangeTherapist] Updating ${type} therapist:`, therapist);
     
     try {
-      // If assigning a therapist, make the API call
       if (therapist && patient?.id) {
         console.log(`[handleChangeTherapist] Assigning therapist ${therapist.name} (ID: ${therapist.id}) to patient ${patient.id}`);
         const result = await assignStaffToPatient(therapist.id, patient.id);
         console.log('[handleChangeTherapist] Assignment result:', result);
         
-        // Update assignedStaff immediately
+        // Update assignedStaff with the API response
         setAssignedStaff(prevAssigned => {
           const updated = prevAssigned ? [...prevAssigned] : [];
-          // Remove previous assignment of the same role if exists
-          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== result.assigned_role.toUpperCase());
-          // Add new assignment - usar result.staff en lugar de therapist
+          // Remove assignment if role already exists and add new one
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== type.toUpperCase());
           filteredUpdated.push(result);
           console.log('[handleChangeTherapist] Updated assigned staff state:', filteredUpdated);
           return filteredUpdated;
         });
       } else if (!therapist && patient?.id) {
-        // If therapist is being unassigned, call the unassign API
         console.log(`[handleChangeTherapist] Unassigning ${type} therapist from patient ${patient.id}.`);
-        try {
-          await unassignStaffFromPatient(patient.id, type);
-          console.log(`[handleChangeTherapist] Successfully unassigned ${type} from backend`);
-        } catch (unassignError) {
-          console.error(`[handleChangeTherapist] Failed to unassign ${type}:`, unassignError);
-          // Continue with local state update even if API fails
-        }
+        await unassignStaffFromPatient(patient.id, type);
         
         setAssignedStaff(prevAssigned => {
           const updated = prevAssigned ? [...prevAssigned] : [];
           const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== type.toUpperCase());
-          console.log('[handleChangeTherapist] Updated assigned staff state after unassign:', filteredUpdated);
           return filteredUpdated;
         });
       }
@@ -1103,22 +1093,17 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
           [type]: {
             ...prevDisciplines[type],
             therapist: therapist || null,
-            // If a therapist is assigned, activate the discipline. If removed, check if assistant exists.
             isActive: (therapist || prevDisciplines[type].assistant) ? true : false
           }
         };
         
-        // Update required_disciplines if activated or deactivated
         const activeDisciplines = Object.keys(updatedDisciplines)
           .filter(key => updatedDisciplines[key].isActive);
-        
-        console.log('[handleChangeTherapist] Active disciplines after therapist assignment:', activeDisciplines);
         
         if (patient?.id) {
           updatePatientDisciplines(patient.id, activeDisciplines);
         }
         
-        // Notify parent component of the change - usando setTimeout para evitar warning de React
         if (onUpdateDisciplines) {
           setTimeout(() => {
             onUpdateDisciplines(updatedDisciplines);
@@ -1134,43 +1119,33 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
     }
   };
 
-  // Change assistant - MEJORADO CON API Y REFRESH
+  // Change assistant
   const handleChangeAssistant = async (type, assistant) => {
     console.log(`[handleChangeAssistant] Updating ${type} assistant:`, assistant);
+    const assistantRole = type === 'PT' ? 'PTA' : type === 'OT' ? 'COTA' : 'STA';
     
     try {
-      // If assigning an assistant, make the API call
       if (assistant && patient?.id) {
         console.log(`[handleChangeAssistant] Assigning assistant ${assistant.name} (ID: ${assistant.id}) to patient ${patient.id}`);
         const result = await assignStaffToPatient(assistant.id, patient.id);
         console.log('[handleChangeAssistant] Assignment result:', result);
         
-        // Update assignedStaff immediately
+        // Update assignedStaff with the API response
         setAssignedStaff(prevAssigned => {
           const updated = prevAssigned ? [...prevAssigned] : [];
-          // Remove previous assignment of the same role if exists
-          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== result.assigned_role.toUpperCase());
-          // Add new assignment - usar result completo
+          // Remove assignment if role already exists and add new one
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== assistantRole.toUpperCase());
           filteredUpdated.push(result);
           console.log('[handleChangeAssistant] Updated assigned staff state:', filteredUpdated);
           return filteredUpdated;
         });
       } else if (!assistant && patient?.id) {
-        // If assistant is being unassigned, call the unassign API
-        const assistantRole = type === 'PT' ? 'PTA' : type === 'OT' ? 'COTA' : 'STA';
         console.log(`[handleChangeAssistant] Unassigning ${assistantRole} assistant from patient ${patient.id}.`);
-        try {
-          await unassignStaffFromPatient(patient.id, assistantRole);
-          console.log(`[handleChangeAssistant] Successfully unassigned ${assistantRole} from backend`);
-        } catch (unassignError) {
-          console.error(`[handleChangeAssistant] Failed to unassign ${assistantRole}:`, unassignError);
-          // Continue with local state update even if API fails
-        }
+        await unassignStaffFromPatient(patient.id, assistantRole);
         
         setAssignedStaff(prevAssigned => {
           const updated = prevAssigned ? [...prevAssigned] : [];
           const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== assistantRole.toUpperCase());
-          console.log('[handleChangeAssistant] Updated assigned staff state after unassign:', filteredUpdated);
           return filteredUpdated;
         });
       }
@@ -1181,22 +1156,17 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
           [type]: {
             ...prevDisciplines[type],
             assistant: assistant || null,
-            // If an assistant is assigned, activate the discipline. If removed, check if therapist exists.
             isActive: (assistant || prevDisciplines[type].therapist) ? true : false
           }
         };
         
-        // Update required_disciplines if activated or deactivated
         const activeDisciplines = Object.keys(updatedDisciplines)
           .filter(key => updatedDisciplines[key].isActive);
-        
-        console.log('[handleChangeAssistant] Active disciplines after assistant assignment:', activeDisciplines);
         
         if (patient?.id) {
           updatePatientDisciplines(patient.id, activeDisciplines);
         }
         
-        // Notify parent component of the change - usando setTimeout para evitar warning de React
         if (onUpdateDisciplines) {
           setTimeout(() => {
             onUpdateDisciplines(updatedDisciplines);
