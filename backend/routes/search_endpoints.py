@@ -211,30 +211,12 @@ def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
         template_sections=[],
     )
 
+@router.get("/templates/{discipline}/{visit_type}")
+def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
+
 @router.get("/note-sections", response_model=List[NoteSectionResponse])
 def get_all_sections(db: Session = Depends(get_db)):
     return db.query(NoteSection).all()
-
-@router.get("/note-templates/full", response_model=List[NoteTemplateWithSectionsResponse])
-def get_all_templates_with_sections(db: Session = Depends(get_db)):
-    templates = db.query(NoteTemplate).options(
-        joinedload(NoteTemplate.sections).joinedload(NoteTemplateSection.section)
-    ).filter(NoteTemplate.is_active == True).all()
-
-    result = []
-    for template in templates:
-        ordered_sections = sorted(template.sections, key=lambda s: s.position or 0)
-        note_sections = [ts.section for ts in ordered_sections]
-
-        result.append(NoteTemplateWithSectionsResponse(
-            id=template.id,
-            discipline=template.discipline,
-            note_type=template.note_type,
-            is_active=template.is_active,
-            sections=note_sections
-        ))
-
-    return result
 
 #====================== DOCUMENTS ======================#
 

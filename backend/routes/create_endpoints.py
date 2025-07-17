@@ -296,57 +296,7 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     return visit
 
 #====================== NOTES ======================
-
-@router.get("/templates/{discipline}/{visit_type}")
-def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
-    """
-    Get a specific template with its sections and schemas
-    """
     discipline = discipline.upper()
-    visit_type = visit_type.replace('-', ' ').title()
-    
-    # Get template with sections
-    template = db.query(NoteTemplate).filter(
-        NoteTemplate.discipline == discipline,
-        NoteTemplate.note_type == visit_type,
-        NoteTemplate.is_active == True
-    ).first()
-    
-    if not template:
-        raise HTTPException(status_code=404, detail=f"No active template found for {discipline} {visit_type}")
-
-    # Get ordered sections with their details
-    template_sections = db.query(NoteTemplateSection).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.position.asc()).all()
-    
-    # Prepare full section details
-    section_details = []
-    for template_section in template_sections:
-        section_info = db.query(NoteSection).filter(
-            NoteSection.id == template_section.section_id
-        ).first()
-        
-        if section_info:
-            section_details.append({
-                "id": section_info.id,
-                "name": section_info.section_name,
-                "description": section_info.description,
-                "is_required": section_info.is_required,
-                "has_static_image": section_info.has_static_image,
-                "static_image_url": section_info.static_image_url,
-                "form_schema": section_info.form_schema,
-                "position": template_section.position
-            })
-    
-    # Build complete response
-    return {
-        "id": template.id,
-        "discipline": template.discipline,
-        "note_type": template.note_type,
-        "is_active": template.is_active,
-        "sections": section_details
-    }
     visit_type = visit_type.replace('-', ' ').title()
     
     template = db.query(NoteTemplate).filter(
@@ -368,15 +318,12 @@ def get_specific_template(discipline: str, visit_type: str, db: Session = Depend
             NoteSection.id == section.section_id
         ).first()
         if section_info:
-            # Extraer form_schema si existe
-            section_data = {
+            section_details.append({
                 "id": section_info.id,
                 "name": section_info.section_name,
-                "description": section_info.description,
-                "is_required": section_info.is_required,
-                "position": section.position,
-                "form_schema": section_info.form_schema if hasattr(section_info, 'form_schema') else None
-            }
+                "fields": section_info.fields,
+                "position": section.position
+            })
     
     template_response = {
         "id": template.id,
@@ -385,55 +332,7 @@ def get_specific_template(discipline: str, visit_type: str, db: Session = Depend
         "sections": section_details
     }
     
-    return template_response#
-
-@router.get("/templates/{discipline}/{visit_type}")
-async def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
-    """Get a specific template with its sections and schemas"""
-    # Normalize parameters
-    discipline = discipline.upper()
-    visit_type = visit_type.replace('-', ' ').title()
-    
-    # Get template
-    template = db.query(NoteTemplate).filter(
-        NoteTemplate.discipline == discipline,
-        NoteTemplate.note_type == visit_type,
-        NoteTemplate.is_active == True
-    ).first()
-    
-    if not template:
-        raise HTTPException(status_code=404, detail=f"No active template found for {discipline} {visit_type}")
-
-    # Get ordered sections with their details
-    template_sections = db.query(NoteTemplateSection).join(
-        NoteSection,
-        NoteTemplateSection.section_id == NoteSection.id
-    ).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.position.asc()).all()
-    
-    # Build section details
-    section_details = []
-    for template_section in template_sections:
-        section = template_section.section
-        section_details.append({
-            "id": section.id,
-            "name": section.section_name,
-            "description": section.description,
-            "is_required": section.is_required,
-            "has_static_image": section.has_static_image,
-            "static_image_url": section.static_image_url,
-            "form_schema": section.form_schema,
-            "position": template_section.position
-        })
-    
-    return {
-        "id": template.id,
-        "discipline": template.discipline,
-        "note_type": template.note_type,
-        "is_active": template.is_active,
-        "sections": section_details
-    }
+    return template_response
 
 @router.post("/note-templates", response_model=NoteTemplateResponse)
 def create_template(template_data: NoteTemplateCreate, db: Session = Depends(get_db)):
