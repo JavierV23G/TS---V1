@@ -211,8 +211,26 @@ def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
         template_sections=[],
     )
 
-@router.get("/templates/{discipline}/{visit_type}")
+@router.get("/templates/{discipline}/{visit_type}", response_model=NoteTemplateWithSectionsResponse)
 def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
+    template = db.query(NoteTemplate).filter(
+        NoteTemplate.discipline == discipline,
+        NoteTemplate.visit_type == visit_type
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).order_by(NoteTemplateSection.order).all()
+
+    return NoteTemplateWithSectionsResponse(
+        id=template.id,
+        discipline=template.discipline,
+        visit_type=template.visit_type,
+        sections=template_sections
+    )
 
 @router.get("/note-sections", response_model=List[NoteSectionResponse])
 def get_all_sections(db: Session = Depends(get_db)):

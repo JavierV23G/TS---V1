@@ -290,7 +290,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
 };
 
 // General Information Section Component
-const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient }) => {
+const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient, setCurrentCertPeriod }) => {
   // Handler for certification period updates
   const handleUpdateCertPeriod = (updatedCertData) => {
     console.log('Certification period updated:', updatedCertData);
@@ -944,6 +944,7 @@ const PatientInfoPage = () => {
                 setCertPeriodDates={setCertPeriodDates}
                 onUpdatePatient={handleUpdatePatient}
                 setPatient={setPatient}
+                setCurrentCertPeriod={setCurrentCertPeriod}
               />
             )}
             {activeTab === 'medical' && (
