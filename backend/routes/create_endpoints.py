@@ -296,43 +296,6 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     return visit
 
 #====================== NOTES ======================
-    discipline = discipline.upper()
-    visit_type = visit_type.replace('-', ' ').title()
-    
-    template = db.query(NoteTemplate).filter(
-        NoteTemplate.discipline == discipline,
-        NoteTemplate.note_type == visit_type,
-        NoteTemplate.is_active == True
-    ).first()
-    
-    if not template:
-        raise HTTPException(status_code=404, detail=f"No active template found for {discipline} {visit_type}")
-    
-    sections = db.query(NoteTemplateSection).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.position.asc()).all()
-    
-    section_details = []
-    for section in sections:
-        section_info = db.query(NoteSection).filter(
-            NoteSection.id == section.section_id
-        ).first()
-        if section_info:
-            section_details.append({
-                "id": section_info.id,
-                "name": section_info.section_name,
-                "fields": section_info.fields,
-                "position": section.position
-            })
-    
-    template_response = {
-        "id": template.id,
-        "discipline": template.discipline,
-        "note_type": template.note_type,
-        "sections": section_details
-    }
-    
-    return template_response
 
 @router.post("/note-templates", response_model=NoteTemplateResponse)
 def create_template(template_data: NoteTemplateCreate, db: Session = Depends(get_db)):

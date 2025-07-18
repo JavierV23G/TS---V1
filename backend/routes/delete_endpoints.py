@@ -10,6 +10,7 @@ from database.models import (
     PatientExerciseAssignment,
     Document,
     NoteSection,
+    NoteTemplateSection,
     Visit,
     VisitNote)
 
@@ -98,6 +99,21 @@ def delete_section(section_id: int, db: Session = Depends(get_db)):
     section = db.query(NoteSection).filter(NoteSection.id == section_id).first()
     if not section:
         raise HTTPException(status_code=404, detail="Section not found")
+    
+    # Check if section is used in any templates
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.section_id == section_id
+    ).all()
+    
+    if template_sections:
+        # Remove from all templates first
+        for template_section in template_sections:
+            db.delete(template_section)
+        
+        # Commit the template section deletions
+        db.commit()
+    
+    # Now delete the section itself
     db.delete(section)
     db.commit()
     return {"detail": "Section deleted"}
@@ -169,14 +185,6 @@ def delete_assigned_exercise(assignment_id: int, db: Session = Depends(get_db)):
     assignment = db.query(PatientExerciseAssignment).filter(
         PatientExerciseAssignment.id == assignment_id
     ).first()
-
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Exercise assignment not found.")
-
-    db.delete(assignment)
-    db.commit()
-    return {"detail": "Exercise assignment deleted successfully."}
-    assignment = db.query(PatientExerciseAssignment).filter(PatientExerciseAssignment.id == assignment_id).first()
 
     if not assignment:
         raise HTTPException(status_code=404, detail="Exercise assignment not found.")

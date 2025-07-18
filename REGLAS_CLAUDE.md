@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Communication Protocol
 - Always address the user as "Doctor Luis"
+- Always communicate in Spanish
 
 ## Development Commands
 

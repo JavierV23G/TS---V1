@@ -338,7 +338,13 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
 };
 
 // Medical Information Section Component
-const MedicalInformationSection = ({ patient, onUpdatePatient }) => {
+const MedicalInformationSection = ({ 
+  patient, 
+  onUpdatePatient, 
+  scheduledVisits, 
+  disciplines, 
+  onSyncVisitsData 
+}) => {
   const handleUpdateMedicalInfo = (updatedMedicalData) => {
     console.log('Medical information updated:', updatedMedicalData);
     if (onUpdatePatient) {
@@ -348,13 +354,25 @@ const MedicalInformationSection = ({ patient, onUpdatePatient }) => {
 
   return (
     <div className="medical-info-section">
-      <MedicalInfoComponent patient={patient} onUpdateMedicalInfo={handleUpdateMedicalInfo} />
+      <MedicalInfoComponent 
+        patient={patient} 
+        onUpdateMedicalInfo={handleUpdateMedicalInfo}
+        scheduledVisits={scheduledVisits}
+        disciplines={disciplines}
+        onSyncVisitsData={onSyncVisitsData}
+      />
     </div>
   );
 };
 
 // Disciplines Section Component
-const DisciplinesSection = ({ patient, onUpdatePatient }) => {
+const DisciplinesSection = ({ 
+  patient, 
+  onUpdatePatient, 
+  scheduledVisits, 
+  approvedVisits, 
+  onSyncDisciplinesData 
+}) => {
   const handleUpdateDisciplines = (updatedDisciplines) => {
     console.log('Disciplines updated:', updatedDisciplines);
     if (onUpdatePatient) {
@@ -364,13 +382,26 @@ const DisciplinesSection = ({ patient, onUpdatePatient }) => {
 
   return (
     <div className="disciplines-section">
-      <DisciplinesComponent patient={patient} onUpdateDisciplines={handleUpdateDisciplines} />
+      <DisciplinesComponent 
+        patient={patient} 
+        onUpdateDisciplines={handleUpdateDisciplines}
+        scheduledVisits={scheduledVisits}
+        approvedVisits={approvedVisits}
+        onSyncDisciplinesData={onSyncDisciplinesData}
+      />
     </div>
   );
 };
 
 // Schedule Section Component
-const ScheduleSection = ({ patient, certPeriodDates, currentCertPeriod }) => {
+const ScheduleSection = ({ 
+  patient, 
+  certPeriodDates, 
+  currentCertPeriod, 
+  approvedVisits, 
+  disciplines, 
+  onSyncScheduleData 
+}) => {
   const handleUpdateSchedule = (updatedSchedule) => {
     console.log('Schedule updated:', updatedSchedule);
   };
@@ -382,6 +413,9 @@ const ScheduleSection = ({ patient, certPeriodDates, currentCertPeriod }) => {
         onUpdateSchedule={handleUpdateSchedule} 
         certPeriodDates={certPeriodDates}
         currentCertPeriod={currentCertPeriod}
+        approvedVisits={approvedVisits}
+        disciplines={disciplines}
+        onSyncScheduleData={onSyncScheduleData}
       />
     </div>
   );
@@ -507,6 +541,11 @@ const PatientInfoPage = () => {
   const userMenuRef = useRef(null);
   const [certPeriodDates, setCertPeriodDates] = useState({ startDate: '', endDate: '' });
   const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
+
+  // ===== ESTADO COMPARTIDO PARA SINCRONIZACIÓN =====
+  const [scheduledVisits, setScheduledVisits] = useState([]);
+  const [approvedVisits, setApprovedVisits] = useState(null);
+  const [disciplines, setDisciplines] = useState(null);
 
   useEffect(() => {
     if (patient?.certification_periods?.length > 0) {
@@ -708,6 +747,30 @@ const PatientInfoPage = () => {
     
     fetchPatient();
   }, [patientId, API_BASE_URL]);
+
+  // ===== FUNCIONES DE SINCRONIZACIÓN BIDIRECCIONAL =====
+  
+  // Sincronización desde MedicalInfoComponent
+  const handleSyncVisitsData = (syncData) => {
+    if (syncData.type === 'approved_visits_changed' && syncData.allVisits) {
+      setApprovedVisits(syncData.allVisits);
+    }
+  };
+
+  // Sincronización desde DisciplinesComponent  
+  const handleSyncDisciplinesData = (syncData) => {
+    if (syncData.type === 'frequency_manually_changed' && syncData.disciplines) {
+      setDisciplines(syncData.disciplines);
+    }
+  };
+
+  // Sincronización desde ScheduleComponent
+  const handleSyncScheduleData = (syncData) => {
+    if (syncData.type === 'visits_updated' && syncData.visits) {
+      setScheduledVisits(syncData.visits);
+    }
+  };
+
 
   // Render loading state
   if (loading) {
@@ -951,12 +1014,18 @@ const PatientInfoPage = () => {
               <MedicalInformationSection 
                 patient={patient} 
                 onUpdatePatient={handleUpdatePatient}
+                scheduledVisits={scheduledVisits}
+                disciplines={disciplines}
+                onSyncVisitsData={handleSyncVisitsData}
               />
             )}
             {activeTab === 'disciplines' && (
               <DisciplinesSection 
                 patient={patient} 
                 onUpdatePatient={handleUpdatePatient}
+                scheduledVisits={scheduledVisits}
+                approvedVisits={approvedVisits}
+                onSyncDisciplinesData={handleSyncDisciplinesData}
               />
             )}
             {activeTab === 'schedule' && (
@@ -964,6 +1033,9 @@ const PatientInfoPage = () => {
                 patient={patient} 
                 certPeriodDates={certPeriodDates}
                 currentCertPeriod={currentCertPeriod}
+                approvedVisits={approvedVisits}
+                disciplines={disciplines}
+                onSyncScheduleData={handleSyncScheduleData}
               />
             )}
             {activeTab === 'exercises' && (

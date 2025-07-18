@@ -9,7 +9,7 @@ const VisitStatusModal = ({
   visitData, 
   onStatusChange,
   onCompleteVisit,
-  onVisitUpdate // Callback to notify parent for immediate UI refresh
+  onVisitUpdate 
 }) => {
   const { currentUser } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState(visitData?.status || 'Scheduled');
