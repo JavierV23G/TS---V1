@@ -215,21 +215,39 @@ def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
 def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
     template = db.query(NoteTemplate).filter(
         NoteTemplate.discipline == discipline,
-        NoteTemplate.visit_type == visit_type
+        NoteTemplate.note_type == visit_type
     ).first()
-    
+
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    template_sections = db.query(NoteTemplateSection).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.order).all()
+    # Get template sections with their full section details
+    template_sections = (
+        db.query(NoteTemplateSection, NoteSection)
+        .join(NoteSection, NoteTemplateSection.section_id == NoteSection.id)
+        .filter(NoteTemplateSection.template_id == template.id)
+        .all()
+    )
+
+    sections_with_details = []
+    for template_section, section in template_sections:
+        section_data = {
+            "id": section.id,
+            "section_name": section.section_name,
+            "description": section.description,
+            "is_required": section.is_required,
+            "has_static_image": section.has_static_image,
+            "static_image_url": section.static_image_url,
+            "form_schema": section.form_schema
+        }
+        sections_with_details.append(section_data)
 
     return NoteTemplateWithSectionsResponse(
         id=template.id,
         discipline=template.discipline,
-        visit_type=template.visit_type,
-        sections=template_sections
+        note_type=template.note_type,
+        is_active=template.is_active,
+        sections=sections_with_details
     )
 
 @router.get("/note-sections", response_model=List[NoteSectionResponse])

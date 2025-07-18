@@ -532,10 +532,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-<<<<<<< HEAD
-  // Organize therapists: assigned first, then separator, then all others
-  const getOrganizedTherapists = () => {
-=======
   // Helper function to check if current user is a therapist
   const isCurrentUserTherapist = () => {
     const therapistRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
@@ -560,7 +556,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
     
     // For admins, developers, and agencies, show all therapists organized
->>>>>>> a5993c39b572c0de6aca148685feceb8be07ce43
     const assignedIds = assignedStaff.map(staff => staff.id);
     const assignedTherapists = therapists.filter(therapist => assignedIds.includes(therapist.id));
     const unassignedTherapists = therapists.filter(therapist => !assignedIds.includes(therapist.id));
@@ -705,13 +700,10 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
     setSelectedDate(date);
     setSelectedVisit(null);
-<<<<<<< HEAD
-=======
     
     // Auto-select therapist if current user is a therapist
     const currentUserTherapistId = getCurrentUserTherapistId();
     
->>>>>>> a5993c39b572c0de6aca148685feceb8be07ce43
     setFormData(prev => ({
       ...prev,
       date: formatDateToLocalISOString(date),
@@ -1332,186 +1324,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                     required
                   />
                 </div>
-<<<<<<< HEAD
-                <div className="tab-content">
-                  {activeTab === 'details' && (
-                    <div className="details-tab">
-                      <div className="form-group">
-                        <label>Visit Type <span className="required">*</span></label>
-                        <select
-                          name="visitType"
-                          value={formData.visitType}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          required
-                        >
-                          <option value="">Select Visit Type</option>
-                          {visitTypes.map((type) => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Therapist <span className="required">*</span></label>
-                        {isLoadingTherapists ? (
-                          <div className="loading-select">
-                            <i className="fas fa-spinner fa-spin"></i>
-                            Loading therapists...
-                          </div>
-                        ) : (
-                          <select
-                            name="therapist"
-                            value={formData.therapist}
-                            onChange={handleInputChange}
-                            className="form-input"
-                            required
-                          >
-                            <option value="">Select Therapist</option>
-                            {(() => {
-                              const { assignedTherapists, unassignedTherapists } = getOrganizedTherapists();
-                              return (
-                                <>
-                                  {assignedTherapists.length > 0 && (
-                                    <optgroup label="Assigned Therapists">
-                                      {assignedTherapists.map((therapist) => (
-                                        <option key={`assigned-${therapist.id}`} value={therapist.id}>
-                                          {therapist.name} ({therapist.role.toUpperCase()})
-                                        </option>
-                                      ))}
-                                    </optgroup>
-                                  )}
-                                  {unassignedTherapists.length > 0 && (
-                                    <optgroup label="All Available Therapists">
-                                      {unassignedTherapists.map((therapist) => (
-                                        <option key={`unassigned-${therapist.id}`} value={therapist.id}>
-                                          {therapist.name} ({therapist.role.toUpperCase()})
-                                        </option>
-                                      ))}
-                                    </optgroup>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </select>
-                        )}
-                        {therapists.length === 0 && !isLoadingTherapists && (
-                          <div className="no-therapists-message">
-                            <i className="fas fa-exclamation-triangle"></i>
-                            No therapists available. Please ensure therapy staff are added to the system.
-                          </div>
-                        )}
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Date <span className="required">*</span></label>
-                          <input
-                            type="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleInputChange}
-                            className="form-input"
-                            min={currentCertPeriod?.start_date || undefined}
-                            max={currentCertPeriod?.end_date || undefined}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Time</label>
-                          <input
-                            type="time"
-                            name="time"
-                            value={formData.time}
-                            onChange={handleInputChange}
-                            className="form-input"
-                          />
-                        </div>
-                      </div>
-                      {formData.status === 'Missed' && (
-                        <div className="form-group">
-                          <label>Reason for Missing</label>
-                          <input
-                            type="text"
-                            name="missedReason"
-                            value={formData.missedReason}
-                            onChange={handleInputChange}
-                            placeholder="Enter reason"
-                            className="form-input"
-                          />
-                        </div>
-                      )}
-                      <div className="form-group">
-                        <label>Comments</label>
-                        <textarea
-                          name="notes"
-                          value={formData.notes}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          rows="3"
-                          placeholder="Add any additional comments about this visit..."
-                        ></textarea>
-                      </div>
-                      {currentCertPeriod && (
-                        <div className="cert-period-info">
-                          <div className="info-label">
-                            <i className="fas fa-certificate"></i>
-                            Current Certification Period
-                          </div>
-                          <div className="info-value">
-                            {currentCertPeriod.start_date} to {currentCertPeriod.end_date}
-                          </div>
-                        </div>
-                      )}
-                     
-                     
-                    </div>
-                  )}
-                  {activeTab === 'missedVisit' && (
-                    <div className="missed-visit-tab">
-                      <h4>Missed Visit Report</h4>
-                      <div className="form-group">
-                        <label>REASON FOR MISSED VISIT:</label>
-                        <input
-                          type="text"
-                          name="reason"
-                          value={missedVisitData.reason}
-                          onChange={handleMissedVisitChange}
-                          className="form-input"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>ACTION TAKEN:</label>
-                        <textarea
-                          name="action"
-                          value={missedVisitData.action}
-                          onChange={handleMissedVisitChange}
-                          className="form-input"
-                          rows="5"
-                        ></textarea>
-                      </div>
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          id="mdNotified"
-                          name="mdNotified"
-                          checked={missedVisitData.mdNotified}
-                          onChange={handleMissedVisitChange}
-                        />
-                        <label htmlFor="mdNotified">MD WAS NOTIFIED BY PHONE OF MISSED VISIT.</label>
-                      </div>
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          id="noShow"
-                          name="noShow"
-                          checked={missedVisitData.noShow}
-                          onChange={handleMissedVisitChange}
-                        />
-                        <label htmlFor="noShow">PATIENT WAS A NO-SHOW.</label>
-                      </div>
-                    </div>
-                  )}
-                  
-=======
                 <div className="form-group">
                   <label>Time</label>
                   <input
@@ -1521,7 +1333,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                     onChange={handleInputChange}
                     className="form-input"
                   />
->>>>>>> a5993c39b572c0de6aca148685feceb8be07ce43
                 </div>
               </div>
               

@@ -43,18 +43,11 @@ const NotesModule = () => {
   // Update selected sections when discipline/type changes
   useEffect(() => {
     if (selectedDiscipline && selectedVisitType) {
-      const template = templates.find(t => 
-        t.discipline === selectedDiscipline && 
-        t.note_type === selectedVisitType
-      );
-      
-      if (template) {
-        setSelectedSections(template.sections.map(s => s.id));
-      } else {
-        setSelectedSections([]);
-      }
+      fetchSpecificTemplate(selectedDiscipline, selectedVisitType);
+    } else {
+      setSelectedSections([]);
     }
-  }, [selectedDiscipline, selectedVisitType, templates]);
+  }, [selectedDiscipline, selectedVisitType]);
 
   // Fetch sections
   const fetchSections = async () => {
@@ -77,6 +70,23 @@ const NotesModule = () => {
       setTemplates(data);
     } catch (error) {
       console.error('Error fetching templates:', error);
+    }
+  };
+
+  // Fetch specific template to get selected sections
+  const fetchSpecificTemplate = async (discipline, visitType) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates/${discipline}/${visitType}`);
+      if (response.ok) {
+        const template = await response.json();
+        setSelectedSections(template.sections.map(s => s.id));
+      } else {
+        // Template doesn't exist, clear selections
+        setSelectedSections([]);
+      }
+    } catch (error) {
+      console.error('Error fetching specific template:', error);
+      setSelectedSections([]);
     }
   };
 
@@ -198,10 +208,15 @@ const NotesModule = () => {
 
     try {
       const response = await fetch(`${API_BASE_URL}/note-sections/${section.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (!response.ok) throw new Error('Failed to delete section');
+      if (!response.ok) {
+        throw new Error(`Failed to delete section: ${response.status} ${response.statusText}`);
+      }
       
       await fetchSections();
       await fetchTemplates(); // Refresh templates in case the deleted section was used
@@ -238,41 +253,81 @@ const NotesModule = () => {
 
     setIsSavingTemplate(true);
     try {
-      const existingTemplate = templates.find(t => 
-        t.discipline === selectedDiscipline && 
-        t.note_type === selectedVisitType
-      );
+      // Check if template exists using the specific endpoint
+      let existingTemplate = null;
+      try {
+        const checkResponse = await fetch(`${API_BASE_URL}/templates/${selectedDiscipline}/${selectedVisitType}`);
+        if (checkResponse.ok) {
+          existingTemplate = await checkResponse.json();
+        }
+      } catch (error) {
+        // Template doesn't exist, will create new one
+        console.log('Template does not exist, will create new one');
+      }
 
-      const endpoint = existingTemplate
-        ? `${API_BASE_URL}/note-templates/${existingTemplate.id}`
-        : `${API_BASE_URL}/note-templates`;
-
-      const method = existingTemplate ? 'PUT' : 'POST';
-      
-      const response = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      if (existingTemplate) {
+        // UPDATE existing template using query parameters
+        const params = new URLSearchParams({
           discipline: selectedDiscipline,
           note_type: selectedVisitType,
-          section_ids: selectedSections,
-          is_active: true
-        })
-      });
+          is_active: 'true'
+        });
+        
+        // Add replace_section_ids as individual parameters
+        selectedSections.forEach(sectionId => {
+          params.append('replace_section_ids', sectionId.toString());
+        });
+        
+        const endpoint = `${API_BASE_URL}/note-templates/${existingTemplate.id}?${params.toString()}`;
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' }
+        });
 
-      if (!response.ok) throw new Error('Failed to save template');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to update template: ${errorData.detail || response.statusText}`);
+        }
+      } else {
+        // CREATE new template
+        const endpoint = `${API_BASE_URL}/note-templates`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            discipline: selectedDiscipline,
+            note_type: selectedVisitType,
+            is_active: true,
+            section_ids: selectedSections
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to create template: ${errorData.detail || response.statusText}`);
+        }
+      }
       
       await fetchTemplates();
+      // Refresh the specific template data to update the selected sections
+      await fetchSpecificTemplate(selectedDiscipline, selectedVisitType);
 
       // Show success notification
       const notification = document.createElement('div');
       notification.className = 'success-notification';
-      notification.textContent = 'Template saved successfully!';
+      notification.textContent = `Template ${existingTemplate ? 'updated' : 'created'} successfully!`;
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
 
     } catch (error) {
       console.error('Error saving template:', error);
+      
+      // Show error notification
+      const notification = document.createElement('div');
+      notification.className = 'error-notification';
+      notification.textContent = error.message || 'Error saving template. Please try again.';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
     } finally {
       setIsSavingTemplate(false);
     }
@@ -391,7 +446,6 @@ const NotesModule = () => {
               <div key={section.id} className="section-card">
                 <div className="section-info">
                   <div className="section-name">{section.section_name}</div>
-                  <div className="section-description">{section.description || 'No description'}</div>
                   <div className="section-meta">
                     {section.is_required && <span className="required-badge">Required</span>}
                     {section.has_static_image && <span className="image-badge">Has Image</span>}
