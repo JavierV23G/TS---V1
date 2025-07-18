@@ -1,0 +1,704 @@
+// VisitStatusModal.scss - Expanded Visit Details Modal
+.visit-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.visit-status-modal-expanded {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 900px;
+  width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid #e5e7eb;
+
+  &.visible {
+    transform: translateY(0) scale(1);
+  }
+
+  // Header Section
+  .modal-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    .header-content {
+      flex: 1;
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 8px 0;
+        line-height: 1.2;
+      }
+
+      .visit-datetime {
+        font-size: 16px;
+        font-weight: 600;
+        color: #3b82f6;
+        margin-bottom: 4px;
+      }
+
+      .patient-info {
+        font-size: 14px;
+        color: #6b7280;
+        font-weight: 500;
+      }
+    }
+
+    .close-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: #f3f4f6;
+      border-radius: 10px;
+      color: #6b7280;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 16px;
+
+      &:hover {
+        background: #e5e7eb;
+        color: #374151;
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  // Main Content
+  .modal-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+
+    // Left Column - Form
+    .visit-details-section {
+      flex: 2;
+      padding: 24px;
+      overflow-y: auto;
+      border-right: 1px solid #e5e7eb;
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 6px;
+        }
+
+        .form-input,
+        .form-select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #1f2937;
+          transition: all 0.2s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+
+          &:hover {
+            border-color: #d1d5db;
+          }
+        }
+
+        .form-textarea {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #1f2937;
+          resize: vertical;
+          min-height: 80px;
+          transition: all 0.2s ease;
+          font-family: inherit;
+
+          &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+
+          &:hover {
+            border-color: #d1d5db;
+          }
+
+          &::placeholder {
+            color: #9ca3af;
+          }
+        }
+      }
+
+      // Medical Staff Section
+      .medical-staff-info {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
+
+        h4 {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1f2937;
+          margin: 0 0 16px 0;
+        }
+
+        .staff-grid {
+          display: grid;
+          gap: 12px;
+
+          .staff-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+
+            &:hover {
+              border-color: #3b82f6;
+              box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+            }
+
+            .staff-icon {
+              width: 36px;
+              height: 36px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 16px;
+
+              &.physician {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+              }
+
+              &.nurse {
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+              }
+
+              &.therapist {
+                background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+              }
+            }
+
+            .staff-details {
+              flex: 1;
+
+              .staff-label {
+                display: block;
+                font-size: 12px;
+                font-weight: 600;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 2px;
+              }
+
+              .staff-name {
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+                line-height: 1.2;
+              }
+            }
+          }
+        }
+
+        // Therapist display for non-admin users
+        .therapist-display {
+          .staff-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 0;
+
+            .staff-icon {
+              width: 36px;
+              height: 36px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 16px;
+
+              &.therapist {
+                background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+              }
+            }
+
+            .staff-details {
+              flex: 1;
+
+              .staff-label {
+                display: block;
+                font-size: 12px;
+                font-weight: 600;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 2px;
+              }
+
+              .staff-name {
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+                line-height: 1.2;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Right Column - Status Selection
+    .status-management-section {
+      flex: 1;
+      padding: 24px;
+      background: #fafbfc;
+      overflow-y: auto;
+
+      h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 16px 0;
+      }
+
+      .status-options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .status-option-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          min-height: 48px;
+
+          &:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+          }
+
+          &.selected {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+          }
+
+          .option-icon {
+            font-size: 16px;
+            width: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .option-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .option-text {
+              font-size: 14px;
+              font-weight: 600;
+              color: #1f2937;
+            }
+
+            .special-badge {
+              color: #10b981;
+              font-size: 10px;
+              background: #ecfdf5;
+              padding: 3px 6px;
+              border-radius: 4px;
+              border: 1px solid #a7f3d0;
+              display: flex;
+              align-items: center;
+              gap: 2px;
+            }
+          }
+
+          .selected-indicator {
+            color: #3b82f6;
+            font-size: 16px;
+            animation: checkmark-appear 0.3s ease-out;
+          }
+        }
+      }
+    }
+  }
+
+  // Footer Section
+  .modal-footer {
+    background: #f9fafb;
+    padding: 20px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    .cancel-btn,
+    .save-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+
+      i {
+        font-size: 14px;
+      }
+    }
+
+    .cancel-btn {
+      background: #f3f4f6;
+      color: #6b7280;
+
+      &:hover {
+        background: #e5e7eb;
+        color: #374151;
+      }
+    }
+
+    .save-btn {
+      background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+      color: white;
+      transition: all 0.3s ease;
+
+      &.has-changes {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        animation: pulse-changes 2s ease-in-out infinite;
+
+        &:hover {
+          background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+
+        &:hover {
+          transform: none;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .visit-status-modal-expanded {
+    width: 98vw;
+    max-height: 95vh;
+
+    .modal-header {
+      padding: 20px;
+
+      .header-content {
+        .modal-title {
+          font-size: 20px;
+        }
+
+        .visit-datetime {
+          font-size: 14px;
+        }
+
+        .patient-info {
+          font-size: 13px;
+        }
+      }
+
+      .close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+    }
+
+    .modal-content {
+      flex-direction: column;
+
+      .visit-details-section {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 20px;
+
+        .medical-staff-info {
+          margin-top: 20px;
+          padding-top: 20px;
+
+          .staff-grid {
+            grid-template-columns: 1fr;
+            gap: 8px;
+
+            .staff-item {
+              padding: 10px;
+
+              .staff-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+              }
+
+              .staff-details {
+                .staff-label {
+                  font-size: 11px;
+                }
+
+                .staff-name {
+                  font-size: 13px;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .status-management-section {
+        padding: 20px;
+
+        .status-options-container {
+          .status-option-card {
+            padding: 10px;
+            min-height: 44px;
+
+            .option-content {
+              .option-text {
+                font-size: 13px;
+              }
+
+              .special-badge {
+                font-size: 9px;
+                padding: 2px 4px;
+              }
+            }
+
+            .option-icon {
+              font-size: 14px;
+            }
+
+            .selected-indicator {
+              font-size: 14px;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+
+      .cancel-btn,
+      .save-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+
+        i {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .visit-status-modal-expanded {
+    .modal-header {
+      padding: 16px;
+
+      .header-content {
+        .modal-title {
+          font-size: 18px;
+        }
+
+        .visit-datetime {
+          font-size: 13px;
+        }
+
+        .patient-info {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .modal-content {
+      .visit-details-section {
+        padding: 16px;
+
+        .form-group {
+          margin-bottom: 16px;
+
+          label {
+            font-size: 13px;
+          }
+
+          .form-input,
+          .form-select,
+          .form-textarea {
+            padding: 10px;
+            font-size: 13px;
+          }
+        }
+      }
+
+      .status-management-section {
+        padding: 16px;
+
+        .status-options-container {
+          .status-option-card {
+            padding: 8px;
+            min-height: 40px;
+            gap: 8px;
+
+            .option-content {
+              .option-text {
+                font-size: 12px;
+              }
+
+              .special-badge {
+                font-size: 8px;
+                padding: 1px 3px;
+              }
+            }
+
+            .option-icon {
+              font-size: 13px;
+              width: 16px;
+            }
+
+            .selected-indicator {
+              font-size: 13px;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+      flex-direction: column;
+
+      .cancel-btn,
+      .save-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+      }
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes checkmark-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-changes {
+  0% {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  }
+  100% {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+}
+
+// Focus and accessibility
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.status-option-card:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.close-btn:focus,
+.cancel-btn:focus,
+.save-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+// Print styles
+@media print {
+  .visit-status-modal-overlay {
+    display: none;
+  }
+}
