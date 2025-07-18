@@ -173,14 +173,14 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     try {
       console.log('Updating patient insurance:', insurance);
       
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      const params = new URLSearchParams();
+      params.append('insurance', insurance);
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          insurance: insurance
-        })
+        }
       });
       
       if (!response.ok) {
@@ -508,15 +508,15 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   
   const updatePatientDetails = async (insurance, agencyId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      const params = new URLSearchParams();
+      params.append('insurance', insurance);
+      params.append('agency_id', agencyId);
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          insurance: insurance,
-          agency_id: agencyId,
-        }),
+        }
       });
 
       if (!response.ok) {
@@ -1161,13 +1161,13 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                         </div>
                         {period.insurance && period.insurance !== 'Not available' && (
                           <div className="period-insurance">
-                            <i className="fas fa-id-card"></i>
+                            <i className="fas fa-id-card" style={{ marginRight: '6px' }}></i>
                             <span>{period.insurance}</span>
                           </div>
                         )}
                         {period.notes && (
                           <div className="period-notes">
-                            <i className="fas fa-sticky-note"></i>
+                            <i className="fas fa-sticky-note" style={{ marginRight: '6px' }}></i>
                             <span>{period.notes}</span>
                           </div>
                         )}
@@ -1300,7 +1300,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
 
                     <div className="info-row">
                       <div className="info-label">
-                        <i className="fas fa-id-card"></i>
+                        <i className="fas fa-id-card" style={{ marginRight: '8px' }}></i>
                         Insurance Provider
                       </div>
                       <div className="info-value insurance-value">
@@ -1317,7 +1317,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                     
                     <div className="info-row">
                       <div className="info-label">
-                        <i className="fas fa-hospital"></i>
+                        <i className="fas fa-hospital" style={{ marginRight: '8px' }}></i>
                         Healthcare Agency
                       </div>
                       <div className="info-value agency-value">
@@ -1335,7 +1335,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
                     {selectedPeriodData?.notes && (
                       <div className="info-row">
                         <div className="info-label">
-                          <i className="fas fa-sticky-note"></i>
+                          <i className="fas fa-sticky-note" style={{ marginRight: '8px' }}></i>
                           Notes
                         </div>
                         <div className="info-value notes-value">

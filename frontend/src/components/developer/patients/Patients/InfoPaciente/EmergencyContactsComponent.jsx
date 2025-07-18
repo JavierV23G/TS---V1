@@ -34,20 +34,34 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
       
       // Si es diccionario (nueva estructura)
       if (typeof patient.contact_info === 'object' && !Array.isArray(patient.contact_info)) {
-        // Extraer SOLO contactos de emergencia del diccionario (excluir primary y secondary)
+        // Extraer contactos del diccionario (excluir primary# y primary)
         Object.entries(patient.contact_info).forEach(([key, value], index) => {
-          if (key.startsWith('emergency_')) {
+          if (key !== 'primary#' && key !== 'primary' && key !== 'secondary') {
             let contactData;
             
-            // Verificar si el valor está codificado con nuestro formato especial (name|phone|relation)
+            // Verificar si el valor está codificado con formato (phone|relation) o (name|phone|relation)
             if (typeof value === 'string' && value.includes('|')) {
-              const [name, phone, relation] = value.split('|');
-              contactData = {
-                id: index + 1,
-                name: name || `Emergency Contact ${index + 1}`,
-                phone: phone,
-                relation: relation || 'Emergency'
-              };
+              const parts = value.split('|');
+              
+              if (parts.length === 2) {
+                // Nuevo formato: phone|relation (nombre en la key)
+                const [phone, relation] = parts;
+                contactData = {
+                  id: index + 1,
+                  name: key || `Contact ${index + 1}`,
+                  phone: phone,
+                  relation: relation || 'Contact'
+                };
+              } else if (parts.length === 3) {
+                // Formato anterior: name|phone|relation
+                const [name, phone, relation] = parts;
+                contactData = {
+                  id: index + 1,
+                  name: name || `Contact ${index + 1}`,
+                  phone: phone,
+                  relation: relation || 'Contact'
+                };
+              }
             } else if (typeof value === 'object' && value.phone) {
               // Compatibilidad con estructura de objeto (por si acaso)
               contactData = {
@@ -144,27 +158,31 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
       
       // Preservar contactos principales existentes
       if (patient.contact_info && typeof patient.contact_info === 'object') {
-        if (patient.contact_info.primary) {
-          contactDict.primary = patient.contact_info.primary;
+        if (patient.contact_info['primary#']) {
+          contactDict['primary#'] = patient.contact_info['primary#'];
+        } else if (patient.contact_info.primary) {
+          contactDict['primary#'] = patient.contact_info.primary; // Migrar formato anterior
         }
         if (patient.contact_info.secondary) {
           contactDict.secondary = patient.contact_info.secondary;
         }
       }
       
-      // Agregar contactos de emergencia al diccionario (codificado como string)
+      // Agregar contactos de emergencia al diccionario (nuevo formato: nombre como key, phone|relation como value)
       updatedEmergencyContacts.forEach((contact, index) => {
-        // Codificar toda la información en un string con formato especial
-        const contactData = `${contact.name || ''}|${formatPhoneNumber(contact.phone)}|${contact.relation || 'Emergency'}`;
-        contactDict[`emergency_${index + 1}`] = contactData;
+        const contactName = contact.name || `Emergency_${index + 1}`;
+        const contactData = `${formatPhoneNumber(contact.phone)}|${contact.relation || 'Emergency'}`;
+        contactDict[contactName] = contactData;
       });
 
       console.log('Sending contact_info:', contactDict);
       
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}`, {
+      const params = new URLSearchParams();
+      params.append('contact_info', JSON.stringify(contactDict));
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contact_info: contactDict }),
       });
 
       console.log('Response status:', response.status);

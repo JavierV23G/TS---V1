@@ -625,6 +625,203 @@
           }
         }
         
+        // Enhanced form field styling with representative colors
+        .weight-input {
+          label {
+            i {
+              background: rgba(37, 99, 235, 0.08);
+              color: #2563eb;
+            }
+          }
+        }
+        
+        .height-input {
+          label {
+            i {
+              background: rgba(22, 163, 74, 0.08);
+              color: #16a34a;
+            }
+          }
+        }
+        
+        .clinical-group-select {
+          label {
+            i {
+              background: rgba(124, 58, 237, 0.08);
+              color: #7c3aed;
+            }
+          }
+        }
+        
+        // Nursing diagnosis, PMH, WBS, Homebound colors
+        .form-group:has(label .fa-heartbeat) {
+          label {
+            i {
+              background: rgba(239, 68, 68, 0.08);
+              color: #ef4444;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-history) {
+          label {
+            i {
+              background: rgba(14, 165, 233, 0.08);
+              color: #0ea5e9;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-band-aid) {
+          label {
+            i {
+              background: rgba(234, 88, 12, 0.08);
+              color: #ea580c;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-home) {
+          label {
+            i {
+              background: rgba(139, 92, 246, 0.08);
+              color: #8b5cf6;
+            }
+          }
+        }
+        
+        // Specific styles for new form fields
+        .physician-input {
+          label {
+            i {
+              background: rgba(5, 150, 105, 0.08);
+              color: #059669;
+            }
+          }
+          
+          input {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            
+            &::placeholder {
+              color: #94a3b8;
+              font-weight: 400;
+            }
+            
+            &:hover:not(:focus) {
+              border-color: #a7f3d0;
+              box-shadow: 0 3px 8px rgba(5, 150, 105, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #059669;
+              box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+            }
+          }
+        }
+        
+        .nurse-input {
+          label {
+            i {
+              background: rgba(220, 38, 38, 0.08);
+              color: #dc2626;
+            }
+          }
+          
+          input {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            
+            &::placeholder {
+              color: #94a3b8;
+              font-weight: 400;
+            }
+            
+            &:hover:not(:focus) {
+              border-color: #fecaca;
+              box-shadow: 0 3px 8px rgba(220, 38, 38, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #dc2626;
+              box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+            }
+          }
+        }
+        
+        .urgency-level-select {
+          label {
+            i {
+              background: rgba(217, 119, 6, 0.08);
+              color: #d97706;
+            }
+          }
+          
+          select {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-position: right 14px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            cursor: pointer;
+            
+            &:hover:not(:focus) {
+              border-color: #fed7aa;
+              box-shadow: 0 3px 8px rgba(217, 119, 6, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #d97706;
+              box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+              background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d97706'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            }
+            
+            option {
+              padding: 10px;
+              font-weight: 500;
+              background: white;
+              color: #1e293b;
+              
+              &:hover {
+                background: #f8fafc;
+              }
+            }
+          }
+        }
+        
         .form-actions {
           display: flex;
           justify-content: flex-end;
@@ -845,15 +1042,93 @@
           }
           
           &.weight-section .info-icon {
-            background: #eff6ff;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
             
             i {
               color: #2563eb;
             }
           }
           
+          &.height-section .info-icon {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            
+            i {
+              color: #16a34a;
+            }
+          }
+          
           &.clinical-section .info-icon {
-            background: #f8fafc;
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            
+            i {
+              color: #7c3aed;
+            }
+          }
+          
+          &.physician-section .info-icon {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            
+            i {
+              color: #059669;
+            }
+          }
+          
+          &.nurse-section .info-icon {
+            background: linear-gradient(135deg, #fef2f2, #fecaca);
+            
+            i {
+              color: #dc2626;
+            }
+          }
+          
+          &.urgency-section .info-icon {
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            
+            i {
+              color: #d97706;
+            }
+          }
+          
+          // Specific icon colors for medical info sections
+          .info-section:has(.fas.fa-heartbeat) .info-icon {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            
+            i {
+              color: #ef4444;
+            }
+          }
+          
+          .info-section:has(.fas.fa-history) .info-icon {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            
+            i {
+              color: #0ea5e9;
+            }
+          }
+          
+          .info-section:has(.fas.fa-band-aid) .info-icon {
+            background: linear-gradient(135deg, #fff7ed, #fed7aa);
+            
+            i {
+              color: #ea580c;
+            }
+          }
+          
+          .info-section:has(.fas.fa-home) .info-icon {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            
+            i {
+              color: #8b5cf6;
+            }
+          }
+          
+          // Approved visits section icon
+          .info-section:has(.fas.fa-calendar-check) .info-icon {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            
+            i {
+              color: #3b82f6;
+            }
           }
           
           .info-content {
@@ -1016,6 +1291,18 @@
                     background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
                   }
                   
+                  &.physician-data::before {
+                    background: linear-gradient(to bottom, #059669, #047857);
+                  }
+                  
+                  &.nurse-data::before {
+                    background: linear-gradient(to bottom, #dc2626, #b91c1c);
+                  }
+                  
+                  &.urgency-data::before {
+                    background: linear-gradient(to bottom, #d97706, #b45309);
+                  }
+                  
                   &:hover {
                     border-color: #cbd5e1;
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
@@ -1069,6 +1356,55 @@
                     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
                     
                     
+                    
+                    i {
+                      transform: scale(1.2);
+                    }
+                  }
+                }
+                
+                .urgency-level-badge {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 10px;
+                  padding: 10px 18px;
+                  border-radius: 30px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  border: 1px solid;
+                  margin-top: 5px;
+                  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  position: relative;
+                  overflow: hidden;
+                  
+                  &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent);
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                    pointer-events: none;
+                  }
+                  
+                  i {
+                    font-size: 16px;
+                    color: inherit;
+                    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+                    transition: all 0.3s ease;
+                  }
+                  
+                  &:hover {
+                    transform: translateY(-3px) scale(1.03);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                    
+                    &::before {
+                      opacity: 1;
+                    }
                     
                     i {
                       transform: scale(1.2);

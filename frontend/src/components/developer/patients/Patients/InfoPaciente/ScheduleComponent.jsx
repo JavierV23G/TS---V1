@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
 import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import VisitStatusModal from './VisitStatusModal';
 import SignaturePad from './SignaturePad';
 
 const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
+  const { user } = useAuth(); // Get current logged user
   const [isCalendarView, setIsCalendarView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showVisitModal, setShowVisitModal] = useState(false);
+  const [showVisitStatusModal, setShowVisitStatusModal] = useState(false);
+  const [statusChangeVisit, setStatusChangeVisit] = useState(null);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [deleteVisitId, setDeleteVisitId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,6 +45,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   
   // DYNAMIC STATE
   const [therapists, setTherapists] = useState([]);
+  const [assignedStaff, setAssignedStaff] = useState([]);
   const [certPeriods, setCertPeriods] = useState([]);
   const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
   const [isLoadingTherapists, setIsLoadingTherapists] = useState(true);
@@ -71,21 +77,46 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   // VISIT TYPES CONFIGURATION
   const visitTypes = [
     'Initial Evaluation',
-    'Treatment Visit',
-    'Re-evaluation',
-    'Discharge Visit',
-    'Maintenance Visit',
-    'Assessment Visit'
+    'Standard',
+    'Reassessment (RA)',
+    'Discharge (DC)',
+    'Recert-Eval'
   ];
 
-  // DISCIPLINE MAPPING - CORREGIDO
+  // DISCIPLINE MAPPING
   const disciplineMapping = {
     'PT': 'PT',
-    'PTA': 'PT', // En el backend PTA también se clasifica como PT
+    'PTA': 'PT',
     'OT': 'OT',
-    'COTA': 'OT', // En el backend COTA también se clasifica como OT
+    'COTA': 'OT',
     'ST': 'ST',
-    'STA': 'ST' // En el backend STA también se clasifica como ST
+    'STA': 'ST'
+  };
+
+  // Check if current user is a therapist
+  const isTherapistUser = () => {
+    const therapistRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
+    return user && therapistRoles.includes(user.role?.toUpperCase());
+  };
+
+  // Check if current user can see all therapists
+  const canSelectAllTherapists = () => {
+    const adminRoles = ['DEVELOPER', 'ADMIN', 'AGENCY'];
+    return user && adminRoles.includes(user.role?.toUpperCase());
+  };
+
+  // Get therapist ID for current user if they are a therapist
+  const getCurrentUserTherapistId = () => {
+    if (!isTherapistUser()) return null;
+    
+    // Find therapist record that matches current user
+    const userTherapist = therapists.find(therapist => 
+      therapist.email === user.email || 
+      therapist.user_id === user.id ||
+      (therapist.name && user.name && therapist.name.toLowerCase() === user.name.toLowerCase())
+    );
+    
+    return userTherapist?.id || null;
   };
 
   // ===== API FUNCTIONS =====
@@ -110,7 +141,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       const staffData = await response.json();
       console.log('Raw staff data:', staffData);
       
-      // Filter for therapy staff only - CORREGIDO: usar roles exactos
+      // Filter for therapy staff only
       const therapyRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
       const filteredTherapists = staffData.filter(staff => 
         staff.role && therapyRoles.includes(staff.role.toUpperCase()) && staff.is_active
@@ -125,6 +156,38 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       setTherapists([]);
     } finally {
       setIsLoadingTherapists(false);
+    }
+  };
+
+  // Fetch assigned staff for patient
+  const fetchAssignedStaff = async () => {
+    if (!patient?.id) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/assigned-staff`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setAssignedStaff([]);
+          return;
+        }
+        throw new Error(`Failed to fetch assigned staff: ${response.status} ${response.statusText}`);
+      }
+      
+      const assignedData = await response.json();
+      
+      // Extract staff information from assignments
+      const assignedStaffList = assignedData.map(assignment => assignment.staff).filter(staff => staff);
+      setAssignedStaff(assignedStaffList);
+      
+    } catch (err) {
+      console.error('Error fetching assigned staff:', err);
+      setAssignedStaff([]);
     }
   };
 
@@ -152,16 +215,14 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       
       setCertPeriods(certData);
       
-      // CORREGIDO: Determinar período activo basado en localStorage o el más reciente
+      // Determine active period
       let activePeriod = null;
       
-      // 1. Verificar si hay una preferencia guardada del usuario
       const savedActiveId = localStorage.getItem(`active_cert_period_${patient.id}`);
       if (savedActiveId) {
         activePeriod = certData.find(period => period.id.toString() === savedActiveId);
       }
       
-      // 2. Si no hay preferencia guardada, usar el período más reciente que contenga la fecha actual
       if (!activePeriod && certData.length > 0) {
         const today = new Date();
         activePeriod = certData.find(period => {
@@ -170,7 +231,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
           return startDate <= today && today <= endDate;
         });
         
-        // 3. Si ninguno es válido para hoy, usar el más reciente
         if (!activePeriod) {
           const sortedByDate = [...certData].sort((a, b) => 
             new Date(b.start_date) - new Date(a.start_date)
@@ -195,11 +255,10 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   };
 
-  // CORREGIDO: Función para escuchar cambios en el período de certificación activo
+  // Handle cert period change
   const handleCertPeriodChange = (newCertPeriodData) => {
     console.log('Certificate period changed:', newCertPeriodData);
     
-    // Buscar el período correspondiente en la lista
     const matchingPeriod = certPeriods.find(period => {
       const periodStart = new Date(period.start_date).toDateString();
       const newStart = new Date(newCertPeriodData.startDate).toDateString();
@@ -210,19 +269,15 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       console.log('Switching to certification period:', matchingPeriod);
       setCurrentCertPeriod(matchingPeriod);
       
-      // Actualizar localStorage para recordar la preferencia del usuario
       localStorage.setItem(`active_cert_period_${patient.id}`, matchingPeriod.id.toString());
       
-      // Limpiar visitas actuales y cargar las del nuevo período
       setVisits([]);
       setSelectedVisit(null);
       setShowVisitModal(false);
-      
-      // Las visitas se cargarán automáticamente por el useEffect que observa currentCertPeriod
     }
   };
 
-  // Fetch visits - CORREGIDO: usar endpoint correcto
+  // Fetch visits for certification period
   const fetchVisitsForCertPeriod = async (certPeriodId) => {
     if (!patient?.id || !certPeriodId) return;
     
@@ -241,7 +296,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         const visitsData = await response.json();
         console.log(`Got ${visitsData.length} visits from API:`, visitsData);
         
-        // Filter for current patient
         const patientVisits = visitsData.filter(visit => 
           visit.patient_id === patient.id
         );
@@ -281,12 +335,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   };
 
-  // Create visit - CORREGIDO PARA USAR EL ENDPOINT CORRECTO
+  // Create visit
   const createVisit = async (visitData) => {
     try {
       console.log('Creating visit with data:', visitData);
       
-      // Prepare data according to backend schema
       const createPayload = {
         patient_id: parseInt(patient.id),
         staff_id: parseInt(visitData.therapist),
@@ -298,7 +351,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
       console.log('Create payload for backend:', createPayload);
 
-      // CORREGIDO: usar /visits/assign en lugar de /visits/
       const response = await fetch(`${API_BASE_URL}/visits/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,7 +373,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   };
 
-  // Update visit - CORREGIDO COMPLETAMENTE
+  // Update visit
   const updateVisit = async (visitId, visitData) => {
     try {
       console.log(`Updating visit ${visitId} with data:`, visitData);
@@ -337,7 +389,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         scheduled_time: visitData.time || undefined,
       };
   
-      // Filter out null or undefined values so they aren't sent as query parameters
       Object.keys(params).forEach(key => (params[key] === null || params[key] === undefined) && delete params[key]);
   
       const queryParams = new URLSearchParams(params);
@@ -391,13 +442,12 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   // ===== HELPER FUNCTIONS =====
 
-  // CORREGIDO: devolver disciplinas en mayúsculas exactas
   const getTherapyTypeFromStaff = (staffId) => {
     const therapist = therapists.find(t => t.id === parseInt(staffId));
     if (!therapist) return 'Other';
     
     const role = therapist.role.toUpperCase();
-    return disciplineMapping[role] || role; // Usa el rol directo si no está en el mapping
+    return disciplineMapping[role] || role;
   };
 
   const formatDateToLocalISOString = (date) => {
@@ -482,6 +532,37 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  // Helper function to check if current user is a therapist
+  const isCurrentUserTherapist = () => {
+    const therapistRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
+    return user && therapistRoles.includes(user.role?.toUpperCase());
+  };
+
+  // Helper function to get current user's therapist data
+  const getCurrentUserTherapistData = () => {
+    if (!isCurrentUserTherapist()) return null;
+    return therapists.find(therapist => therapist.user_id === user.id || therapist.email === user.email);
+  };
+
+  // Organize therapists: assigned first, then separator, then all others
+  const getOrganizedTherapists = () => {
+    // If current user is a therapist, only show their own data
+    if (isCurrentUserTherapist()) {
+      const currentTherapist = getCurrentUserTherapistData();
+      return {
+        assignedTherapists: currentTherapist ? [currentTherapist] : [],
+        unassignedTherapists: []
+      };
+    }
+    
+    // For admins, developers, and agencies, show all therapists organized
+    const assignedIds = assignedStaff.map(staff => staff.id);
+    const assignedTherapists = therapists.filter(therapist => assignedIds.includes(therapist.id));
+    const unassignedTherapists = therapists.filter(therapist => !assignedIds.includes(therapist.id));
+    
+    return { assignedTherapists, unassignedTherapists };
+  };
+
   // ===== USEEFFECTS =====
 
   // Initialize data loading
@@ -492,10 +573,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   useEffect(() => {
     if (patient?.id) {
       fetchCertificationPeriods();
+      fetchAssignedStaff();
     }
   }, [patient?.id]);
 
-  // CORREGIDO: Escuchar cambios en el período de certificación desde el componente padre
+  // Listen for cert period changes
   useEffect(() => {
     if (certPeriodDates && onUpdateSchedule) {
       handleCertPeriodChange(certPeriodDates);
@@ -513,7 +595,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
   }, [currentCertPeriod?.id, patient?.id]);
 
-  // Update form data when selected visit changes
+  // Update form data when selected visit changes or when therapists load
   useEffect(() => {
     if (selectedVisit) {
       setFormData({
@@ -547,9 +629,12 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         });
       }
     } else {
+      // Auto-select therapist if current user is a therapist
+      const currentTherapist = getCurrentUserTherapistData();
+      
       setFormData({
         visitType: '',
-        therapist: '',
+        therapist: currentTherapist ? currentTherapist.id.toString() : '',
         date: formatDateToLocalISOString(new Date()),
         time: '',
         notes: '',
@@ -576,7 +661,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       setRescheduleDate('');
     }
     setActiveTab('details');
-  }, [selectedVisit, currentCertPeriod]);
+  }, [selectedVisit, currentCertPeriod, therapists, user]);
 
   // ===== EVENT HANDLERS =====
 
@@ -615,22 +700,117 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     }
     setSelectedDate(date);
     setSelectedVisit(null);
-    setFormData({
-      ...formData,
+    
+    // Auto-select therapist if current user is a therapist
+    const currentUserTherapistId = getCurrentUserTherapistId();
+    
+    setFormData(prev => ({
+      ...prev,
       date: formatDateToLocalISOString(date),
       time: '',
       visitType: '',
-      therapist: '',
+      therapist: currentUserTherapistId?.toString() || '',
       notes: '',
       status: 'Scheduled',
       missedReason: '',
-    });
+    }));
     setShowVisitModal(true);
   };
 
   const handleOpenVisitModal = (visit = null) => {
-    setSelectedVisit(visit);
-    setShowVisitModal(true);
+    if (visit) {
+      // For existing visits, show status modal instead of edit modal
+      setStatusChangeVisit(visit);
+      setShowVisitStatusModal(true);
+    } else {
+      // For new visits, show creation modal
+      setSelectedVisit(null);
+      setShowVisitModal(true);
+    }
+  };
+
+  const handleStatusChange = async (visitId, newStatus, updatedVisitData = null) => {
+    try {
+      setIsLoading(true);
+      
+      // Find the visit to update
+      const visitToUpdate = visits.find(v => v.id === visitId);
+      if (!visitToUpdate) {
+        throw new Error('Visit not found');
+      }
+
+      // Use provided updated data or create basic status update
+      const updateData = updatedVisitData || {
+        ...visitToUpdate,
+        status: newStatus
+      };
+
+      // Call the existing updateVisit function
+      const updatedVisit = await updateVisit(visitId, updateData);
+      
+      // Update local state with all the changed fields
+      setVisits(prevVisits => {
+        const updatedVisits = prevVisits.map(visit => 
+          visit.id === visitId ? { ...visit, ...updateData } : visit
+        );
+        
+        if (onUpdateSchedule) {
+          onUpdateSchedule(updatedVisits);
+        }
+        
+        return updatedVisits;
+      });
+
+      setError(`✅ Visit updated successfully!`);
+      setTimeout(() => setError(''), 3000);
+      
+    } catch (err) {
+      console.error('Error updating visit:', err);
+      setError(`❌ Failed to update visit: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+      setShowVisitStatusModal(false);
+      setStatusChangeVisit(null);
+    }
+  };
+
+  // Handle immediate visit updates from modal
+  const handleVisitUpdate = (updatedVisitData) => {
+    console.log('handleVisitUpdate called with:', updatedVisitData);
+    
+    // Update local state immediately for instant UI refresh
+    setVisits(prevVisits => {
+      console.log('Previous visits:', prevVisits);
+      
+      const updatedVisits = prevVisits.map(visit => 
+        visit.id === updatedVisitData.id ? { ...visit, ...updatedVisitData } : visit
+      );
+      
+      console.log('Updated visits:', updatedVisits);
+      
+      if (onUpdateSchedule) {
+        onUpdateSchedule(updatedVisits);
+      }
+      
+      return updatedVisits;
+    });
+    
+    // Force a re-render by updating any dependent state
+    setActiveFilter(prevFilter => prevFilter); // Trigger re-render
+  };
+
+  const handleCompleteVisit = (visitData) => {
+    // Close status modal and open evaluation modal
+    setShowVisitStatusModal(false);
+    setStatusChangeVisit(null);
+    
+    // Update visit status with all data first
+    const completedVisitData = { ...visitData, status: 'Completed' };
+    handleStatusChange(visitData.id, 'Completed', completedVisitData).then(() => {
+      // Then open the completion modal for evaluation
+      setCompletionVisitData(completedVisitData);
+      setShowCompletionModal(true);
+    });
   };
 
   const handleInitiateDelete = (visitId, e) => {
@@ -644,7 +824,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     try {
       await deleteVisitApi(deleteVisitId);
       
-      // CORREGIDO: actualizar estado inmediatamente
       const updatedVisits = visits.filter((visit) => visit.id !== deleteVisitId);
       setVisits(updatedVisits);
       
@@ -741,7 +920,9 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     return existingVisits.length === 0;
   };
 
-  // FUNCIÓN PRINCIPAL DE GUARDADO - COMPLETAMENTE CORREGIDA
+
+
+  // MAIN SAVE FUNCTION - Only for creating/editing basic visit details
   const handleSaveVisit = async () => {
     // Basic validation
     if (!formData.visitType || !formData.therapist || !formData.date) {
@@ -777,25 +958,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
     try {
       let visitDataToSave = { ...formData };
-
-      // Handle missed visit data
-      if (activeTab === 'missedVisit' || formData.status === 'Missed') {
-        visitDataToSave.status = 'Missed';
-        if (missedVisitData.reason) {
-          visitDataToSave.missedReason = missedVisitData.reason;
-        }
-      }
-
-      // Handle reschedule
-      if (activeTab === 'reschedule') {
-        if (!rescheduleDate) {
-          setError('Please select a new date for rescheduling');
-          return;
-        }
-        visitDataToSave.date = rescheduleDate;
-        visitDataToSave.status = 'Scheduled';
-      }
-
+      
       console.log('Saving visit data:', visitDataToSave);
 
       let result;
@@ -807,13 +970,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         result = await updateVisit(selectedVisit.id, visitDataToSave);
         console.log('Update result:', result);
         
-        // CORREGIDO: actualizar estado inmediatamente y correctamente
         setVisits(prevVisits => {
           const updatedVisits = prevVisits.map(visit => 
             visit.id === selectedVisit.id ? { ...result } : visit
           );
           
-          // Notify parent component
           if (onUpdateSchedule) {
             onUpdateSchedule(updatedVisits);
           }
@@ -830,11 +991,9 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         result = await createVisit(visitDataToSave);
         console.log('Create result:', result);
         
-        // CORREGIDO: actualizar estado inmediatamente
         setVisits(prevVisits => {
           const updatedVisits = [...prevVisits, result];
           
-          // Notify parent component
           if (onUpdateSchedule) {
             onUpdateSchedule(updatedVisits);
           }
@@ -845,13 +1004,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         console.log('Visit created successfully');
       }
 
-      // Handle completion modal for completed visits
-      if (visitDataToSave.status === 'Completed' && 
-          (!selectedVisit || selectedVisit.status !== 'Completed')) {
-        setCompletionVisitData(result);
-        setShowCompletionModal(true);
-      }
-
       // Close modal and reset state
       setShowVisitModal(false);
       setSelectedVisit(null);
@@ -859,11 +1011,8 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
       // Show success message
       const action = selectedVisit ? 'updated' : 'created';
-      const statusMessage = visitDataToSave.status !== 'Scheduled' 
-        ? ` and status changed to ${visitDataToSave.status}` 
-        : '';
       
-      setError(`✅ Visit ${action} successfully${statusMessage}!`);
+      setError(`✅ Visit ${action} successfully!`);
       
       // Auto-clear success message
       setTimeout(() => {
@@ -1058,17 +1207,12 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   const renderVisitModal = () => {
     if (!showVisitModal) return null;
-    const isCompletedView = selectedVisit && selectedVisit.status === 'Completed';
     return (
       <div className="modal-overlay">
         <div className="modal-content modal-large">
           <div className="modal-header">
             <h3>
-              {selectedVisit
-                ? isCompletedView
-                  ? 'Visit Detail'
-                  : 'Edit Visit'
-                : 'Schedule New Visit'}
+              {selectedVisit ? 'Edit Visit Details' : 'Schedule New Visit'}
             </h3>
             <button className="close-btn" onClick={() => setShowVisitModal(false)}>
               <i className="fas fa-times"></i>
@@ -1076,425 +1220,146 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
           </div>
           <div className="modal-body">
             {error && <div className="error-message">{error}</div>}
-            {isCompletedView ? (
-              <div className="completed-visit-view">
-                <div className="visit-details-column">
-                  <h4>Visit Details</h4>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Date</label>
-                      <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                        className="form-input"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Type</label>
-                      <select
-                        name="visitType"
-                        value={formData.visitType}
-                        onChange={handleInputChange}
-                        className="form-input"
-                      >
-                        <option value="">Select Visit Type</option>
-                        {visitTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>G-Code</label>
-                    <input
-                      type="text"
-                      name="gCode"
-                      value={formData.gCode}
-                      onChange={handleInputChange}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-row time-row">
-                    <div className="form-group time-group">
-                      <label>Time In</label>
-                      <div className="time-inputs">
-                        <input
-                          type="text"
-                          name="timeInHour"
-                          value={formData.timeInHour}
-                          onChange={handleInputChange}
-                        />
-                        <span className="time-separator">:</span>
-                        <input
-                          type="text"
-                          name="timeInMinute"
-                          value={formData.timeInMinute}
-                          onChange={handleInputChange}
-                        />
-                        <select
-                          name="timeInAmPm"
-                          value={formData.timeInAmPm}
-                          onChange={handleInputChange}
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="form-group time-group">
-                      <label>Time Out</label>
-                      <div className="time-inputs">
-                        <input
-                          type="text"
-                          name="timeOutHour"
-                          value={formData.timeOutHour}
-                          onChange={handleInputChange}
-                        />
-                        <span className="time-separator">:</span>
-                        <input
-                          type="text"
-                          name="timeOutMinute"
-                          value={formData.timeOutMinute}
-                          onChange={handleInputChange}
-                        />
-                        <select
-                          name="timeOutAmPm"
-                          value={formData.timeOutAmPm}
-                          onChange={handleInputChange}
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Physician</label>
-                    <input
-                      type="text"
-                      name="physician"
-                      value={formData.physician}
-                      onChange={handleInputChange}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Cert Period</label>
-                    <select
-                      name="certPeriod"
-                      value={formData.certPeriod}
-                      onChange={handleInputChange}
-                      className="form-input"
-                    >
-                      {certPeriods.map((period) => (
-                        <option key={period.id} value={period.id}>
-                          {`${period.start_date} - ${period.end_date}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Additional Notes</label>
-                    <textarea
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      className="form-input"
-                      rows="5"
-                    ></textarea>
-                  </div>
-                  <button
-                    className="update-button"
-                    onClick={handleSaveVisit}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="btn-loading">
-                        <i className="fas fa-spinner fa-spin"></i> Updating...
-                      </span>
-                    ) : (
-                      'UPDATE'
-                    )}
-                  </button>
-                </div>
-                <div className="evaluation-column">
-                  <div className="evaluation-section">
-                    <div className="evaluation-header">
-                      <h4>{getTherapyTypeFromStaff(formData.therapist)} EVALUATION</h4>
-                      <div className="status-badge incomplete">Incomplete</div>
-                    </div>
-                    <div className="evaluation-info">
-                      <p>Therapist: {getTherapistName(formData.therapist)}</p>
-                    </div>
-                    <div className="evaluation-actions">
-                      <button className="edit-button">EDIT</button>
-                      <button className="view-button">VIEW</button>
-                    </div>
-                  </div>
-                  <div className="documents-section">
-                    <h4>UPLOADED DOCUMENTS</h4>
-                    {formData.documents.length === 0 ? (
-                      <p className="no-documents">No files uploaded</p>
-                    ) : (
-                      <ul className="documents-list">
-                        {formData.documents.map(doc => (
-                          <li key={doc.id || doc} className="document-item">
-                            <div className="document-icon">
-                              <i className="fas fa-file-alt"></i>
-                            </div>
-                            <div className="document-info">
-                              <span className="document-name">{typeof doc === 'string' ? doc : doc.name}</span>
-                              {doc.size && (
-                                <span className="document-size">{formatFileSize(doc.size)}</span>
-                              )}
-                            </div>
-                            <button
-                              className="remove-document"
-                              onClick={() => handleRemoveDocument(doc.id || doc)}
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="upload-container">
-                      <div className="file-input-container">
-                        <input
-                          type="file"
-                          id="document-upload"
-                          className="hidden-file-input"
-                          onChange={handleFileSelect}
-                        />
-                        <label htmlFor="document-upload" className="file-label">
-                          {selectedFile ? selectedFile.name : 'No file selected'}
-                        </label>
-                        <button className="choose-file-btn">CHOOSE FILE</button>
-                      </div>
-                      <button
-                        className="upload-btn"
-                        onClick={handleFileUpload}
-                        disabled={!selectedFile || isLoading}
-                      >
-                        {isLoading ? (
-                          <i className="fas fa-spinner fa-spin"></i>
-                        ) : (
-                          'UPLOAD'
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="forms-section">
-                    <h4>OTHER FORMS</h4>
-                    <div className="forms-buttons">
-                      <button className="form-btn">ADD ADDENDUM</button>
-                      <button className="form-btn">ADD SIGNATURES</button>
-                      <button className="form-btn">ADD OQBI</button>
-                      <button className="form-btn">ADD DC</button>
-                      <button className="form-btn other-forms">OTHER FORMS</button>
-                      <button className="form-btn sticky">ADD STICKY</button>
-                      <button className="form-btn expense">ADD EXPENSE</button>
-                    </div>
-                  </div>
-                </div>
+            
+            {/* Only show details tab for creating/editing basic visit info */}
+            <div className="visit-details-form">
+              <div className="form-group">
+                <label>Visit Type <span className="required">*</span></label>
+                <select
+                  name="visitType"
+                  value={formData.visitType}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  required
+                >
+                  <option value="">Select Visit Type</option>
+                  {visitTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <div className="visit-tabs">
-                <div className="tabs-header">
-                  <button
-                    className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('details')}
+              
+              <div className="form-group">
+                <label>Therapist <span className="required">*</span></label>
+                {isLoadingTherapists ? (
+                  <div className="loading-select">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Loading therapists...
+                  </div>
+                ) : (
+                  <select
+                    name="therapist"
+                    value={formData.therapist}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    required
+                    disabled={isCurrentUserTherapist()}
                   >
+                    <option value="">Select Therapist</option>
+                    {!isCurrentUserTherapist() ? (
+                      // Show all therapists for admin users
+                      (() => {
+                        const { assignedTherapists, unassignedTherapists } = getOrganizedTherapists();
+                        return (
+                          <>
+                            {assignedTherapists.length > 0 && (
+                              <optgroup label="Assigned Therapists">
+                                {assignedTherapists.map((therapist) => (
+                                  <option key={`assigned-${therapist.id}`} value={therapist.id}>
+                                    {therapist.name} ({therapist.role.toUpperCase()})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {unassignedTherapists.length > 0 && (
+                              <optgroup label="All Available Therapists">
+                                {unassignedTherapists.map((therapist) => (
+                                  <option key={`unassigned-${therapist.id}`} value={therapist.id}>
+                                    {therapist.name} ({therapist.role.toUpperCase()})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </>
+                        );
+                      })()
+                    ) : (
+                      // Show only current user if they are a therapist
+                      (() => {
+                        const currentTherapist = getCurrentUserTherapistData();
+                        return currentTherapist ? (
+                          <option key={currentTherapist.id} value={currentTherapist.id}>
+                            {currentTherapist.name} ({currentTherapist.role.toUpperCase()})
+                          </option>
+                        ) : null;
+                      })()
+                    )}
+                  </select>
+                )}
+                {isCurrentUserTherapist() && (
+                  <div className="therapist-info">
                     <i className="fas fa-info-circle"></i>
-                    Details
-                  </button>
-                  <button
-                    className={`tab-button ${activeTab === 'missedVisit' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('missedVisit')}
-                  >
-                    <i className="fas fa-calendar-times"></i>
-                    Missed Visit
-                  </button>
+                    <span>As a therapist, you can only schedule visits for yourself</span>
+                  </div>
+                )}
+                {therapists.length === 0 && !isLoadingTherapists && (
+                  <div className="no-therapists-message">
+                    <i className="fas fa-exclamation-triangle"></i>
+                    No therapists available. Please ensure therapy staff are added to the system.
+                  </div>
+                )}
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date <span className="required">*</span></label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    min={currentCertPeriod?.start_date || undefined}
+                    max={currentCertPeriod?.end_date || undefined}
+                    required
+                  />
                 </div>
-                <div className="tab-content">
-                  {activeTab === 'details' && (
-                    <div className="details-tab">
-                      <div className="form-group">
-                        <label>Visit Type <span className="required">*</span></label>
-                        <select
-                          name="visitType"
-                          value={formData.visitType}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          required
-                        >
-                          <option value="">Select Visit Type</option>
-                          {visitTypes.map((type) => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Therapist <span className="required">*</span></label>
-                        {isLoadingTherapists ? (
-                          <div className="loading-select">
-                            <i className="fas fa-spinner fa-spin"></i>
-                            Loading therapists...
-                          </div>
-                        ) : (
-                          <select
-                            name="therapist"
-                            value={formData.therapist}
-                            onChange={handleInputChange}
-                            className="form-input"
-                            required
-                          >
-                            <option value="">Select Therapist</option>
-                            {therapists.map((therapist) => (
-                              <option key={therapist.id} value={therapist.id}>
-                                {therapist.name} ({therapist.role.toUpperCase()})
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {therapists.length === 0 && !isLoadingTherapists && (
-                          <div className="no-therapists-message">
-                            <i className="fas fa-exclamation-triangle"></i>
-                            No therapists available. Please ensure therapy staff are added to the system.
-                          </div>
-                        )}
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Date <span className="required">*</span></label>
-                          <input
-                            type="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleInputChange}
-                            className="form-input"
-                            min={currentCertPeriod?.start_date || undefined}
-                            max={currentCertPeriod?.end_date || undefined}
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Time</label>
-                          <input
-                            type="time"
-                            name="time"
-                            value={formData.time}
-                            onChange={handleInputChange}
-                            className="form-input"
-                          />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Status <span className="required">*</span></label>
-                        <select
-                          name="status"
-                          value={formData.status}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          required
-                        >
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Missed">Missed</option>
-                          <option value="Pending">Pending</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
-                      {formData.status === 'Missed' && (
-                        <div className="form-group">
-                          <label>Reason for Missing</label>
-                          <input
-                            type="text"
-                            name="missedReason"
-                            value={formData.missedReason}
-                            onChange={handleInputChange}
-                            placeholder="Enter reason"
-                            className="form-input"
-                          />
-                        </div>
-                      )}
-                      <div className="form-group">
-                        <label>Notes</label>
-                        <textarea
-                          name="notes"
-                          value={formData.notes}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          rows="3"
-                          placeholder="Add any additional notes about this visit..."
-                        ></textarea>
-                      </div>
-                      {currentCertPeriod && (
-                        <div className="cert-period-info">
-                          <div className="info-label">
-                            <i className="fas fa-certificate"></i>
-                            Current Certification Period
-                          </div>
-                          <div className="info-value">
-                            {currentCertPeriod.start_date} to {currentCertPeriod.end_date}
-                          </div>
-                        </div>
-                      )}
-                     
-                     
-                    </div>
-                  )}
-                  {activeTab === 'missedVisit' && (
-                    <div className="missed-visit-tab">
-                      <h4>Missed Visit Report</h4>
-                      <div className="form-group">
-                        <label>REASON FOR MISSED VISIT:</label>
-                        <input
-                          type="text"
-                          name="reason"
-                          value={missedVisitData.reason}
-                          onChange={handleMissedVisitChange}
-                          className="form-input"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>ACTION TAKEN:</label>
-                        <textarea
-                          name="action"
-                          value={missedVisitData.action}
-                          onChange={handleMissedVisitChange}
-                          className="form-input"
-                          rows="5"
-                        ></textarea>
-                      </div>
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          id="mdNotified"
-                          name="mdNotified"
-                          checked={missedVisitData.mdNotified}
-                          onChange={handleMissedVisitChange}
-                        />
-                        <label htmlFor="mdNotified">MD WAS NOTIFIED BY PHONE OF MISSED VISIT.</label>
-                      </div>
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          id="noShow"
-                          name="noShow"
-                          checked={missedVisitData.noShow}
-                          onChange={handleMissedVisitChange}
-                        />
-                        <label htmlFor="noShow">PATIENT WAS A NO-SHOW.</label>
-                      </div>
-                    </div>
-                  )}
-                  
+                <div className="form-group">
+                  <label>Time</label>
+                  <input
+                    type="time"
+                    name="time"
+                    value={formData.time}
+                    onChange={handleInputChange}
+                    className="form-input"
+                  />
                 </div>
               </div>
-            )}
+              
+              <div className="form-group">
+                <label>Comments</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  rows="3"
+                  placeholder="Add any additional comments about this visit..."
+                ></textarea>
+              </div>
+              
+              {currentCertPeriod && (
+                <div className="cert-period-info">
+                  <div className="info-label">
+                    <i className="fas fa-certificate"></i>
+                    Current Certification Period
+                  </div>
+                  <div className="info-value">
+                    {currentCertPeriod.start_date} to {currentCertPeriod.end_date}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="modal-footer">
             <button className="cancel-btn" onClick={() => setShowVisitModal(false)}>
@@ -1510,9 +1375,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                   <i className="fas fa-spinner fa-spin"></i> Saving...
                 </span>
               ) : (
-                activeTab === 'missedVisit' ? 'Submit Missed Visit' :
-                activeTab === 'reschedule' ? 'Reschedule Visit' :
-                selectedVisit ? 'Update Visit' : 'Save Visit'
+                selectedVisit ? 'Update Visit' : 'Schedule Visit'
               )}
             </button>
           </div>
@@ -1692,7 +1555,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     const [year, month, day] = visit.visit_date.split('-').map(Number);
     const visitDate = new Date(year, month - 1, day);
 
-    // Unique key to force re-render when status changes
     const uniqueKey = `visit-${visit.id}-${visit.status}-${visit.visit_date}-${Date.now()}`;
 
     return (
@@ -1801,7 +1663,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       );
     }
 
-    if (sortedMonths.length === 0) {
+                if (sortedMonths.length === 0) {
       return (
         <div className="empty-visits-container">
           <div className="empty-state">
@@ -1814,7 +1676,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
             )}
             <button 
               className="add-visit-btn" 
-              onClick={() => handleShowCalendar()}
+              onClick={() => handleOpenVisitModal()}
               disabled={!currentCertPeriod}
             >
               <i className="fas fa-plus-circle"></i>
@@ -1844,10 +1706,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
           <div className="header-actions">
             <button
               className="quick-add-btn"
-              onClick={() => {
-                setSelectedVisit(null);
-                setShowVisitModal(true);
-              }}
+              onClick={() => handleOpenVisitModal()}
               disabled={!currentCertPeriod}
             >
               <i className="fas fa-plus"></i>
@@ -1929,10 +1788,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         <div className="add-visit-floating">
           <button
             className="add-visit-btn"
-            onClick={() => {
-              setSelectedVisit(null);
-              setShowVisitModal(true);
-            }}
+            onClick={() => handleOpenVisitModal()}
             disabled={!currentCertPeriod}
             aria-label="Add new visit"
           >
@@ -1951,6 +1807,12 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         <div className="header-title">
           <i className="fas fa-calendar-alt"></i>
           <h3>Patient Schedule</h3>
+          {user && (
+            <div className="user-info">
+              <span className="user-role">{user.role}</span>
+              <span className="user-name">{user.name}</span>
+            </div>
+          )}
         </div>
         {(isLoadingTherapists || isLoadingCertPeriods || isLoadingVisits) && (
           <div className="header-loading">
@@ -1966,6 +1828,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         visitData={completionVisitData}
         onSave={handleCompletionFormSave}
       />
+
 
       <div className="card-body">
         {/* Global error display */}
@@ -2018,10 +1881,7 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                   </button>
                   <button
                     className="add-visit-calendar"
-                    onClick={() => {
-                      setSelectedVisit(null);
-                      setShowVisitModal(true);
-                    }}
+                    onClick={() => handleOpenVisitModal()}
                   >
                     <i className="fas fa-plus"></i>
                     <span>Add Visit</span>
@@ -2037,6 +1897,19 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       {/* Modals */}
       {showVisitModal && renderVisitModal()}
       {showDeleteConfirmModal && renderDeleteConfirmModal()}
+      
+      {/* Visit Status Modal */}
+      <VisitStatusModal
+        isOpen={showVisitStatusModal}
+        onClose={() => {
+          setShowVisitStatusModal(false);
+          setStatusChangeVisit(null);
+        }}
+        visitData={statusChangeVisit}
+        onStatusChange={handleStatusChange}
+        onCompleteVisit={handleCompleteVisit}
+        onVisitUpdate={handleVisitUpdate}
+      />
     </div>
   );
 };

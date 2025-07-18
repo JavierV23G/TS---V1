@@ -3301,6 +3301,39 @@
                       box-shadow: 0 6px 15px rgba(2, 136, 209, 0.3);
                     }
                   }
+                  
+                  &.view-profile {
+                    background: rgba(44, 123, 229, 0.1);
+                    color: var(--color-primary-600);
+                    
+                    &:hover {
+                      background: var(--gradient-blue-premium);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(44, 123, 229, 0.3);
+                    }
+                  }
+                  
+                  &.activate-btn {
+                    background: rgba(16, 185, 129, 0.1);
+                    color: #047857;
+                    
+                    &:hover {
+                      background: var(--gradient-success);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+                    }
+                  }
+                  
+                  &.deactivate-btn {
+                    background: rgba(239, 68, 68, 0.1);
+                    color: #dc2626;
+                    
+                    &:hover {
+                      background: var(--gradient-danger);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+                    }
+                  }
                 }
               }
             }

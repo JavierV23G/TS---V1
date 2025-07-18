@@ -104,29 +104,6 @@ def delete_section(section_id: int, db: Session = Depends(get_db)):
 
 #///////////////////////// PATIENTS //////////////////////////#
 
-@router.put("/patients/{patient_id}/deactivate")
-def deactivate_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    patient.is_active = False
-
-    cert_periods = db.query(CertificationPeriod).filter(
-        CertificationPeriod.patient_id == patient_id,
-        CertificationPeriod.is_active == True
-    ).all()
-
-    for cert in cert_periods:
-        cert.is_active = False
-
-    db.commit()
-
-    return {
-        "message": "Patient and their active certification periods deactivated.",
-        "patient_id": patient.id
-    }
-
 #///////////////////////// CERT PERIODS //////////////////////////#
 
 @router.delete("/cert-periods/{cert_id}")

@@ -59,10 +59,22 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found.")
 
-    assigned_role = staff.role
+    assigned_role = staff.role.upper()
+    
+    discipline_groups = {
+        'PT': ['PT'],     
+        'PTA': ['PTA'],  
+        'OT': ['OT'],    
+        'COTA': ['COTA'], 
+        'ST': ['ST'],    
+        'STA': ['STA']  
+    }
+    
+    roles_to_replace = discipline_groups.get(assigned_role, [assigned_role])
+    
     existing_assignment = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
         StaffAssignment.patient_id == patient_id,
-        StaffAssignment.assigned_role == assigned_role
+        StaffAssignment.assigned_role.in_(roles_to_replace)
     ).first()
 
     if existing_assignment and existing_assignment.staff_id == staff_id:
@@ -75,6 +87,7 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
 
     if existing_assignment:
         existing_assignment.staff_id = staff_id
+        existing_assignment.assigned_role = assigned_role
         existing_assignment.assigned_at = datetime.utcnow()
         db.commit()
         db.refresh(existing_assignment)
@@ -101,22 +114,6 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
         assigned_role=new_assignment.assigned_role,
         staff=StaffResponse.model_validate(staff)
     )
-
-@router.delete("/unassign-staff")
-def unassign_staff_from_patient(patient_id: int, staff_role: str, db: Session = Depends(get_db)):
-    """Remove staff assignment from patient based on role"""
-    assignment = db.query(StaffAssignment).filter(
-        StaffAssignment.patient_id == patient_id,
-        StaffAssignment.assigned_role.ilike(staff_role)
-    ).first()
-    
-    if not assignment:
-        raise HTTPException(status_code=404, detail=f"No {staff_role} assignment found for patient")
-    
-    db.delete(assignment)
-    db.commit()
-    
-    return {"message": f"Successfully unassigned {staff_role} from patient {patient_id}"}
 
 #====================== PATIENTS ======================#
 
@@ -298,7 +295,44 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     db.refresh(visit)
     return visit
 
-#====================== NOTES ======================#
+#====================== NOTES ======================
+    discipline = discipline.upper()
+    visit_type = visit_type.replace('-', ' ').title()
+    
+    template = db.query(NoteTemplate).filter(
+        NoteTemplate.discipline == discipline,
+        NoteTemplate.note_type == visit_type,
+        NoteTemplate.is_active == True
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail=f"No active template found for {discipline} {visit_type}")
+    
+    sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).order_by(NoteTemplateSection.position.asc()).all()
+    
+    section_details = []
+    for section in sections:
+        section_info = db.query(NoteSection).filter(
+            NoteSection.id == section.section_id
+        ).first()
+        if section_info:
+            section_details.append({
+                "id": section_info.id,
+                "name": section_info.section_name,
+                "fields": section_info.fields,
+                "position": section.position
+            })
+    
+    template_response = {
+        "id": template.id,
+        "discipline": template.discipline,
+        "note_type": template.note_type,
+        "sections": section_details
+    }
+    
+    return template_response
 
 @router.post("/note-templates", response_model=NoteTemplateResponse)
 def create_template(template_data: NoteTemplateCreate, db: Session = Depends(get_db)):

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Body, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import date, datetime, timedelta
 from database.connection import get_db
 from database.models import (
@@ -87,49 +87,100 @@ def update_staff_info(
 @router.put("/patients/{patient_id}")
 def update_patient_info(
     patient_id: int,
-    patient_update: PatientUpdate,
+    full_name: Optional[str] = None,
+    birthday: Optional[str] = None,
+    gender: Optional[str] = None,
+    address: Optional[str] = None,
+    contact_info: Optional[str] = None,
+    insurance: Optional[str] = None,
+    physician: Optional[str] = None,
+    agency_id: Optional[int] = None,
+    nursing_diagnosis: Optional[str] = None,
+    urgency_level: Optional[str] = None,
+    prior_level_of_function: Optional[str] = None,
+    homebound_status: Optional[str] = None,
+    weight_bearing_status: Optional[str] = None,
+    referral_reason: Optional[str] = None,
+    weight: Optional[str] = None,
+    height: Optional[str] = None,
+    past_medical_history: Optional[str] = None,
+    clinical_grouping: Optional[str] = None,
+    required_disciplines: Optional[str] = None,
+    is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
 ):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
-    update_data = patient_update.dict(exclude_unset=True)
+    # Verificar si la agencia existe cuando se actualiza agency_id
+    if agency_id is not None:
+        agency = db.query(Staff).filter(Staff.id == agency_id).first()
+        if not agency:
+            raise HTTPException(status_code=404, detail="Agency does not exist.")
+        if agency.role.lower() != "agency":
+            raise HTTPException(status_code=400, detail="Provided ID does not belong to a valid agency.")
+
+    # Procesar contact_info si viene como JSON string
+    processed_contact_info = None
+    if contact_info is not None:
+        try:
+            import json
+            processed_contact_info = json.loads(contact_info)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid contact_info JSON format.")
+
+    update_data = {
+        "full_name": full_name,
+        "birthday": birthday,
+        "gender": gender,
+        "address": address,
+        "contact_info": processed_contact_info,
+        "insurance": insurance,
+        "physician": physician,
+        "agency_id": agency_id,
+        "nursing_diagnosis": nursing_diagnosis,
+        "urgency_level": urgency_level,
+        "prior_level_of_function": prior_level_of_function,
+        "homebound_status": homebound_status,
+        "weight_bearing_status": weight_bearing_status,
+        "referral_reason": referral_reason,
+        "weight": weight,
+        "height": height,
+        "past_medical_history": past_medical_history,
+        "clinical_grouping": clinical_grouping,
+        "required_disciplines": required_disciplines,
+        "is_active": is_active
+    }
 
     for key, value in update_data.items():
-        setattr(patient, key, value)
+        if value is not None:
+            setattr(patient, key, value)
+
+    # Si se está actualizando is_active, manejar certification periods
+    if is_active is not None:
+        from datetime import datetime
+        today = datetime.utcnow().date()
+        cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
+        
+        if is_active:
+            # Activando paciente: activar períodos de certificación válidos para hoy
+            for cert in cert_periods:
+                if cert.start_date <= today <= cert.end_date:
+                    cert.is_active = True
+                else:
+                    cert.is_active = False
+        else:
+            # Desactivando paciente: desactivar todos los períodos de certificación activos
+            for cert in cert_periods:
+                if cert.is_active:
+                    cert.is_active = False
 
     db.commit()
     db.refresh(patient)
 
-    return {"message": "Patient updated successfully.", "patient": patient}
+    return {"message": "Patient updated successfully.", "patient_id": patient.id}
 
-@router.put("/patients/{patient_id}/activate")
-def activate_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    patient.is_active = True
-    today = datetime.utcnow().date()
-
-    cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
-
-    found_valid = False
-
-    for cert in cert_periods:
-        if cert.start_date <= today <= cert.end_date:
-            cert.is_active = True
-            found_valid = True
-        else:
-            cert.is_active = False 
-
-    db.commit()
-    return {
-        "message": "Patient reactivated successfully.",
-        "patient_id": patient_id,
-        "valid_cert_found": found_valid
-    }
 
 #////////////////////////// VISITS //////////////////////////#
 

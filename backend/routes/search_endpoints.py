@@ -35,6 +35,11 @@ def get_active_staff(db: Session = Depends(get_db)):
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
+    # First check if patient exists
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
     assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
     
     return [
@@ -50,8 +55,8 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
 #====================== PATIENTS ======================#
 
 @router.get("/patients/", response_model=List[PatientResponse])
-def get_active_patients(db: Session = Depends(get_db)):
-    patients = db.query(Patient).filter(Patient.is_active == True).all()
+def get_all_patients(db: Session = Depends(get_db)):
+    patients = db.query(Patient).all()
     
     response_patients = []
     today = date.today()
@@ -206,30 +211,30 @@ def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
         template_sections=[],
     )
 
+@router.get("/templates/{discipline}/{visit_type}", response_model=NoteTemplateWithSectionsResponse)
+def get_specific_template(discipline: str, visit_type: str, db: Session = Depends(get_db)):
+    template = db.query(NoteTemplate).filter(
+        NoteTemplate.discipline == discipline,
+        NoteTemplate.visit_type == visit_type
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).order_by(NoteTemplateSection.order).all()
+
+    return NoteTemplateWithSectionsResponse(
+        id=template.id,
+        discipline=template.discipline,
+        visit_type=template.visit_type,
+        sections=template_sections
+    )
+
 @router.get("/note-sections", response_model=List[NoteSectionResponse])
 def get_all_sections(db: Session = Depends(get_db)):
     return db.query(NoteSection).all()
-
-@router.get("/note-templates/full", response_model=List[NoteTemplateWithSectionsResponse])
-def get_all_templates_with_sections(db: Session = Depends(get_db)):
-    templates = db.query(NoteTemplate).options(
-        joinedload(NoteTemplate.sections).joinedload(NoteTemplateSection.section)
-    ).filter(NoteTemplate.is_active == True).all()
-
-    result = []
-    for template in templates:
-        ordered_sections = sorted(template.sections, key=lambda s: s.position or 0)
-        note_sections = [ts.section for ts in ordered_sections]
-
-        result.append(NoteTemplateWithSectionsResponse(
-            id=template.id,
-            discipline=template.discipline,
-            note_type=template.note_type,
-            is_active=template.is_active,
-            sections=note_sections
-        ))
-
-    return result
 
 #====================== DOCUMENTS ======================#
 
