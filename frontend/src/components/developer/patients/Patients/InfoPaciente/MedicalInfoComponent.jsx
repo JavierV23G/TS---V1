@@ -16,6 +16,9 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     wbs: '',
     clinicalGrouping: '',
     homebound: '',
+    physician: '',
+    nurse: '',
+    urgencyLevel: '',
     approvedVisits: {
       pt: { approved: '', used: '', status: 'waiting' },
       ot: { approved: '', used: '', status: 'waiting' },
@@ -44,6 +47,9 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         wbs: patient.weight_bearing_status || '',
         clinicalGrouping: patient.clinical_grouping || '',
         homebound: patient.homebound_status || '',
+        physician: patient.physician || '',
+        nurse: patient.nurse || '',
+        urgencyLevel: patient.urgency_level || '',
         approvedVisits: {
           pt: { approved: '', used: '', status: 'waiting' },
           ot: { approved: '', used: '', status: 'waiting' },
@@ -232,7 +238,10 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         past_medical_history: medicalData.pmh ? medicalData.pmh.trim() : '',
         weight_bearing_status: medicalData.wbs ? medicalData.wbs.trim() : '',
         clinical_grouping: medicalData.clinicalGrouping ? medicalData.clinicalGrouping.trim() : '',
-        homebound_status: medicalData.homebound ? medicalData.homebound.trim() : ''
+        homebound_status: medicalData.homebound ? medicalData.homebound.trim() : '',
+        physician: medicalData.physician ? medicalData.physician.trim() : '',
+        nurse: medicalData.nurse ? medicalData.nurse.trim() : '',
+        urgency_level: medicalData.urgencyLevel ? medicalData.urgencyLevel.trim() : ''
       };
       
       console.log('Original patient data:', patient);
@@ -347,7 +356,10 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         pmh: updatedPatient.past_medical_history || '',
         wbs: updatedPatient.weight_bearing_status || '',
         clinicalGrouping: updatedPatient.clinical_grouping || '',
-        homebound: updatedPatient.homebound_status || ''
+        homebound: updatedPatient.homebound_status || '',
+        physician: updatedPatient.physician || '',
+        nurse: updatedPatient.nurse || '',
+        urgencyLevel: updatedPatient.urgency_level || ''
       }));
       
       // Notify parent component
@@ -385,6 +397,9 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         wbs: patient.weight_bearing_status || '',
         clinicalGrouping: patient.clinical_grouping || '',
         homebound: patient.homebound_status || '',
+        physician: patient.physician || '',
+        nurse: patient.nurse || '',
+        urgencyLevel: patient.urgency_level || '',
         approvedVisits: {
           pt: { approved: '', used: '', status: 'waiting' },
           ot: { approved: '', used: '', status: 'waiting' },
@@ -505,6 +520,36 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     return statusDetails[status];
   };
 
+  // Get icon for urgency level
+  const getUrgencyLevelIcon = (urgencyLevel) => {
+    if (!urgencyLevel) return 'fas fa-exclamation-triangle';
+    
+    const level = urgencyLevel.toLowerCase();
+    if (level.includes('high') || level.includes('urgent') || level.includes('critical')) 
+      return 'fas fa-exclamation-triangle';
+    if (level.includes('medium') || level.includes('moderate')) 
+      return 'fas fa-exclamation-circle';
+    if (level.includes('low') || level.includes('normal') || level.includes('routine')) 
+      return 'fas fa-info-circle';
+    
+    return 'fas fa-exclamation-triangle';
+  };
+  
+  // Get color for urgency level
+  const getUrgencyLevelColor = (urgencyLevel) => {
+    if (!urgencyLevel) return '#64748b';
+    
+    const level = urgencyLevel.toLowerCase();
+    if (level.includes('high') || level.includes('urgent') || level.includes('critical')) 
+      return '#ef4444';
+    if (level.includes('medium') || level.includes('moderate')) 
+      return '#f59e0b';
+    if (level.includes('low') || level.includes('normal') || level.includes('routine')) 
+      return '#10b981';
+    
+    return '#64748b';
+  };
+
   // Helper para mostrar valores o "Not provided yet"
   const displayValue = (value, type = 'text') => {
     if (!value || value === '' || value === 0) {
@@ -533,6 +578,30 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
           <span className="secondary-data">({heightValue} in)</span>
         </div>
       );
+    }
+    
+    if (type === 'physician') {
+      return <div className="data-box physician-data">{value}</div>;
+    }
+    
+    if (type === 'nurse') {
+      return <div className="data-box nurse-data">{value}</div>;
+    }
+    
+    if (type === 'nursing-diagnosis') {
+      return <div className="data-box nursing-diagnosis">{value}</div>;
+    }
+    
+    if (type === 'pmh') {
+      return <div className="data-box pmh-data">{value}</div>;
+    }
+    
+    if (type === 'wbs') {
+      return <div className="data-box wbs-data">{value}</div>;
+    }
+    
+    if (type === 'homebound') {
+      return <div className="data-box homebound-data">{value}</div>;
     }
     
     return <div className="data-box">{value}</div>;
@@ -811,6 +880,56 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                 placeholder="Enter homebound status reason"
                 rows="2"
               ></textarea>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group physician-input">
+                <label>
+                  <i className="fas fa-user-md"></i>
+                  Physician (MD)
+                </label>
+                <input 
+                  type="text" 
+                  name="physician"
+                  value={medicalData.physician} 
+                  onChange={handleInputChange}
+                  placeholder="Enter physician name"
+                />
+              </div>
+              
+              <div className="form-group nurse-input">
+                <label>
+                  <i className="fas fa-plus-square"></i>
+                  Nurse
+                </label>
+                <input 
+                  type="text" 
+                  name="nurse"
+                  value={medicalData.nurse} 
+                  onChange={handleInputChange}
+                  placeholder="Enter nurse name"
+                />
+              </div>
+            </div>
+            
+            <div className="form-group urgency-level-select">
+              <label>
+                <i className="fas fa-exclamation-triangle"></i>
+                Urgency Level
+              </label>
+              <select 
+                name="urgencyLevel"
+                value={medicalData.urgencyLevel} 
+                onChange={handleInputChange}
+              >
+                <option value="">Select Urgency Level</option>
+                <option value="Low">Low</option>
+                <option value="Normal">Normal</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+                <option value="Urgent">Urgent</option>
+              </select>
             </div>
 
             {/* Approved Visits Section - EDIT MODE */}
@@ -1192,7 +1311,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Nursing Diagnosis</div>
                 <div className="info-value">
-                  {displayValue(medicalData.nursingDiagnosis)}
+                  {displayValue(medicalData.nursingDiagnosis, 'nursing-diagnosis')}
                 </div>
               </div>
             </div>
@@ -1204,7 +1323,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">PMH (Past Medical History)</div>
                 <div className="info-value">
-                  {displayValue(medicalData.pmh)}
+                  {displayValue(medicalData.pmh, 'pmh')}
                 </div>
               </div>
             </div>
@@ -1216,7 +1335,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">WBS (Weight Bearing Status)</div>
                 <div className="info-value">
-                  {displayValue(medicalData.wbs)}
+                  {displayValue(medicalData.wbs, 'wbs')}
                 </div>
               </div>
             </div>
@@ -1254,7 +1373,54 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
               <div className="info-content">
                 <div className="info-label">Homebound Status</div>
                 <div className="info-value">
-                  {displayValue(medicalData.homebound)}
+                  {displayValue(medicalData.homebound, 'homebound')}
+                </div>
+              </div>
+            </div>
+            
+            <div className="info-section physician-section">
+              <div className="info-icon">
+                <i className="fas fa-user-md"></i>
+              </div>
+              <div className="info-content">
+                <div className="info-label">Physician (MD)</div>
+                <div className="info-value">
+                  {displayValue(medicalData.physician, 'physician')}
+                </div>
+              </div>
+            </div>
+            
+            <div className="info-section nurse-section">
+              <div className="info-icon">
+                <i className="fas fa-user-md"></i>
+              </div>
+              <div className="info-content">
+                <div className="info-label">Nurse</div>
+                <div className="info-value">
+                  {displayValue(medicalData.nurse, 'nurse')}
+                </div>
+              </div>
+            </div>
+            
+            <div className="info-section urgency-section">
+              <div className="info-icon">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <div className="info-content">
+                <div className="info-label">Urgency Level</div>
+                <div className="info-value">
+                  {medicalData.urgencyLevel ? (
+                    <div className="urgency-level-badge" style={{ 
+                      color: getUrgencyLevelColor(medicalData.urgencyLevel),
+                      borderColor: `${getUrgencyLevelColor(medicalData.urgencyLevel)}50`,
+                      background: `${getUrgencyLevelColor(medicalData.urgencyLevel)}10`
+                    }}>
+                      <i className={getUrgencyLevelIcon(medicalData.urgencyLevel)}></i>
+                      <span>{medicalData.urgencyLevel}</span>
+                    </div>
+                  ) : (
+                    <span className="no-data">Not provided yet</span>
+                  )}
                 </div>
               </div>
             </div>
