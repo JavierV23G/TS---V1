@@ -14,7 +14,8 @@ const DisciplineCard = ({
   onChangeAssistant,
   onChangeFrequency,
   therapistsList,
-  assistantsList
+  assistantsList,
+  scheduledVisits = []  // NUEVO PROP PARA SINCRONIZACIÓN
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFrequencyEditing, setIsFrequencyEditing] = useState(false);
@@ -521,8 +522,35 @@ const DisciplineCard = ({
                     <div className="frequency-code glass-highlight">
                       <span>{frequency}</span>
                       <div className="frequency-glow"></div>
+                      {scheduledVisits.length > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px',
+                          background: '#10b981',
+                          color: 'white',
+                          fontSize: '10px',
+                          padding: '2px 4px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold'
+                        }}>
+                          🔗
+                        </span>
+                      )}
                     </div>
-                    <span className="frequency-readable">{getFrequencyDisplay(frequency)}</span>
+                    <span className="frequency-readable">
+                      {getFrequencyDisplay(frequency)}
+                      {scheduledVisits.length > 0 && (
+                        <span style={{ 
+                          fontSize: '11px', 
+                          color: '#10b981', 
+                          marginLeft: '8px',
+                          fontWeight: '500'
+                        }}>
+                          (Auto-sync)
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className="frequency-visualization">
                     {renderFrequencyVisualization(frequency, colors)}
@@ -646,7 +674,15 @@ const renderFrequencyVisualization = (frequency, colors) => {
   );
 };
 
-const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
+const DisciplinesComponent = ({ 
+  patient, 
+  onUpdateDisciplines,
+  // NUEVOS PROPS PARA SINCRONIZACIÓN
+  scheduledVisits = [],     // Visitas del calendario
+  approvedVisits = null,    // Datos de medical info
+  onSyncDisciplinesData     // Callback para sincronizar cambios
+}) => {
+  
   const [disciplines, setDisciplines] = useState({
     PT: {
       isActive: false,
@@ -676,6 +712,129 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // ===== FUNCIONES DE ALMACENAMIENTO LOCAL =====
+  
+  // Guardar disciplines data en localStorage
+  const saveDisciplinesToLocal = (disciplinesData) => {
+    if (patient?.id) {
+      const key = `disciplines_${patient.id}`;
+      localStorage.setItem(key, JSON.stringify(disciplinesData));
+    }
+  };
+
+  // Cargar disciplines data desde localStorage
+  const loadDisciplinesFromLocal = () => {
+    if (patient?.id) {
+      const key = `disciplines_${patient.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return parsed;
+        } catch (e) {
+          console.warn('Error parsing stored disciplines:', e);
+        }
+      }
+    }
+    return null;
+  };
+
+  // ===== FUNCIONES DE SINCRONIZACIÓN =====
+  
+  // Calcular frecuencia automáticamente basado en visitas del calendario
+  const calculateFrequencyFromVisits = (disciplineType, visits = scheduledVisits) => {
+    const disciplineMapping = {
+      'PT': ['PT', 'PTA'],
+      'OT': ['OT', 'COTA'],
+      'ST': ['ST', 'STA']
+    };
+    
+    const relevantRoles = disciplineMapping[disciplineType] || [];
+    
+    // Filtrar visitas de esta disciplina
+    const disciplineVisits = visits.filter(visit => {
+      const therapyType = visit.therapy_type?.toUpperCase();
+      const status = visit.status?.toLowerCase();
+      const validStatuses = ['completed', 'scheduled', 'in_progress'];
+      return relevantRoles.includes(therapyType) && validStatuses.includes(status);
+    });
+    
+    if (disciplineVisits.length === 0) return '';
+    
+    // Agrupar visitas por semana
+    const visitsByWeek = {};
+    disciplineVisits.forEach(visit => {
+      const visitDate = new Date(visit.visit_date);
+      const weekKey = getWeekKey(visitDate);
+      
+      if (!visitsByWeek[weekKey]) {
+        visitsByWeek[weekKey] = [];
+      }
+      visitsByWeek[weekKey].push(visit);
+    });
+    
+    const weeks = Object.keys(visitsByWeek).sort();
+    if (weeks.length === 0) return '';
+    
+    // Calcular frecuencia más común
+    const weeklyVisitCounts = weeks.map(week => visitsByWeek[week].length);
+    const totalVisits = weeklyVisitCounts.reduce((sum, count) => sum + count, 0);
+    const totalWeeks = weeks.length;
+    
+    // Determinar el patrón más representativo
+    if (totalWeeks === 1) {
+      return `${totalVisits}w1`; // X visitas en 1 semana
+    }
+    
+    // Para múltiples semanas, calcular el promedio
+    const avgVisitsPerWeek = Math.round(totalVisits / totalWeeks);
+    
+    // Patrones comunes
+    if (avgVisitsPerWeek === 1 && totalWeeks <= 2) return '1w1';
+    if (avgVisitsPerWeek === 2 && totalWeeks <= 2) return '2w1';
+    if (avgVisitsPerWeek === 3 && totalWeeks <= 2) return '3w1';
+    
+    // Para períodos más largos
+    return `${totalVisits}w${totalWeeks}`;
+  };
+  
+  // Obtener clave de semana para una fecha
+  const getWeekKey = (date) => {
+    const year = date.getFullYear();
+    const week = getWeekNumber(date);
+    return `${year}-W${week}`;
+  };
+  
+  // Calcular número de semana
+  const getWeekNumber = (date) => {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  };
+  
+  // Sincronizar datos con otros componentes
+  const syncWithOtherComponents = (updatedDisciplinesData) => {
+    if (onSyncDisciplinesData && typeof onSyncDisciplinesData === 'function') {
+      onSyncDisciplinesData(updatedDisciplinesData);
+    }
+  };
+  
+  // Obtener límites de visitas aprobadas desde medical info
+  const getApprovedVisitsLimit = (disciplineType) => {
+    if (!approvedVisits) return null;
+    
+    const disciplineMap = {
+      'PT': 'pt',
+      'OT': 'ot',
+      'ST': 'st'
+    };
+    
+    const disciplineKey = disciplineMap[disciplineType];
+    const approved = approvedVisits[disciplineKey]?.approved;
+    
+    return approved ? parseInt(approved) : null;
+  };
   
   // Fetch staff data from API
   useEffect(() => {
@@ -879,12 +1038,55 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
         }
       };
       
+      // NUEVO: Cargar disciplines_data desde localStorage primero, luego desde paciente
+      const localData = loadDisciplinesFromLocal();
+      if (localData) {
+        // Combinar datos guardados con datos generados
+        Object.keys(newDisciplines).forEach(type => {
+          if (localData[type]) {
+            // Preservar frecuencias guardadas
+            if (localData[type].frequency) {
+              newDisciplines[type].frequency = localData[type].frequency;
+            }
+            // Preservar otros datos si existen
+            if (localData[type].isActive !== undefined) {
+              newDisciplines[type].isActive = localData[type].isActive;
+            }
+          }
+        });
+      }
+      // Fallback: cargar desde patient data si existe
+      else if (patient.disciplines_data) {
+        try {
+          const parsedDisciplinesData = typeof patient.disciplines_data === 'string' 
+            ? JSON.parse(patient.disciplines_data) 
+            : patient.disciplines_data;
+          
+          // Combinar datos guardados con datos generados
+          Object.keys(newDisciplines).forEach(type => {
+            if (parsedDisciplinesData[type]) {
+              // Preservar frecuencias guardadas
+              if (parsedDisciplinesData[type].frequency) {
+                newDisciplines[type].frequency = parsedDisciplinesData[type].frequency;
+              }
+              // Preservar otros datos si existen
+              if (parsedDisciplinesData[type].isActive !== undefined) {
+                newDisciplines[type].isActive = parsedDisciplinesData[type].isActive;
+              }
+            }
+          });
+          
+        } catch (e) {
+          console.warn('Error parsing disciplines_data:', e);
+        }
+      }
+
       console.log('🎯 Final disciplines state being set:', newDisciplines);
       
       // Log each discipline status
       Object.keys(newDisciplines).forEach(type => {
         const disc = newDisciplines[type];
-        console.log(`   ${type}: Active=${disc.isActive}, Therapist=${disc.therapist?.name || 'None'}, Assistant=${disc.assistant?.name || 'None'}`);
+        console.log(`   ${type}: Active=${disc.isActive}, Therapist=${disc.therapist?.name || 'None'}, Assistant=${disc.assistant?.name || 'None'}, Frequency=${disc.frequency || 'None'}`);
       });
       
       setDisciplines(newDisciplines);
@@ -892,6 +1094,51 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
       console.log('✅ Disciplines initialization completed');
     }
   }, [patient, allStaff, assignedStaff, isInitialized]);
+
+  // NUEVO: Sincronización automática de frecuencias con visitas del calendario
+  useEffect(() => {
+    if (scheduledVisits.length >= 0 && isInitialized) {
+      console.log('🔄 Disciplines: Syncing frequencies with calendar visits:', scheduledVisits.length);
+      
+      setDisciplines(prev => {
+        const updated = { ...prev };
+        let hasChanges = false;
+        
+        Object.keys(updated).forEach(disciplineType => {
+          if (updated[disciplineType].isActive) {
+            const calculatedFrequency = calculateFrequencyFromVisits(disciplineType, scheduledVisits);
+            
+            // Solo actualizar si la frecuencia calculada es diferente y no está vacía
+            if (calculatedFrequency && calculatedFrequency !== updated[disciplineType].frequency) {
+              console.log(`📊 ${disciplineType}: Auto-calculated frequency: ${calculatedFrequency}`);
+              updated[disciplineType] = {
+                ...updated[disciplineType],
+                frequency: calculatedFrequency
+              };
+              hasChanges = true;
+            }
+          }
+        });
+        
+        // Sincronizar cambios con otros componentes si hay cambios
+        if (hasChanges) {
+          syncWithOtherComponents({
+            type: 'frequency_auto_calculated',
+            disciplines: updated
+          });
+          
+          // Notificar al componente padre
+          if (onUpdateDisciplines) {
+            setTimeout(() => {
+              onUpdateDisciplines(updated);
+            }, 0);
+          }
+        }
+        
+        return hasChanges ? updated : prev;
+      });
+    }
+  }, [scheduledVisits, isInitialized]); // Se ejecuta cuando cambian las visitas del calendario
   
   // TODAS LAS FUNCIONES DE MANEJO - SIN VERIFICACIÓN AUTOMÁTICA
   
@@ -1182,9 +1429,9 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
     }
   };
 
-  // Change frequency
-  const handleChangeFrequency = (type, frequency) => {
-    console.log(`Updating ${type} frequency to: ${frequency}`);
+  // Change frequency - MEJORADO CON SINCRONIZACIÓN
+  const handleChangeFrequency = async (type, frequency) => {
+    console.log(`🔄 Updating ${type} frequency to: ${frequency}`);
     
     setDisciplines(prevDisciplines => {
       const updatedDisciplines = {
@@ -1194,6 +1441,17 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
           frequency
         }
       };
+      
+      // NUEVO: Guardar en localStorage
+      saveDisciplinesToLocal(updatedDisciplines);
+      
+      // NUEVO: Sincronizar cambios con otros componentes
+      syncWithOtherComponents({
+        type: 'frequency_manually_changed',
+        discipline: type,
+        frequency: frequency,
+        disciplines: updatedDisciplines
+      });
       
       if (onUpdateDisciplines) {
         setTimeout(() => {
@@ -1350,40 +1608,95 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
         )}
         
         <div className="disciplines-list">
-          {disciplineCards.map((card) => (
-            <DisciplineCard
-              key={card.type}
-              disciplineType={card.type}
-              disciplineLabel={card.label}
-              assistantLabel={card.assistantLabel}
-              therapist={card.data.therapist}
-              assistant={card.data.assistant}
-              frequency={card.data.frequency}
-              isActive={card.data.isActive}
-              onToggle={() => handleToggleDiscipline(card.type)}
-              onChangeTherapist={(therapist) => handleChangeTherapist(card.type, therapist)}
-              onChangeAssistant={(assistant) => handleChangeAssistant(card.type, assistant)}
-              onChangeFrequency={(frequency) => handleChangeFrequency(card.type, frequency)}
-              therapistsList={getTherapistsByType(card.type)}
-              assistantsList={getAssistantsByType(card.type)}
-            />
-          ))}
+          {disciplineCards.map((card) => {
+            const approvedLimit = getApprovedVisitsLimit(card.type);
+            
+            return (
+              <div key={card.type} style={{ position: 'relative' }}>
+                {/* Indicador de límite de visitas aprobadas */}
+                {approvedLimit && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                    color: 'white',
+                    fontSize: '11px',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontWeight: 'bold',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                  }}>
+                    📋 {approvedLimit} visits approved
+                  </div>
+                )}
+                
+                <DisciplineCard
+                  disciplineType={card.type}
+                  disciplineLabel={card.label}
+                  assistantLabel={card.assistantLabel}
+                  therapist={card.data.therapist}
+                  assistant={card.data.assistant}
+                  frequency={card.data.frequency}
+                  isActive={card.data.isActive}
+                  onToggle={() => handleToggleDiscipline(card.type)}
+                  onChangeTherapist={(therapist) => handleChangeTherapist(card.type, therapist)}
+                  onChangeAssistant={(assistant) => handleChangeAssistant(card.type, assistant)}
+                  onChangeFrequency={(frequency) => handleChangeFrequency(card.type, frequency)}
+                  therapistsList={getTherapistsByType(card.type)}
+                  assistantsList={getAssistantsByType(card.type)}
+                  // NUEVOS PROPS PARA SINCRONIZACIÓN
+                  scheduledVisits={scheduledVisits}
+                  approvedVisitsLimit={approvedLimit}
+                />
+              </div>
+            );
+          })}
         </div>
         
-        {/* Información adicional */}
+        {/* Información adicional y sincronización */}
         <div className="disciplines-info">
+          {/* Panel de sincronización */}
+          {(scheduledVisits.length > 0 || approvedVisits) && (
+            <div style={{
+              backgroundColor: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+              border: '1px solid #10b981',
+              color: '#065f46',
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              marginTop: '15px',
+              marginBottom: '15px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <i className="fas fa-sync-alt" style={{ color: '#10b981' }}></i>
+                <strong>Live Synchronization Active</strong>
+              </div>
+              <ul style={{ margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                {scheduledVisits.length > 0 && (
+                  <li>✅ <strong>Frequencies</strong> auto-calculate from {scheduledVisits.length} calendar visits</li>
+                )}
+                {approvedVisits && (
+                  <li>✅ <strong>Visit limits</strong> sync with Medical Info component</li>
+                )}
+                <li>✅ Manual frequency changes <strong>override auto-calculation</strong></li>
+                <li>✅ All changes <strong>sync instantly</strong> with Calendar and Medical Info</li>
+              </ul>
+            </div>
+          )}
+          
           <div style={{
             backgroundColor: '#f0f9ff',
             border: '1px solid #0ea5e9',
             color: '#0c4a6e',
             padding: '12px',
             borderRadius: '6px',
-            fontSize: '13px',
-            marginTop: '15px'
+            fontSize: '13px'
           }}>
             <i className="fas fa-lightbulb" style={{ marginRight: '6px' }}></i>
-            <strong>Tip:</strong> Disciplines remain active even without assigned staff until you reload the page. 
-            Assign therapists or assistants to maintain consistency between sessions.
+            <strong>Tip:</strong> Frequencies update automatically as you add visits to the calendar. 
+            You can manually override them by editing the frequency field.
           </div>
         </div>
         

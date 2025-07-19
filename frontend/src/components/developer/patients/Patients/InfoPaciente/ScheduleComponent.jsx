@@ -5,7 +5,15 @@ import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal
 import VisitStatusModal from './VisitStatusModal';
 import SignaturePad from './SignaturePad';
 
-const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
+const ScheduleComponent = ({ 
+  patient, 
+  onUpdateSchedule, 
+  certPeriodDates,
+  // NUEVOS PROPS PARA SINCRONIZACIÓN
+  approvedVisits = null,      // Datos de medical info
+  disciplines = null,         // Datos de disciplinas con frecuencias
+  onSyncScheduleData          // Callback para sincronizar cambios
+}) => {
   const { user } = useAuth(); // Get current logged user
   const [isCalendarView, setIsCalendarView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +30,8 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [disciplineFilter, setDisciplineFilter] = useState('ALL'); // New filter for disciplines
+  const [showDisciplineFilter, setShowDisciplineFilter] = useState(false); // Show/hide discipline filter
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionVisitData, setCompletionVisitData] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
@@ -40,7 +50,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     mdNotified: false,
     noShow: false
   });
-  const [weeklyLimits, setWeeklyLimits] = useState({});
+  const [weeklyLimits, setWeeklyLimits] = useState({
+    PT: {},  // Weekly limits for PT/PTA
+    OT: {},  // Weekly limits for OT/COTA
+    ST: {}   // Weekly limits for ST/STA
+  });
   const [hoveredDay, setHoveredDay] = useState(null);
   
   // DYNAMIC STATE
@@ -74,6 +88,84 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+  // ===== FUNCIONES DE SINCRONIZACIÓN =====
+  
+  // Sincronizar datos con otros componentes
+  const syncWithOtherComponents = (syncData) => {
+    if (onSyncScheduleData && typeof onSyncScheduleData === 'function') {
+      onSyncScheduleData(syncData);
+    }
+  };
+
+  // Obtener límite de visitas aprobadas para una disciplina
+  const getApprovedVisitsLimit = (discipline) => {
+    if (!approvedVisits) return null;
+    
+    const disciplineMap = {
+      'PT': 'pt',
+      'OT': 'ot',
+      'ST': 'st'
+    };
+    
+    const disciplineKey = disciplineMap[discipline];
+    const approved = approvedVisits[disciplineKey]?.approved;
+    
+    return approved ? parseInt(approved) : null;
+  };
+
+  // Obtener visitas usadas para una disciplina
+  const getUsedVisitsCount = (discipline) => {
+    const disciplineRoles = {
+      'PT': ['PT', 'PTA'],
+      'OT': ['OT', 'COTA'],
+      'ST': ['ST', 'STA']
+    };
+    
+    const relevantRoles = disciplineRoles[discipline] || [];
+    
+    return visits.filter(visit => {
+      const therapyType = visit.therapy_type?.toUpperCase();
+      const status = visit.status?.toLowerCase();
+      const validStatuses = ['completed', 'scheduled', 'in_progress'];
+      return relevantRoles.includes(therapyType) && validStatuses.includes(status);
+    }).length;
+  };
+
+  // Calcular weekly limits basado en approved visits y frecuencias
+  const calculateWeeklyLimitsFromData = () => {
+    if (!approvedVisits || !disciplines) return weeklyLimits;
+    
+    const newLimits = { PT: {}, OT: {}, ST: {} };
+    
+    Object.keys(newLimits).forEach(discipline => {
+      const approved = getApprovedVisitsLimit(discipline);
+      const frequency = disciplines[discipline]?.frequency;
+      
+      if (approved && frequency) {
+        // Parsear frecuencia (ej: "2w1" = 2 visitas por 1 semana)
+        const frequencyMatch = frequency.match(/(\d+)w(\d+)/);
+        if (frequencyMatch) {
+          const visitsPerPeriod = parseInt(frequencyMatch[1]);
+          const weeksInPeriod = parseInt(frequencyMatch[2]);
+          const visitsPerWeek = Math.ceil(visitsPerPeriod / weeksInPeriod);
+          
+          // Aplicar límite a todas las semanas del período de certificación
+          if (currentCertPeriod) {
+            const startDate = new Date(currentCertPeriod.start_date);
+            const endDate = new Date(currentCertPeriod.end_date);
+            const totalWeeks = Math.ceil((endDate - startDate) / (7 * 24 * 60 * 60 * 1000));
+            
+            for (let week = 1; week <= totalWeeks; week++) {
+              newLimits[discipline][week] = Math.min(visitsPerWeek, approved);
+            }
+          }
+        }
+      }
+    });
+    
+    return newLimits;
+  };
+
   // VISIT TYPES CONFIGURATION
   const visitTypes = [
     'Initial Evaluation',
@@ -101,8 +193,17 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   // Check if current user can see all therapists
   const canSelectAllTherapists = () => {
-    const adminRoles = ['DEVELOPER', 'ADMIN', 'AGENCY'];
-    return user && adminRoles.includes(user.role?.toUpperCase());
+    if (!user || !user.role) return false;
+    
+    // Normalize role to uppercase and handle different formats
+    const normalizedRole = user.role.toString().toUpperCase().trim();
+    const adminRoles = ['DEVELOPER', 'ADMIN', 'AGENCY', 'ADMINISTRATOR'];
+    
+    // Check if the role includes any admin role (in case format is like "Developer - Main")
+    const canSeeAll = adminRoles.some(role => normalizedRole.includes(role));
+    
+    console.log('User role:', user.role, 'Normalized:', normalizedRole, 'Can see all therapists:', canSeeAll);
+    return canSeeAll;
   };
 
   // Get therapist ID for current user if they are a therapist
@@ -117,6 +218,24 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     );
     
     return userTherapist?.id || null;
+  };
+
+  // Get the discipline of the current user
+  const getCurrentUserDiscipline = () => {
+    if (!user) return null;
+    const role = user.role?.toUpperCase();
+    return disciplineMapping[role] || null;
+  };
+
+  // Check if a therapist belongs to the same discipline as current user
+  const isSameDiscipline = (therapistId) => {
+    const currentUserDiscipline = getCurrentUserDiscipline();
+    if (!currentUserDiscipline) return true; // Non-therapist users see all
+    
+    const therapistType = getTherapistType(therapistId);
+    const therapistDiscipline = disciplineMapping[therapistType];
+    
+    return therapistDiscipline === currentUserDiscipline;
   };
 
   // ===== API FUNCTIONS =====
@@ -313,15 +432,21 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         setError('Failed to load visits from server');
       }
       
-      // Initialize weekly limits
-      const initialLimits = {};
+      // Initialize weekly limits for each discipline
+      const initialLimits = {
+        PT: {},
+        OT: {},
+        ST: {}
+      };
       const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       
       for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
         const weekNumber = getWeekNumber(d);
-        if (!initialLimits[weekNumber]) {
-          initialLimits[weekNumber] = 2;
+        if (!initialLimits.PT[weekNumber]) {
+          initialLimits.PT[weekNumber] = 2; // Default 2 visits per week for PT
+          initialLimits.OT[weekNumber] = 3; // Default 3 visits per week for OT
+          initialLimits.ST[weekNumber] = 2; // Default 2 visits per week for ST
         }
       }
       setWeeklyLimits(initialLimits);
@@ -463,16 +588,42 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
   };
 
-  const canScheduleVisit = (date) => {
+  const canScheduleVisit = (date, discipline = null) => {
     const visitDate = new Date(date);
     const weekNumber = getWeekNumber(visitDate);
+    
+    // If discipline is provided, check limit for that discipline
+    if (discipline) {
+      const weekVisits = visits.filter(
+        (visit) => {
+          const visitWeek = getWeekNumber(new Date(visit.visit_date));
+          const therapistType = getTherapistType(visit.staff_id);
+          const therapistDiscipline = disciplineMapping[therapistType];
+          return visitWeek === weekNumber && 
+                 visit.status === 'Scheduled' && 
+                 therapistDiscipline === discipline;
+        }
+      ).length;
+      const limit = weeklyLimits[discipline]?.[weekNumber] || 2;
+      return weekVisits < limit;
+    }
+    
+    // If no discipline specified, check based on current filter
+    const activeDiscipline = disciplineFilter !== 'ALL' ? disciplineFilter : null;
+    if (activeDiscipline) {
+      return canScheduleVisit(date, activeDiscipline);
+    }
+    
+    // Default behavior - check all visits
     const weekVisits = visits.filter(
       (visit) =>
         getWeekNumber(new Date(visit.visit_date)) === weekNumber &&
         visit.status === 'Scheduled'
     ).length;
-    const limit = weeklyLimits[weekNumber] || 2;
-    return weekVisits < limit;
+    const totalLimit = Object.values(weeklyLimits).reduce((sum, disciplineLimits) => {
+      return sum + (disciplineLimits[weekNumber] || 2);
+    }, 0) || 6; // Default total limit if no discipline limits set
+    return weekVisits < totalLimit;
   };
 
   const getTherapistName = (therapistId) => {
@@ -488,12 +639,15 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   const getTherapistColors = (therapistId) => {
     const therapistType = getTherapistType(therapistId);
     const colors = {
-      PT: { primary: '#4f46e5', secondary: '#e0e7ff' },
-      PTA: { primary: '#6366f1', secondary: '#e0e7ff' },
-      OT: { primary: '#0ea5e9', secondary: '#e0f2fe' },
-      COTA: { primary: '#38bdf8', secondary: '#e0f2fe' },
-      ST: { primary: '#14b8a6', secondary: '#d1fae5' },
-      STA: { primary: '#2dd4bf', secondary: '#d1fae5' },
+      // PT Team - Blue (matching DisciplinesComponent)
+      PT: { primary: '#3b82f6', secondary: 'rgba(59, 130, 246, 0.1)' },
+      PTA: { primary: '#3b82f6', secondary: 'rgba(59, 130, 246, 0.1)' },
+      // OT Team - Purple (matching DisciplinesComponent)
+      OT: { primary: '#8b5cf6', secondary: 'rgba(139, 92, 246, 0.1)' },
+      COTA: { primary: '#8b5cf6', secondary: 'rgba(139, 92, 246, 0.1)' },
+      // ST Team - Green (matching DisciplinesComponent)
+      ST: { primary: '#10b981', secondary: 'rgba(16, 185, 129, 0.1)' },
+      STA: { primary: '#10b981', secondary: 'rgba(16, 185, 129, 0.1)' },
     };
     return therapistType && colors[therapistType] ? colors[therapistType] : { primary: '#64748b', secondary: '#f1f5f9' };
   };
@@ -546,13 +700,19 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   // Organize therapists: assigned first, then separator, then all others
   const getOrganizedTherapists = () => {
-    // If current user is a therapist, only show their own data
+    // If current user is a therapist, only show therapists from their discipline
     if (isCurrentUserTherapist()) {
-      const currentTherapist = getCurrentUserTherapistData();
-      return {
-        assignedTherapists: currentTherapist ? [currentTherapist] : [],
-        unassignedTherapists: []
-      };
+      const currentUserDiscipline = getCurrentUserDiscipline();
+      const sameDiscTherapists = therapists.filter(therapist => {
+        const therapistDiscipline = disciplineMapping[therapist.role.toUpperCase()];
+        return therapistDiscipline === currentUserDiscipline;
+      });
+      
+      const assignedIds = assignedStaff.map(staff => staff.id);
+      const assignedTherapists = sameDiscTherapists.filter(therapist => assignedIds.includes(therapist.id));
+      const unassignedTherapists = sameDiscTherapists.filter(therapist => !assignedIds.includes(therapist.id));
+      
+      return { assignedTherapists, unassignedTherapists };
     }
     
     // For admins, developers, and agencies, show all therapists organized
@@ -663,6 +823,47 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     setActiveTab('details');
   }, [selectedVisit, currentCertPeriod, therapists, user]);
 
+  // NUEVO: Sincronización automática con datos externos
+  useEffect(() => {
+    if ((approvedVisits || disciplines) && currentCertPeriod) {
+      console.log('🔄 Schedule: Syncing with external data');
+      
+      // Actualizar weekly limits basado en approved visits y frecuencias
+      const newLimits = calculateWeeklyLimitsFromData();
+      
+      setWeeklyLimits(prevLimits => {
+        const hasChanges = JSON.stringify(prevLimits) !== JSON.stringify(newLimits);
+        
+        if (hasChanges) {
+          console.log('📊 Schedule: Updated weekly limits:', newLimits);
+          
+          // Sincronizar cambios con otros componentes
+          syncWithOtherComponents({
+            type: 'weekly_limits_updated',
+            weeklyLimits: newLimits,
+            visits: visits
+          });
+        }
+        
+        return hasChanges ? newLimits : prevLimits;
+      });
+    }
+  }, [approvedVisits, disciplines, currentCertPeriod]); // Se ejecuta cuando cambian los datos externos
+
+  // NUEVO: Sincronización cuando cambian las visitas
+  useEffect(() => {
+    if (visits.length >= 0) {
+      console.log('🔄 Schedule: Visits changed, syncing with other components');
+      
+      // Sincronizar visitas con otros componentes
+      syncWithOtherComponents({
+        type: 'visits_updated',
+        visits: visits,
+        weeklyLimits: weeklyLimits
+      });
+    }
+  }, [visits]); // Se ejecuta cuando cambian las visitas
+
   // ===== EVENT HANDLERS =====
 
   const handleShowCalendar = () => {
@@ -678,10 +879,15 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
     setSelectedDate(null);
   };
 
-  const handleLimitChange = (weekNumber, value) => {
+  const handleLimitChange = (weekNumber, value, discipline = null) => {
+    const activeDiscipline = discipline || (disciplineFilter !== 'ALL' ? disciplineFilter : 'PT');
+    
     setWeeklyLimits((prev) => ({
       ...prev,
-      [weekNumber]: parseInt(value) || 0,
+      [activeDiscipline]: {
+        ...prev[activeDiscipline],
+        [weekNumber]: parseInt(value) || 0,
+      }
     }));
   };
 
@@ -694,6 +900,24 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   };
 
   const handleDateClick = (date) => {
+    // Check if date is within certification period
+    if (!currentCertPeriod) {
+      setError('No certification period active. Please set up a certification period first.');
+      return;
+    }
+    
+    const checkDate = new Date(date);
+    const startDate = new Date(currentCertPeriod.start_date);
+    const endDate = new Date(currentCertPeriod.end_date);
+    checkDate.setHours(0, 0, 0, 0);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    
+    if (checkDate < startDate || checkDate > endDate) {
+      setError(`Visit date must be within the certification period (${currentCertPeriod.start_date} to ${currentCertPeriod.end_date})`);
+      return;
+    }
+    
     if (!canScheduleVisit(date)) {
       setError('Maximum number of visits for this week reached');
       return;
@@ -1056,6 +1280,16 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   const getFilteredVisits = () => {
     let filtered = [...visits];
     filtered = filtered.filter((visit) => isWithinCertPeriod(visit.visit_date));
+    
+    // Filter by discipline
+    if (disciplineFilter !== 'ALL') {
+      filtered = filtered.filter((visit) => {
+        const therapistType = getTherapistType(visit.staff_id);
+        const therapistDiscipline = disciplineMapping[therapistType];
+        return therapistDiscipline === disciplineFilter;
+      });
+    }
+    
     if (activeFilter !== 'ALL') {
       filtered = filtered.filter((visit) => visit.status === activeFilter);
     }
@@ -1095,7 +1329,18 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
 
   const getVisitsForDay = (date) => {
     const dateString = formatDateToLocalISOString(date);
-    return visits.filter((visit) => visit.visit_date === dateString && isWithinCertPeriod(visit.visit_date));
+    let dayVisits = visits.filter((visit) => visit.visit_date === dateString && isWithinCertPeriod(visit.visit_date));
+    
+    // Apply discipline filter if active
+    if (disciplineFilter !== 'ALL') {
+      dayVisits = dayVisits.filter((visit) => {
+        const therapistType = getTherapistType(visit.staff_id);
+        const therapistDiscipline = disciplineMapping[therapistType];
+        return therapistDiscipline === disciplineFilter;
+      });
+    }
+    
+    return dayVisits;
   };
 
   // ===== RENDER FUNCTIONS =====
@@ -1409,6 +1654,19 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
       }
     });
 
+    // Helper function to check if a date is within the cert period
+    const isDateWithinCertPeriod = (date) => {
+      if (!date || !currentCertPeriod) return false;
+      const checkDate = new Date(date);
+      const startDate = new Date(currentCertPeriod.start_date);
+      const endDate = new Date(currentCertPeriod.end_date);
+      // Reset hours to compare only dates
+      checkDate.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+      return checkDate >= startDate && checkDate <= endDate;
+    };
+
     return (
       <div className="schedule-calendar">
         <div className="calendar-header">
@@ -1439,20 +1697,43 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
               const firstDayOfWeek = week.find((day) => day !== null);
               if (!firstDayOfWeek) return null;
               const weekNumber = getWeekNumber(firstDayOfWeek);
-              const weekVisits = visits.filter(
-                (v) => getWeekNumber(new Date(v.visit_date)) === weekNumber && v.status === 'Scheduled'
-              ).length;
-              const limit = weeklyLimits[weekNumber] || 2;
+              // Filter visits for the current discipline and week
+              const activeDiscipline = disciplineFilter !== 'ALL' ? disciplineFilter : 'ALL';
+              let weekVisits, limit;
+              
+              if (activeDiscipline === 'ALL') {
+                // Show all visits when no filter is active
+                weekVisits = visits.filter(
+                  (v) => getWeekNumber(new Date(v.visit_date)) === weekNumber && v.status === 'Scheduled'
+                ).length;
+                limit = Object.values(weeklyLimits).reduce((sum, disciplineLimits) => {
+                  return sum + (disciplineLimits[weekNumber] || 2);
+                }, 0) || 6;
+              } else {
+                // Show only visits for the filtered discipline
+                weekVisits = visits.filter(
+                  (v) => {
+                    const visitWeek = getWeekNumber(new Date(v.visit_date));
+                    const therapistType = getTherapistType(v.staff_id);
+                    const therapistDiscipline = disciplineMapping[therapistType];
+                    return visitWeek === weekNumber && 
+                           v.status === 'Scheduled' && 
+                           therapistDiscipline === activeDiscipline;
+                  }
+                ).length;
+                limit = weeklyLimits[activeDiscipline]?.[weekNumber] || 2;
+              }
+              
               const isOverScheduled = weekVisits >= limit;
               return (
                 <div key={weekIndex} className="calendar-week-row">
                   <div className="week-limit">
-                    <span>Limit:</span>
+                    <span>{activeDiscipline !== 'ALL' ? `${activeDiscipline} Limit:` : 'Total Limit:'}</span>
                     <input
                       type="number"
                       min="0"
                       value={limit}
-                      onChange={(e) => handleLimitChange(weekNumber, e.target.value)}
+                      onChange={(e) => handleLimitChange(weekNumber, e.target.value, activeDiscipline !== 'ALL' ? activeDiscipline : null)}
                       className="limit-input"
                       style={{ width: '50px', margin: '0 5px' }}
                     />
@@ -1469,7 +1750,9 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                         day.getDate() === today.getDate() &&
                         day.getMonth() === today.getMonth() &&
                         day.getFullYear() === today.getFullYear();
-                      const isBlocked = !canScheduleVisit(day);
+                      const isWithinCertPeriod = isDateWithinCertPeriod(day);
+                      const isBlocked = !canScheduleVisit(day) || !isWithinCertPeriod;
+                      const isOutsideCertPeriod = !isWithinCertPeriod;
                       const isHovered = hoveredDay &&
                         day.getDate() === hoveredDay.getDate() &&
                         day.getMonth() === hoveredDay.getMonth() &&
@@ -1477,9 +1760,9 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                       return (
                         <div
                           key={dayIndex}
-                          className={`calendar-day ${dayVisits.length > 0 ? 'has-visits' : ''} ${isToday ? 'today' : ''} ${isBlocked ? 'blocked' : ''} ${isHovered ? 'hovered' : ''}`}
+                          className={`calendar-day ${dayVisits.length > 0 ? 'has-visits' : ''} ${isToday ? 'today' : ''} ${isBlocked ? 'blocked' : ''} ${isOutsideCertPeriod ? 'outside-cert-period' : ''} ${isHovered ? 'hovered' : ''}`}
                           onClick={() => !isBlocked && handleDateClick(day)}
-                          onMouseEnter={() => handleDayMouseEnter(day)}
+                          onMouseEnter={() => isWithinCertPeriod && handleDayMouseEnter(day)}
                           onMouseLeave={handleDayMouseLeave}
                           style={{ height: dayVisits.length > 1 ? '200px' : '150px' }}
                         >
@@ -1534,7 +1817,11 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                               })}
                             </div>
                           )}
-                          {isBlocked && <div className="blocked-overlay">Max Limit Reached</div>}
+                          {isBlocked && (
+                            <div className="blocked-overlay">
+                              {isOutsideCertPeriod ? 'Outside Cert Period' : 'Max Limit Reached'}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1704,6 +1991,16 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
             </div>
           )}
           <div className="header-actions">
+            <button 
+              className="discipline-filter-btn"
+              onClick={() => setShowDisciplineFilter(!showDisciplineFilter)}
+            >
+              <i className="fas fa-filter"></i>
+              <span>Filter</span>
+              {disciplineFilter !== 'ALL' && (
+                <span className="filter-badge">{disciplineFilter}</span>
+              )}
+            </button>
             <button
               className="quick-add-btn"
               onClick={() => handleOpenVisitModal()}
@@ -1718,6 +2015,53 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
             </button>
           </div>
         </div>
+        {/* Discipline filter dropdown - only show when button is clicked */}
+        {showDisciplineFilter && (
+          <div className="discipline-filter-panel">
+            <div className="discipline-filter">
+              <label className="filter-label">Select Discipline:</label>
+              <div className="discipline-pills">
+                <button
+                  className={`discipline-pill all ${disciplineFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => {
+                    setDisciplineFilter('ALL');
+                    setShowDisciplineFilter(false);
+                  }}
+                >
+                  All Disciplines
+                </button>
+                <button
+                  className={`discipline-pill pt ${disciplineFilter === 'PT' ? 'active' : ''}`}
+                  onClick={() => {
+                    setDisciplineFilter('PT');
+                    setShowDisciplineFilter(false);
+                  }}
+                >
+                  PT/PTA
+                </button>
+                <button
+                  className={`discipline-pill ot ${disciplineFilter === 'OT' ? 'active' : ''}`}
+                  onClick={() => {
+                    setDisciplineFilter('OT');
+                    setShowDisciplineFilter(false);
+                  }}
+                >
+                  OT/COTA
+                </button>
+                <button
+                  className={`discipline-pill st ${disciplineFilter === 'ST' ? 'active' : ''}`}
+                  onClick={() => {
+                    setDisciplineFilter('ST');
+                    setShowDisciplineFilter(false);
+                  }}
+                >
+                  ST/STA
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="visits-filter">
           <div className="filter-pills">
             <button
@@ -1879,14 +2223,177 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                     <i className="fas fa-arrow-left"></i>
                     <span>Back to Visits</span>
                   </button>
-                  <button
-                    className="add-visit-calendar"
-                    onClick={() => handleOpenVisitModal()}
-                  >
-                    <i className="fas fa-plus"></i>
-                    <span>Add Visit</span>
-                  </button>
+                  <div className="calendar-nav-right">
+                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                      <button
+                        onClick={() => setDisciplineFilter('PT')}
+                        style={{
+                          padding: '8px 16px',
+                          border: disciplineFilter === 'PT' ? '2px solid #3b82f6' : '2px solid #3b82f6',
+                          borderRadius: '20px',
+                          background: disciplineFilter === 'PT' ? '#3b82f6' : 'white',
+                          color: disciplineFilter === 'PT' ? 'white' : '#3b82f6',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          transition: 'all 0.3s ease',
+                          outline: 'none',
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        PT
+                        {approvedVisits && (
+                          <span style={{
+                            fontSize: '10px',
+                            background: disciplineFilter === 'PT' ? 'rgba(255,255,255,0.3)' : 'rgba(59, 130, 246, 0.1)',
+                            padding: '2px 4px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold'
+                          }}>
+                            {getUsedVisitsCount('PT')}/{getApprovedVisitsLimit('PT') || '?'}
+                          </span>
+                        )}
+                        {disciplines?.PT?.frequency && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#10b981',
+                            color: 'white',
+                            fontSize: '8px',
+                            padding: '1px 3px',
+                            borderRadius: '6px',
+                            fontWeight: 'bold'
+                          }}>
+                            🔗
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setDisciplineFilter('OT')}
+                        style={{
+                          padding: '8px 16px',
+                          border: disciplineFilter === 'OT' ? '2px solid #8b5cf6' : '2px solid #8b5cf6',
+                          borderRadius: '20px',
+                          background: disciplineFilter === 'OT' ? '#8b5cf6' : 'white',
+                          color: disciplineFilter === 'OT' ? 'white' : '#8b5cf6',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          transition: 'all 0.3s ease',
+                          outline: 'none',
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        OT
+                        {approvedVisits && (
+                          <span style={{
+                            fontSize: '10px',
+                            background: disciplineFilter === 'OT' ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.1)',
+                            padding: '2px 4px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold'
+                          }}>
+                            {getUsedVisitsCount('OT')}/{getApprovedVisitsLimit('OT') || '?'}
+                          </span>
+                        )}
+                        {disciplines?.OT?.frequency && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#10b981',
+                            color: 'white',
+                            fontSize: '8px',
+                            padding: '1px 3px',
+                            borderRadius: '6px',
+                            fontWeight: 'bold'
+                          }}>
+                            🔗
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setDisciplineFilter('ST')}
+                        style={{
+                          padding: '8px 16px',
+                          border: disciplineFilter === 'ST' ? '2px solid #10b981' : '2px solid #10b981',
+                          borderRadius: '20px',
+                          background: disciplineFilter === 'ST' ? '#10b981' : 'white',
+                          color: disciplineFilter === 'ST' ? 'white' : '#10b981',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          transition: 'all 0.3s ease',
+                          outline: 'none',
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        ST
+                        {approvedVisits && (
+                          <span style={{
+                            fontSize: '10px',
+                            background: disciplineFilter === 'ST' ? 'rgba(255,255,255,0.3)' : 'rgba(16, 185, 129, 0.1)',
+                            padding: '2px 4px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold'
+                          }}>
+                            {getUsedVisitsCount('ST')}/{getApprovedVisitsLimit('ST') || '?'}
+                          </span>
+                        )}
+                        {disciplines?.ST?.frequency && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#10b981',
+                            color: 'white',
+                            fontSize: '8px',
+                            padding: '1px 3px',
+                            borderRadius: '6px',
+                            fontWeight: 'bold'
+                          }}>
+                            🔗
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setDisciplineFilter('ALL')}
+                        style={{
+                          padding: '8px 16px',
+                          border: disciplineFilter === 'ALL' ? '2px solid #6b7280' : '2px solid #6b7280',
+                          borderRadius: '20px',
+                          background: disciplineFilter === 'ALL' ? '#6b7280' : 'white',
+                          color: disciplineFilter === 'ALL' ? 'white' : '#6b7280',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          transition: 'all 0.3s ease',
+                          outline: 'none'
+                        }}
+                      >
+                        ALL
+                      </button>
+                    </div>
+                    <button
+                      className="add-visit-calendar"
+                      onClick={() => handleOpenVisitModal()}
+                    >
+                      <i className="fas fa-plus"></i>
+                      <span>Add Visit</span>
+                    </button>
+                  </div>
                 </div>
+                
                 {renderCalendar()}
               </div>
             )}

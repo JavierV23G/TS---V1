@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import '../../../../../styles/developer/Patients/InfoPaciente/MedicalInfoComponent.scss';
 
-const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
+const MedicalInfoComponent = ({ 
+  patient, 
+  onUpdateMedicalInfo,
+  // NUEVOS PROPS PARA SINCRONIZACIÓN
+  scheduledVisits = [], // Visitas del calendario
+  disciplines = null,   // Datos de disciplinas con frecuencias
+  onSyncVisitsData      // Callback para sincronizar cambios
+}) => {
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -27,6 +35,79 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
   });
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // ===== FUNCIONES DE ALMACENAMIENTO LOCAL =====
+  
+  // Guardar approved visits en localStorage
+  const saveApprovedVisitsToLocal = (approvedVisitsData) => {
+    if (patient?.id) {
+      const key = `approvedVisits_${patient.id}`;
+      localStorage.setItem(key, JSON.stringify(approvedVisitsData));
+    }
+  };
+
+  // Cargar approved visits desde localStorage
+  const loadApprovedVisitsFromLocal = () => {
+    if (patient?.id) {
+      const key = `approvedVisits_${patient.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return parsed;
+        } catch (e) {
+          console.warn('Error parsing stored approved visits:', e);
+        }
+      }
+    }
+    return null;
+  };
+
+  // ===== FUNCIONES DE SINCRONIZACIÓN =====
+  
+  // Calcular visitas usadas basado en visitas del calendario
+  const calculateUsedVisits = (disciplineKey, visits = scheduledVisits) => {
+    const disciplineMapping = {
+      'pt': ['PT', 'PTA'],
+      'ot': ['OT', 'COTA'],  
+      'st': ['ST', 'STA']
+    };
+    
+    const relevantRoles = disciplineMapping[disciplineKey] || [];
+    
+    // Filtrar visitas completadas y programadas para esta disciplina
+    const disciplineVisits = visits.filter(visit => {
+      const therapyType = visit.therapy_type?.toUpperCase();
+      const status = visit.status?.toLowerCase();
+      
+      // Contar visitas que están completadas o programadas (no canceladas)
+      const validStatuses = ['completed', 'scheduled', 'in_progress'];
+      return relevantRoles.includes(therapyType) && validStatuses.includes(status);
+    });
+    
+    return disciplineVisits.length;
+  };
+
+  // Sincronizar datos con otros componentes
+  const syncWithOtherComponents = (updatedVisitsData) => {
+    if (onSyncVisitsData && typeof onSyncVisitsData === 'function') {
+      onSyncVisitsData(updatedVisitsData);
+    }
+  };
+
+  // Obtener frecuencia de una disciplina desde el componente de disciplinas
+  const getDisciplineFrequency = (disciplineKey) => {
+    if (!disciplines) return null;
+    
+    const disciplineMap = {
+      'pt': 'PT',
+      'ot': 'OT', 
+      'st': 'ST'
+    };
+    
+    const disciplineType = disciplineMap[disciplineKey];
+    return disciplines[disciplineType]?.frequency || null;
+  };
   
   // Initialize with patient data
   useEffect(() => {
@@ -36,6 +117,30 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
       const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
+      
+      // Cargar approved visits desde localStorage primero, luego desde patient data
+      let approvedVisitsData = {
+        pt: { approved: '', used: '', status: 'waiting' },
+        ot: { approved: '', used: '', status: 'waiting' },
+        st: { approved: '', used: '', status: 'waiting' }
+      };
+
+      // Prioridad 1: localStorage
+      const localData = loadApprovedVisitsFromLocal();
+      if (localData) {
+        approvedVisitsData = { ...approvedVisitsData, ...localData };
+      }
+      // Prioridad 2: patient data (como fallback)
+      else if (patient.approved_visits) {
+        try {
+          const parsedVisits = typeof patient.approved_visits === 'string' 
+            ? JSON.parse(patient.approved_visits) 
+            : patient.approved_visits;
+          approvedVisitsData = { ...approvedVisitsData, ...parsedVisits };
+        } catch (e) {
+          console.warn('Error parsing approved_visits:', e);
+        }
+      }
       
       setMedicalData({
         weight: patient.weight || '',
@@ -50,14 +155,49 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         physician: patient.physician || '',
         nurse: patient.nurse || '',
         urgencyLevel: patient.urgency_level || '',
-        approvedVisits: {
-          pt: { approved: '', used: '', status: 'waiting' },
-          ot: { approved: '', used: '', status: 'waiting' },
-          st: { approved: '', used: '', status: 'waiting' }
-        }
+        approvedVisits: approvedVisitsData
       });
     }
   }, [patient]);
+
+  // NUEVO: Sincronización automática con datos externos
+  useEffect(() => {
+    if (scheduledVisits.length >= 0) { // >= 0 para permitir arrays vacíos
+      console.log('🔄 Syncing medical info with calendar visits:', scheduledVisits.length);
+      
+      setMedicalData(prev => {
+        const newApprovedVisits = { ...prev.approvedVisits };
+        
+        // Calcular visitas usadas para cada disciplina
+        Object.keys(newApprovedVisits).forEach(discipline => {
+          const usedCount = calculateUsedVisits(discipline, scheduledVisits);
+          const currentApproved = parseInt(newApprovedVisits[discipline].approved) || 0;
+          
+          // Actualizar visitas usadas
+          newApprovedVisits[discipline] = {
+            ...newApprovedVisits[discipline],
+            used: usedCount.toString()
+          };
+          
+          // Actualizar status automáticamente
+          if (currentApproved === 0) {
+            newApprovedVisits[discipline].status = 'waiting';
+          } else if (usedCount >= currentApproved && currentApproved > 0) {
+            newApprovedVisits[discipline].status = 'no_more';
+          } else if (currentApproved > 0 && usedCount < currentApproved) {
+            newApprovedVisits[discipline].status = 'active';
+          }
+          
+          console.log(`📊 ${discipline.toUpperCase()}: ${usedCount}/${currentApproved} visits used`);
+        });
+        
+        return {
+          ...prev,
+          approvedVisits: newApprovedVisits
+        };
+      });
+    }
+  }, [scheduledVisits]); // Se ejecuta cuando cambian las visitas del calendario
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -122,9 +262,12 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     }));
   };
 
-  // Handle visits input changes
+  // Handle visits input changes - MEJORADO CON SINCRONIZACIÓN
   const handleVisitsChange = (discipline, field, value) => {
     const processedValue = value === '' ? '' : (parseInt(value) || 0);
+    
+    // Si estamos cambiando 'used' manualmente, bloquear auto-sync temporalmente
+    const isManualUsedChange = field === 'used';
     
     const newApprovedVisits = {
       ...medicalData.approvedVisits,
@@ -137,7 +280,13 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
     // Auto-update status based on visits
     const disciplineData = newApprovedVisits[discipline];
     const approvedNum = parseInt(disciplineData.approved) || 0;
-    const usedNum = parseInt(disciplineData.used) || 0;
+    const usedNum = isManualUsedChange ? processedValue : 
+      parseInt(disciplineData.used) || calculateUsedVisits(discipline);
+    
+    // Actualizar used si no es cambio manual
+    if (!isManualUsedChange) {
+      disciplineData.used = usedNum;
+    }
     
     if (approvedNum === 0) {
       disciplineData.status = 'waiting';
@@ -151,6 +300,21 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       ...prev,
       approvedVisits: newApprovedVisits
     }));
+    
+    // NUEVO: Guardar automáticamente en localStorage
+    saveApprovedVisitsToLocal(newApprovedVisits);
+
+    // NUEVO: Sincronizar cambios con otros componentes
+    if (field === 'approved') {
+      console.log(`🔄 Medical Info: Approved visits changed for ${discipline}: ${processedValue}`);
+      syncWithOtherComponents({
+        type: 'approved_visits_changed',
+        discipline: discipline,
+        field: field,
+        value: processedValue,
+        allVisits: newApprovedVisits
+      });
+    }
   };
 
   // Handle status change
@@ -241,7 +405,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         homebound_status: medicalData.homebound ? medicalData.homebound.trim() : '',
         physician: medicalData.physician ? medicalData.physician.trim() : '',
         nurse: medicalData.nurse ? medicalData.nurse.trim() : '',
-        urgency_level: medicalData.urgencyLevel ? medicalData.urgencyLevel.trim() : ''
+        urgency_level: medicalData.urgencyLevel ? medicalData.urgencyLevel.trim() : '',
       };
       
       console.log('Original patient data:', patient);
@@ -473,7 +637,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
       pt: {
         name: 'Physical Therapy',
         shortName: 'PT',
-        icon: 'fas fa-dumbbell',
+        icon: 'fas fa-walking',
         color: '#3b82f6',
         gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)'
       },
@@ -481,15 +645,15 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
         name: 'Occupational Therapy',
         shortName: 'OT',
         icon: 'fas fa-hands',
-        color: '#10b981',
-        gradient: 'linear-gradient(135deg, #10b981, #059669)'
+        color: '#8b5cf6',
+        gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
       },
       st: {
         name: 'Speech Therapy',
         shortName: 'ST',
-        icon: 'fas fa-comments',
-        color: '#f59e0b',
-        gradient: 'linear-gradient(135deg, #f59e0b, #d97706)'
+        icon: 'fas fa-comment-medical',
+        color: '#10b981',
+        gradient: 'linear-gradient(135deg, #10b981, #059669)'
       }
     };
     return details[discipline];
@@ -1060,7 +1224,7 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                               textTransform: 'uppercase', 
                               letterSpacing: '1px' 
                             }}>
-                              USED
+                              USED {scheduledVisits.length > 0 && '(Auto-sync)'}
                             </label>
                             <input
                               type="number"
@@ -1127,6 +1291,33 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                   );
                 })}
               </div>
+              
+              {/* Información de sincronización */}
+              {(scheduledVisits.length > 0 || disciplines) && (
+                <div style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+                  border: '1px solid #0ea5e9',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  color: '#0c4a6e'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <i className="fas fa-sync-alt" style={{ color: '#0ea5e9' }}></i>
+                    <strong>Synchronization Active</strong>
+                  </div>
+                  <ul style={{ margin: '0', paddingLeft: '20px', lineHeight: '1.5' }}>
+                    {scheduledVisits.length > 0 && (
+                      <li>✅ <strong>Used visits</strong> auto-calculate from {scheduledVisits.length} calendar visits</li>
+                    )}
+                    {disciplines && (
+                      <li>✅ <strong>Frequencies</strong> sync with Disciplines component</li>
+                    )}
+                    <li>✅ Changes here <strong>sync instantly</strong> with Calendar and Disciplines</li>
+                  </ul>
+                </div>
+              )}
             </div>
             
             <div className="form-actions">
@@ -1202,12 +1393,27 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                       // Determinar si mostrar "Not set up yet" o los valores
                       const isNotSetUp = approvedNum === 0 && usedNum === 0;
                       
+                      // NUEVO: Obtener frecuencia desde disciplines
+                      const frequency = getDisciplineFrequency(discipline);
+                      const hasFrequency = frequency && frequency !== '';
+                      
                       return (
                         <div key={discipline} className="visit-card-view">
                           <div className="visit-card-header">
                             <div className="discipline-badge" style={{ background: disciplineInfo.gradient }}>
                               <i className={disciplineInfo.icon}></i>
                               <span>{disciplineInfo.shortName}</span>
+                              {hasFrequency && (
+                                <span className="frequency-indicator" style={{
+                                  fontSize: '10px',
+                                  background: 'rgba(255,255,255,0.3)',
+                                  padding: '2px 6px',
+                                  borderRadius: '10px',
+                                  marginLeft: '6px'
+                                }}>
+                                  {frequency}
+                                </span>
+                              )}
                             </div>
                             {isNotSetUp ? (
                               <div className="status-badge not-set" style={{ 
@@ -1289,6 +1495,15 @@ const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
                                   </div>
                                   <span className="progress-text">
                                     {Math.round(progressPercentage)}% used
+                                    {hasFrequency && (
+                                      <span style={{ 
+                                        fontSize: '11px', 
+                                        color: '#64748b', 
+                                        marginLeft: '8px' 
+                                      }}>
+                                        • Freq: {frequency}
+                                      </span>
+                                    )}
                                   </span>
                                 </div>
                               </>
