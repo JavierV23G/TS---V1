@@ -24,7 +24,7 @@ const VisitStatusModal = ({
   // Editable form fields
   const [visitDate, setVisitDate] = useState(visitData?.visit_date || '');
   const [visitTime, setVisitTime] = useState(visitData?.scheduled_time || '');
-  const [visitType, setVisitType] = useState(visitData?.visit_type || 'Initial');
+  const [visitType, setVisitType] = useState(visitData?.visit_type || 'Initial Evaluation');
   const [comments, setComments] = useState(visitData?.comments || '');
 
   // Check if user can edit therapist (only Developer, Administrator, Agency)
@@ -75,7 +75,7 @@ const VisitStatusModal = ({
       // Set form fields from visitData
       setVisitDate(visitData.visit_date || '');
       setVisitTime(visitData.scheduled_time || '');
-      setVisitType(visitData.visit_type || 'Initial');
+      setVisitType(visitData.visit_type || 'Initial Evaluation');
       setComments(visitData.comments || '');
       setSelectedStatus(visitData.status || 'Scheduled');
       setSelectedTherapist(visitData.staff_id || null);
@@ -375,11 +375,11 @@ const VisitStatusModal = ({
                 onChange={(e) => setVisitType(e.target.value)}
                 className="form-select"
               >
-                <option value="Initial">Initial</option>
-                <option value="Follow Up">Follow Up</option>
-                <option value="Re-evaluation">Re-evaluation</option>
-                <option value="Discharge">Discharge</option>
-                <option value="Assessment">Assessment</option>
+                <option value="Initial Evaluation">Initial Evaluation</option>
+                <option value="Standard">Standard</option>
+                <option value="Reassessment (RA)">Reassessment (RA)</option>
+                <option value="Discharge (DC)">Discharge (DC)</option>
+                <option value="Recert-Eval">Recert-Eval</option>
               </select>
             </div>
 

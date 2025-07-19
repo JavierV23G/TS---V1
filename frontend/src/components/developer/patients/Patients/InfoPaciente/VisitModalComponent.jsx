@@ -59,20 +59,13 @@ const VisitModalComponent = ({
     { id: 'sta1', name: 'Robert Williams', type: 'STA' },
   ];
 
-  // Visit types
+  // Visit types - Exact 5 types as requested
   const visitTypes = [
-    { id: 'INITIAL', label: 'Initial Eval' },
-    { id: 'REGULAR', label: 'Regular therapy session' },
-    { id: 'RECERT', label: 'Recertification evaluation' },
-    { id: 'DISCHARGE', label: 'Discharge (DC w/o a visit)' },
-    { id: 'POST_HOSPITAL', label: 'Post-Hospital Eval' },
-    { id: 'REASSESSMENT', label: 'Reassessment' },
-    { id: 'SOC_OASIS', label: 'SOC OASIS' },
-    { id: 'ROC_OASIS', label: 'ROC OASIS' },
-    { id: 'RECERT_OASIS', label: 'ReCert OASIS' },
-    { id: 'FOLLOWUP_OASIS', label: 'Follow-Up OASIS' },
-    { id: 'DC_OASIS', label: 'DC OASIS' },
-    { id: 'SUPERVISION', label: 'Supervision Assessment' },
+    { id: 'INITIAL_EVALUATION', label: 'Initial Evaluation' },
+    { id: 'STANDARD', label: 'Standard' },
+    { id: 'REASSESSMENT', label: 'Reassessment (RA)' },
+    { id: 'DISCHARGE', label: 'Discharge (DC)' },
+    { id: 'RECERT_EVAL', label: 'Recert-Eval' }
   ];
 
   // Visit actions
@@ -128,7 +121,7 @@ const VisitModalComponent = ({
   useEffect(() => {
     if (visitData) {
       setFormData({
-        visitType: visitData.visitType || 'INITIAL',
+        visitType: visitData.visitType || 'INITIAL_EVALUATION',
         therapist: visitData.therapist || therapists[0].id,
         date: visitData.date || formatDateToLocalISOString(new Date()),
         time: visitData.time || '15:00',
