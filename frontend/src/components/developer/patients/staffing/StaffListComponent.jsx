@@ -56,6 +56,26 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&');
 
+  // Formatear número de teléfono a formato (123) 456-7890
+  const formatPhoneNumber = (value) => {
+    // Remover todo lo que no sea dígito
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    
+    // Limitar a 10 dígitos
+    const truncated = phoneNumber.slice(0, 10);
+    
+    // Aplicar formato según la longitud
+    if (truncated.length >= 6) {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3, 6)}-${truncated.slice(6)}`;
+    } else if (truncated.length >= 3) {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3)}`;
+    } else if (truncated.length > 0) {
+      return `(${truncated}`;
+    }
+    
+    return truncated;
+  };
+
   // Simulación de carga con mensajes dinámicos
   useEffect(() => {
     setIsLoading(true);
@@ -115,13 +135,13 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         const [firstName, ...rest] = staff.name?.split(' ') || [''];
         const lastName = rest.join(' ');
   
-        // ✅ FIX: Obtener el rol REAL de la API, no asumir 'developer'
-        const actualRole = staff.role?.toLowerCase() || 'developer'; // Usar el rol real de la API
+        // ✅ FIX: Obtener el rol REAL de la API, preservando capitalización
+        const actualRole = staff.role || 'developer'; // Usar el rol real de la API sin convertir a minúsculas
         console.log(`🎯 Staff ${staff.name} - API Role:`, staff.role, "Processed:", actualRole);
         
         // Mapear el rol a su visualización correspondiente
-        const roleInfo = roles.find(r => r.value === actualRole);
-        const roleDisplay = roleInfo?.label || actualRole.toUpperCase();
+        const roleInfo = roles.find(r => r.value === actualRole.toLowerCase());
+        const roleDisplay = roleInfo?.label || actualRole;
         
         console.log(`🏷️ Role mapping for ${staff.name}:`, {
           original: staff.role,
@@ -131,7 +151,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         });
         
         // Determinar el tipo basado en el rol (agency o staff)
-        const type = actualRole === 'agency' ? 'agency' : 'staff';
+        const type = actualRole.toLowerCase() === 'agency' ? 'agency' : 'staff';
         
         // Para el tipo agency, usar el name como agencyName
         const agencyName = type === 'agency' ? staff.name : '';
@@ -150,7 +170,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         // Inicializar documentos basados en el tipo y rol REAL
         const documents = staff.documents ? JSON.parse(staff.documents) : 
           type === 'agency' ? initializeDocuments('agency', 'agency') : 
-          requiresDocuments(actualRole) ? initializeDocuments(actualRole, 'staff') : {};
+          requiresDocuments(actualRole.toLowerCase()) ? initializeDocuments(actualRole.toLowerCase(), 'staff') : {};
 
         const processedStaff = {
           id: staff.id,
@@ -161,8 +181,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           dob: staff.birthday || '',
           gender: staff.gender || '',
           email: staff.email || '',
-          phone: staff.phone || '',
-          alternatePhone: staff.alt_phone || '',
+          phone: staff.phone ? formatPhoneNumber(staff.phone) : '',
+          alternatePhone: staff.alt_phone ? formatPhoneNumber(staff.alt_phone) : '',
           zipCode: staff.postal_code || '',
           address: staff.address || '',
           userName: staff.username || '',
@@ -170,7 +190,10 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           role: actualRole, // ✅ Usar el rol REAL
           roleDisplay: roleDisplay,
           agency: agency,
-          branches: branches,
+          branches: branches.map(branch => ({
+            ...branch,
+            phone: branch.phone ? formatPhoneNumber(branch.phone) : ''
+          })),
           documents: documents,
           status: staff.is_active ? 'active' : 'inactive',
           fax: staff.fax || ''
@@ -225,7 +248,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     
     // Filtrar por rol (solo si está viendo staff)
     if (filterRole !== 'all' && viewMode !== 'agencies') {
-      filtered = filtered.filter(member => member.role === filterRole);
+      filtered = filtered.filter(member => member.role.toLowerCase() === filterRole);
     }
     
     // Filtrar por estado si no se muestran inactivos
@@ -267,6 +290,18 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   // Toggle visibilidad de contraseña
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
+  };
+
+  // Manejar cambio de teléfono con formato
+  const handlePhoneChange = (field, value) => {
+    const formattedPhone = formatPhoneNumber(value);
+    handleUpdateMember(field, formattedPhone);
+  };
+
+  // Manejar cambio de teléfono para agencias
+  const handleAgencyPhoneChange = (field, value) => {
+    const formattedPhone = formatPhoneNumber(value);
+    handleUpdateAgencyField(field, formattedPhone);
   };
 
   // Guardar cambios en la API
@@ -351,7 +386,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         }
         
         if (filterRole !== 'all' && viewMode !== 'agencies') {
-          matchesFilters = matchesFilters && member.role === filterRole;
+          matchesFilters = matchesFilters && member.role.toLowerCase() === filterRole;
         }
         
         if (!showInactive) {
@@ -508,9 +543,13 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     if (!selectedStaff || selectedStaff.type !== 'agency') return;
     
     const updatedBranches = [...(selectedStaff.branches || [])];
+    
+    // Si es un campo de teléfono, formatear
+    const finalValue = field === 'phone' ? formatPhoneNumber(value) : value;
+    
     updatedBranches[index] = {
       ...(updatedBranches[index] || {}),
-      [field]: value
+      [field]: finalValue
     };
     
     setSelectedStaff(prev => ({
@@ -586,17 +625,17 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   useEffect(() => {
     if (selectedStaff && editMode) {
       // Si cambia de rol y necesita documentos diferentes, inicializamos
-      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role) && 
+      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role.toLowerCase()) && 
           (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
         setSelectedStaff(prev => ({
           ...prev,
-          documents: initializeDocuments(prev.role, prev.type)
+          documents: initializeDocuments(prev.role.toLowerCase(), prev.type)
         }));
-      } else if (selectedStaff.role === 'agency' && 
+      } else if (selectedStaff.role.toLowerCase() === 'agency' && 
                 (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
         setSelectedStaff(prev => ({
           ...prev,
-          documents: initializeDocuments(prev.role, 'agency')
+          documents: initializeDocuments(prev.role.toLowerCase(), 'agency')
         }));
       }
     }
@@ -604,12 +643,12 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
 
   // Verificar si el rol requiere afiliación a una agencia
   const requiresAgency = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(role);
+    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(role.toLowerCase());
   };
 
   // Verificar si el rol requiere documentos
   const requiresDocuments = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(role);
+    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(role.toLowerCase());
   };
 
   // ✅ FIX: Renderizar pestañas basado en el tipo de miembro seleccionado con rol correcto
@@ -745,7 +784,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
               <input 
                 type="tel" 
                 value={selectedStaff.phone || ''} 
-                onChange={(e) => handleUpdateMember('phone', e.target.value)}
+                onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                placeholder="(123) 456-7890"
               />
             </div>
           </div>
@@ -755,7 +795,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
               <input 
                 type="tel" 
                 value={selectedStaff.alternatePhone || ''} 
-                onChange={(e) => handleUpdateMember('alternatePhone', e.target.value)}
+                onChange={(e) => handlePhoneChange('alternatePhone', e.target.value)}
+                placeholder="(123) 456-7890"
               />
             </div>
             <div className="input-group">
@@ -812,7 +853,8 @@ const renderAgencyInfoTab = () => (
             <input 
               type="tel" 
               value={selectedStaff.phone || ''} 
-              onChange={(e) => handleUpdateAgencyField('phone', e.target.value)}
+              onChange={(e) => handleAgencyPhoneChange('phone', e.target.value)}
+              placeholder="(123) 456-7890"
             />
           </div>
         </div>
@@ -906,7 +948,7 @@ const renderBranchesTab = () => (
                     type="tel" 
                     value={branch.phone || ''} 
                     onChange={(e) => handleUpdateBranch(index, 'phone', e.target.value)}
-                    placeholder="(555) 123-4567"
+                    placeholder="(123) 456-7890"
                   />
                 </div>
               </div>
@@ -1532,7 +1574,7 @@ return (
                        
                        // Asegurarse de que los documentos se inicialicen correctamente
                        if (requiresDocuments(newRole) && (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-                         handleUpdateMember('documents', initializeDocuments(newRole, selectedStaff.type));
+                         handleUpdateMember('documents', initializeDocuments(newRole.toLowerCase(), selectedStaff.type));
                        }
                      }}
                      disabled={selectedStaff.type === 'agency'} // No cambiar rol para agencias

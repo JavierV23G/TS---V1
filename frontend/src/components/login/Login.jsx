@@ -45,6 +45,16 @@ const Login = ({ onForgotPassword }) => {
       setErrors({ ...errors, [name]: false });
     }
   };
+  
+  const handlePasswordFocus = (e) => {
+    // Prevenir que el foco salte cuando el usuario está escribiendo
+    e.target.dataset.focused = 'true';
+  };
+  
+  const handlePasswordBlur = (e) => {
+    // Limpiar el indicador de foco
+    delete e.target.dataset.focused;
+  };
 
   const handleRememberMeChange = (e) => {
     setRememberMe(e.target.checked);
@@ -59,11 +69,21 @@ const Login = ({ onForgotPassword }) => {
   };
 
   const showError = (field, message) => {
+    // Guardar el elemento actualmente enfocado
+    const currentlyFocused = document.activeElement;
+    
     setErrors({ ...errors, [field]: true, message });
     const element = document.getElementById(`${field}Group`);
     if (element) {
       element.classList.add('form-pulse');
       setTimeout(() => element.classList.remove('form-pulse'), 500);
+    }
+    
+    // Restaurar el foco al elemento que estaba enfocado
+    if (currentlyFocused && currentlyFocused.id) {
+      setTimeout(() => {
+        currentlyFocused.focus();
+      }, 0);
     }
   };
 
@@ -82,8 +102,13 @@ const Login = ({ onForgotPassword }) => {
 
   const closeAuthModal = () => setAuthModal(prev => ({ ...prev, isOpen: false }));
   
-  const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = (e) => {
+    e.preventDefault();
     setShowPassword(!showPassword);
+    // Mantener el foco en el campo de contraseña
+    setTimeout(() => {
+      document.getElementById('password')?.focus();
+    }, 0);
   };
 
   const handleSubmit = async (e) => {
@@ -206,6 +231,8 @@ const Login = ({ onForgotPassword }) => {
               value={formData.password}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onFocus={handlePasswordFocus}
+              onBlur={handlePasswordBlur}
               required
               autoComplete="current-password"
             />
@@ -213,6 +240,7 @@ const Login = ({ onForgotPassword }) => {
               type="button" 
               className="password-toggle-btn" 
               onClick={togglePasswordVisibility}
+              onMouseDown={(e) => e.preventDefault()}
               tabIndex="-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
