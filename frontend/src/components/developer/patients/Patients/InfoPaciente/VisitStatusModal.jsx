@@ -50,12 +50,6 @@ const VisitStatusModal = ({
       special: true
     },
     {
-      id: 'Pending',
-      label: 'Pending',
-      icon: 'fas fa-clock',
-      color: '#f59e0b'
-    },
-    {
       id: 'Missed',
       label: 'Missed',
       icon: 'fas fa-user-times',
@@ -327,7 +321,7 @@ const VisitStatusModal = ({
         {/* Header */}
         <div className="modal-header">
           <div className="header-content">
-            <h2 className="modal-title">Visit Details</h2>
+            <h2 className="modal-title">Visit Management</h2>
             <div className="visit-datetime">
               {visitDate ? formatDate(visitDate) : 'No date'} | {visitTime ? formatTime(visitTime) : 'No time'}
             </div>
@@ -375,11 +369,18 @@ const VisitStatusModal = ({
                 onChange={(e) => setVisitType(e.target.value)}
                 className="form-select"
               >
-                <option value="Initial">Initial</option>
-                <option value="Follow Up">Follow Up</option>
-                <option value="Re-evaluation">Re-evaluation</option>
-                <option value="Discharge">Discharge</option>
-                <option value="Assessment">Assessment</option>
+                <option value="Initial Evaluation">Initial Evaluation</option>
+                <option value="Regular therapy session">Regular therapy session</option>
+                <option value="Recertification evaluation">Recertification evaluation</option>
+                <option value="Discharge (DC w/o a visit)">Discharge (DC w/o a visit)</option>
+                <option value="Post-Hospital Eval">Post-Hospital Eval</option>
+                <option value="Reassessment">Reassessment</option>
+                <option value="SOC OASIS">SOC OASIS</option>
+                <option value="ROC OASIS">ROC OASIS</option>
+                <option value="ReCert OASIS">ReCert OASIS</option>
+                <option value="Follow-Up OASIS">Follow-Up OASIS</option>
+                <option value="DC OASIS">DC OASIS</option>
+                <option value="Supervision Assessment">Supervision Assessment</option>
               </select>
             </div>
 
