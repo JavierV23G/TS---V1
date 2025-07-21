@@ -334,7 +334,7 @@ $medical-radius-sm: 8px;
       align-items: center;
       gap: 0.75rem;
 
-      // Special styling for telehealth toggle - Simple & Elegant
+      // Simple elegant checkbox for telehealth
       &.telehealth-toggle {
         .checkbox-container {
           position: relative;
@@ -345,53 +345,46 @@ $medical-radius-sm: 8px;
             cursor: pointer;
 
             &:checked + .checkbox-label {
-              background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-              border: none;
-              box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+              background: linear-gradient(135deg, #667eea, #764ba2);
+              border-color: #667eea;
+              box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 
               &::after {
-                transform: translateX(1.4rem);
-                background: #fff;
-                box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
               }
             }
           }
 
           .checkbox-label {
             display: block;
-            width: 3.2rem;
-            height: 1.6rem;
-            border: none;
-            border-radius: 2rem;
-            background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+            width: 1.75rem;
+            height: 1.75rem;
+            border: 2px solid $border-clinical;
+            border-radius: 8px;
+            background: $medical-white;
             cursor: pointer;
             position: relative;
             transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-            // Simple toggle circle
             &::after {
-              content: '';
+              content: '✓';
               position: absolute;
-              top: 0.15rem;
-              left: 0.15rem;
-              width: 1.3rem;
-              height: 1.3rem;
-              background: #fff;
-              border-radius: 50%;
-              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%) scale(0);
+              color: $medical-white;
+              font-weight: 700;
+              font-size: 0.9rem;
+              opacity: 0;
+              transition: all 0.3s ease;
             }
 
             &:hover {
+              border-color: #667eea;
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
               transform: translateY(-1px);
-              box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 
-                         0 4px 12px rgba(102, 126, 234, 0.15);
-            }
-
-            &:active {
-              transform: scale(0.98);
-              transition: all 0.1s ease;
             }
           }
         }
@@ -990,12 +983,3 @@ $medical-radius-sm: 8px;
   }
 }
 
-// Simple hover animation
-@keyframes gentleFloat {
-  0%, 100% {
-    transform: translateY(-1px);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
