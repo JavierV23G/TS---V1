@@ -1,4 +1,7 @@
 // NoteTemplateModal.scss
+// Import all section styles to ensure they're available in the modal
+@import './sections/sections';
+
 .note-template-modal {
   position: fixed;
   top: 0;

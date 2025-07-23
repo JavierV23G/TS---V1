@@ -1,4 +1,7 @@
 // TemplateRenderer.scss
+// Import all section styles
+@import './sections/sections';
+
 .template-renderer {
   display: flex;
   height: 100%;

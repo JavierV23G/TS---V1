@@ -24,11 +24,16 @@ const NoteTemplateModal = ({
     refreshConfig 
   } = useTemplateConfig(disciplina, tipoNota, isOpen);
 
-  // Debug log for initial data
-  console.log('NoteTemplateModal initialData:', initialData);
-  console.log('NoteTemplateModal patientData:', patientData);
-  console.log('NoteTemplateModal disciplina:', disciplina);
-  console.log('NoteTemplateModal tipoNota:', tipoNota);
+  // Debug log for initial data (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔷 NoteTemplateModal - Modal opened with data:', {
+      initialData,
+      patientData,
+      disciplina,
+      tipoNota,
+      templateConfig
+    });
+  }
 
   // Manage section data with autosave
   const {
