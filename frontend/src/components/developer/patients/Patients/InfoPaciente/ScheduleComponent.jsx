@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+// import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal'; // Removed - notes handled separately
 import VisitStatusModal from './VisitStatusModal';
 import SignaturePad from './SignaturePad';
 
@@ -32,8 +32,7 @@ const ScheduleComponent = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [disciplineFilter, setDisciplineFilter] = useState('ALL'); // New filter for disciplines
   const [showDisciplineFilter, setShowDisciplineFilter] = useState(false); // Show/hide discipline filter
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [completionVisitData, setCompletionVisitData] = useState(null);
+  // Note: Completion modal state removed - handled in Notes component
   const [activeTab, setActiveTab] = useState('details');
   const [selectedFile, setSelectedFile] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
@@ -1024,16 +1023,16 @@ const ScheduleComponent = ({
   };
 
   const handleCompleteVisit = (visitData) => {
-    // Close status modal and open evaluation modal
+    // Close status modal
     setShowVisitStatusModal(false);
     setStatusChangeVisit(null);
     
-    // Update visit status with all data first
+    // Update visit status with all data - notes are handled separately in Notes component
     const completedVisitData = { ...visitData, status: 'Completed' };
     handleStatusChange(visitData.id, 'Completed', completedVisitData).then(() => {
-      // Then open the completion modal for evaluation
-      setCompletionVisitData(completedVisitData);
-      setShowCompletionModal(true);
+      // Visit marked as completed - user can access notes from the Notes tab
+      setError('✅ Visit completed! Visit notes can be added from the Notes section.');
+      setTimeout(() => setError(''), 5000);
     });
   };
 
@@ -1251,31 +1250,7 @@ const ScheduleComponent = ({
     }
   };
 
-  const handleCompletionFormSave = async (formData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setVisits(prevVisits => {
-          const updatedVisits = prevVisits.map((visit) =>
-            visit.id === completionVisitData.id
-              ? {
-                  ...visit,
-                  evaluationCompleted: true,
-                  evaluationData: formData,
-                }
-              : visit
-          );
-          
-          if (onUpdateSchedule) {
-            onUpdateSchedule(updatedVisits);
-          }
-          
-          return updatedVisits;
-        });
-        
-        resolve();
-      }, 2000);
-    });
-  };
+  // Note: Completion form handling is now done in the Notes component
 
   const getFilteredVisits = () => {
     let filtered = [...visits];
@@ -2166,12 +2141,7 @@ const ScheduleComponent = ({
         )}
       </div>
 
-      <VisitCompletionModal
-        isOpen={showCompletionModal}
-        onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
-        onSave={handleCompletionFormSave}
-      />
+      {/* Note: Visit completion/notes are now handled in the dedicated Notes component */}
 
 
       <div className="card-body">
