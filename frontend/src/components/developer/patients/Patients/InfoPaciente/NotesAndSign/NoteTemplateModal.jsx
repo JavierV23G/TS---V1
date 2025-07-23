@@ -9,7 +9,7 @@ const NoteTemplateModal = ({
   onClose, 
   patientData, 
   disciplina = 'PT', 
-  tipoNota = 'evaluation',
+  tipoNota = 'Initial Evaluation',
   initialData = {},
   onSave 
 }) => {
@@ -23,6 +23,12 @@ const NoteTemplateModal = ({
     error: configError,
     refreshConfig 
   } = useTemplateConfig(disciplina, tipoNota, isOpen);
+
+  // Debug log for initial data
+  console.log('NoteTemplateModal initialData:', initialData);
+  console.log('NoteTemplateModal patientData:', patientData);
+  console.log('NoteTemplateModal disciplina:', disciplina);
+  console.log('NoteTemplateModal tipoNota:', tipoNota);
 
   // Manage section data with autosave
   const {
@@ -67,14 +73,20 @@ const NoteTemplateModal = ({
         return;
       }
 
-      // Save final data
-      const result = await saveData();
+      // Save final data with completed status
+      const finalData = {
+        ...data,
+        status: "Completed"
+      };
+      
+      const result = await saveData(finalData);
       
       if (onSave) {
-        await onSave(data, { 
+        await onSave(finalData, { 
           templateConfig, 
           validation,
-          completionStats: getCompletionStats()
+          completionStats: getCompletionStats(),
+          isCompleted: true
         });
       }
 

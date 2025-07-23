@@ -14,7 +14,7 @@ const useTemplateConfig = (disciplina, tipoNota) => {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/templates/${disciplina}/${tipoNota}`);
+      const response = await fetch(`http://localhost:8000/templates/${disciplina}/${tipoNota}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch template: ${response.status} - ${response.statusText}`);

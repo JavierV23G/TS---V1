@@ -254,20 +254,12 @@ class NoteSectionResponse(NoteSectionCreate):
 
 #========================= NOTES =========================#
 
-class VisitNoteSectionData(BaseModel):
-    section_id: int
-    content: dict
-
-class VisitNoteSectionUpdate(BaseModel):
-    section_id: int
-    content: Dict
-
 class VisitNoteUpdate(BaseModel):
     status: Optional[str] = None
     therapist_signature: Optional[str] = None
     patient_signature: Optional[str] = None
     visit_date_signature: Optional[str] = None
-    updated_sections: Optional[List[VisitNoteSectionUpdate]] = None
+    sections_data: Optional[dict] = None
 
 class VisitNoteResponse(BaseModel):
     id: int
@@ -278,7 +270,7 @@ class VisitNoteResponse(BaseModel):
     therapist_signature: Optional[str] = None
     patient_signature: Optional[str] = None
     visit_date_signature: Optional[date] = None
-    sections_data: Optional[List[VisitNoteSectionData]] = None
+    sections_data: Optional[dict] = None
     template_sections: List[NoteSectionResponse] = []
 
     class Config:

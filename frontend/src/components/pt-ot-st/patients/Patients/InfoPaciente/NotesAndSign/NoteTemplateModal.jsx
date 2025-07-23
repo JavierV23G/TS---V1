@@ -9,7 +9,7 @@ const NoteTemplateModal = ({
   onClose, 
   patientData, 
   disciplina = 'PT', 
-  tipoNota = 'evaluation',
+  tipoNota = 'Initial Evaluation',
   initialData = {},
   onSave 
 }) => {
@@ -64,14 +64,20 @@ const NoteTemplateModal = ({
         return;
       }
 
-      // Save final data
-      const result = await saveData();
+      // Save final data with completed status
+      const finalData = {
+        ...data,
+        status: "Completed"
+      };
+      
+      const result = await saveData(finalData);
       
       if (onSave) {
-        await onSave(data, { 
+        await onSave(finalData, { 
           templateConfig, 
           validation,
-          completionStats: getCompletionStats()
+          completionStats: getCompletionStats(),
+          isCompleted: true
         });
       }
 

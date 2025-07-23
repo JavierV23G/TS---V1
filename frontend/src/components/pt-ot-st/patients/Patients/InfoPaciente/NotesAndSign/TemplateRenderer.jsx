@@ -16,6 +16,17 @@ const TemplateRenderer = ({
   const [activeSection, setActiveSection] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Map backend section names to frontend components
+  const getSectionComponent = (sectionName) => {
+    const sectionMap = {
+      'VITALS': 'VitalsSection',
+      'Transfers / Functional Independence': 'TransfersFunctionalSection',
+      'PAIN': 'PainSection'
+    };
+    
+    return sectionMap[sectionName] || null;
+  };
+
   // Load sections based on template configuration
   useEffect(() => {
     if (!templateConfig?.sections) return;
@@ -25,14 +36,21 @@ const TemplateRenderer = ({
       const sectionsMap = {};
 
       templateConfig.sections.forEach(sectionConfig => {
-        const SectionComponent = Sections[sectionConfig.component];
+        // Get component name from section_name mapping
+        const componentName = getSectionComponent(sectionConfig.section_name);
+        const SectionComponent = componentName ? Sections[componentName] : null;
+        
         if (SectionComponent) {
           sectionsMap[sectionConfig.id] = {
             Component: SectionComponent,
-            config: sectionConfig
+            config: {
+              ...sectionConfig,
+              component: componentName,
+              name: sectionConfig.section_name
+            }
           };
         } else {
-          console.warn(`Section component ${sectionConfig.component} not found`);
+          console.warn(`Section component for "${sectionConfig.section_name}" not found (mapped to: ${componentName})`);
         }
       });
 
