@@ -349,6 +349,12 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
     # Update primitive fields
     if data.status is not None:
         note.status = data.status
+        
+        # If note is completed, also update the visit status
+        if data.status.lower() == "completed":
+            visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
+            if visit:
+                visit.status = "Completed"
     if data.therapist_signature is not None:
         note.therapist_signature = data.therapist_signature
     if data.patient_signature is not None:
@@ -363,17 +369,16 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
             note.visit_date_signature = data.visit_date_signature
 
     # Update sections_data content
-    if data.updated_sections:
-        existing = note.sections_data or []
-        section_map = {s["section_id"]: s for s in existing}
-
-        for update in data.updated_sections:
-            section_map[update.section_id] = {
-                "section_id": update.section_id,
-                "content": update.content
-            }
-
-        note.sections_data = list(section_map.values())
+    if data.sections_data is not None:
+        note.sections_data = data.sections_data
+        
+        # If note was completed and sections are being updated, change to pending
+        if note.status.lower() == "completed" and data.status is None:
+            note.status = "Pending"
+            # Also update visit status to pending
+            visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
+            if visit:
+                visit.status = "Pending"
 
     db.commit()
     db.refresh(note)

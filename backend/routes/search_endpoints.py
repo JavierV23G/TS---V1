@@ -178,25 +178,30 @@ def get_deleted_visits(cert_id: int, db: Session = Depends(get_db)):
 
 #====================== VISIT NOTES ======================#
 
-@router.get("/visit-notes/{visit_id}/debug", response_model=VisitNoteResponse)
-def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
+@router.get("/visit-notes/{visit_id}", response_model=VisitNoteResponse)
+def get_visit_note(visit_id: int, db: Session = Depends(get_db)):
     note = db.query(VisitNote).filter(VisitNote.visit_id == visit_id).first()
 
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    print("======= DEBUG INFO FOR NOTE =======")
-    print(f"Note ID: {note.id}")
-    print(f"Visit ID: {note.visit_id}")
-    print(f"Discipline: {note.discipline}")
-    print(f"Note Type: {note.note_type}")
-    print(f"Status: {note.status}")
-    print(f"Therapist Signature: {note.therapist_signature}")
-    print(f"Patient Signature: {note.patient_signature}")
-    print(f"Visit Date Signature: {note.visit_date_signature}")
-    print("Sections Data Raw:", note.sections_data)
-    print("Sections Data JSON Dump:", json.dumps(note.sections_data, indent=2) if note.sections_data else "None")
-    print("======= END DEBUG INFO =======")
+    # Get template sections for frontend context
+    template = db.query(NoteTemplate).filter_by(
+        discipline=note.discipline,
+        note_type=note.note_type,
+        is_active=True
+    ).first()
+
+    template_sections = []
+    if template:
+        links = (
+            db.query(NoteTemplateSection)
+            .filter(NoteTemplateSection.template_id == template.id)
+            .join(NoteSection)
+            .order_by(NoteTemplateSection.position.asc())
+            .all()
+        )
+        template_sections = [ts.section for ts in links]
 
     return VisitNoteResponse(
         id=note.id,
@@ -207,8 +212,8 @@ def get_note_debug(visit_id: int, db: Session = Depends(get_db)):
         therapist_signature=note.therapist_signature,
         patient_signature=note.patient_signature,
         visit_date_signature=note.visit_date_signature,
-        sections_data=note.sections_data or [],
-        template_sections=[],
+        sections_data=note.sections_data or {},
+        template_sections=template_sections,
     )
 
 @router.get("/templates/{discipline}/{visit_type}", response_model=NoteTemplateWithSectionsResponse)

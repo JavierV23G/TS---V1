@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SignaturePad from './SignaturePad';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import '../../../../../styles/developer/Patients/InfoPaciente/VisitModalComponent.scss';
 
 /**
@@ -63,7 +63,7 @@ const VisitModalComponent = ({
     { id: 'sta1', name: 'Robert Williams', type: 'STA', role: 'STA' },
   ];
 
-  // Visit types
+  // Visit types - Exact 5 types as requested
   const visitTypes = [
     'Initial Evaluation',
     'Regular therapy session',
@@ -848,10 +848,13 @@ const VisitModalComponent = ({
 
       {/* Evaluation Modal */}
       {showEvaluationModal && (
-        <VisitCompletionModal
+        <NoteTemplateModal
           isOpen={showEvaluationModal}
           onClose={() => setShowEvaluationModal(false)}
-          visitData={{
+          patientData={patientInfo}
+          disciplina={visitData?.discipline || 'PT'}
+          tipoNota="evaluation"
+          initialData={{
             ...visitData,
             patientName: patientInfo?.full_name || 'Unknown',
             date: formData.date

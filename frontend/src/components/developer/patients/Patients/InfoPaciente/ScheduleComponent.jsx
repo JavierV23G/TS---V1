@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import VisitStatusModal from './VisitStatusModal';
 import VisitModalComponent from './VisitModalComponent';
 import SignaturePad from './SignaturePad';
@@ -33,6 +33,7 @@ const ScheduleComponent = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [disciplineFilter, setDisciplineFilter] = useState('ALL'); // New filter for disciplines
   const [showDisciplineFilter, setShowDisciplineFilter] = useState(false); // Show/hide discipline filter
+  // Completion modal state
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionVisitData, setCompletionVisitData] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
@@ -564,10 +565,16 @@ const ScheduleComponent = ({
       
       if (!response.ok) {
         const errorText = await response.text();
+        
+        // Check if the error is due to visit having notes
+        if (response.status === 400 && (errorText.includes('note') || errorText.includes('Note'))) {
+          throw new Error('Cannot delete visit: This visit has associated notes. The visit has been deactivated instead of deleted to preserve the note data.');
+        }
+        
         throw new Error(`Failed to delete visit: ${response.status} - ${errorText}`);
       }
       
-      console.log('Visit deleted successfully:', visitId);
+      console.log('✅ Visit deleted successfully:', visitId);
       return visitId;
       
     } catch (err) {
@@ -1064,17 +1071,39 @@ const ScheduleComponent = ({
   };
 
   const handleCompleteVisit = (visitData) => {
-    // Close status modal and open evaluation modal
+    // Close status modal
     setShowVisitStatusModal(false);
     setStatusChangeVisit(null);
     
-    // Update visit status with all data first
-    const completedVisitData = { ...visitData, status: 'Completed' };
-    handleStatusChange(visitData.id, 'Completed', completedVisitData).then(() => {
-      // Then open the completion modal for evaluation
-      setCompletionVisitData(completedVisitData);
-      setShowCompletionModal(true);
-    });
+    // Get therapist discipline for proper template loading
+    const therapist = therapists.find(t => t.id === visitData.staff_id);
+    const therapistRole = therapist?.role?.toUpperCase() || 'PT';
+    
+    // Map therapist role to discipline
+    const disciplineMapping = {
+      'PT': 'PT',
+      'PTA': 'PT', 
+      'OT': 'OT',
+      'COTA': 'OT',
+      'ST': 'ST',
+      'STA': 'ST'
+    };
+    
+    const discipline = disciplineMapping[therapistRole] || 'PT';
+    
+    // Prepare visit data with discipline information
+    const enrichedVisitData = {
+      ...visitData,
+      discipline: discipline,
+      therapist_role: therapistRole,
+      patientId: patient?.id,
+      patientName: patient?.full_name || `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim()
+    };
+    
+    // Open note completion modal instead of directly changing status
+    console.log('Opening completion modal for visit:', enrichedVisitData);
+    setCompletionVisitData(enrichedVisitData);
+    setShowCompletionModal(true);
   };
 
   const handleInitiateDelete = (visitId, e) => {
@@ -1088,18 +1117,29 @@ const ScheduleComponent = ({
     try {
       await deleteVisitApi(deleteVisitId);
       
-      const updatedVisits = visits.filter((visit) => visit.id !== deleteVisitId);
-      setVisits(updatedVisits);
-      
-      if (onUpdateSchedule) {
-        onUpdateSchedule(updatedVisits);
+      // Refresh visits list to get updated data (including any deactivated visits)
+      if (currentCertPeriod?.id) {
+        await fetchVisitsForCertPeriod(currentCertPeriod.id);
       }
       
       setError('✅ Visit deleted successfully!');
       setTimeout(() => setError(''), 3000);
       
     } catch (err) {
-      setError('❌ Failed to delete visit: ' + err.message);
+      console.error('Delete visit error:', err);
+      
+      // Show specific error message based on type
+      if (err.message.includes('associated notes')) {
+        setError('⚠️ ' + err.message);
+        // Refresh the list since the visit might have been deactivated
+        if (currentCertPeriod?.id) {
+          await fetchVisitsForCertPeriod(currentCertPeriod.id);
+        }
+      } else {
+        setError('❌ Failed to delete visit: ' + err.message);
+      }
+      
+      setTimeout(() => setError(''), 5000);
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirmModal(false);
@@ -1291,39 +1331,56 @@ const ScheduleComponent = ({
     }
   };
 
-  const handleCompletionFormSave = async (formData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setVisits(prevVisits => {
-          const updatedVisits = prevVisits.map((visit) =>
-            visit.id === completionVisitData.id
-              ? {
-                  ...visit,
-                  evaluationCompleted: true,
-                  evaluationData: formData,
-                  hasNoteSaved: true, // Add flag to indicate note is saved
-                }
-              : visit
-          );
-          
-          if (onUpdateSchedule) {
-            onUpdateSchedule(updatedVisits);
-          }
-          
-          return updatedVisits;
-        });
-        
-        // Just close the completion modal, don't open details modal
-        setShowCompletionModal(false);
-        setCompletionVisitData(null);
-        
-        // Show success message
-        setError('✅ Note saved successfully!');
-        setTimeout(() => setError(''), 3000);
-        
-        resolve();
-      }, 2000);
-    });
+  const handleCompletionFormSave = async (formData, options = {}) => {
+    console.log('Saving completion form data:', formData);
+    
+    try {
+      // Get the note for this visit
+      const noteResponse = await fetch(`http://localhost:8000/visit-notes/${completionVisitData.id}`);
+      if (!noteResponse.ok) {
+        throw new Error('Failed to fetch note');
+      }
+      const noteData = await noteResponse.json();
+      
+      // Update the note with new data and completed status
+      const updateResponse = await fetch(`http://localhost:8000/visit-notes/${noteData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: options.isCompleted ? "Completed" : "Pending",
+          sections_data: formData,
+          therapist_signature: formData.therapist_signature,
+          patient_signature: formData.patient_signature,
+          visit_date_signature: formData.visit_date_signature
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update note');
+      }
+      
+      const updatedNote = await updateResponse.json();
+      
+      // Refresh visits list to show updated status
+      if (currentCertPeriod?.id) {
+        await fetchVisitsForCertPeriod(currentCertPeriod.id);
+      }
+      
+      // Close modal and show success message
+      setShowCompletionModal(false);
+      setCompletionVisitData(null);
+      setError('✅ Note saved successfully!');
+      setTimeout(() => setError(''), 3000);
+      
+      return updatedNote;
+    } catch (error) {
+      console.error('Error saving completion form:', error);
+      setError('❌ Failed to save note. Please try again.');
+      setTimeout(() => setError(''), 5000);
+      throw error;
+    }
   };
 
   const getFilteredVisits = () => {
@@ -2241,10 +2298,18 @@ const ScheduleComponent = ({
         )}
       </div>
 
-      <VisitCompletionModal
+      <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
+        patientData={{
+          firstName: patient?.first_name || '',
+          lastName: patient?.last_name || '',
+          id: patient?.id,
+          full_name: patient?.full_name || `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim()
+        }}
+        disciplina={completionVisitData?.discipline || 'PT'}
+        tipoNota="Initial Evaluation"
+        initialData={completionVisitData || {}}
         onSave={handleCompletionFormSave}
       />
 

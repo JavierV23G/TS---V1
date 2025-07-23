@@ -1,0 +1,44 @@
+// Import all section styles for TemplateRenderer
+// This ensures all section styles are available when sections are dynamically loaded
+
+// 1. Subjective Section
+@import 'SubjectiveSection';
+
+// 2. Vitals Section
+@import 'VitalsSection';
+
+// 3. Pain Section
+@import 'PainSection';
+
+// 4. Medication Section
+@import 'MedicationSection';
+
+// 5. Living Arrangements Section
+@import 'LivingArrangementsSection';
+
+// 6. Gait Mobility Section
+@import 'GaitMobilitySection';
+
+// 7. Muscle Balance Sections
+@import 'MuscleBalanceSections';
+
+// 8. Transfers Functional Section
+@import 'TransfersFunctionalSection';
+
+// 9. ADL Self Care Section
+@import 'ADLSelfCareSection';
+
+// 10. Standardized Tests Section
+@import 'StandardizedTestsSection';
+
+// 11. Assessment Sections (Multiple sections in one file)
+@import 'AssessmentSections';
+
+// 12. Treatment Interventions Section
+@import 'TreatmentInterventionsSection';
+
+// 13. Goals Section
+@import 'GoalsSection';
+
+// 14. Signature Section
+@import 'SignatureSection';

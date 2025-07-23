@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import '../../../../../styles/pt-ot-st/Patients/InfoPaciente/ScheduleComponent.scss';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import SignaturePad from './SignaturePad';
 
 const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
@@ -694,26 +694,46 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   };
 
   // Manejar guardado del formulario de finalización
-  const handleCompletionFormSave = async (formData) => {
+  const handleCompletionFormSave = async (formData, options = {}) => {
     console.log('Saving completion form data:', formData);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const updatedVisits = visits.map((visit) =>
-          visit.id === completionVisitData.id
-            ? {
-                ...visit,
-                evaluationCompleted: true,
-                evaluationData: formData,
-              }
-            : visit
-        );
-        setVisits(updatedVisits);
-        if (onUpdateSchedule) {
-          onUpdateSchedule(updatedVisits);
-        }
-        resolve();
-      }, 2000);
-    });
+    
+    try {
+      // Get the note for this visit
+      const noteResponse = await fetch(`http://localhost:8000/visit-notes/${completionVisitData.id}`);
+      if (!noteResponse.ok) {
+        throw new Error('Failed to fetch note');
+      }
+      const noteData = await noteResponse.json();
+      
+      // Update the note with new data and completed status
+      const updateResponse = await fetch(`http://localhost:8000/visit-notes/${noteData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: options.isCompleted ? "Completed" : "Pending",
+          sections_data: formData,
+          therapist_signature: formData.therapist_signature,
+          patient_signature: formData.patient_signature,
+          visit_date_signature: formData.visit_date_signature
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update note');
+      }
+      
+      const updatedNote = await updateResponse.json();
+      
+      // Refresh visits list to show updated status
+      await fetchVisits();
+      
+      return updatedNote;
+    } catch (error) {
+      console.error('Error saving completion form:', error);
+      throw error;
+    }
   };
 
   // Obtener nombre del terapeuta por ID
@@ -1810,10 +1830,13 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         </div>
       </div>
 
-      <VisitCompletionModal
+      <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
+        patientData={patient}
+        disciplina={completionVisitData?.discipline || 'PT'}
+        tipoNota="Initial Evaluation"
+        initialData={completionVisitData}
         onSave={handleCompletionFormSave}
       />
 
