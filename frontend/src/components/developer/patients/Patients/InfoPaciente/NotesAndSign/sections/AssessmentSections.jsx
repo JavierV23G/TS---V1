@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/AssessmentSections.scss';
+import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/AssessmentSections.scss';
 
 // Múltiples secciones de Assessment optimizadas en un solo archivo
 

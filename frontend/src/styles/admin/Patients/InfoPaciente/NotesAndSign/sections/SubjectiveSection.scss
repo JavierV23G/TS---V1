@@ -1,0 +1,110 @@
+// SubjectiveSection.scss
+.subjective-section {
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    textarea, input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      }
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-text {
+      font-size: 0.875rem;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+  }
+
+  .pain-scale {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+
+    .scale-numbers {
+      display: flex;
+      gap: 5px;
+
+      .scale-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        
+        input[type="radio"] {
+          margin-bottom: 5px;
+        }
+
+        label {
+          font-size: 0.8rem;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+
+      input[type="checkbox"] {
+        margin-right: 8px;
+        width: auto;
+      }
+
+      label {
+        margin: 0;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .subjective-section {
+    .checkbox-group {
+      grid-template-columns: 1fr;
+    }
+
+    .pain-scale .scale-numbers {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+}

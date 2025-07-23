@@ -1,6 +1,6 @@
 // SignatureSection.jsx - Modular signature component
 import React, { useRef, useState, useEffect } from 'react';
-import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/SignatureSection.scss';
+import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/SignatureSection.scss';
 
 const SignatureSection = ({ 
   data, 

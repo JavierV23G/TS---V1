@@ -16,13 +16,13 @@ const NoteTemplateModal = ({
   const [currentStep, setCurrentStep] = useState('template');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load template configuration
+  // Load template configuration - hooks must be called unconditionally
   const { 
     templateConfig, 
     loading: configLoading, 
     error: configError,
     refreshConfig 
-  } = useTemplateConfig(disciplina, tipoNota);
+  } = useTemplateConfig(disciplina, tipoNota, isOpen);
 
   // Manage section data with autosave
   const {
@@ -40,6 +40,9 @@ const NoteTemplateModal = ({
     interval: templateConfig?.navigation?.autoSaveInterval || 30000,
     onSave: onSave
   });
+
+  // Early return if modal is not open - after hooks
+  if (!isOpen) return null;
 
   // Handle modal close
   const handleClose = () => {
@@ -139,8 +142,6 @@ const NoteTemplateModal = ({
       </div>
     );
   }
-
-  if (!isOpen) return null;
 
   const completionStats = getCompletionStats();
 

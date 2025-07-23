@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-// import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal'; // Removed - notes handled separately
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import VisitStatusModal from './VisitStatusModal';
 import VisitModalComponent from './VisitModalComponent';
 import SignaturePad from './SignaturePad';
@@ -33,7 +33,9 @@ const ScheduleComponent = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [disciplineFilter, setDisciplineFilter] = useState('ALL'); // New filter for disciplines
   const [showDisciplineFilter, setShowDisciplineFilter] = useState(false); // Show/hide discipline filter
-  // Note: Completion modal state removed - handled in Notes component
+  // Completion modal state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionVisitData, setCompletionVisitData] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const [selectedFile, setSelectedFile] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
@@ -2240,10 +2242,13 @@ const ScheduleComponent = ({
         )}
       </div>
 
-      <VisitCompletionModal
+      <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
+        patientData={patient}
+        disciplina={completionVisitData?.discipline || 'PT'}
+        tipoNota="evaluation"
+        initialData={completionVisitData}
         onSave={handleCompletionFormSave}
       />
 

@@ -1,0 +1,39 @@
+// AssessmentSections.scss
+@import 'common';
+
+.assessment-sections {
+  @extend .section-common;
+
+  .assessment-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 15px;
+
+    .assessment-header {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 10px;
+    }
+  }
+
+  .severity-scale {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+
+    .scale-item {
+      text-align: center;
+      
+      input[type="radio"] {
+        margin-bottom: 5px;
+      }
+      
+      label {
+        font-size: 0.8rem;
+        display: block;
+      }
+    }
+  }
+}

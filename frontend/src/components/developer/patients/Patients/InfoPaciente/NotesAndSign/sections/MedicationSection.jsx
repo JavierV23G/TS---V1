@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/MedicationSection.scss';
+import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/MedicationSection.scss';
 
 const MedicationSection = ({ data, onChange, sectionId, config, onOpenTest }) => {
   const handleChange = (field, value) => {

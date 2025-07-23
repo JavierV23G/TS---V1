@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import '../../../../../styles/pt-ot-st/Patients/InfoPaciente/ScheduleComponent.scss';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import SignaturePad from './SignaturePad';
 
 const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
@@ -1810,10 +1810,13 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         </div>
       </div>
 
-      <VisitCompletionModal
+      <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
+        patientData={patient}
+        disciplina={completionVisitData?.discipline || 'PT'}
+        tipoNota="evaluation"
+        initialData={completionVisitData}
         onSave={handleCompletionFormSave}
       />
 
