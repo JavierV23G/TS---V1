@@ -3,6 +3,7 @@ import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
 // import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal'; // Removed - notes handled separately
 import VisitStatusModal from './VisitStatusModal';
+import VisitModalComponent from './VisitModalComponent';
 import SignaturePad from './SignaturePad';
 
 const ScheduleComponent = ({ 
@@ -55,6 +56,8 @@ const ScheduleComponent = ({
     ST: {}   // Weekly limits for ST/STA
   });
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [showCompletedVisitModal, setShowCompletedVisitModal] = useState(false);
+  const [completedVisitModalData, setCompletedVisitModalData] = useState(null);
   
   // DYNAMIC STATE
   const [therapists, setTherapists] = useState([]);
@@ -171,7 +174,15 @@ const ScheduleComponent = ({
     'Standard',
     'Reassessment (RA)',
     'Discharge (DC)',
-    'Recert-Eval'
+    'Recert-Eval',
+    'Regular therapy session',
+    'Post-Hospital Eval',
+    'SOC OASIS',
+    'ROC OASIS',
+    'ReCert OASIS',
+    'Follow-Up OASIS',
+    'DC OASIS',
+    'Supervision Assessment'
   ];
 
   // DISCIPLINE MAPPING
@@ -942,9 +953,38 @@ const ScheduleComponent = ({
 
   const handleOpenVisitModal = (visit = null) => {
     if (visit) {
-      // For existing visits, show status modal instead of edit modal
-      setStatusChangeVisit(visit);
-      setShowVisitStatusModal(true);
+      console.log('Opening modal for visit:', visit);
+      console.log('Visit status:', visit.status);
+      console.log('Has note saved:', visit.hasNoteSaved);
+      console.log('Is pending changes:', visit.isPendingChanges);
+      
+      // Check if visit is completed OR is pending (returned for changes)
+      if (visit.status === 'Completed' || visit.status?.toLowerCase() === 'completed' || visit.status === 'Pending') {
+        console.log('Opening details modal for completed visit or pending changes');
+        // Always open details modal for completed visits or pending changes
+        setShowCompletedVisitModal(true);
+        setCompletedVisitModalData({
+          ...visit,
+          visitType: visit.visit_type,
+          therapist: visit.staff_id,
+          date: visit.visit_date,
+          time: visit.scheduled_time,
+          status: visit.status.toUpperCase(),
+          gCode: visit.gCode || '',
+          physician: patient?.physician || 'Not assigned',
+          certPeriod: visit.certification_period_id || currentCertPeriod?.id,
+          certPeriodDisplay: currentCertPeriod ? `${currentCertPeriod.start_date} - ${currentCertPeriod.end_date}` : 'Not available',
+          notes: visit.notes || '',
+          documents: visit.documents || [],
+          evaluationData: visit.evaluationData || null,
+          isPendingChanges: visit.status === 'Pending'
+        });
+      } else {
+        console.log('Opening status modal for regular visit');
+        // For existing visits that are not completed, show status modal
+        setStatusChangeVisit(visit);
+        setShowVisitStatusModal(true);
+      }
     } else {
       // For new visits, show creation modal
       setSelectedVisit(null);
@@ -1250,7 +1290,40 @@ const ScheduleComponent = ({
     }
   };
 
-  // Note: Completion form handling is now done in the Notes component
+  const handleCompletionFormSave = async (formData) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setVisits(prevVisits => {
+          const updatedVisits = prevVisits.map((visit) =>
+            visit.id === completionVisitData.id
+              ? {
+                  ...visit,
+                  evaluationCompleted: true,
+                  evaluationData: formData,
+                  hasNoteSaved: true, // Add flag to indicate note is saved
+                }
+              : visit
+          );
+          
+          if (onUpdateSchedule) {
+            onUpdateSchedule(updatedVisits);
+          }
+          
+          return updatedVisits;
+        });
+        
+        // Just close the completion modal, don't open details modal
+        setShowCompletionModal(false);
+        setCompletionVisitData(null);
+        
+        // Show success message
+        setError('✅ Note saved successfully!');
+        setTimeout(() => setError(''), 3000);
+        
+        resolve();
+      }, 2000);
+    });
+  };
 
   const getFilteredVisits = () => {
     let filtered = [...visits];
@@ -1787,6 +1860,20 @@ const ScheduleComponent = ({
                                     <div className="visit-purpose-container">
                                       <span className="visit-type">{visit.visit_type}</span>
                                     </div>
+                                    {visit.hasNoteSaved && (
+                                      <div className="calendar-note-saved" style={{
+                                        fontSize: '0.75rem',
+                                        color: '#10b981',
+                                        fontWeight: '600',
+                                        marginTop: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}>
+                                        <i className="fas fa-check-circle" style={{fontSize: '0.7rem'}}></i>
+                                        <span>Note Saved</span>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -1814,7 +1901,10 @@ const ScheduleComponent = ({
     const therapistColors = getTherapistColors(visit.staff_id);
     const statusColor = getStatusColor(visit.status);
     const therapistType = getTherapistType(visit.staff_id);
-    const [year, month, day] = visit.visit_date.split('-').map(Number);
+    
+    // Create date without timezone issues
+    const visitDateString = visit.visit_date;
+    const [year, month, day] = visitDateString.split('-').map(Number);
     const visitDate = new Date(year, month - 1, day);
 
     const uniqueKey = `visit-${visit.id}-${visit.status}-${visit.visit_date}-${Date.now()}`;
@@ -1852,11 +1942,11 @@ const ScheduleComponent = ({
             <i className="fas fa-calendar"></i>
             <div className="date-time-details">
               <span className="visit-date">
-                {visitDate.toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                })}
+                {(() => {
+                  // Manual date formatting to avoid timezone issues
+                  const [year, month, day] = visitDateString.split('-');
+                  return `${month}/${day}/${year}`;
+                })()}
               </span>
               {visit.scheduled_time && <span className="visit-time">{formatTime(visit.scheduled_time)}</span>}
             </div>
@@ -1888,6 +1978,15 @@ const ScheduleComponent = ({
               <span>
                 {visit.documents.length} {visit.documents.length === 1 ? 'Document' : 'Documents'}
               </span>
+            </div>
+          )}
+          {/* Note status indicators */}
+          {(visit.status === 'Completed' || visit.status?.toLowerCase() === 'completed') && visit.hasNoteSaved && (
+            <div className="note-status-container">
+              <div className="note-saved-indicator">
+                <i className="fas fa-check-circle"></i>
+                <span>Saved</span>
+              </div>
             </div>
           )}
         </div>
@@ -2141,7 +2240,13 @@ const ScheduleComponent = ({
         )}
       </div>
 
-      {/* Note: Visit completion/notes are now handled in the dedicated Notes component */}
+      <VisitCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        visitData={completionVisitData}
+        onSave={handleCompletionFormSave}
+      />
+
 
 
       <div className="card-body">
@@ -2374,6 +2479,62 @@ const ScheduleComponent = ({
       {/* Modals */}
       {showVisitModal && renderVisitModal()}
       {showDeleteConfirmModal && renderDeleteConfirmModal()}
+      
+      {/* Completed Visit Details Modal */}
+      <VisitModalComponent
+        isOpen={showCompletedVisitModal}
+        onClose={() => {
+          setShowCompletedVisitModal(false);
+          setCompletedVisitModalData(null);
+        }}
+        visitData={completedVisitModalData}
+        onSave={async (updatedData) => {
+          // Handle any updates to the completed visit
+          console.log('Updated visit data:', updatedData);
+          
+          try {
+            // Always update visit in database with all changes
+            const updatePayload = {
+              visitType: updatedData.visit_type,
+              therapist: updatedData.staff_id,
+              date: updatedData.visit_date,
+              time: updatedData.scheduled_time,
+              certPeriod: updatedData.certPeriod || completedVisitModalData.certPeriod,
+              status: completedVisitModalData.status // Keep current status by default
+            };
+            
+            // Only update status if it actually changed (for Return to Therapist)
+            if (updatedData.status && updatedData.status !== completedVisitModalData.status) {
+              updatePayload.status = updatedData.status;
+            }
+            
+            // Send update to database
+            await updateVisit(completedVisitModalData.id, updatePayload);
+            
+            // Update the visit in the visits list
+            setVisits(prevVisits => {
+              const updatedVisits = prevVisits.map(visit => 
+                visit.id === completedVisitModalData.id ? { ...visit, ...updatedData } : visit
+              );
+              
+              if (onUpdateSchedule) {
+                onUpdateSchedule(updatedVisits);
+              }
+              
+              return updatedVisits;
+            });
+            
+            setShowCompletedVisitModal(false);
+            setCompletedVisitModalData(null);
+          } catch (error) {
+            console.error('Error updating visit:', error);
+            setError('Failed to update visit status');
+          }
+        }}
+        certPeriodDates={certPeriodDates}
+        patientInfo={patient}
+        visitStatus="COMPLETED"
+      />
       
       {/* Visit Status Modal */}
       <VisitStatusModal
