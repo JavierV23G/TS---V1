@@ -1,510 +1,617 @@
-@import '../../../../styles/variables.scss';
+// ===== THERAPYSYNC ULTIMATE CLINICAL COMPANY MANAGEMENT =====
+// 🏆 DISEÑO PREMIUM MULTIMILLONARIO - COMPANIES EDITION 🏆
+// Adaptado del Staff Management para Companies
 
-.company-list-container {
-  width: 100%;
-  animation: fadeIn 0.5s ease;
+// ===== VARIABLES ULTRA PREMIUM =====
+:root {
+  // 🎨 Paleta de Colores Premium para Companies
+  --company-primary: #1565C0;      // Azul Corporativo Premium
+  --company-secondary: #1976D2;    // Azul Secundario Elegante
+  --company-accent: #42A5F5;       // Azul Claro Premium
+  --company-success: #00C851;      // Verde Éxito Premium
+  --company-warning: #FF9500;      // Naranja Advertencia Premium
+  --company-error: #FF5722;        // Rojo Error Premium
+
+  // 🌟 Paleta Base Ultra Premium
+  --clinical-white: #FFFFFF;
+  --clinical-pearl: #FAFBFC;
+  --clinical-silver: #F8F9FA;
+  --clinical-blue: #F0F4FF;
+  --clinical-sky: #E8F2FF;
+  --clinical-accent: #E3F2FD;
+  --clinical-primary: #1565C0;
+  --clinical-secondary: #1976D2;
+  --clinical-tertiary: #42A5F5;
+  --clinical-text: #1A1A1A;
+  --clinical-text-secondary: #424242;
+  --clinical-text-light: #616161;
+  --clinical-text-muted: #9E9E9E;
+  --clinical-border: #E0E7FF;
+  --clinical-divider: #F0F0F0;
+  
+  // ✨ Sombras Cinematográficas Ultra Premium
+  --shadow-ambient: 0 1px 3px rgba(21, 101, 192, 0.04);
+  --shadow-subtle: 0 2px 8px rgba(21, 101, 192, 0.06);
+  --shadow-medium: 0 4px 16px rgba(21, 101, 192, 0.08);
+  --shadow-elevated: 0 8px 32px rgba(21, 101, 192, 0.12);
+  --shadow-floating: 0 12px 48px rgba(21, 101, 192, 0.16);
+  --shadow-dramatic: 0 20px 64px rgba(21, 101, 192, 0.20);
+  --shadow-focus: 0 0 0 4px rgba(21, 101, 192, 0.08);
+  --shadow-glow: 0 0 20px rgba(21, 101, 192, 0.15);
+  
+  // 🎭 Transiciones de Nivel Cinematográfico
+  --transition-instant: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-swift: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-smooth: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  --transition-elegant: all 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+  --transition-luxury: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  // 🎯 Bordes de Precisión Quirúrgica
+  --radius-micro: 4px;
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+  --radius-premium: 28px;
+}
+
+// ===== MIXINS ULTRA PREMIUM =====
+@mixin clinical-card-ultimate {
+  background: var(--clinical-white);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-subtle);
+  border: 1px solid var(--clinical-border);
+  transition: var(--transition-swift);
   position: relative;
-
-  // Animación de entrada
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: var(--transition-swift);
   }
+  
+  &:hover {
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px) scale(1.002);
+    border-color: var(--clinical-primary);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+}
 
-  // Pantalla de carga mejorada
+@mixin clinical-button-ultimate {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-medium);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-swift);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: var(--transition-swift);
+  }
+  
+  &:hover::before {
+    left: 100%;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ===== COMPONENTE PRINCIPAL =====
+.company-list-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--clinical-pearl) 0%, var(--clinical-blue) 100%);
+  padding: 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  
+  // ===== PANTALLA DE CARGA HOLOGRÁFICA COMPACTA =====
   .company-list-loading {
-    background: rgba(10, 30, 60, 0.8);
-    border-radius: $border-radius-lg;
-    padding: $spacing-12;
-    margin-bottom: $spacing-8;
-    text-align: center;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba($primary-color, 0.2);
-    position: relative;
-    min-height: 400px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0f1419 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 
-                inset 0 0 60px rgba($primary-color, 0.1);
+    z-index: 9999;
     
+    // Efectos de fondo holográfico
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(76, 175, 80, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(255, 152, 0, 0.05) 0%, transparent 50%);
+      animation: hologramBackground 15s ease-in-out infinite;
+    }
+    
+    // Líneas de escaneo
+    .wave-effect {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        0deg,
+        transparent 0%,
+        rgba(0, 229, 255, 0.03) 45%,
+        rgba(0, 229, 255, 0.08) 50%,
+        rgba(0, 229, 255, 0.03) 55%,
+        transparent 100%
+      );
+      animation: scanLine 4s linear infinite;
+    }
+    
+    .scan-effect {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        rgba(0, 229, 255, 0.02) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      animation: scanGrid 8s linear infinite;
+    }
+    
+    .data-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      
+      .line {
+        position: absolute;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        opacity: 0.3;
+        animation: dataFlow 6s linear infinite;
+        
+        &:nth-child(odd) { animation-delay: -2s; }
+        &:nth-child(even) { animation-delay: -4s; }
+        
+        
+      }
+    }
+    
+    // Contenedor del loader compacto
     .loading-container {
+      text-align: center;
       position: relative;
-      width: 300px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: $spacing-6;
+      z-index: 10;
       
       .hologram-effect {
         position: relative;
-        width: 140px;
-        height: 140px;
-        margin-bottom: $spacing-5;
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
         
         .hologram-ring {
           position: absolute;
-          width: 100%;
-          height: 100%;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 70px;
+          height: 70px;
+          border: 2px solid #00e5ff;
           border-radius: 50%;
-          border: 2px solid rgba($primary-color, 0.3);
-          box-shadow: 
-            0 0 15px rgba($primary-color, 0.5),
-            inset 0 0 15px rgba($primary-color, 0.5);
-          animation: pulseRing 3s infinite ease-in-out;
+          border-top-color: transparent;
+          border-right-color: transparent;
+          animation: hologramSpin 2s linear infinite;
+          
+          &::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 50%;
+            animation: hologramSpin 3s linear infinite reverse;
+          }
         }
         
         .hologram-circle {
           position: absolute;
-          width: 70%;
-          height: 70%;
-          top: 15%;
-          left: 15%;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 42px;
+          height: 42px;
+          border: 1px solid #4caf50;
           border-radius: 50%;
-          background: radial-gradient(
-            circle at center,
-            rgba($primary-light, 0.4) 0%,
-            rgba($primary-color, 0.2) 40%,
-            rgba($primary-color, 0.1) 60%,
-            transparent 80%
-          );
-          filter: blur(4px);
-          opacity: 0.8;
-          animation: pulsate 3s infinite ease-in-out;
+          background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, transparent 70%);
+          animation: hologramPulse 2s ease-in-out infinite;
         }
         
         .hologram-bars {
           position: absolute;
-          width: 100%;
-          height: 100%;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
           display: flex;
-          align-items: center;
-          justify-content: center;
+          align-items: end;
+          gap: 2px;
+          height: 28px;
           
           .bar {
-            position: absolute;
-            width: 3px;
-            background: linear-gradient(to top, transparent, $primary-color, transparent);
-            box-shadow: 0 0 8px rgba($primary-color, 0.8);
-            animation-name: barHeight;
-            animation-duration: 1.5s;
-            animation-iteration-count: infinite;
-            animation-timing-function: ease-in-out;
+            width: 2px;
+            background: linear-gradient(to top, #ff9800, #ffc107);
+            border-radius: 1px;
+            animation: hologramBars 1.5s ease-in-out infinite;
             
-            &:nth-child(1) {
-              height: 60%;
-              left: 30%;
-              animation-delay: 0.2s;
-            }
-            
-            &:nth-child(2) {
-              height: 40%;
-              left: 40%;
-              animation-delay: 0.6s;
-            }
-            
-            &:nth-child(3) {
-              height: 70%;
-              left: 50%;
-              animation-delay: 0s;
-            }
-            
-            &:nth-child(4) {
-              height: 50%;
-              left: 60%;
-              animation-delay: 0.8s;
-            }
-            
-            &:nth-child(5) {
-              height: 45%;
-              left: 70%;
-              animation-delay: 0.4s;
-            }
+            &:nth-child(1) { height: 20%; animation-delay: 0s; }
+            &:nth-child(2) { height: 60%; animation-delay: 0.2s; }
+            &:nth-child(3) { height: 100%; animation-delay: 0.4s; }
+            &:nth-child(4) { height: 40%; animation-delay: 0.6s; }
+            &:nth-child(5) { height: 80%; animation-delay: 0.8s; }
           }
         }
       }
       
       .loading-progress {
-        width: 100%;
-        margin: $spacing-4 0;
+        width: 200px;
+        margin: 0 auto 16px;
         
         .progress-bar {
-          height: 6px;
           width: 100%;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
+          height: 3px;
+          background: rgba(0, 229, 255, 0.2);
+          border-radius: 2px;
           overflow: hidden;
           position: relative;
           
           .progress-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
             height: 100%;
-            background: linear-gradient(90deg, $primary-color, $primary-light);
-            box-shadow: 0 0 10px rgba($primary-color, 0.8);
-            border-radius: 3px;
+            background: linear-gradient(90deg, #00e5ff, #4caf50, #ff9800);
             width: 0%;
-            animation: progressFill 4.5s ease-in-out forwards;
+            border-radius: 2px;
+            animation: progressFill 4s ease-in-out infinite;
+            position: relative;
+            
+            &::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 20px;
+              height: 100%;
+              background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8));
+              animation: progressShine 2s ease-in-out infinite;
+            }
           }
         }
       }
       
       .loading-text {
-        font-size: $font-lg;
-        font-weight: $font-semibold;
-        color: $white;
-        text-shadow: 0 0 10px rgba($primary-color, 0.8);
-        width: 100%;
-        min-height: 32px;
-        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        color: #00e5ff;
+        margin-bottom: 8px;
+        font-weight: 500;
+        text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+        animation: textGlow 2s ease-in-out infinite alternate;
       }
       
       .loading-status {
-        margin-top: $spacing-4;
-        font-size: $font-sm;
-        color: rgba($white, 0.7);
+        font-size: 12px;
+        color: #4caf50;
         display: flex;
         align-items: center;
-        gap: $spacing-2;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 600;
         
         .status-dot {
-          display: inline-block;
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
+          background: #4caf50;
           border-radius: 50%;
-          background-color: $success;
-          box-shadow: 0 0 8px $success;
-          animation: blink 1.2s infinite;
+          animation: statusPulse 1.5s ease-in-out infinite;
+          box-shadow: 0 0 8px #4caf50;
         }
       }
     }
   }
-  
-  // Cabecera mejorada
+
+  // ===== HEADER PREMIUM =====
   .company-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: $spacing-6;
-    padding: $spacing-6;
-    border-radius: $border-radius-lg;
-    background: linear-gradient(135deg, rgba($primary-color, 0.15), rgba(25, 25, 65, 0.3));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba($primary-color, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    position: relative;
-    overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(ellipse at center, rgba($primary-light, 0.03) 0%, transparent 70%);
-      opacity: 0.7;
-      animation: rotate 30s linear infinite;
-    }
-    
-    @keyframes rotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @include clinical-card-ultimate;
+    padding: 32px;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, var(--clinical-white) 0%, var(--clinical-pearl) 100%);
     
     .header-content {
       display: flex;
       align-items: center;
-      gap: $spacing-4;
-      z-index: 1;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
       
       .back-button {
-        display: flex;
-        align-items: center;
-        gap: $spacing-2;
-        padding: $spacing-2 $spacing-4;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: $border-radius-md;
-        color: $white;
-        font-weight: $font-medium;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        @include clinical-button-ultimate;
+        background: linear-gradient(135deg, var(--clinical-text-muted) 0%, var(--clinical-text-light) 100%);
+        color: white;
+        padding: 10px 16px;
+        font-size: 13px;
         
         i {
-          font-size: $font-md;
-        }
-        
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: translateX(-3px);
+          font-size: 12px;
         }
       }
       
       .header-title-container {
+        flex: 1;
+        text-align: center;
+        
         h2 {
-          font-size: $font-xl;
-          font-weight: $font-bold;
-          color: $white;
-          margin-bottom: $spacing-2;
-          position: relative;
-          display: inline-block;
-          
-          &::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 0;
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, $primary-color, $primary-light);
-            border-radius: 3px;
-          }
+          font-size: 32px;
+          color: var(--clinical-text);
+          margin: 0 0 8px 0;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+          background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
         
         p {
-          color: rgba(255, 255, 255, 0.8);
-          font-size: $font-md;
+          color: var(--clinical-text-light);
+          margin: 0;
+          font-size: 16px;
+          font-weight: 500;
         }
       }
     }
     
     .header-actions {
       display: flex;
-      gap: $spacing-3;
-      z-index: 1;
+      gap: 16px;
+      flex-wrap: wrap;
       
-      button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: $spacing-2;
-        padding: $spacing-3 $spacing-5;
-        border-radius: $border-radius-md;
-        font-weight: $font-medium;
-        font-size: $font-sm;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        
-        i {
-          font-size: $font-md;
-        }
-        
-        &.add-new-btn {
-          background: linear-gradient(135deg, $primary-color, $primary-light);
-          color: $white;
-          border: none;
-          box-shadow: 0 4px 10px rgba($primary-color, 0.25);
-          
-          &:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba($primary-color, 0.3);
-          }
-        }
-        
-        &.refresh-btn {
-          background: rgba(255, 255, 255, 0.1);
-          color: $white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          
-          &:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-          }
-        }
-        
-        &.export-btn {
-          background: rgba($success, 0.1);
-          color: $success;
-          border: 1px solid rgba($success, 0.2);
-          
-          &:hover {
-            background: rgba($success, 0.2);
-            transform: translateY(-3px);
-          }
-        }
+      .add-new-btn {
+        @include clinical-button-ultimate;
+        background: linear-gradient(135deg, var(--company-success) 0%, #4CAF50 100%);
+        color: white;
+      }
+      
+      .refresh-btn {
+        @include clinical-button-ultimate;
+        background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+        color: white;
+      }
+      
+      .export-btn {
+        @include clinical-button-ultimate;
+        background: linear-gradient(135deg, var(--company-warning) 0%, #FFB74D 100%);
+        color: white;
       }
     }
   }
-  
-  // Barra de filtros y búsqueda mejorada
+
+  // ===== FILTROS PREMIUM =====
   .search-filter-container {
-    margin-bottom: $spacing-6;
+    @include clinical-card-ultimate;
+    padding: 24px 32px;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, var(--clinical-white) 0%, var(--clinical-accent) 100%);
     
     .search-bar {
-      display: flex;
-      flex-direction: column;
-      gap: $spacing-4;
-      padding: $spacing-5;
-      border-radius: $border-radius-lg;
-      background: rgba(10, 30, 60, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      
       .search-input-wrapper {
         position: relative;
-        width: 100%;
+        max-width: 500px;
+        margin-bottom: 24px;
         
         i {
           position: absolute;
-          left: $spacing-4;
+          left: 16px;
           top: 50%;
           transform: translateY(-50%);
-          color: rgba(255, 255, 255, 0.6);
-          font-size: $font-md;
+          color: var(--clinical-text-muted);
+          font-size: 16px;
+          z-index: 2;
         }
         
         input {
           width: 100%;
-          padding: $spacing-4 $spacing-4 $spacing-4 $spacing-10;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: $border-radius-lg;
-          color: $white;
-          font-size: $font-md;
-          transition: all 0.3s ease;
+          padding: 16px 16px 16px 48px;
+          border: 2px solid var(--clinical-border);
+          border-radius: var(--radius-large);
+          font-size: 16px;
+          color: var(--clinical-text);
+          background: var(--clinical-white);
+          transition: var(--transition-swift);
           
           &:focus {
             outline: none;
-            border-color: $primary-color;
-            box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+            border-color: var(--clinical-primary);
+            box-shadow: var(--shadow-focus);
           }
           
           &::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: var(--clinical-text-muted);
           }
         }
         
         .clear-search {
           position: absolute;
-          right: $spacing-4;
+          right: 12px;
           top: 50%;
           transform: translateY(-50%);
           background: none;
           border: none;
-          color: rgba(255, 255, 255, 0.6);
+          color: var(--clinical-text-muted);
           cursor: pointer;
+          padding: 8px;
+          border-radius: 50%;
+          transition: var(--transition-swift);
           
           &:hover {
-            color: $white;
+            background: var(--clinical-accent);
+            color: var(--clinical-text);
           }
         }
       }
       
       .filter-options {
         display: flex;
-        flex-direction: column;
-        gap: $spacing-4;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: center;
         
         .type-filter {
           display: flex;
-          flex-direction: column;
-          gap: $spacing-3;
+          align-items: center;
+          gap: 16px;
           
           .filter-label {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: $font-sm;
-            font-weight: $font-medium;
             display: flex;
             align-items: center;
-            gap: $spacing-2;
+            gap: 8px;
+            color: var(--clinical-text);
+            font-weight: 600;
+            font-size: 14px;
             
             i {
-              color: $primary-light;
+              color: var(--clinical-primary);
             }
           }
           
           .type-options {
             display: flex;
             flex-wrap: wrap;
-            gap: $spacing-3;
+            gap: 8px;
             
             .type-option {
-              padding: $spacing-2 $spacing-4;
-              border-radius: $border-radius-full;
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              color: rgba(255, 255, 255, 0.8);
-              font-size: $font-xs;
-              font-weight: $font-medium;
+              padding: 8px 16px;
+              border: 2px solid var(--clinical-border);
+              border-radius: var(--radius-medium);
+              background: var(--clinical-white);
+              color: var(--clinical-text-light);
+              font-size: 13px;
+              font-weight: 600;
               cursor: pointer;
-              transition: all 0.3s ease;
+              transition: var(--transition-swift);
               
               &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                transform: translateY(-2px);
+                border-color: var(--clinical-primary);
+                color: var(--clinical-primary);
+                transform: translateY(-1px);
               }
               
               &.active {
-                background: $primary-color;
-                border-color: $primary-light;
-                color: $white;
-                box-shadow: 0 4px 10px rgba($primary-color, 0.3);
+                background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+                border-color: var(--clinical-primary);
+                color: white;
+                box-shadow: var(--shadow-medium);
               }
             }
           }
         }
         
         .inactive-filter {
-          margin-top: $spacing-2;
-          
           .toggle-switch {
             position: relative;
             display: inline-flex;
             align-items: center;
+            gap: 12px;
             cursor: pointer;
             
             input {
-              opacity: 0;
-              width: 0;
-              height: 0;
+              appearance: none;
+              width: 48px;
+              height: 24px;
+              background: var(--clinical-border);
+              border-radius: 12px;
+              position: relative;
+              transition: var(--transition-swift);
               
-              &:checked + .toggle-slider {
-                background-color: rgba($primary-color, 0.5);
-                
-                &:before {
-                  transform: translateX(18px);
-                  background-color: $primary-color;
-                }
+              &:checked {
+                background: var(--clinical-primary);
+              }
+              
+              &::after {
+                content: '';
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background: white;
+                border-radius: 50%;
+                top: 2px;
+                left: 2px;
+                transition: var(--transition-swift);
+                box-shadow: var(--shadow-subtle);
+              }
+              
+              &:checked::after {
+                left: 26px;
               }
             }
             
             .toggle-slider {
-              position: relative;
-              width: 40px;
-              height: 22px;
-              background-color: rgba(255, 255, 255, 0.1);
-              margin-right: $spacing-3;
-              transition: .4s;
-              border-radius: 34px;
-              
-              &:before {
-                position: absolute;
-                content: "";
-                height: 16px;
-                width: 16px;
-                left: 3px;
-                bottom: 3px;
-                background-color: rgba(255, 255, 255, 0.9);
-                transition: .4s;
-                border-radius: 50%;
-              }
+              display: none;
             }
             
             .toggle-label {
               display: flex;
               align-items: center;
-              gap: $spacing-2;
-              color: rgba(255, 255, 255, 0.8);
-              font-size: $font-sm;
+              gap: 8px;
+              color: var(--clinical-text);
+              font-weight: 600;
+              font-size: 14px;
               
               i {
-                color: $primary-light;
+                color: var(--company-error);
               }
             }
           }
@@ -512,116 +619,83 @@
       }
     }
   }
-  
-  // Contenedor de tarjetas de compañías
+
+  // ===== COMPANY CARDS PREMIUM =====
   .company-cards-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: $spacing-6;
-    margin-bottom: $spacing-8;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
     
-    // Tarjeta de compañía mejorada
     .company-card {
-      background: rgba(10, 30, 60, 0.5);
-      border-radius: $border-radius-lg;
+      @include clinical-card-ultimate;
+      padding: 0;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      
-      .card-highlight {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba($primary-light, 0.05) 0%, transparent 50%);
-        opacity: 0;
-        transition: all 0.3s ease;
-      }
-      
-      &:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        border-color: rgba($primary-color, 0.3);
-        
-        .card-highlight {
-          opacity: 1;
-        }
-        
-        .company-card-header {
-          .edit-action {
-            .edit-btn {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        }
-      }
-      
-      &.active {
-        border-left: 3px solid $status-active;
-      }
+      background: linear-gradient(135deg, var(--clinical-white) 0%, var(--clinical-pearl) 100%);
       
       &.inactive {
-        border-left: 3px solid $status-inactive;
         opacity: 0.7;
+        
+        .card-highlight {
+          background: linear-gradient(135deg, var(--company-error) 0%, #F44336 100%);
+        }
       }
       
-      // Encabezado de la tarjeta
+      .card-highlight {
+        height: 4px;
+        background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+      }
+      
       .company-card-header {
-        padding: $spacing-5;
+        padding: 24px 24px 16px 24px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 16px;
         position: relative;
-        z-index: 1;
         
         .company-logo {
           position: relative;
-          margin-right: $spacing-4;
           
-          img, .logo-placeholder {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
+          img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
             object-fit: cover;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border: 3px solid var(--clinical-white);
+            box-shadow: var(--shadow-medium);
           }
           
           .logo-placeholder {
-            background: linear-gradient(135deg, rgba($primary-color, 0.7), rgba($primary-light, 0.7));
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--clinical-accent) 0%, var(--clinical-sky) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: $white;
-            font-size: $font-lg;
-            font-weight: $font-bold;
+            font-weight: 800;
+            font-size: 22px;
+            color: var(--clinical-primary);
+            border: 3px solid var(--clinical-white);
+            box-shadow: var(--shadow-medium);
           }
           
           .status-indicator {
             position: absolute;
-            bottom: -5px;
-            right: -5px;
-            width: 15px;
-            height: 15px;
+            bottom: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            border: 2px solid rgba(10, 30, 60, 0.8);
+            border: 3px solid white;
+            box-shadow: var(--shadow-subtle);
             
             &.active {
-              background-color: $status-active;
-              box-shadow: 0 0 10px rgba($status-active, 0.5);
+              background: linear-gradient(135deg, var(--company-success) 0%, #4CAF50 100%);
             }
             
             &.inactive {
-              background-color: $status-inactive;
-              box-shadow: 0 0 10px rgba($status-inactive, 0.5);
+              background: linear-gradient(135deg, var(--company-error) 0%, #F44336 100%);
             }
           }
         }
@@ -630,40 +704,37 @@
           flex: 1;
           
           h3 {
-            font-size: $font-lg;
-            font-weight: $font-semibold;
-            color: $white;
-            margin: 0 0 $spacing-1 0;
+            font-size: 20px;
+            color: var(--clinical-text);
+            margin: 0 0 8px 0;
+            font-weight: 700;
+            letter-spacing: -0.3px;
           }
           
           .company-meta {
             display: flex;
             align-items: center;
-            gap: $spacing-3;
-            flex-wrap: wrap;
+            gap: 12px;
             
             .company-type {
-              display: inline-block;
-              font-size: $font-xs;
-              padding: $spacing-1 $spacing-3;
-              border-radius: $border-radius-full;
-              background: rgba($primary-color, 0.1);
-              color: $primary-light;
-              border: 1px solid rgba($primary-color, 0.2);
+              color: var(--clinical-text-light);
+              font-size: 14px;
+              font-weight: 500;
             }
             
-            .status-badge {
+            .status-badge.inactive {
               display: flex;
               align-items: center;
-              gap: $spacing-1;
-              font-size: $font-xs;
-              padding: $spacing-1 $spacing-3;
-              border-radius: $border-radius-full;
+              gap: 4px;
+              padding: 4px 8px;
+              background: rgba(255, 87, 34, 0.1);
+              color: var(--company-error);
+              border-radius: var(--radius-small);
+              font-size: 11px;
+              font-weight: 600;
               
-              &.inactive {
-                background: rgba($status-inactive, 0.1);
-                color: $status-inactive;
-                border: 1px solid rgba($status-inactive, 0.2);
+              i {
+                font-size: 10px;
               }
             }
           }
@@ -671,92 +742,73 @@
         
         .edit-action {
           .edit-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba($primary-color, 0.1);
-            color: $primary-light;
-            border: 1px solid rgba($primary-color, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            opacity: 0.7;
-            transform: translateY(5px);
+            @include clinical-button-ultimate;
+            background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
             
-            &:hover {
-              background: $primary-color;
-              color: $white;
-              box-shadow: 0 0 15px rgba($primary-color, 0.5);
+            i {
+              font-size: 11px;
             }
           }
         }
       }
       
-      // Cuerpo de la tarjeta
       .company-card-body {
-        padding: $spacing-5;
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-4;
-        flex: 1;
-        z-index: 1;
+        padding: 0 24px 24px 24px;
         
         .company-details {
-          display: flex;
-          flex-direction: column;
-          gap: $spacing-3;
+          margin-bottom: 20px;
           
           .detail-item {
             display: flex;
             align-items: center;
-            gap: $spacing-3;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--clinical-text-light);
             
             i {
               width: 16px;
-              color: $primary-light;
-              font-size: $font-sm;
+              text-align: center;
+              color: var(--clinical-text-muted);
+              font-size: 13px;
             }
             
             span {
-              font-size: $font-sm;
-              color: $white;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
+              font-weight: 500;
             }
           }
         }
         
         .company-stats {
           display: flex;
-          gap: $spacing-3;
-          margin-top: $spacing-2;
+          justify-content: space-around;
+          margin-bottom: 20px;
+          padding: 16px;
+          background: linear-gradient(135deg, var(--clinical-accent) 0%, var(--clinical-sky) 100%);
+          border-radius: var(--radius-medium);
           
           .stat-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: $border-radius-md;
-            padding: $spacing-2 $spacing-3;
-            flex: 1;
             text-align: center;
-            transition: all 0.3s ease;
-            
-            &:hover {
-              background: rgba($primary-color, 0.1);
-              transform: translateY(-3px);
-            }
             
             .stat-label {
-              font-size: $font-xs;
-              color: rgba(255, 255, 255, 0.6);
-              margin-bottom: $spacing-1;
+              display: block;
+              font-size: 11px;
+              color: var(--clinical-text-muted);
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+              font-weight: 700;
             }
             
             .stat-value {
-              font-size: $font-md;
-              color: $white;
-              font-weight: $font-semibold;
+              display: block;
+              font-size: 20px;
+              font-weight: 800;
+              color: var(--clinical-primary);
+              line-height: 1;
             }
           }
         }
@@ -764,394 +816,337 @@
         .specialties-list {
           display: flex;
           flex-wrap: wrap;
-          gap: $spacing-2;
-          margin-top: $spacing-3;
+          gap: 6px;
           
-          .specialty-tag, .more-tag {
-            font-size: $font-xs;
-            padding: $spacing-1 $spacing-2;
-            border-radius: $border-radius-full;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            
-            &:hover {
-              background: rgba(255, 255, 255, 0.1);
-              transform: translateY(-2px);
-            }
+          .specialty-tag {
+            padding: 4px 8px;
+            background: var(--clinical-white);
+            color: var(--clinical-primary);
+            border: 1px solid var(--clinical-border);
+            border-radius: var(--radius-small);
+            font-size: 11px;
+            font-weight: 600;
           }
           
           .more-tag {
-            background: rgba($primary-color, 0.1);
-            color: $primary-light;
-            border-color: rgba($primary-color, 0.2);
-          }
-        }
-      }
-    }
-    
-    // No hay resultados
-    .no-results {
-      grid-column: 1 / -1;
-      background: rgba(10, 30, 60, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: $border-radius-lg;
-      padding: $spacing-8 $spacing-4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      
-      .no-results-icon {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: $spacing-4;
-        
-        i {
-          font-size: $font-xl;
-          color: rgba(255, 255, 255, 0.3);
-          animation: floatAnimation 3s infinite ease-in-out;
-        }
-      }
-      
-      h3 {
-        font-size: $font-lg;
-        font-weight: $font-semibold;
-        color: $white;
-        margin: 0 0 $spacing-2 0;
-      }
-      
-      p {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: $font-sm;
-        margin: 0 0 $spacing-6 0;
-        max-width: 400px;
-      }
-      
-      .reset-filters-btn {
-          padding: $spacing-3 $spacing-6;
-          border-radius: $border-radius-md;
-          background: rgba($primary-color, 0.1);
-          color: $primary-light;
-          border: 1px solid rgba($primary-color, 0.2);
-          display: flex;
-          align-items: center;
-          gap: $spacing-2;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          
-          &:hover {
-            background: rgba($primary-color, 0.2);
-            transform: translateY(-3px);
+            padding: 4px 8px;
+            background: var(--clinical-text-muted);
+            color: white;
+            border-radius: var(--radius-small);
+            font-size: 11px;
+            font-weight: 600;
           }
         }
       }
     }
   }
-  
-  // Modal de edición de compañía mejorado
-  .company-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: $spacing-4;
-    animation: fadeIn 0.3s ease;
-    
-    .company-modal {
-      background: rgba(10, 30, 60, 0.95);
-      border-radius: $border-radius-lg;
-      width: 100%;
-      max-width: 900px;
-      max-height: 90vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      animation: modalEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-      border: 1px solid rgba($primary-color, 0.3);
-      
-      // Special styling for the editable modal
-      &.company-edit-modal {
-        .modal-header {
-          .company-profile-header {
-            display: flex;
-            gap: $spacing-5;
-            width: 100%;
 
-            .modal-logo {
-              position: relative;
+  // ===== NO RESULTS =====
+  .no-results {
+    @include clinical-card-ultimate;
+    padding: 60px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--clinical-white) 0%, var(--clinical-pearl) 100%);
+    
+    .no-results-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--clinical-accent) 0%, var(--clinical-sky) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px auto;
+      
+      i {
+        font-size: 32px;
+        color: var(--clinical-primary);
+      }
+    }
+    
+    h3 {
+      font-size: 24px;
+      color: var(--clinical-text);
+      margin: 0 0 12px 0;
+      font-weight: 700;
+    }
+    
+    p {
+      color: var(--clinical-text-light);
+      margin: 0 0 24px 0;
+      font-size: 16px;
+    }
+    
+    .reset-filters-btn {
+      @include clinical-button-ultimate;
+      background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+      color: white;
+    }
+  }
+}
+
+// ===== MODAL PREMIUM PARA COMPANIES =====
+.company-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  .company-modal {
+    @include clinical-card-ultimate;
+    width: 100%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: var(--shadow-dramatic);
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--clinical-white);
+    border: 1.5px solid var(--clinical-border);
+    display: flex;
+    flex-direction: column;
+    
+    .modal-header {
+      padding: 32px 40px;
+      border-bottom: 1.5px solid var(--clinical-divider);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, var(--clinical-blue) 0%, var(--clinical-pearl) 100%);
+      
+      .company-profile-header {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex: 1;
+        
+        .modal-logo {
+          position: relative;
+          
+          .logo-image-container {
+            position: relative;
+            
+            img {
+              width: 80px;
+              height: 80px;
+              border-radius: 50%;
+              object-fit: cover;
+              border: 4px solid var(--clinical-white);
+              box-shadow: var(--shadow-elevated);
+            }
+            
+            .remove-logo-btn {
+              position: absolute;
+              top: -4px;
+              right: -4px;
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              background: var(--company-error);
+              color: white;
+              border: none;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              transition: var(--transition-swift);
               
-              img, .logo-placeholder {
-                width: 70px;
-                height: 70px;
-                border-radius: $border-radius-md;
-                object-fit: cover;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+              &:hover {
+                transform: scale(1.1);
+              }
+            }
+          }
+          
+          .logo-upload-container {
+            position: relative;
+            cursor: pointer;
+            
+            .logo-placeholder {
+              width: 80px;
+              height: 80px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, var(--clinical-accent) 0%, var(--clinical-sky) 100%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 800;
+              font-size: 28px;
+              color: var(--clinical-primary);
+              border: 4px solid var(--clinical-white);
+              box-shadow: var(--shadow-elevated);
+            }
+            
+            .logo-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 0, 0.7);
+              border-radius: 50%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              opacity: 0;
+              transition: var(--transition-swift);
+              
+              i {
+                font-size: 16px;
+                margin-bottom: 4px;
               }
               
-              .logo-placeholder {
-                background: linear-gradient(135deg, rgba($primary-color, 0.7), rgba($primary-light, 0.7));
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: $white;
-                font-size: $font-lg;
-                font-weight: $font-bold;
-              }
-              
-              .logo-image-container {
-                position: relative;
-                
-                .remove-logo-btn {
-                  position: absolute;
-                  top: -8px;
-                  right: -8px;
-                  width: 24px;
-                  height: 24px;
-                  border-radius: 50%;
-                  background: rgba(0, 0, 0, 0.6);
-                  border: 1px solid rgba(255, 255, 255, 0.2);
-                  color: $white;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  cursor: pointer;
-                  font-size: $font-xs;
-                  
-                  &:hover {
-                    background: $status-inactive;
-                  }
-                }
-              }
-              
-              .logo-upload-container {
-                position: relative;
-                overflow: hidden;
-                
-                .logo-overlay {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  width: 100%;
-                  height: 100%;
-                  background: rgba(0, 0, 0, 0.5);
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  opacity: 0;
-                  transition: all 0.3s ease;
-                  cursor: pointer;
-                  
-                  i {
-                    font-size: $font-lg;
-                    color: $white;
-                    margin-bottom: $spacing-1;
-                  }
-                  
-                  span {
-                    font-size: $font-xs;
-                    color: $white;
-                  }
-                  
-                  .logo-input {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    opacity: 0;
-                    cursor: pointer;
-                  }
-                }
-                
-                &:hover .logo-overlay {
-                  opacity: 1;
-                }
-              }
-              
-              .modal-status {
-                position: absolute;
-                bottom: -5px;
-                right: -5px;
-                width: 15px;
-                height: 15px;
-                border-radius: 50%;
-                border: 2px solid rgba(10, 30, 60, 0.9);
-                
-                &.active {
-                  background-color: $status-active;
-                  box-shadow: 0 0 10px rgba($status-active, 0.5);
-                }
-                
-                &.inactive {
-                  background-color: $status-inactive;
-                  box-shadow: 0 0 10px rgba($status-inactive, 0.5);
-                }
+              span {
+                font-size: 10px;
+                font-weight: 600;
               }
             }
             
-            .company-details {
+            &:hover .logo-overlay {
+              opacity: 1;
+            }
+            
+            .logo-input {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              opacity: 0;
+              cursor: pointer;
+            }
+          }
+          
+          .modal-status {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: var(--shadow-subtle);
+            
+            &.active {
+              background: linear-gradient(135deg, var(--company-success) 0%, #4CAF50 100%);
+            }
+            
+            &.inactive {
+              background: linear-gradient(135deg, var(--company-error) 0%, #F44336 100%);
+            }
+          }
+        }
+        
+        .company-details {
+          flex: 1;
+          
+          .name-fields,
+          .type-status-selects {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            
+            .input-group {
               flex: 1;
               
-              .name-fields {
-                margin-bottom: $spacing-3;
+              label {
+                display: block;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--clinical-text);
+                margin-bottom: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              input,
+              select {
+                width: 100%;
+                padding: 10px 14px;
+                border: 2px solid var(--clinical-border);
+                border-radius: var(--radius-medium);
+                font-size: 14px;
+                color: var(--clinical-text);
+                background: var(--clinical-white);
+                transition: var(--transition-swift);
                 
-                .input-group {
-                  &.full-width {
-                    width: 100%;
-                  }
-                  
-                  label {
-                    display: block;
-                    font-size: $font-xs;
-                    color: rgba(255, 255, 255, 0.7);
-                    margin-bottom: $spacing-1;
-                  }
-                  
-                  input {
-                    width: 100%;
-                    padding: $spacing-2 $spacing-3;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: $border-radius-md;
-                    color: $white;
-                    font-size: $font-md;
-                    
-                    &:focus {
-                      outline: none;
-                      border-color: $primary-color;
-                      box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
-                    }
-                    
-                    &::placeholder {
-                      color: rgba(255, 255, 255, 0.3);
-                    }
-                  }
+                &:focus {
+                  outline: none;
+                  border-color: var(--clinical-primary);
+                  box-shadow: var(--shadow-focus);
                 }
               }
               
-              .type-status-selects {
+              &.full-width {
+                flex: 2;
+              }
+              
+              .status-toggle-container {
                 display: flex;
-                gap: $spacing-3;
+                align-items: center;
+                gap: 12px;
                 
-                .input-group {
-                  flex: 1;
+                .toggle-switch {
+                  position: relative;
+                  cursor: pointer;
                   
-                  label {
-                    display: block;
-                    font-size: $font-xs;
-                    color: rgba(255, 255, 255, 0.7);
-                    margin-bottom: $spacing-1;
-                  }
-                  
-                  select {
-                    width: 100%;
-                    padding: $spacing-2 $spacing-3;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: $border-radius-md;
-                    color: $white;
-                    font-size: $font-sm;
+                  input {
                     appearance: none;
-                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-                    background-repeat: no-repeat;
-                    background-position: right $spacing-3 center;
+                    width: 40px;
+                    height: 20px;
+                    background: var(--clinical-border);
+                    border-radius: 10px;
+                    position: relative;
+                    transition: var(--transition-swift);
                     
-                    &:focus {
-                      outline: none;
-                      border-color: $primary-color;
-                      box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+                    &:checked {
+                      background: var(--company-success);
                     }
                     
-                    option {
-                      background-color: rgba(10, 30, 60, 0.95);
-                      color: $white;
+                    &::after {
+                      content: '';
+                      position: absolute;
+                      width: 16px;
+                      height: 16px;
+                      background: white;
+                      border-radius: 50%;
+                      top: 2px;
+                      left: 2px;
+                      transition: var(--transition-swift);
+                      box-shadow: var(--shadow-subtle);
+                    }
+                    
+                    &:checked::after {
+                      left: 22px;
                     }
                   }
                   
-                  .status-toggle-container {
-                    display: flex;
-                    align-items: center;
-                    gap: $spacing-3;
-                    height: 38px;
-                    
-                    .toggle-switch {
-                      position: relative;
-                      display: inline-block;
-                      width: 46px;
-                      height: 24px;
-                      
-                      input {
-                        opacity: 0;
-                        width: 0;
-                        height: 0;
-                        
-                        &:checked + .toggle-slider {
-                          background-color: rgba($status-active, 0.5);
-                          
-                          &:before {
-                            transform: translateX(22px);
-                            background-color: $status-active;
-                          }
-                        }
-                      }
-                      
-                      .toggle-slider {
-                        position: absolute;
-                        cursor: pointer;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background-color: rgba($status-inactive, 0.5);
-                        transition: .4s;
-                        border-radius: 34px;
-                        
-                        &:before {
-                          position: absolute;
-                          content: "";
-                          height: 18px;
-                          width: 18px;
-                          left: 3px;
-                          bottom: 3px;
-                          background-color: $status-inactive;
-                          transition: .4s;
-                          border-radius: 50%;
-                        }
-                      }
-                    }
-                    
-                    .status-text {
-                      font-size: $font-sm;
-                      font-weight: $font-medium;
-                      
-                      &.active {
-                        color: $status-active;
-                      }
-                      
-                      &.inactive {
-                        color: $status-inactive;
-                      }
-                    }
+                  .toggle-slider {
+                    display: none;
+                  }
+                }
+                
+                .status-text {
+                  font-size: 14px;
+                  font-weight: 600;
+                  
+                  &.active {
+                    color: var(--company-success);
+                  }
+                  
+                  &.inactive {
+                    color: var(--company-error);
                   }
                 }
               }
@@ -1160,660 +1155,639 @@
         }
       }
       
-      @keyframes modalEnter {
-        from {
-          opacity: 0;
-          transform: scale(0.9) translateY(20px);
+      .close-modal {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--clinical-border);
+        font-size: 18px;
+        color: var(--clinical-text-muted);
+        cursor: pointer;
+        padding: 12px;
+        border-radius: 50%;
+        transition: var(--transition-swift);
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow-subtle);
+        
+        &:hover {
+          background: var(--clinical-white);
+          color: var(--clinical-text);
+          transform: scale(1.1);
+          box-shadow: var(--shadow-medium);
         }
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
+      }
+    }
+    
+    .modal-tabs {
+      display: flex;
+      background: var(--clinical-accent);
+      border-bottom: 1.5px solid var(--clinical-divider);
+      overflow-x: auto;
+      
+      .tab-btn {
+        flex: 1;
+        min-width: 140px;
+        padding: 16px 20px;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--clinical-text-light);
+        cursor: pointer;
+        transition: var(--transition-swift);
+        border-bottom: 3px solid transparent;
+        
+        i {
+          font-size: 16px;
+        }
+        
+        &:hover {
+          background: rgba(21, 101, 192, 0.05);
+          color: var(--clinical-text);
+        }
+        
+        &.active {
+          color: var(--clinical-primary);
+          border-bottom-color: var(--clinical-primary);
+          background: linear-gradient(to bottom, transparent 0%, rgba(21, 101, 192, 0.05) 100%);
+        }
+      }
+    }
+    
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px;
+      background: var(--clinical-white);
+      
+      .company-form-section {
+        margin-bottom: 32px;
+        
+        h3 {
+          font-size: 20px;
+          color: var(--clinical-text);
+          margin: 0 0 24px 0;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          
+          &::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+            border-radius: 2px;
+          }
+        }
+        
+        .form-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 20px;
+          
+          .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            
+            label {
+              font-size: 14px;
+              font-weight: 600;
+              color: var(--clinical-text);
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            input,
+            select {
+              padding: 12px 16px;
+              border: 2px solid var(--clinical-border);
+              border-radius: var(--radius-medium);
+              font-size: 15px;
+              color: var(--clinical-text);
+              background: var(--clinical-white);
+              transition: var(--transition-swift);
+              
+              &:focus {
+                outline: none;
+                border-color: var(--clinical-primary);
+                box-shadow: var(--shadow-focus);
+              }
+              
+              &::placeholder {
+                color: var(--clinical-text-muted);
+              }
+            }
+            
+            &.full-width {
+              grid-column: 1 / -1;
+            }
+            
+            .logo-upload-field {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              
+              .upload-button {
+                @include clinical-button-ultimate;
+                background: linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-secondary) 100%);
+                color: white;
+                cursor: pointer;
+                
+                input {
+                  display: none;
+                }
+              }
+              
+              .file-name {
+                font-size: 14px;
+                color: var(--clinical-text-light);
+                font-style: italic;
+              }
+            }
+          }
+        }
+        
+        .form-label {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--clinical-text);
+          margin-bottom: 16px;
+          display: block;
+        }
+        
+        .specialties-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+          
+          .specialty-option {
+            .checkbox-container {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 12px 16px;
+              border: 2px solid var(--clinical-border);
+              border-radius: var(--radius-medium);
+              cursor: pointer;
+              transition: var(--transition-swift);
+              background: var(--clinical-white);
+              
+              &:hover {
+                border-color: var(--clinical-primary);
+                background: var(--clinical-accent);
+              }
+              
+              input {
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border: 2px solid var(--clinical-border);
+                border-radius: 4px;
+                position: relative;
+                cursor: pointer;
+                transition: var(--transition-swift);
+                
+                &:checked {
+                  background: var(--clinical-primary);
+                  border-color: var(--clinical-primary);
+                  
+                  &::after {
+                    content: '✓';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    color: white;
+                    font-size: 12px;
+                    font-weight: bold;
+                  }
+                }
+              }
+              
+              .checkmark {
+                display: none;
+              }
+              
+              .specialty-name {
+                font-size: 14px;
+                color: var(--clinical-text);
+                font-weight: 500;
+              }
+              
+              input:checked ~ .specialty-name {
+                color: var(--clinical-primary);
+                font-weight: 600;
+              }
+            }
+          }
+        }
+        
+        .company-status-section {
+          margin-top: 32px;
+          padding-top: 24px;
+          border-top: 1px solid var(--clinical-divider);
+          
+          h3 {
+            font-size: 18px;
+            color: var(--clinical-text);
+            margin: 0 0 16px 0;
+            font-weight: 700;
+          }
+          
+          .status-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+            
+            .status-label {
+              font-size: 14px;
+              font-weight: 600;
+              color: var(--clinical-text);
+            }
+            
+            .toggle-switch-container {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              
+              .toggle-switch.status-toggle {
+                input {
+                  appearance: none;
+                  width: 48px;
+                  height: 24px;
+                  background: var(--clinical-border);
+                  border-radius: 12px;
+                  position: relative;
+                  transition: var(--transition-swift);
+                  cursor: pointer;
+                  
+                  &:checked {
+                    background: var(--company-success);
+                  }
+                  
+                  &::after {
+                    content: '';
+                    position: absolute;
+                    width: 20px;
+                    height: 20px;
+                    background: white;
+                    border-radius: 50%;
+                    top: 2px;
+                    left: 2px;
+                    transition: var(--transition-swift);
+                    box-shadow: var(--shadow-subtle);
+                  }
+                  
+                  &:checked::after {
+                    left: 26px;
+                  }
+                }
+                
+                .toggle-slider {
+                  display: none;
+                }
+              }
+              
+              .status-text {
+                font-size: 14px;
+                font-weight: 600;
+                
+                &.active {
+                  color: var(--company-success);
+                }
+                
+                &.inactive {
+                  color: var(--company-error);
+                }
+              }
+            }
+          }
+          
+          .status-description {
+            font-size: 14px;
+            color: var(--clinical-text-light);
+            margin: 0;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+    
+    .modal-footer {
+      padding: 24px 40px;
+      border-top: 1.5px solid var(--clinical-divider);
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+      background: linear-gradient(135deg, var(--clinical-pearl) 0%, var(--clinical-white) 100%);
+      
+      .action-btn {
+        @include clinical-button-ultimate;
+        padding: 12px 24px;
+        font-size: 14px;
+        
+        &.cancel-btn {
+          background: linear-gradient(135deg, var(--clinical-text-muted) 0%, var(--clinical-text-light) 100%);
+          color: white;
+        }
+        
+        &.save-btn {
+          background: linear-gradient(135deg, var(--company-success) 0%, #4CAF50 100%);
+          color: white;
+        }
+      }
+    }
+  }
+}
+
+// ===== ANIMACIONES =====
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hologramBackground {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes scanLine {
+  0% { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes scanGrid {
+  0% { transform: translateX(-100vw); }
+  100% { transform: translateX(100vw); }
+}
+
+@keyframes dataFlow {
+  0% { 
+    opacity: 0;
+    width: 0%;
+  }
+  50% {
+    opacity: 1;
+    width: 100%;
+  }
+  100% {
+    opacity: 0;
+    width: 0%;
+  }
+}
+
+@keyframes hologramSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes hologramPulse {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes hologramBars {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes progressFill {
+  0% { width: 0%; }
+  75% { width: 100%; }
+  100% { width: 100%; }
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes textGlow {
+  from { text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
+  to { text-shadow: 0 0 16px rgba(0, 229, 255, 0.8); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+// ===== RESPONSIVE DESIGN =====
+@media (max-width: 1200px) {
+  .company-list-container {
+    padding: 20px;
+    
+    .company-cards-container {
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    
+    .company-modal {
+      max-width: 95vw;
+      margin: 16px;
+      
+      .modal-header {
+        padding: 24px 32px;
+      }
+      
+      .modal-body {
+        padding: 24px 32px;
+      }
+      
+      .modal-tabs .tab-btn {
+        min-width: 120px;
+        padding: 14px 16px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .company-list-container {
+    padding: 16px;
+    
+    .company-list-header {
+      padding: 24px;
+      
+      .header-content {
+        flex-direction: column;
+        gap: 16px;
+        
+        .header-title-container h2 {
+          font-size: 24px;
         }
       }
       
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: $spacing-5 $spacing-6;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(5, 20, 45, 0.8);
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    .search-filter-container {
+      padding: 20px;
+      
+      .filter-options {
+        flex-direction: column;
+        gap: 16px;
         
-        .close-modal {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          color: $white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.3s ease;
+        .type-filter {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
           
-          &:hover {
-            background: $status-inactive;
-            transform: rotate(90deg);
+          .type-options {
+            width: 100%;
+          }
+        }
+      }
+    }
+    
+    .company-cards-container {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    
+    .company-modal {
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: 0;
+      border-radius: 0;
+      
+      .modal-header {
+        padding: 20px;
+        
+        .company-profile-header {
+          gap: 16px;
+          
+          .modal-logo {
+            img,
+            .logo-placeholder {
+              width: 64px;
+              height: 64px;
+            }
+          }
+          
+          .company-details {
+            .name-fields,
+            .type-status-selects {
+              flex-direction: column;
+              gap: 12px;
+            }
           }
         }
       }
       
       .modal-tabs {
-        display: flex;
-        background: rgba(5, 15, 35, 0.8);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        overflow-x: auto;
-        
-        &::-webkit-scrollbar {
-          height: 4px;
-        }
-        
-        &::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-        }
-        
-        &::-webkit-scrollbar-thumb {
-          background: rgba($primary-color, 0.3);
-          border-radius: 2px;
-        }
-        
         .tab-btn {
-          padding: $spacing-4 $spacing-6;
-          background: transparent;
-          border: none;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: $font-sm;
-          font-weight: $font-medium;
-          display: flex;
-          align-items: center;
-          gap: $spacing-2;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          position: relative;
+          min-width: 80px;
+          padding: 12px 8px;
+          font-size: 12px;
           
-          &::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 3px;
-            background: $primary-color;
-            transition: all 0.3s ease;
-          }
-          
-          &:hover {
-            color: $white;
-            
-            &::after {
-              width: 30px;
-            }
-          }
-          
-          &.active {
-            color: $primary-light;
-            background: rgba($primary-color, 0.1);
-            
-            &::after {
-              width: 60%;
-            }
+          span {
+            display: none;
           }
         }
       }
       
       .modal-body {
-        padding: $spacing-6;
-        overflow-y: auto;
-        max-height: calc(90vh - 180px);
+        padding: 20px;
         
-        // Make the scrollbar more attractive
-        &::-webkit-scrollbar {
-          width: 8px;
+        .company-form-section .form-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
         }
         
-        &::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
-        }
-        
-        &::-webkit-scrollbar-thumb {
-          background: rgba($primary-color, 0.3);
-          border-radius: 4px;
-          
-          &:hover {
-            background: rgba($primary-color, 0.5);
-          }
-        }
-        
-        // Company form sections
-        .company-form-section {
-          margin-bottom: $spacing-8;
-          animation: fadeIn 0.5s ease;
-          
-          h3 {
-            font-size: $font-lg;
-            font-weight: $font-semibold;
-            color: $white;
-            margin: 0 0 $spacing-5 0;
-            padding-bottom: $spacing-3;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            
-            &::after {
-              content: '';
-              position: absolute;
-              bottom: -1px;
-              left: 0;
-              width: 60px;
-              height: 3px;
-              background: linear-gradient(90deg, $primary-color, $primary-light);
-              border-radius: 3px;
-            }
-          }
-          
-          .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: $spacing-6;
-            
-            .form-group {
-              &.full-width {
-                grid-column: 1 / -1;
-              }
-              
-              label {
-                display: block;
-                font-size: $font-sm;
-                color: rgba(255, 255, 255, 0.8);
-                margin-bottom: $spacing-2;
-                font-weight: $font-medium;
-              }
-              
-              input, select, textarea {
-                width: 100%;
-                padding: $spacing-3 $spacing-4;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: $border-radius-md;
-                color: $white;
-                font-size: $font-md;
-                transition: all 0.3s ease;
-                
-                &:focus {
-                  outline: none;
-                  border-color: $primary-color;
-                  box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
-                  background: rgba(255, 255, 255, 0.08);
-                }
-                
-                &::placeholder {
-                  color: rgba(255, 255, 255, 0.4);
-                }
-              }
-              
-              select {
-                appearance: none;
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-                background-repeat: no-repeat;
-                background-position: right $spacing-4 center;
-                padding-right: $spacing-10;
-                
-                option {
-                  background-color: rgba(10, 30, 60, 0.95);
-                  color: $white;
-                }
-              }
-              
-              textarea {
-                min-height: 100px;
-                resize: vertical;
-              }
-              
-              .logo-upload-field {
-                display: flex;
-                align-items: center;
-                gap: $spacing-4;
-                
-                .upload-button {
-                  display: inline-flex;
-                  align-items: center;
-                  gap: $spacing-2;
-                  padding: $spacing-3 $spacing-4;
-                  background: rgba($primary-color, 0.1);
-                  border: 1px solid rgba($primary-color, 0.2);
-                  border-radius: $border-radius-md;
-                  color: $primary-light;
-                  font-size: $font-sm;
-                  cursor: pointer;
-                  transition: all 0.3s ease;
-                  position: relative;
-                  overflow: hidden;
-                  
-                  input[type="file"] {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    opacity: 0;
-                    cursor: pointer;
-                  }
-                  
-                  &:hover {
-                    background: rgba($primary-color, 0.2);
-                  }
-                }
-                
-                .file-name {
-                  font-size: $font-sm;
-                  color: rgba(255, 255, 255, 0.7);
-                }
-              }
-            }
-          }
-          
-          .form-label {
-            display: block;
-            font-size: $font-md;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: $spacing-4;
-            font-weight: $font-medium;
-          }
-          
-          .specialties-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: $spacing-4;
-            margin-bottom: $spacing-6;
-            
-            .specialty-option {
-              .checkbox-container {
-                position: relative;
-                padding-left: 35px;
-                margin-bottom: $spacing-3;
-                cursor: pointer;
-                font-size: $font-md;
-                color: rgba(255, 255, 255, 0.9);
-                user-select: none;
-                display: flex;
-                align-items: center;
-                
-                input {
-                  position: absolute;
-                  opacity: 0;
-                  cursor: pointer;
-                  height: 0;
-                  width: 0;
-                  
-                  &:checked ~ .checkmark {
-                    background-color: $primary-color;
-                    border-color: $primary-light;
-                    
-                    &:after {
-                      display: block;
-                    }
-                  }
-                }
-                
-                .checkmark {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  height: 22px;
-                  width: 22px;
-                  background-color: rgba(255, 255, 255, 0.05);
-                  border: 1px solid rgba(255, 255, 255, 0.2);
-                  border-radius: $border-radius-sm;
-                  transition: all 0.3s ease;
-                  
-                  &:after {
-                    content: "";
-                    position: absolute;
-                    display: none;
-                    left: 8px;
-                    top: 4px;
-                    width: 5px;
-                    height: 10px;
-                    border: solid white;
-                    border-width: 0 2px 2px 0;
-                    transform: rotate(45deg);
-                  }
-                }
-                
-                &:hover input ~ .checkmark {
-                  background-color: rgba(255, 255, 255, 0.1);
-                  border-color: rgba($primary-color, 0.4);
-                }
-                
-                .specialty-name {
-                  margin-left: $spacing-1;
-                }
-              }
-            }
-          }
-          
-          .company-status-section {
-            margin-top: $spacing-6;
-            padding-top: $spacing-6;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            
-            .status-toggle-wrapper {
-              display: flex;
-              align-items: center;
-              gap: $spacing-4;
-              margin: $spacing-4 0;
-              
-              .status-label {
-                font-size: $font-md;
-                color: rgba(255, 255, 255, 0.8);
-                font-weight: $font-medium;
-              }
-              
-              .toggle-switch-container {
-                display: flex;
-                align-items: center;
-                gap: $spacing-3;
-                
-                .status-toggle {
-                  position: relative;
-                  display: inline-block;
-                  width: 54px;
-                  height: 28px;
-                  
-                  input {
-                    opacity: 0;
-                    width: 0;
-                    height: 0;
-                    
-                    &:checked + .toggle-slider {
-                      background-color: rgba($status-active, 0.5);
-                      
-                      &:before {
-                        transform: translateX(26px);
-                        background-color: $status-active;
-                      }
-                    }
-                  }
-                  
-                  .toggle-slider {
-                    position: absolute;
-                    cursor: pointer;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba($status-inactive, 0.5);
-                    transition: .4s;
-                    border-radius: 34px;
-                    
-                    &:before {
-                      position: absolute;
-                      content: "";
-                      height: 20px;
-                      width: 20px;
-                      left: 4px;
-                      bottom: 4px;
-                      background-color: $status-inactive;
-                      transition: .4s;
-                      border-radius: 50%;
-                    }
-                  }
-                }
-                
-                .status-text {
-                  font-size: $font-md;
-                  font-weight: $font-semibold;
-                  
-                  &.active {
-                    color: $status-active;
-                  }
-                  
-                  &.inactive {
-                    color: $status-inactive;
-                  }
-                }
-              }
-            }
-            
-            .status-description {
-              font-size: $font-sm;
-              color: rgba(255, 255, 255, 0.7);
-              font-style: italic;
-              margin-top: $spacing-2;
-            }
-          }
+        .specialties-grid {
+          grid-template-columns: 1fr;
         }
       }
       
       .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: $spacing-4;
-        padding: $spacing-4 $spacing-6;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(5, 15, 35, 0.8);
+        padding: 16px 20px;
+        flex-direction: column;
         
         .action-btn {
-          padding: $spacing-3 $spacing-5;
-          border-radius: $border-radius-md;
-          font-size: $font-sm;
-          font-weight: $font-medium;
-          display: flex;
-          align-items: center;
-          gap: $spacing-2;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          
-          i {
-            font-size: $font-md;
-          }
-          
-          &.cancel-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            
-            &:hover {
-              background: rgba(255, 255, 255, 0.1);
-              transform: translateY(-3px);
-            }
-          }
-          
-          &.save-btn {
-            background: linear-gradient(135deg, $primary-color, $primary-light);
-            color: $white;
-            border: none;
-            box-shadow: 0 4px 10px rgba($primary-color, 0.3);
-            
-            &:hover {
-              transform: translateY(-3px);
-              box-shadow: 0 6px 15px rgba($primary-color, 0.4);
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // Animaciones
-  @keyframes pulseRing {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.8;
-    }
-    50% {
-      transform: scale(1.05);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes pulsate {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.7;
-    }
-    50% {
-      transform: scale(1.1);
-      opacity: 0.9;
-    }
-  }
-  
-  @keyframes barHeight {
-    0%, 100% {
-      transform: scaleY(0.6);
-    }
-    50% {
-      transform: scaleY(1);
-    }
-  }
-  
-  @keyframes progressFill {
-    0% {
-      width: 0%;
-    }
-    20% {
-      width: 40%;
-    }
-    50% {
-      width: 60%;
-    }
-    80% {
-      width: 85%;
-    }
-    100% {
-      width: 100%;
-    }
-  }
-  
-  @keyframes blink {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
-  }
-  
-  @keyframes floatAnimation {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-  
-  // Media queries para responsividad
-  @media (max-width: $breakpoint-xl) {
-    .company-list-container {
-      .company-cards-container {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      }
-      
-      .company-modal-overlay {
-        .company-modal {
-          width: 90%;
-          
-          .company-form-section {
-            .specialties-grid {
-              grid-template-columns: repeat(2, 1fr);
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  @media (max-width: $breakpoint-lg) {
-    .company-list-container {
-      .company-list-header {
-        flex-direction: column;
-        gap: $spacing-4;
-        
-        .header-content {
           width: 100%;
         }
-        
-        .header-actions {
-          width: 100%;
-          justify-content: flex-start;
-          margin-top: $spacing-4;
-        }
       }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .company-list-container {
+    padding: 12px;
+    
+    .company-list-header {
+      padding: 20px;
       
-      .company-cards-container {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      .header-content .header-title-container h2 {
+        font-size: 20px;
       }
+    }
+    
+    .search-filter-container {
+      padding: 16px;
+    }
+    
+    .company-cards-container {
+      gap: 12px;
       
-      .company-modal-overlay {
-        .company-modal {
-          .modal-header {
-            .company-profile-header {
-              flex-direction: column;
-              align-items: center;
-              text-align: center;
-              
-              .modal-logo {
-                margin-bottom: $spacing-4;
-              }
-              
-              .company-details {
-                width: 100%;
-                
-                .type-status-selects {
-                  flex-direction: column;
-                  gap: $spacing-3;
-                }
-              }
+      .company-card {
+        .company-card-header {
+          padding: 20px 20px 12px 20px;
+          
+          .company-logo {
+            img,
+            .logo-placeholder {
+              width: 56px;
+              height: 56px;
+              font-size: 18px;
             }
           }
           
-          .modal-body {
-            .company-form-section {
-              .form-grid {
-                grid-template-columns: 1fr;
-              }
-            }
+          .company-identity h3 {
+            font-size: 18px;
           }
+        }
+        
+        .company-card-body {
+          padding: 0 20px 20px 20px;
         }
       }
     }
   }
-  
-  @media (max-width: $breakpoint-md) {
-    .company-list-container {
-      .company-cards-container {
-        grid-template-columns: 1fr;
-      }
-      
-      .company-modal-overlay {
-        padding: $spacing-2;
-        
-        .company-modal {
-          max-height: 95vh;
-          width: 95%;
-          
-          .modal-body {
-            padding: $spacing-4;
-            
-            .company-form-section {
-              .specialties-grid {
-                grid-template-columns: 1fr;
-              }
-            }
-          }
-          
-          .modal-footer {
-            flex-wrap: wrap;
-            
-            .action-btn {
-              flex: 1;
-              justify-content: center;
-            }
-          }
-        }
-      }
-    }
-  }
+}

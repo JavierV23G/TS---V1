@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../components/login/AuthContext';
 import logoImg from '../../../../assets/LogoMHC.jpeg';
 import '../../../../styles/developer/Patients/Staffing/StaffingPage.scss';
+import '../../../../styles/Header/Header.scss';
 import PremiumTabs from '../Patients/PremiunTabs.jsx';
 import AddStaffForm from './AddStaffForm';
 import StaffList from './StaffListComponent';
@@ -407,10 +408,6 @@ const DevStaffingPage = () => {
             </div>
           </div>
           
-          <div className="tabs-section">
-            <PremiumTabs activeTab="Staffing" onTabChange={handleTabChange} />
-          </div>
-          
           <div className="support-user-profile" ref={userMenuRef}>
             <div 
               className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -452,63 +449,29 @@ const DevStaffingPage = () => {
                 <div className="support-menu-section">
                   <div className="section-title">Account</div>
                   <div className="support-menu-items">
-                    <div className="support-menu-item">
+                    <div 
+                      className="support-menu-item"
+                      onClick={() => {
+                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                        navigate(`/${baseRole}/profile`);
+                      }}
+                    >
                       <i className="fas fa-user-circle"></i>
                       <span>My Profile</span>
                     </div>
-                    <div className="support-menu-item">
+                    <div 
+                      className="support-menu-item"
+                      onClick={() => {
+                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                        navigate(`/${baseRole}/settings`);
+                      }}
+                    >
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
                     </div>
-                    <div className="support-menu-item">
-                      <i className="fas fa-calendar-alt"></i>
-                      <span>My Schedule</span>
-                    </div>
                   </div>
                 </div>
                 
-                <div className="support-menu-section">
-                  <div className="section-title">Preferences</div>
-                  <div className="support-menu-items">
-                    <div className="support-menu-item">
-                      <i className="fas fa-bell"></i>
-                      <span>Notifications</span>
-                      <div className="support-notification-badge">{notificationCount}</div>
-                    </div>
-                    <div className="support-menu-item toggle-item">
-                      <div className="toggle-item-content">
-                        <i className="fas fa-moon"></i>
-                        <span>Dark Mode</span>
-                      </div>
-                      <div className="toggle-switch">
-                        <div className="toggle-handle active"></div>
-                      </div>
-                    </div>
-                    <div className="support-menu-item toggle-item">
-                      <div className="toggle-item-content">
-                        <i className="fas fa-volume-up"></i>
-                        <span>Sound Alerts</span>
-                      </div>
-                      <div className="toggle-switch">
-                        <div className="toggle-handle"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="support-menu-section">
-                  <div className="section-title">Support</div>
-                  <div className="support-menu-items">
-                    <div className="support-menu-item">
-                      <i className="fas fa-headset"></i>
-                      <span>Contact Support</span>
-                    </div>
-                    <div className="support-menu-item">
-                      <i className="fas fa-bug"></i>
-                      <span>Report Issue</span>
-                    </div>
-                  </div>
-                </div>
                 
                 <div className="support-menu-footer">
                   <div className="support-menu-item logout" onClick={handleLogout}>
@@ -516,7 +479,7 @@ const DevStaffingPage = () => {
                     <span>Log Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™ Support</span>
+                    <span>TherapySync™</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -525,6 +488,10 @@ const DevStaffingPage = () => {
           </div>
         </div>
       </header>
+      
+      <div className="tabs-section">
+        <PremiumTabs activeTab="Staffing" onTabChange={handleTabChange} />
+      </div>
       
       <main className={`staffing-content ${isLoggingOut ? 'fade-out' : ''}`}>
         <div className="staffing-container">

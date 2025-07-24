@@ -24,7 +24,7 @@ const VisitStatusModal = ({
   // Editable form fields
   const [visitDate, setVisitDate] = useState(visitData?.visit_date || '');
   const [visitTime, setVisitTime] = useState(visitData?.scheduled_time || '');
-  const [visitType, setVisitType] = useState(visitData?.visit_type || 'Initial');
+  const [visitType, setVisitType] = useState(visitData?.visit_type || 'Initial Evaluation');
   const [comments, setComments] = useState(visitData?.comments || '');
 
   // Check if user can edit therapist (only Developer, Administrator, Agency)
@@ -69,7 +69,7 @@ const VisitStatusModal = ({
       // Set form fields from visitData
       setVisitDate(visitData.visit_date || '');
       setVisitTime(visitData.scheduled_time || '');
-      setVisitType(visitData.visit_type || 'Initial');
+      setVisitType(visitData.visit_type || 'Initial Evaluation');
       setComments(visitData.comments || '');
       setSelectedStatus(visitData.status || 'Scheduled');
       setSelectedTherapist(visitData.staff_id || null);
@@ -193,7 +193,59 @@ const VisitStatusModal = ({
 
   const handleSave = async () => {
     try {
-      // Use query parameters instead of body (based on backend analysis)
+      // Special handling for "Completed" status - open note modal instead of changing status
+      if (selectedStatus === 'Completed') {
+        console.log('Opening note modal for visit completion');
+        
+        // Prepare visit data for note modal with other field updates but keep original status
+        const visitDataForNote = {
+          ...visitData,
+          visit_date: visitDate,
+          scheduled_time: visitTime,
+          visit_type: visitType,
+          staff_id: selectedTherapist
+          // NOTE: Intentionally NOT setting status to 'Completed' yet - this will be done when note is actually completed
+        };
+
+        // First update other fields (if any changed) but exclude status
+        const params = new URLSearchParams();
+        
+        if (visitDate !== visitData.visit_date) params.append('visit_date', visitDate);
+        if (visitTime !== visitData.scheduled_time) params.append('scheduled_time', visitTime);
+        if (visitType !== visitData.visit_type) params.append('visit_type', visitType);
+        if (selectedTherapist !== visitData.staff_id) params.append('staff_id', selectedTherapist);
+        // NOTE: Intentionally NOT adding status parameter for Completed
+
+        // Only make API call if there are other changes to save
+        if (params.toString()) {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+          
+          const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}?${params.toString()}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to update visit fields:', response.status, errorText);
+            alert('Failed to update visit. Please try again.');
+            return;
+          }
+
+          const updatedVisit = await response.json();
+          // Merge the updated fields but keep original status
+          Object.assign(visitDataForNote, updatedVisit);
+        }
+
+        // Call completion function which should open the note modal
+        onCompleteVisit(visitDataForNote);
+        onClose();
+        return;
+      }
+
+      // For all other status changes, proceed normally with full update
       const params = new URLSearchParams();
       
       if (visitDate !== visitData.visit_date) params.append('visit_date', visitDate);
@@ -215,10 +267,9 @@ const VisitStatusModal = ({
       if (response.ok) {
         const updatedVisit = await response.json();
         
-        // Prepare updated visit data for parent components using the actual response data
         const updatedVisitData = {
           ...visitData,
-          ...updatedVisit, // Use the actual backend response
+          ...updatedVisit,
           visit_date: visitDate,
           scheduled_time: visitTime,
           visit_type: visitType,
@@ -231,11 +282,6 @@ const VisitStatusModal = ({
         // Notify parent component about the update for immediate UI refresh
         if (typeof onVisitUpdate === 'function') {
           onVisitUpdate(updatedVisitData);
-        }
-
-        // Call appropriate handler based on status (but don't update again to avoid conflicts)
-        if (selectedStatus === 'Completed') {
-          onCompleteVisit(updatedVisitData);
         }
         
         onClose();

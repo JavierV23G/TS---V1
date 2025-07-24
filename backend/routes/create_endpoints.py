@@ -281,7 +281,7 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
         NoteTemplateSection.template_id == template.id
     ).order_by(NoteTemplateSection.position.asc()).all()
 
-    sections_data = [{"section_id": s.section_id, "content": {}} for s in sections]
+    sections_data = {str(s.section_id): {} for s in sections}
 
     note = VisitNote(
         visit_id=visit.id,

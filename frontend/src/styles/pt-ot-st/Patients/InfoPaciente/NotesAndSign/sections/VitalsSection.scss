@@ -1,0 +1,31 @@
+// VitalsSection.scss
+@import 'common';
+
+.vitals-section {
+  @extend .section-common;
+
+  .vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+
+    .vital-item {
+      .vital-label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      input {
+        text-align: center;
+      }
+
+      .unit {
+        font-size: 0.8rem;
+        color: #666;
+        margin-left: 5px;
+      }
+    }
+  }
+}
