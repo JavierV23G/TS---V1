@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 // Map backend section names to frontend components
 const mapSectionNameToComponent = (sectionName) => {
   const sectionMap = {
+    // Solo las 3 secciones que necesitamos del backend
     'VITALS': 'VitalsSection',
+    'PAIN': 'PainSection', 
     'Transfers / Functional Independence': 'TransfersFunctionalSection',
-    'PAIN': 'PainSection'
   };
+  
   
   return sectionMap[sectionName] || null;
 };
@@ -25,7 +27,8 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/templates/${disciplina}/${tipoNota}`);
+      const templateUrl = `http://localhost:8000/templates/${disciplina}/${tipoNota}`;
+      const response = await fetch(templateUrl);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch template: ${response.status} - ${response.statusText}`);
@@ -37,14 +40,17 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
       const transformedConfig = {
         templateId: config.id,
         name: `${config.discipline} ${config.note_type}`,
-        sections: config.sections.map(section => ({
-          id: section.id,
-          section_name: section.section_name,
-          component: mapSectionNameToComponent(section.section_name),
-          is_required: section.is_required,
-          description: section.description,
-          form_schema: section.form_schema
-        })),
+        sections: config.sections.map(section => {
+          const component = mapSectionNameToComponent(section.section_name);
+          return {
+            id: section.id,
+            section_name: section.section_name,
+            component: component,
+            is_required: section.is_required,
+            description: section.description,
+            form_schema: section.form_schema
+          };
+        }),
         discipline: config.discipline,
         note_type: config.note_type,
         is_active: config.is_active
@@ -55,7 +61,6 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
         throw new Error('Invalid template structure received from backend');
       }
       
-      console.log('✅ Template loaded successfully:', transformedConfig);
       setTemplateConfig(transformedConfig);
     } catch (err) {
       console.error('Error fetching template config:', err);

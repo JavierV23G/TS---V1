@@ -2,6 +2,18 @@ import React from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/VitalsSection.scss';
 
 const VitalsSection = ({ data, onChange, sectionId, config }) => {
+  // Helper to handle nested field changes
+  const handleNestedChange = (section, field, value) => {
+    const updatedData = {
+      ...data,
+      [section]: {
+        ...data?.[section],
+        [field]: value
+      }
+    };
+    onChange(updatedData);
+  };
+
   const handleChange = (field, value) => {
     const updatedData = { ...data, [field]: value };
     onChange(updatedData);
@@ -14,12 +26,12 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
       </div>
       
       <div className="vitals-layout">
-        {/* Sección de signos vitales en reposo */}
+        {/* AT REST Section */}
         <div className="vitals-section at-rest">
           <div className="vitals-header">
             <div className="title-with-icon">
               <i className="fas fa-heart-pulse"></i>
-              <h3>At Rest</h3>
+              <h3>AT REST</h3>
             </div>
             <div className="info-badge">Baseline</div>
           </div>
@@ -30,8 +42,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.restHeartRate || ''} 
-                  onChange={(e) => handleChange('restHeartRate', e.target.value)}
+                  value={data?.at_rest?.heart_rate || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'heart_rate', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -45,8 +57,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="bp-field">
                 <input 
                   type="number" 
-                  value={data?.restSystolic || ''} 
-                  onChange={(e) => handleChange('restSystolic', e.target.value)}
+                  value={data?.at_rest?.blood_pressure_systolic || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'blood_pressure_systolic', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -54,8 +66,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
                 <span className="bp-divider">/</span>
                 <input 
                   type="number" 
-                  value={data?.restDiastolic || ''} 
-                  onChange={(e) => handleChange('restDiastolic', e.target.value)}
+                  value={data?.at_rest?.blood_pressure_diastolic || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'blood_pressure_diastolic', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -69,8 +81,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.restRespirations || ''} 
-                  onChange={(e) => handleChange('restRespirations', e.target.value)}
+                  value={data?.at_rest?.respirations || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'respirations', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="100"
@@ -80,12 +92,12 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
             </div>
             
             <div className="vital-card">
-              <label>O<sub>2</sub> Saturation</label>
+              <label>O₂ Saturation</label>
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.restO2Saturation || ''} 
-                  onChange={(e) => handleChange('restO2Saturation', e.target.value)}
+                  value={data?.at_rest?.o2_saturation || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'o2_saturation', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="100"
@@ -99,25 +111,36 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.temperature || ''} 
-                  onChange={(e) => handleChange('temperature', e.target.value)}
+                  value={data?.at_rest?.temperature || ''} 
+                  onChange={(e) => handleNestedChange('at_rest', 'temperature', e.target.value)}
                   placeholder="0"
                   step="0.1"
                   min="90"
                   max="110"
                 />
-                <span className="unit">°F</span>
+                <span className="unit">°C</span>
               </div>
             </div>
           </div>
+          
+          {/* Additional Notes for AT REST */}
+          <div className="vitals-notes">
+            <label>Vitals Additional Notes</label>
+            <textarea 
+              value={data?.at_rest?.vitals_additional || ''}
+              onChange={(e) => handleNestedChange('at_rest', 'vitals_additional', e.target.value)}
+              placeholder="Enter additional vitals information..."
+              rows={3}
+            />
+          </div>
         </div>
         
-        {/* Sección de signos vitales después del ejercicio */}
+        {/* AFTER EXERTION Section */}
         <div className="vitals-section after-exertion">
           <div className="vitals-header">
             <div className="title-with-icon">
               <i className="fas fa-person-running"></i>
-              <h3>After Exertion</h3>
+              <h3>AFTER EXERTION</h3>
             </div>
             <div className="info-badge">Activity Response</div>
           </div>
@@ -128,8 +151,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.exertionHeartRate || ''} 
-                  onChange={(e) => handleChange('exertionHeartRate', e.target.value)}
+                  value={data?.after_exertion?.heart_rate || ''} 
+                  onChange={(e) => handleNestedChange('after_exertion', 'heart_rate', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -143,8 +166,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="bp-field">
                 <input 
                   type="number" 
-                  value={data?.exertionSystolic || ''} 
-                  onChange={(e) => handleChange('exertionSystolic', e.target.value)}
+                  value={data?.after_exertion?.blood_pressure_systolic || ''} 
+                  onChange={(e) => handleNestedChange('after_exertion', 'blood_pressure_systolic', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -152,8 +175,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
                 <span className="bp-divider">/</span>
                 <input 
                   type="number" 
-                  value={data?.exertionDiastolic || ''} 
-                  onChange={(e) => handleChange('exertionDiastolic', e.target.value)}
+                  value={data?.after_exertion?.blood_pressure_diastolic || ''} 
+                  onChange={(e) => handleNestedChange('after_exertion', 'blood_pressure_diastolic', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="300"
@@ -167,8 +190,8 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.exertionRespirations || ''} 
-                  onChange={(e) => handleChange('exertionRespirations', e.target.value)}
+                  value={data?.after_exertion?.respirations || ''} 
+                  onChange={(e) => handleNestedChange('after_exertion', 'respirations', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="100"
@@ -178,12 +201,12 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
             </div>
             
             <div className="vital-card">
-              <label>O<sub>2</sub> Saturation</label>
+              <label>O₂ Saturation</label>
               <div className="input-field">
                 <input 
                   type="number" 
-                  value={data?.exertionO2Saturation || ''} 
-                  onChange={(e) => handleChange('exertionO2Saturation', e.target.value)}
+                  value={data?.after_exertion?.o2_saturation || ''} 
+                  onChange={(e) => handleNestedChange('after_exertion', 'o2_saturation', e.target.value)}
                   placeholder="0"
                   min="0"
                   max="100"
@@ -194,78 +217,19 @@ const VitalsSection = ({ data, onChange, sectionId, config }) => {
           </div>
         </div>
         
-        {/* Sección de análisis de signos vitales */}
-        <div className="vitals-analytics-section">
-          <div className="vitals-summary-card">
-            <div className="card-header">
-              <h4>Vital Signs Analysis</h4>
-              <i className="fas fa-chart-line"></i>
-            </div>
-            <div className="vital-comparison">
-              <div className="comparison-item">
-                <div className="label">
-                  <i className="fas fa-heartbeat"></i>
-                  Heart Rate Δ:
-                </div>
-                <div className="value">{
-                  data?.restHeartRate && data?.exertionHeartRate 
-                  ? `+${Math.max(0, data.exertionHeartRate - data.restHeartRate)} bpm` 
-                  : 'N/A'
-                }</div>
-              </div>
-              <div className="comparison-item">
-                <div className="label">
-                  <i className="fas fa-stethoscope"></i>
-                  Blood Pressure Δ:
-                </div>
-                <div className="value">{
-                  data?.restSystolic && data?.exertionSystolic 
-                  ? `+${Math.max(0, data.exertionSystolic - data.restSystolic)}/${Math.max(0, data.exertionDiastolic - data.restDiastolic)} mmHg` 
-                  : 'N/A'
-                }</div>
-              </div>
-              <div className="comparison-item">
-                <div className="label">
-                  <i className="fas fa-lungs"></i>
-                  O<sub>2</sub> Saturation Δ:
-                </div>
-                <div className={`value ${
-                  data?.restO2Saturation && data?.exertionO2Saturation && (data.exertionO2Saturation - data.restO2Saturation < -3) 
-                  ? 'negative' : ''}`
-                }>{
-                  data?.restO2Saturation && data?.exertionO2Saturation 
-                  ? `${data.exertionO2Saturation - data.restO2Saturation > 0 ? '+' : ''}${data.exertionO2Saturation - data.restO2Saturation}%` 
-                  : 'N/A'
-                }</div>
-              </div>
-            </div>
-            <div className="vital-status">
-              <div className="checkbox-alert">
-                <input 
-                  type="checkbox" 
-                  id="vitalsOutOfParameters" 
-                  checked={data?.vitalsOutOfParameters || false}
-                  onChange={(e) => handleChange('vitalsOutOfParameters', e.target.checked)}
-                />
-                <label htmlFor="vitalsOutOfParameters">
-                  <i className="fas fa-triangle-exclamation"></i>
-                  Vitals Out of Parameters
-                </label>
-              </div>
-            </div>
-          </div>
-          
-          <div className="vitals-notes-card">
-            <div className="card-header">
-              <h4>Additional Notes</h4>
-              <i className="fas fa-clipboard-list"></i>
-            </div>
-            <textarea 
-              value={data?.vitalsAdditional || ''}
-              onChange={(e) => handleChange('vitalsAdditional', e.target.value)}
-              placeholder="Enter additional vitals information or observations..."
-              rows={5}
+        {/* Vitals Out of Parameters Checkbox */}
+        <div className="vitals-checkbox-section">
+          <div className="checkbox-alert">
+            <input 
+              type="checkbox" 
+              id="vitalsOutOfParameters" 
+              checked={data?.vitals_out_of_parameters || false}
+              onChange={(e) => handleChange('vitals_out_of_parameters', e.target.checked)}
             />
+            <label htmlFor="vitalsOutOfParameters">
+              <i className="fas fa-triangle-exclamation"></i>
+              Vitals Out of Parameters
+            </label>
           </div>
         </div>
       </div>

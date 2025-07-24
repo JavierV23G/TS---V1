@@ -19,9 +19,10 @@ const TemplateRenderer = ({
   // Map backend section names to frontend components
   const getSectionComponent = (sectionName) => {
     const sectionMap = {
+      // Solo las 3 secciones que necesitamos del backend
       'VITALS': 'VitalsSection',
+      'PAIN': 'PainSection', 
       'Transfers / Functional Independence': 'TransfersFunctionalSection',
-      'PAIN': 'PainSection'
     };
     
     return sectionMap[sectionName] || null;
@@ -62,9 +63,6 @@ const TemplateRenderer = ({
               required: sectionConfig.is_required || false
             }
           };
-          console.log(`✅ Loaded section: ${sectionConfig.section_name} -> ${componentName}`);
-        } else {
-          console.warn(`❌ Section component for "${sectionConfig.section_name}" not found (mapped to: ${componentName})`);
         }
       });
 

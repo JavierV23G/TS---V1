@@ -24,16 +24,6 @@ const NoteTemplateModal = ({
     refreshConfig 
   } = useTemplateConfig(disciplina, tipoNota, isOpen);
 
-  // Debug log for initial data (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔷 NoteTemplateModal - Modal opened with data:', {
-      initialData,
-      patientData,
-      disciplina,
-      tipoNota,
-      templateConfig
-    });
-  }
 
   // Manage section data with autosave
   const {
@@ -52,8 +42,11 @@ const NoteTemplateModal = ({
     onSave: onSave
   });
 
+
   // Early return if modal is not open - after hooks
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   // Handle modal close
   const handleClose = () => {
@@ -106,13 +99,11 @@ const NoteTemplateModal = ({
 
   // Handle test opening (placeholder)
   const handleOpenTest = (testName) => {
-    console.log('Opening test:', testName);
     // TODO: Implement test modal opening logic
   };
 
   // Handle diagnosis modal opening (placeholder)
   const handleOpenDiagnosisModal = () => {
-    console.log('Opening diagnosis modal');
     // TODO: Implement diagnosis modal opening logic
   };
 
@@ -176,12 +167,7 @@ const NoteTemplateModal = ({
                 </h2>
                 <div className="template-meta">
                   <span className="patient-name">
-                    <i className="fas fa-user"></i>
                     {patientData?.firstName} {patientData?.lastName}
-                  </span>
-                  <span className="template-type">
-                    <i className="fas fa-tag"></i>
-                    {disciplina} • {tipoNota}
                   </span>
                   <span className="completion-status">
                     <i className="fas fa-chart-pie"></i>

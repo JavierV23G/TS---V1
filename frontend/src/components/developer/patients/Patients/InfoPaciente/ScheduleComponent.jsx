@@ -1071,6 +1071,8 @@ const ScheduleComponent = ({
   };
 
   const handleCompleteVisit = (visitData) => {
+    console.log('🔥 handleCompleteVisit called with:', visitData);
+    
     // Close status modal
     setShowVisitStatusModal(false);
     setStatusChangeVisit(null);
@@ -1078,6 +1080,9 @@ const ScheduleComponent = ({
     // Get therapist discipline for proper template loading
     const therapist = therapists.find(t => t.id === visitData.staff_id);
     const therapistRole = therapist?.role?.toUpperCase() || 'PT';
+    
+    console.log('🔥 Therapist found:', therapist);
+    console.log('🔥 Therapist role:', therapistRole);
     
     // Map therapist role to discipline
     const disciplineMapping = {
@@ -1100,10 +1105,14 @@ const ScheduleComponent = ({
       patientName: patient?.full_name || `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim()
     };
     
+    console.log('🔥 Enriched visit data:', enrichedVisitData);
+    console.log('🔥 Setting showCompletionModal to TRUE');
+    
     // Open note completion modal instead of directly changing status
-    console.log('Opening completion modal for visit:', enrichedVisitData);
     setCompletionVisitData(enrichedVisitData);
     setShowCompletionModal(true);
+    
+    console.log('🔥 Modal states set - completion modal should be opening...');
   };
 
   const handleInitiateDelete = (visitId, e) => {
@@ -2300,7 +2309,10 @@ const ScheduleComponent = ({
 
       <NoteTemplateModal
         isOpen={showCompletionModal}
-        onClose={() => setShowCompletionModal(false)}
+        onClose={() => {
+          console.log('🔥 NoteTemplateModal onClose called');
+          setShowCompletionModal(false);
+        }}
         patientData={{
           firstName: patient?.first_name || '',
           lastName: patient?.last_name || '',
@@ -2312,6 +2324,24 @@ const ScheduleComponent = ({
         initialData={completionVisitData || {}}
         onSave={handleCompletionFormSave}
       />
+
+      {/* Debug modal states */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          backgroundColor: 'black',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          zIndex: 99999
+        }}>
+          <div>showCompletionModal: {showCompletionModal ? 'TRUE' : 'FALSE'}</div>
+          <div>completionVisitData: {completionVisitData ? 'EXISTS' : 'NULL'}</div>
+        </div>
+      )}
 
 
 
