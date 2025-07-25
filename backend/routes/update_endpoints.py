@@ -22,7 +22,7 @@ from auth.auth_middleware import role_required, get_current_user
 
 router = APIRouter()
 
-#////////////////////////// STAFF //////////////////////////#
+#====================== STAFF ======================#
 
 @router.put("/staff/{staff_id}")
 def update_staff_info(
@@ -82,7 +82,7 @@ def update_staff_info(
 
     return {"message": "Staff updated successfully.", "staff_id": staff.id}
 
-#////////////////////////// PACIENTES //////////////////////////#
+#====================== PATIENTS ======================#
 
 @router.put("/patients/{patient_id}")
 def update_patient_info(
@@ -182,7 +182,7 @@ def update_patient_info(
     return {"message": "Patient updated successfully.", "patient_id": patient.id}
 
 
-#////////////////////////// VISITS //////////////////////////#
+#====================== VISITS ======================#
 
 @router.put("/visits/{id}", response_model=VisitResponse)
 def update_visit(
@@ -281,7 +281,7 @@ def restore_hidden_visit(visit_id: int, db: Session = Depends(get_db)):
     db.refresh(visit)
     return visit
 
-#////////////////////////// NOTAS //////////////////////////#
+#====================== NOTES ======================#
 
 @router.put("/note-sections/{section_id}", response_model=NoteSectionResponse)
 def update_section(section_id: int, data: NoteSectionUpdate, db: Session = Depends(get_db)):
@@ -346,67 +346,29 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
     if not note:
         raise HTTPException(status_code=404, detail="Visit note not found")
 
-    # Update primitive fields
     if data.status is not None:
         note.status = data.status
-        
-        # If note is completed, also update the visit status
         if data.status.lower() == "completed":
             visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
             if visit:
                 visit.status = "Completed"
-    if data.therapist_signature is not None:
-        note.therapist_signature = data.therapist_signature
-    if data.patient_signature is not None:
-        note.patient_signature = data.patient_signature
-    if data.visit_date_signature is not None:
-        if isinstance(data.visit_date_signature, str):
-            try:
-                note.visit_date_signature = date.fromisoformat(data.visit_date_signature)
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
-        else:
-            note.visit_date_signature = data.visit_date_signature
 
-    # Update sections_data content
+    if data.therapist_name is not None:
+        note.therapist_name = data.therapist_name
+
     if data.sections_data is not None:
         note.sections_data = data.sections_data
-        
-        # If note was completed and sections are being updated, change to pending
         if note.status.lower() == "completed" and data.status is None:
             note.status = "Pending"
-            # Also update visit status to pending
             visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
             if visit:
                 visit.status = "Pending"
 
     db.commit()
     db.refresh(note)
+    return note
 
-    # Return optional template_sections for frontend context
-    template = db.query(NoteTemplate).filter_by(
-        discipline=note.discipline,
-        note_type=note.note_type,
-        is_active=True
-    ).first()
-
-    template_sections = []
-    if template:
-        links = (
-            db.query(NoteTemplateSection)
-            .filter(NoteTemplateSection.template_id == template.id)
-            .join(NoteSection)
-            .order_by(NoteTemplateSection.position.asc())
-            .all()
-        )
-        template_sections = [ts.section for ts in links]
-
-    return {
-        **note.__dict__,
-        "template_sections": template_sections
-    }
-
-#////////////////////////// CERT PERIOD //////////////////////////#
+#====================== CERTIFICATION PERIODS ======================#
 
 @router.put("/cert-periods/{cert_id}", response_model=CertificationPeriodResponse)
 def update_certification_period(cert_id: int, cert_update: CertificationPeriodUpdate, db: Session = Depends(get_db)):
@@ -441,7 +403,7 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
     db.refresh(cert)
     return cert
 
-#////////////////////////// EXERCISES //////////////////////////#
+#====================== EXERCISES ======================#
 
 @router.put("/exercises/{exercise_id}", response_model=ExerciseResponse)
 def update_exercise(

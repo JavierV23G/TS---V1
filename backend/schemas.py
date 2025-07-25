@@ -254,24 +254,23 @@ class NoteSectionResponse(NoteSectionCreate):
 
 #========================= NOTES =========================#
 
+class VisitNoteCreate(BaseModel):
+    visit_id: int
+    status: Optional[str] = "Pending"
+    sections_data: Optional[dict] = None
+    therapist_name: str
+
 class VisitNoteUpdate(BaseModel):
     status: Optional[str] = None
-    therapist_signature: Optional[str] = None
-    patient_signature: Optional[str] = None
-    visit_date_signature: Optional[str] = None
     sections_data: Optional[dict] = None
+    therapist_name: Optional[str] = None
 
 class VisitNoteResponse(BaseModel):
     id: int
     visit_id: int
     status: str
-    discipline: str
-    note_type: str
-    therapist_signature: Optional[str] = None
-    patient_signature: Optional[str] = None
-    visit_date_signature: Optional[date] = None
     sections_data: Optional[dict] = None
-    template_sections: List[NoteSectionResponse] = []
+    therapist_name: str
 
     class Config:
         from_attributes = True

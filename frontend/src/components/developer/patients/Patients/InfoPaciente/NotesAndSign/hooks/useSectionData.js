@@ -171,9 +171,11 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
   }, [initialData]);
 
   // Función para obtener estadísticas de completitud
-  const getCompletionStats = useCallback(() => {
-    // Verificar que data existe y es un objeto
-    if (!data || typeof data !== 'object') {
+  const getCompletionStats = useCallback((templateConfig = null) => {
+    // Si tenemos templateConfig, usar sus secciones como referencia
+    const totalSections = templateConfig?.sections?.length || 0;
+    
+    if (totalSections === 0) {
       return {
         total: 0,
         completed: 0,
@@ -181,9 +183,18 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
       };
     }
 
-    const sections = Object.keys(data);
-    const completedSections = sections.filter(sectionId => {
-      const sectionData = data[sectionId];
+    // Verificar que data existe y es un objeto
+    if (!data || typeof data !== 'object') {
+      return {
+        total: totalSections,
+        completed: 0,
+        percentage: 0
+      };
+    }
+
+    // Contar secciones completadas basándose en templateConfig.sections
+    const completedSections = templateConfig.sections.filter(section => {
+      const sectionData = data[section.id];
       if (!sectionData || typeof sectionData !== 'object') return false;
       
       return Object.values(sectionData).some(value => {
@@ -196,9 +207,9 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
     });
 
     return {
-      total: sections.length,
+      total: totalSections,
       completed: completedSections.length,
-      percentage: sections.length > 0 ? Math.round((completedSections.length / sections.length) * 100) : 0
+      percentage: Math.round((completedSections.length / totalSections) * 100)
     };
   }, [data]);
 

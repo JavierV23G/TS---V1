@@ -144,15 +144,9 @@ class VisitNote(Base):
 
     id = Column(Integer, primary_key=True)
     visit_id = Column(Integer, ForeignKey("visits.id"), nullable=False)
-    status = Column(String, default="Scheduled")
-    discipline = Column(String, nullable=False)
-    note_type = Column(String, nullable=False)
-
-    therapist_signature = Column(Text, nullable=True)
-    patient_signature = Column(Text, nullable=True)
-    visit_date_signature = Column(Date, nullable=True)
-
+    status = Column(String, default="Pending")
     sections_data = Column(JSON, nullable=True)
+    therapist_name = Column(String, nullable=False)
 
     visit = relationship("Visit", back_populates="note")
 

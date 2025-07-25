@@ -293,7 +293,6 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
 const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient, setCurrentCertPeriod }) => {
   // Handler for certification period updates
   const handleUpdateCertPeriod = (updatedCertData) => {
-    console.log('Certification period updated:', updatedCertData);
     if (updatedCertData.startDate && updatedCertData.endDate) {
       setCertPeriodDates({ 
         startDate: updatedCertData.startDate, 
@@ -319,7 +318,6 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
 
   // Handler for emergency contacts updates
   const handleUpdateContacts = (updatedContacts) => {
-    console.log('Emergency contacts updated:', updatedContacts);
   };
   
   return (
@@ -346,7 +344,6 @@ const MedicalInformationSection = ({
   onSyncVisitsData 
 }) => {
   const handleUpdateMedicalInfo = (updatedMedicalData) => {
-    console.log('Medical information updated:', updatedMedicalData);
     if (onUpdatePatient) {
       onUpdatePatient({ ...patient, ...updatedMedicalData });
     }
@@ -374,7 +371,6 @@ const DisciplinesSection = ({
   onSyncDisciplinesData 
 }) => {
   const handleUpdateDisciplines = (updatedDisciplines) => {
-    console.log('Disciplines updated:', updatedDisciplines);
     if (onUpdatePatient) {
       onUpdatePatient({ ...patient, required_disciplines: updatedDisciplines });
     }
@@ -403,7 +399,6 @@ const ScheduleSection = ({
   onSyncScheduleData 
 }) => {
   const handleUpdateSchedule = (updatedSchedule) => {
-    console.log('Schedule updated:', updatedSchedule);
   };
   
   return (
@@ -424,7 +419,6 @@ const ScheduleSection = ({
 // Exercises Section Component
 const ExercisesSection = ({ patient }) => {
   const handleUpdateExercises = (updatedExercises) => {
-    console.log('Exercises updated:', updatedExercises);
   };
   
   return (
@@ -437,7 +431,6 @@ const ExercisesSection = ({ patient }) => {
 // Documents Section Component
 const DocumentsSection = ({ patient }) => {
   const handleUpdateDocuments = (updatedDocuments) => {
-    console.log('Documents updated:', updatedDocuments);
   };
   
   return (
@@ -450,7 +443,6 @@ const DocumentsSection = ({ patient }) => {
 // Notes Section Component
 const NotesSection = ({ patient }) => {
   const handleUpdateNotes = (updatedNotes) => {
-    console.log('Notes updated:', updatedNotes);
   };
   
   return (
@@ -716,7 +708,6 @@ const PatientInfoPage = () => {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching patient from:', `${API_BASE_URL}/patients/${patientId}`);
         
         const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
           method: 'GET',  
@@ -733,7 +724,6 @@ const PatientInfoPage = () => {
         }
         
         const patientData = await response.json();
-        console.log('Received patient data:', patientData);
         
         setPatient(patientData);
         

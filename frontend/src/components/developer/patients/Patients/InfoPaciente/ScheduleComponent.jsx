@@ -213,8 +213,6 @@ const ScheduleComponent = ({
     
     // Check if the role includes any admin role (in case format is like "Developer - Main")
     const canSeeAll = adminRoles.some(role => normalizedRole.includes(role));
-    
-    console.log('User role:', user.role, 'Normalized:', normalizedRole, 'Can see all therapists:', canSeeAll);
     return canSeeAll;
   };
 
@@ -270,7 +268,6 @@ const ScheduleComponent = ({
       }
       
       const staffData = await response.json();
-      console.log('Raw staff data:', staffData);
       
       // Filter for therapy staff only
       const therapyRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
@@ -278,7 +275,6 @@ const ScheduleComponent = ({
         staff.role && therapyRoles.includes(staff.role.toUpperCase()) && staff.is_active
       );
       
-      console.log('Filtered therapists:', filteredTherapists);
       setTherapists(filteredTherapists);
       
     } catch (err) {
@@ -342,7 +338,6 @@ const ScheduleComponent = ({
       }
       
       const certData = await response.json();
-      console.log('Certification periods data:', certData);
       
       setCertPeriods(certData);
       
@@ -388,7 +383,6 @@ const ScheduleComponent = ({
 
   // Handle cert period change
   const handleCertPeriodChange = (newCertPeriodData) => {
-    console.log('Certificate period changed:', newCertPeriodData);
     
     const matchingPeriod = certPeriods.find(period => {
       const periodStart = new Date(period.start_date).toDateString();
@@ -397,7 +391,6 @@ const ScheduleComponent = ({
     });
     
     if (matchingPeriod && matchingPeriod.id !== currentCertPeriod?.id) {
-      console.log('Switching to certification period:', matchingPeriod);
       setCurrentCertPeriod(matchingPeriod);
       
       localStorage.setItem(`active_cert_period_${patient.id}`, matchingPeriod.id.toString());
@@ -416,7 +409,6 @@ const ScheduleComponent = ({
       setIsLoadingVisits(true);
       setError('');
       
-      console.log(`Fetching visits for cert period: ${certPeriodId}, patient: ${patient.id}`);
       
       const response = await fetch(`${API_BASE_URL}/visits/certperiod/${certPeriodId}`, {
         method: 'GET',
@@ -425,17 +417,14 @@ const ScheduleComponent = ({
       
       if (response.ok) {
         const visitsData = await response.json();
-        console.log(`Got ${visitsData.length} visits from API:`, visitsData);
         
         const patientVisits = visitsData.filter(visit => 
           visit.patient_id === patient.id
         );
         
-        console.log(`Filtered to ${patientVisits.length} visits for patient ${patient.id} in cert period ${certPeriodId}`);
         setVisits(patientVisits);
         
       } else if (response.status === 404) {
-        console.log('No visits found for this certification period');
         setVisits([]);
       } else {
         const errorText = await response.text();
@@ -472,10 +461,9 @@ const ScheduleComponent = ({
     }
   };
 
-  // Create visit
+  // Create visit (uses separated endpoint)
   const createVisit = async (visitData) => {
     try {
-      console.log('Creating visit with data:', visitData);
       
       const createPayload = {
         patient_id: parseInt(patient.id),
@@ -486,7 +474,6 @@ const ScheduleComponent = ({
         scheduled_time: visitData.time || null
       };
 
-      console.log('Create payload for backend:', createPayload);
 
       const response = await fetch(`${API_BASE_URL}/visits/assign`, {
         method: 'POST',
@@ -496,7 +483,6 @@ const ScheduleComponent = ({
 
       if (response.ok) {
         const newVisit = await response.json();
-        console.log('Visit created successfully:', newVisit);
         return newVisit;
       } else {
         const errorText = await response.text();
@@ -510,10 +496,46 @@ const ScheduleComponent = ({
     }
   };
 
+  // Create note (uses separated endpoint with simplified fields)
+  const createVisitNote = async (visitId, noteData) => {
+    try {
+      
+      // Get therapist info to get name
+      const therapist = assignedStaff.find(staff => staff.id === parseInt(noteData.therapist));
+      const therapistName = therapist ? therapist.name : 'Unknown Therapist';
+      
+      const createPayload = {
+        visit_id: parseInt(visitId),
+        status: noteData.status || 'Pending',
+        sections_data: noteData.sections_data || {},
+        therapist_name: therapistName
+      };
+
+
+      const response = await fetch(`${API_BASE_URL}/visit-notes/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createPayload),
+      });
+
+      if (response.ok) {
+        const newNote = await response.json();
+        return newNote;
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to create note:', errorText);
+        throw new Error(`Failed to create note: ${response.status} - ${errorText}`);
+      }
+      
+    } catch (err) {
+      console.error('Error creating note:', err);
+      throw err;
+    }
+  };
+
   // Update visit
   const updateVisit = async (visitId, visitData) => {
     try {
-      console.log(`Updating visit ${visitId} with data:`, visitData);
   
       const params = {
         patient_id: patient.id,
@@ -530,7 +552,6 @@ const ScheduleComponent = ({
   
       const queryParams = new URLSearchParams(params);
   
-      console.log('Update URL query params:', queryParams.toString());
   
       const response = await fetch(`${API_BASE_URL}/visits/${visitId}?${queryParams.toString()}`, {
         method: 'PUT',
@@ -539,7 +560,6 @@ const ScheduleComponent = ({
   
       if (response.ok) {
         const updatedVisit = await response.json();
-        console.log('Visit updated successfully:', updatedVisit);
         return updatedVisit;
       } else {
         const errorText = await response.text();
@@ -556,7 +576,6 @@ const ScheduleComponent = ({
   // Delete visit
   const deleteVisitApi = async (visitId) => {
     try {
-      console.log('Deleting visit:', visitId);
       
       const response = await fetch(`${API_BASE_URL}/visits/${visitId}`, {
         method: 'DELETE',
@@ -574,7 +593,6 @@ const ScheduleComponent = ({
         throw new Error(`Failed to delete visit: ${response.status} - ${errorText}`);
       }
       
-      console.log('✅ Visit deleted successfully:', visitId);
       return visitId;
       
     } catch (err) {
@@ -765,10 +783,8 @@ const ScheduleComponent = ({
   // Load visits when certification period changes
   useEffect(() => {
     if (currentCertPeriod?.id) {
-      console.log('Loading visits for certification period:', currentCertPeriod);
       fetchVisitsForCertPeriod(currentCertPeriod.id);
     } else {
-      console.log('No certification period selected, clearing visits');
       setVisits([]);
     }
   }, [currentCertPeriod?.id, patient?.id]);
@@ -844,7 +860,6 @@ const ScheduleComponent = ({
   // NUEVO: Sincronización automática con datos externos
   useEffect(() => {
     if ((approvedVisits || disciplines) && currentCertPeriod) {
-      console.log('🔄 Schedule: Syncing with external data');
       
       // Actualizar weekly limits basado en approved visits y frecuencias
       const newLimits = calculateWeeklyLimitsFromData();
@@ -853,7 +868,6 @@ const ScheduleComponent = ({
         const hasChanges = JSON.stringify(prevLimits) !== JSON.stringify(newLimits);
         
         if (hasChanges) {
-          console.log('📊 Schedule: Updated weekly limits:', newLimits);
           
           // Sincronizar cambios con otros componentes
           syncWithOtherComponents({
@@ -871,7 +885,6 @@ const ScheduleComponent = ({
   // NUEVO: Sincronización cuando cambian las visitas
   useEffect(() => {
     if (visits.length >= 0) {
-      console.log('🔄 Schedule: Visits changed, syncing with other components');
       
       // Sincronizar visitas con otros componentes
       syncWithOtherComponents({
@@ -961,14 +974,9 @@ const ScheduleComponent = ({
 
   const handleOpenVisitModal = (visit = null) => {
     if (visit) {
-      console.log('Opening modal for visit:', visit);
-      console.log('Visit status:', visit.status);
-      console.log('Has note saved:', visit.hasNoteSaved);
-      console.log('Is pending changes:', visit.isPendingChanges);
       
       // Check if visit is completed OR is pending (returned for changes)
       if (visit.status === 'Completed' || visit.status?.toLowerCase() === 'completed' || visit.status === 'Pending') {
-        console.log('Opening details modal for completed visit or pending changes');
         // Always open details modal for completed visits or pending changes
         setShowCompletedVisitModal(true);
         setCompletedVisitModalData({
@@ -988,7 +996,6 @@ const ScheduleComponent = ({
           isPendingChanges: visit.status === 'Pending'
         });
       } else {
-        console.log('Opening status modal for regular visit');
         // For existing visits that are not completed, show status modal
         setStatusChangeVisit(visit);
         setShowVisitStatusModal(true);
@@ -1047,17 +1054,14 @@ const ScheduleComponent = ({
 
   // Handle immediate visit updates from modal
   const handleVisitUpdate = (updatedVisitData) => {
-    console.log('handleVisitUpdate called with:', updatedVisitData);
     
     // Update local state immediately for instant UI refresh
     setVisits(prevVisits => {
-      console.log('Previous visits:', prevVisits);
       
       const updatedVisits = prevVisits.map(visit => 
         visit.id === updatedVisitData.id ? { ...visit, ...updatedVisitData } : visit
       );
       
-      console.log('Updated visits:', updatedVisits);
       
       if (onUpdateSchedule) {
         onUpdateSchedule(updatedVisits);
@@ -1071,7 +1075,6 @@ const ScheduleComponent = ({
   };
 
   const handleCompleteVisit = (visitData) => {
-    console.log('🔥 handleCompleteVisit called with:', visitData);
     
     // Close status modal
     setShowVisitStatusModal(false);
@@ -1081,8 +1084,6 @@ const ScheduleComponent = ({
     const therapist = therapists.find(t => t.id === visitData.staff_id);
     const therapistRole = therapist?.role?.toUpperCase() || 'PT';
     
-    console.log('🔥 Therapist found:', therapist);
-    console.log('🔥 Therapist role:', therapistRole);
     
     // Map therapist role to discipline
     const disciplineMapping = {
@@ -1105,14 +1106,11 @@ const ScheduleComponent = ({
       patientName: patient?.full_name || `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim()
     };
     
-    console.log('🔥 Enriched visit data:', enrichedVisitData);
-    console.log('🔥 Setting showCompletionModal to TRUE');
     
     // Open note completion modal instead of directly changing status
     setCompletionVisitData(enrichedVisitData);
     setShowCompletionModal(true);
     
-    console.log('🔥 Modal states set - completion modal should be opening...');
   };
 
   const handleInitiateDelete = (visitId, e) => {
@@ -1272,16 +1270,13 @@ const ScheduleComponent = ({
     try {
       let visitDataToSave = { ...formData };
       
-      console.log('Saving visit data:', visitDataToSave);
 
       let result;
 
       if (selectedVisit) {
         // UPDATING EXISTING VISIT
-        console.log('Updating existing visit with ID:', selectedVisit.id);
         
         result = await updateVisit(selectedVisit.id, visitDataToSave);
-        console.log('Update result:', result);
         
         setVisits(prevVisits => {
           const updatedVisits = prevVisits.map(visit => 
@@ -1295,14 +1290,11 @@ const ScheduleComponent = ({
           return updatedVisits;
         });
         
-        console.log('Visit updated successfully in UI');
         
       } else {
         // CREATING NEW VISIT
-        console.log('Creating new visit');
         
         result = await createVisit(visitDataToSave);
-        console.log('Create result:', result);
         
         setVisits(prevVisits => {
           const updatedVisits = [...prevVisits, result];
@@ -1314,7 +1306,6 @@ const ScheduleComponent = ({
           return updatedVisits;
         });
         
-        console.log('Visit created successfully');
       }
 
       // Close modal and reset state
@@ -1341,36 +1332,59 @@ const ScheduleComponent = ({
   };
 
   const handleCompletionFormSave = async (formData, options = {}) => {
-    console.log('Saving completion form data:', formData);
-    
     try {
-      // Get the note for this visit
-      const noteResponse = await fetch(`http://localhost:8000/visit-notes/${completionVisitData.id}`);
-      if (!noteResponse.ok) {
-        throw new Error('Failed to fetch note');
+      let noteData = null;
+      
+      // Try to get existing note for this visit
+      const noteResponse = await fetch(`${API_BASE_URL}/visit-notes/${completionVisitData.id}`);
+      
+      if (noteResponse.ok) {
+        // Note exists, update it
+        noteData = await noteResponse.json();
+        
+        const updateResponse = await fetch(`${API_BASE_URL}/visit-notes/${noteData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: options.isCompleted ? "Completed" : "Pending",
+            sections_data: formData
+          })
+        });
+        
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update note');
+        }
+        
+        noteData = await updateResponse.json();
+      } else {
+        // Note doesn't exist, create it using the new separated endpoint
+        // Get therapist info to get name
+        const therapist = assignedStaff.find(staff => staff.id === parseInt(completionVisitData.staff_id));
+        const therapistName = therapist ? therapist.name : 'Unknown Therapist';
+        
+        const createResponse = await fetch(`${API_BASE_URL}/visit-notes/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            visit_id: completionVisitData.id,
+            status: options.isCompleted ? "Completed" : "Pending",
+            sections_data: formData,
+            therapist_name: therapistName
+          })
+        });
+        
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          console.error('Failed to create note:', errorText);
+          throw new Error(`Failed to create note: ${createResponse.status} - ${errorText}`);
+        }
+        
+        noteData = await createResponse.json();
       }
-      const noteData = await noteResponse.json();
-      
-      // Update the note with new data and completed status
-      const updateResponse = await fetch(`http://localhost:8000/visit-notes/${noteData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: options.isCompleted ? "Completed" : "Pending",
-          sections_data: formData,
-          therapist_signature: formData.therapist_signature,
-          patient_signature: formData.patient_signature,
-          visit_date_signature: formData.visit_date_signature
-        })
-      });
-      
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update note');
-      }
-      
-      const updatedNote = await updateResponse.json();
       
       // Refresh visits list to show updated status
       if (currentCertPeriod?.id) {
@@ -1383,7 +1397,7 @@ const ScheduleComponent = ({
       setError('✅ Note saved successfully!');
       setTimeout(() => setError(''), 3000);
       
-      return updatedNote;
+      return noteData;
     } catch (error) {
       console.error('Error saving completion form:', error);
       setError('❌ Failed to save note. Please try again.');
@@ -2310,7 +2324,6 @@ const ScheduleComponent = ({
       <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => {
-          console.log('🔥 NoteTemplateModal onClose called');
           setShowCompletionModal(false);
         }}
         patientData={{
@@ -2319,29 +2332,12 @@ const ScheduleComponent = ({
           id: patient?.id,
           full_name: patient?.full_name || `${patient?.first_name || ''} ${patient?.last_name || ''}`.trim()
         }}
-        disciplina={completionVisitData?.discipline || 'PT'}
-        tipoNota="Initial Evaluation"
+        disciplina={completionVisitData?.therapy_type || 'PT'}
+        tipoNota={completionVisitData?.visit_type || 'Initial Evaluation'}
         initialData={completionVisitData || {}}
         onSave={handleCompletionFormSave}
       />
 
-      {/* Debug modal states */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{
-          position: 'fixed',
-          top: '10px',
-          right: '10px',
-          backgroundColor: 'black',
-          color: 'white',
-          padding: '10px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          zIndex: 99999
-        }}>
-          <div>showCompletionModal: {showCompletionModal ? 'TRUE' : 'FALSE'}</div>
-          <div>completionVisitData: {completionVisitData ? 'EXISTS' : 'NULL'}</div>
-        </div>
-      )}
 
 
 
@@ -2586,7 +2582,6 @@ const ScheduleComponent = ({
         visitData={completedVisitModalData}
         onSave={async (updatedData) => {
           // Handle any updates to the completed visit
-          console.log('Updated visit data:', updatedData);
           
           try {
             // Always update visit in database with all changes

@@ -112,7 +112,6 @@ const MedicalInfoComponent = ({
   // Initialize with patient data
   useEffect(() => {
     if (patient && patient.id) {
-      console.log('Patient data received:', patient);
       
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
@@ -163,7 +162,6 @@ const MedicalInfoComponent = ({
   // NUEVO: Sincronización automática con datos externos
   useEffect(() => {
     if (scheduledVisits.length >= 0) { // >= 0 para permitir arrays vacíos
-      console.log('🔄 Syncing medical info with calendar visits:', scheduledVisits.length);
       
       setMedicalData(prev => {
         const newApprovedVisits = { ...prev.approvedVisits };
@@ -188,7 +186,6 @@ const MedicalInfoComponent = ({
             newApprovedVisits[discipline].status = 'active';
           }
           
-          console.log(`📊 ${discipline.toUpperCase()}: ${usedCount}/${currentApproved} visits used`);
         });
         
         return {
@@ -306,7 +303,6 @@ const MedicalInfoComponent = ({
 
     // NUEVO: Sincronizar cambios con otros componentes
     if (field === 'approved') {
-      console.log(`🔄 Medical Info: Approved visits changed for ${discipline}: ${processedValue}`);
       syncWithOtherComponents({
         type: 'approved_visits_changed',
         discipline: discipline,
@@ -408,10 +404,6 @@ const MedicalInfoComponent = ({
         urgency_level: medicalData.urgencyLevel ? medicalData.urgencyLevel.trim() : '',
       };
       
-      console.log('Original patient data:', patient);
-      console.log('Medical form data:', medicalData);
-      console.log('Medical data to save:', medicalDataToSave);
-      console.log('API URL:', `${API_BASE_URL}/patients/${patient.id}`);
       
       // Create URL parameters for only the medical fields that have values
       const params = new URLSearchParams();
@@ -430,8 +422,6 @@ const MedicalInfoComponent = ({
         }
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -473,7 +463,6 @@ const MedicalInfoComponent = ({
       }
       
       const responseData = await response.json();
-      console.log('API Response:', responseData);
       
       // Validate response
       if (!responseData || !responseData.patient_id) {
@@ -534,7 +523,6 @@ const MedicalInfoComponent = ({
       // Success feedback
       setIsEditing(false);
       setSuccessMessage('Medical information updated successfully!');
-      console.log('Medical information updated successfully');
       
     } catch (err) {
       console.error('Error saving medical data:', err);

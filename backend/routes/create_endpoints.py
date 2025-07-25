@@ -20,7 +20,7 @@ from schemas import (
     DocumentResponse, 
     ExerciseCreate, ExerciseResponse, PatientExerciseAssignmentCreate, 
     VisitCreate, VisitResponse,
-    VisitNoteResponse,
+    VisitNoteCreate, VisitNoteResponse,
     NoteSectionCreate, NoteSectionResponse,
     NoteTemplateCreate, NoteTemplateResponse)
 from auth.security import hash_password
@@ -60,16 +60,10 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
         raise HTTPException(status_code=404, detail="Staff not found.")
 
     assigned_role = staff.role.upper()
-    
     discipline_groups = {
-        'PT': ['PT'],     
-        'PTA': ['PTA'],  
-        'OT': ['OT'],    
-        'COTA': ['COTA'], 
-        'ST': ['ST'],    
-        'STA': ['STA']  
+        'PT': ['PT'], 'PTA': ['PTA'], 'OT': ['OT'], 
+        'COTA': ['COTA'], 'ST': ['ST'], 'STA': ['STA']
     }
-    
     roles_to_replace = discipline_groups.get(assigned_role, [assigned_role])
     
     existing_assignment = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
@@ -139,7 +133,6 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
     cert_start = patient.initial_cert_start_date
     cert_end = cert_start + timedelta(days=60)
-
     cert_period = CertificationPeriod(
         patient_id=new_patient.id,
         start_date=cert_start,
@@ -155,7 +148,7 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
 def sanitize_filename(filename: str) -> str:
     name, ext = os.path.splitext(filename)
-    name = re.sub(r'[^\w\d-]', '_', name)  
+    name = re.sub(r'[^\w\d-]', '_', name)
     return f"{name}{ext.lower()}"
 
 @router.post("/documents/upload", response_model=DocumentResponse)
@@ -206,26 +199,21 @@ def create_exercise(exercise: ExerciseCreate, db: Session = Depends(get_db)):
 
 @router.post("/patients/exercises/")
 def assign_exercises_to_patient(assignments: List[PatientExerciseAssignmentCreate], db: Session = Depends(get_db)):
-    for a in assignments:
-        db.add(PatientExerciseAssignment(**a.dict()))
+    for assignment in assignments:
+        db.add(PatientExerciseAssignment(**assignment.dict()))
     db.commit()
     return {"message": "Exercises assigned successfully."}
 
 #====================== CERTIFICATION PERIODS ======================#
 
 @router.post("/patients/{patient_id}/certification-period", response_model=CertificationPeriodResponse)
-def create_certification_period(
-    patient_id: int,
-    start_date: date,
-    db: Session = Depends(get_db)
-):
+def create_certification_period(patient_id: int, start_date: date, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
     end_date = start_date + timedelta(days=60)
     today = date.today()
-
     is_active = patient.is_active and (start_date <= today <= end_date)
 
     new_cert = CertificationPeriod(
@@ -234,7 +222,6 @@ def create_certification_period(
         end_date=end_date,
         is_active=is_active
     )
-
     db.add(new_cert)
     db.commit()
     db.refresh(new_cert)
@@ -262,38 +249,54 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
         certification_period_id=cert.id,
         visit_date=data.visit_date,
         visit_type=data.visit_type,
-        therapy_type=staff.role.upper(), 
+        therapy_type=staff.role.upper(),
         status=data.status,
         scheduled_time=data.scheduled_time
     )
     db.add(visit)
-    db.flush()
-
-    template = db.query(NoteTemplate).filter_by(
-        discipline=staff.role.upper(),
-        note_type=data.visit_type,
-        is_active=True
-    ).first()
-    if not template:
-        raise HTTPException(status_code=404, detail="No active template for this visit type and discipline")
-
-    sections = db.query(NoteTemplateSection).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.position.asc()).all()
-
-    sections_data = {str(s.section_id): {} for s in sections}
-
-    note = VisitNote(
-        visit_id=visit.id,
-        discipline=template.discipline,
-        note_type=template.note_type,
-        status="Scheduled",
-        sections_data=sections_data
-    )
-    db.add(note)
     db.commit()
     db.refresh(visit)
     return visit
+
+@router.post("/visit-notes/", response_model=VisitNoteResponse)
+def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db)):
+    visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
+    if not visit:
+        raise HTTPException(status_code=404, detail="Visit not found")
+    
+    existing_note = db.query(VisitNote).filter(VisitNote.visit_id == note_data.visit_id).first()
+    if existing_note:
+        raise HTTPException(status_code=400, detail="Note already exists for this visit")
+    
+    template = db.query(NoteTemplate).filter_by(
+        discipline=visit.therapy_type.upper(),
+        note_type=visit.visit_type,
+        is_active=True
+    ).first()
+    
+    if not template:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No active template found for discipline '{visit.therapy_type}' and note type '{visit.visit_type}'"
+        )
+    
+    sections_data = note_data.sections_data
+    if not sections_data or len(sections_data) == 0:
+        sections = db.query(NoteTemplateSection).filter(
+            NoteTemplateSection.template_id == template.id
+        ).order_by(NoteTemplateSection.position.asc()).all()
+        sections_data = {str(s.section_id): {} for s in sections}
+    
+    note = VisitNote(
+        visit_id=note_data.visit_id,
+        status=note_data.status,
+        sections_data=sections_data,
+        therapist_name=note_data.therapist_name
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
 
 #====================== NOTES ======================
 

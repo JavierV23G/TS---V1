@@ -83,7 +83,7 @@ const NoteTemplateModal = ({
         await onSave(finalData, { 
           templateConfig, 
           validation,
-          completionStats: getCompletionStats(),
+          completionStats: getCompletionStats(templateConfig),
           isCompleted: true
         });
       }
@@ -151,7 +151,7 @@ const NoteTemplateModal = ({
     );
   }
 
-  const completionStats = getCompletionStats();
+  const completionStats = getCompletionStats(templateConfig);
 
   return (
     <div className="note-template-modal open">

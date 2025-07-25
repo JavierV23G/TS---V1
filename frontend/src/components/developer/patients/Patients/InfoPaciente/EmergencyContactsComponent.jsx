@@ -175,7 +175,6 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
         contactDict[contactName] = contactData;
       });
 
-      console.log('Sending contact_info:', contactDict);
       
       const params = new URLSearchParams();
       params.append('contact_info', JSON.stringify(contactDict));
@@ -185,7 +184,6 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
         headers: { 'Content-Type': 'application/json' },
       });
 
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();

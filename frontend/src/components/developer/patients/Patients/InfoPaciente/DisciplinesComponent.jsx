@@ -110,8 +110,6 @@ const DisciplineCard = ({
       ? assistantsList.find(a => a.id === parseInt(selectedAssistant)) || null 
       : null;
 
-    console.log('Saving therapist:', newTherapist);
-    console.log('Saving assistant:', newAssistant);
 
     // Comparar IDs para determinar si hay un cambio
     const therapistId = therapist?.id || null;
@@ -240,7 +238,6 @@ const DisciplineCard = ({
                     id={`therapist-select-${disciplineType}`}
                     value={selectedTherapist}
                     onChange={(e) => {
-                      console.log('Selected therapist ID:', e.target.value);
                       setSelectedTherapist(e.target.value);
                     }}
                     disabled={!isActive}
@@ -269,7 +266,6 @@ const DisciplineCard = ({
                     id={`assistant-select-${disciplineType}`}
                     value={selectedAssistant}
                     onChange={(e) => {
-                      console.log('Selected assistant ID:', e.target.value);
                       setSelectedAssistant(e.target.value);
                     }}
                     disabled={!isActive}
@@ -855,7 +851,6 @@ const DisciplinesComponent = ({
         }
         
         const data = await response.json();
-        console.log('Received staff data:', data);
         setAllStaff(data);
         
       } catch (err) {
@@ -873,13 +868,11 @@ const DisciplinesComponent = ({
   useEffect(() => {
     const fetchAssignedStaff = async () => {
       if (!patient?.id) {
-        console.log('❌ No patient ID found for fetching assigned staff');
         setAssignedStaff([]);
         return;
       }
       
       try {
-        console.log('🔍 Fetching assigned staff for patient:', patient.id);
         // USAR LA URL CORRECTA SEGÚN TU BACKEND
         const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/assigned-staff`, {
           method: 'GET',
@@ -888,32 +881,20 @@ const DisciplinesComponent = ({
           },
         });
         
-        console.log('📡 Assigned staff response status:', response.status);
-        console.log('📡 Response URL:', response.url);
         
         if (response.ok) {
           const assignedData = await response.json();
-          console.log('✅ Assigned staff data received:', assignedData);
-          console.log('📊 Number of assignments found:', assignedData.length);
           
           // Log each assignment details
           assignedData.forEach((assignment, index) => {
-            console.log(`   Assignment ${index + 1}:`, {
-              id: assignment.id,
-              role: assignment.assigned_role,
-              staff_name: assignment.staff?.name,
-              staff_id: assignment.staff?.id
-            });
+            
           });
           
           setAssignedStaff(assignedData);
         } else {
-          console.log('❌ Failed to fetch assigned staff. Status:', response.status);
           try {
             const errorText = await response.text();
-            console.log('❌ Error response:', errorText);
           } catch (e) {
-            console.log('❌ Could not read error response');
           }
           setAssignedStaff([]);
         }
@@ -926,7 +907,6 @@ const DisciplinesComponent = ({
         });
         
         // Si falla por CORS o red, intentar endpoint alternativo
-        console.log('🔄 Trying alternative approach...');
         try {
           // Verificar si el endpoint existe usando otra estrategia
           const testResponse = await fetch(`${API_BASE_URL}/staff/`, {
@@ -937,7 +917,6 @@ const DisciplinesComponent = ({
           });
           
           if (testResponse.ok) {
-            console.log('✅ Basic API connection works, but assigned-staff endpoint has issues');
           }
         } catch (testErr) {
           console.error('💥 Complete API failure:', testErr);
@@ -952,68 +931,45 @@ const DisciplinesComponent = ({
   
   // Initialize with patient data and assigned staff - CORREGIDO PARA REINICIALIZAR CUANDO CAMBIAN LOS DATOS
   useEffect(() => {
-    console.log('🔄 Initialization check:', {
-      hasPatient: !!patient,
-      patientId: patient?.id,
-      allStaffCount: allStaff.length,
-      assignedStaffCount: assignedStaff ? assignedStaff.length : 'null',
-      isInitialized
-    });
     
     // CAMBIO CLAVE: Reinicializar cuando assignedStaff tiene datos nuevos
     if (patient && allStaff.length > 0 && assignedStaff !== null && 
         (!isInitialized || (assignedStaff.length > 0 && !disciplines.PT.therapist && !disciplines.OT.therapist && !disciplines.ST.therapist))) {
-      console.log('🚀 Starting disciplines initialization with:', {
-        patient: patient.id,
-        staffCount: allStaff.length,
-        assignedStaffCount: assignedStaff.length,
-        assignedStaff
-      });
       
       // Procesar required_disciplines - CON MEJOR DEBUG
       let requiredDisciplines = [];
       
-      console.log('🔍 Raw required_disciplines from patient:', patient.required_disciplines);
-      console.log('🔍 Type of required_disciplines:', typeof patient.required_disciplines);
       
       if (patient.required_disciplines) {
         try {
           if (typeof patient.required_disciplines === 'string') {
             requiredDisciplines = JSON.parse(patient.required_disciplines);
-            console.log('✅ Parsed string required_disciplines:', requiredDisciplines);
           } else if (Array.isArray(patient.required_disciplines)) {
             requiredDisciplines = patient.required_disciplines;
-            console.log('✅ Used array required_disciplines:', requiredDisciplines);
           } else if (typeof patient.required_disciplines === 'object') {
             // NUEVO: Si viene como objeto {PT: {...}, OT: {...}}, extraer las activas
             const disciplineObj = patient.required_disciplines;
             requiredDisciplines = Object.keys(disciplineObj).filter(key => 
               disciplineObj[key] && disciplineObj[key].isActive
             );
-            console.log('✅ Extracted from object required_disciplines:', requiredDisciplines);
           } else {
             requiredDisciplines = [];
-            console.log('⚠️ Unknown format for required_disciplines, using empty array');
           }
         } catch (parseError) {
           console.warn('⚠️ Failed to parse required_disciplines:', parseError);
           requiredDisciplines = [];
         }
       } else {
-        console.log('⚠️ No required_disciplines found in patient data');
       }
       
-      console.log('📋 Required disciplines from patient:', requiredDisciplines);
       
       // Mapear staff asignado por rol
       const assignedByRole = {};
       assignedStaff.forEach(assignment => {
         const role = assignment.assigned_role.toUpperCase();
         assignedByRole[role] = assignment.staff;
-        console.log(`🔗 Mapped assigned staff: ${role} -> ${assignment.staff.name} (ID: ${assignment.staff.id})`);
       });
       
-      console.log('👥 Final assigned staff by role:', assignedByRole);
       
       // Crear estado inicial de disciplinas - MEJORADO
       const newDisciplines = {
@@ -1081,24 +1037,20 @@ const DisciplinesComponent = ({
         }
       }
 
-      console.log('🎯 Final disciplines state being set:', newDisciplines);
       
       // Log each discipline status
       Object.keys(newDisciplines).forEach(type => {
         const disc = newDisciplines[type];
-        console.log(`   ${type}: Active=${disc.isActive}, Therapist=${disc.therapist?.name || 'None'}, Assistant=${disc.assistant?.name || 'None'}, Frequency=${disc.frequency || 'None'}`);
       });
       
       setDisciplines(newDisciplines);
       setIsInitialized(true);
-      console.log('✅ Disciplines initialization completed');
     }
   }, [patient, allStaff, assignedStaff, isInitialized]);
 
   // NUEVO: Sincronización automática de frecuencias con visitas del calendario
   useEffect(() => {
     if (scheduledVisits.length >= 0 && isInitialized) {
-      console.log('🔄 Disciplines: Syncing frequencies with calendar visits:', scheduledVisits.length);
       
       setDisciplines(prev => {
         const updated = { ...prev };
@@ -1110,7 +1062,6 @@ const DisciplinesComponent = ({
             
             // Solo actualizar si la frecuencia calculada es diferente y no está vacía
             if (calculatedFrequency && calculatedFrequency !== updated[disciplineType].frequency) {
-              console.log(`📊 ${disciplineType}: Auto-calculated frequency: ${calculatedFrequency}`);
               updated[disciplineType] = {
                 ...updated[disciplineType],
                 frequency: calculatedFrequency
@@ -1186,7 +1137,6 @@ const DisciplinesComponent = ({
       }
       
       const result = await response.json();
-      console.log('Staff assigned successfully:', result);
       return result;
     } catch (error) {
       console.error('Error assigning staff:', error);
@@ -1209,7 +1159,6 @@ const DisciplinesComponent = ({
       }
       
       const result = await response.json();
-      console.log('Staff unassigned successfully:', result);
       return result;
     } catch (error) {
       console.error('Error unassigning staff:', error);
@@ -1220,7 +1169,6 @@ const DisciplinesComponent = ({
   // Update required disciplines in patient - CORREGIDO
   const updatePatientDisciplines = async (patientId, activeDisciplines) => {
     try {
-      console.log('Updating patient disciplines. Active disciplines:', activeDisciplines);
       
       const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
         method: 'PUT',
@@ -1237,7 +1185,6 @@ const DisciplinesComponent = ({
       }
       
       const result = await response.json();
-      console.log('Patient disciplines updated successfully:', result);
       return result;
     } catch (error) {
       console.error('Error updating patient disciplines:', error);
@@ -1247,7 +1194,6 @@ const DisciplinesComponent = ({
 
   // Toggle discipline active status - CORREGIDO Y MEJORADO
   const handleToggleDiscipline = async (type, explicitActiveState = null) => {
-    console.log(`[handleToggleDiscipline] Toggling ${type} discipline. Explicit state: ${explicitActiveState}`);
     
     const currentDiscipline = disciplines[type];
     let newActiveState = explicitActiveState !== null ? explicitActiveState : !currentDiscipline.isActive;
@@ -1265,7 +1211,6 @@ const DisciplinesComponent = ({
           assistant: null
         }
       };
-      console.log(`[handleToggleDiscipline] Deactivating ${type}. Clearing staff.`);
     } else {
       // If activating, set isActive to true
       updatedDisciplines = {
@@ -1275,7 +1220,6 @@ const DisciplinesComponent = ({
           isActive: true
         }
       };
-      console.log(`[handleToggleDiscipline] Activating ${type}.`);
     }
 
     setDisciplines(updatedDisciplines);
@@ -1284,12 +1228,10 @@ const DisciplinesComponent = ({
     const activeDisciplines = Object.keys(updatedDisciplines)
       .filter(key => updatedDisciplines[key].isActive);
     
-    console.log('[handleToggleDiscipline] Active disciplines to save:', activeDisciplines);
     
     if (patient?.id) {
       try {
         await updatePatientDisciplines(patient.id, activeDisciplines);
-        console.log(`[handleToggleDiscipline] Successfully updated patient disciplines for ${type}.`);
       } catch (err) {
         console.error(`[handleToggleDiscipline] Error updating patient disciplines for ${type}:`, err);
         setError(`Failed to update discipline status: ${err.message}`);
@@ -1306,13 +1248,10 @@ const DisciplinesComponent = ({
 
   // Change therapist
   const handleChangeTherapist = async (type, therapist) => {
-    console.log(`[handleChangeTherapist] Updating ${type} therapist:`, therapist);
     
     try {
       if (therapist && patient?.id) {
-        console.log(`[handleChangeTherapist] Assigning therapist ${therapist.name} (ID: ${therapist.id}) to patient ${patient.id}`);
         const result = await assignStaffToPatient(therapist.id, patient.id);
-        console.log('[handleChangeTherapist] Assignment result:', result);
         
         // Update assignedStaff with the API response
         setAssignedStaff(prevAssigned => {
@@ -1320,11 +1259,9 @@ const DisciplinesComponent = ({
           // Remove assignment if role already exists and add new one
           const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== type.toUpperCase());
           filteredUpdated.push(result);
-          console.log('[handleChangeTherapist] Updated assigned staff state:', filteredUpdated);
           return filteredUpdated;
         });
       } else if (!therapist && patient?.id) {
-        console.log(`[handleChangeTherapist] Unassigning ${type} therapist from patient ${patient.id}.`);
         await unassignStaffFromPatient(patient.id, type);
         
         setAssignedStaff(prevAssigned => {
@@ -1368,14 +1305,11 @@ const DisciplinesComponent = ({
 
   // Change assistant
   const handleChangeAssistant = async (type, assistant) => {
-    console.log(`[handleChangeAssistant] Updating ${type} assistant:`, assistant);
     const assistantRole = type === 'PT' ? 'PTA' : type === 'OT' ? 'COTA' : 'STA';
     
     try {
       if (assistant && patient?.id) {
-        console.log(`[handleChangeAssistant] Assigning assistant ${assistant.name} (ID: ${assistant.id}) to patient ${patient.id}`);
         const result = await assignStaffToPatient(assistant.id, patient.id);
-        console.log('[handleChangeAssistant] Assignment result:', result);
         
         // Update assignedStaff with the API response
         setAssignedStaff(prevAssigned => {
@@ -1383,11 +1317,9 @@ const DisciplinesComponent = ({
           // Remove assignment if role already exists and add new one
           const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== assistantRole.toUpperCase());
           filteredUpdated.push(result);
-          console.log('[handleChangeAssistant] Updated assigned staff state:', filteredUpdated);
           return filteredUpdated;
         });
       } else if (!assistant && patient?.id) {
-        console.log(`[handleChangeAssistant] Unassigning ${assistantRole} assistant from patient ${patient.id}.`);
         await unassignStaffFromPatient(patient.id, assistantRole);
         
         setAssignedStaff(prevAssigned => {
@@ -1431,7 +1363,6 @@ const DisciplinesComponent = ({
 
   // Change frequency - MEJORADO CON SINCRONIZACIÓN
   const handleChangeFrequency = async (type, frequency) => {
-    console.log(`🔄 Updating ${type} frequency to: ${frequency}`);
     
     setDisciplines(prevDisciplines => {
       const updatedDisciplines = {

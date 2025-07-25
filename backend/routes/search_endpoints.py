@@ -31,11 +31,10 @@ router = APIRouter()
 @router.get("/staff/", response_model=List[StaffResponse])
 def get_active_staff(db: Session = Depends(get_db)):
     staff_list = db.query(Staff).filter(Staff.is_active == True).all()
-    return [StaffResponse.model_validate(s) for s in staff_list]
+    return [StaffResponse.model_validate(staff) for staff in staff_list]
 
 @router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
 def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
-    # First check if patient exists
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -44,12 +43,12 @@ def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
     
     return [
         StaffAssignmentResponse(
-            id=a.id,
-            assigned_at=a.assigned_at,
-            assigned_role=a.assigned_role,
-            staff=StaffResponse.model_validate(a.staff)
+            id=assignment.id,
+            assigned_at=assignment.assigned_at,
+            assigned_role=assignment.assigned_role,
+            staff=StaffResponse.model_validate(assignment.staff)
         )
-        for a in assignments
+        for assignment in assignments
     ]
 
 #====================== PATIENTS ======================#
@@ -185,35 +184,12 @@ def get_visit_note(visit_id: int, db: Session = Depends(get_db)):
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    # Get template sections for frontend context
-    template = db.query(NoteTemplate).filter_by(
-        discipline=note.discipline,
-        note_type=note.note_type,
-        is_active=True
-    ).first()
-
-    template_sections = []
-    if template:
-        links = (
-            db.query(NoteTemplateSection)
-            .filter(NoteTemplateSection.template_id == template.id)
-            .join(NoteSection)
-            .order_by(NoteTemplateSection.position.asc())
-            .all()
-        )
-        template_sections = [ts.section for ts in links]
-
     return VisitNoteResponse(
         id=note.id,
         visit_id=note.visit_id,
         status=note.status,
-        discipline=note.discipline,
-        note_type=note.note_type,
-        therapist_signature=note.therapist_signature,
-        patient_signature=note.patient_signature,
-        visit_date_signature=note.visit_date_signature,
         sections_data=note.sections_data or {},
-        template_sections=template_sections,
+        therapist_name=note.therapist_name,
     )
 
 @router.get("/templates/{discipline}/{visit_type}", response_model=NoteTemplateWithSectionsResponse)
