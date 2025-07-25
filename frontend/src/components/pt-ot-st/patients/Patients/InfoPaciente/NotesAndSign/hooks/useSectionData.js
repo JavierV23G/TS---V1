@@ -99,16 +99,34 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
   // Función para validar datos
   const validateData = useCallback((dataToValidate = data) => {
+    console.log('=== DEBUG: validateData called ===');
+    console.log('dataToValidate:', dataToValidate);
+    console.log('Type of dataToValidate:', typeof dataToValidate);
+    
     const errors = {};
     const warnings = {};
 
-    // Validaciones básicas
+    // Solo validar si tenemos sections template (objetos numéricos como "1", "2", "3")
+    const templateSections = {};
+    const nonTemplateSections = {};
+    
+    console.log('Data entries to validate:', Object.entries(dataToValidate));
+    
     Object.entries(dataToValidate).forEach(([sectionId, sectionData]) => {
-      if (!sectionData || typeof sectionData !== 'object') {
-        errors[sectionId] = 'Invalid section data';
-        return;
+      console.log(`Validating section "${sectionId}":`, sectionData, 'Type:', typeof sectionData);
+      
+      // Solo validar sections que son strings numéricos ("1", "2", "3") - estas son las sections template
+      if (/^\d+$/.test(sectionId) && sectionData && typeof sectionData === 'object') {
+        templateSections[sectionId] = sectionData;
+        console.log(`Section "${sectionId}" is a template section`);
+      } else {
+        nonTemplateSections[sectionId] = sectionData;
+        console.log(`Section "${sectionId}" failed validation - not an object:`, typeof sectionData);
       }
+    });
 
+    // Solo validar las sections template
+    Object.entries(templateSections).forEach(([sectionId, sectionData]) => {
       // Validar campos requeridos (esto se podría hacer más específico por section)
       const emptyFields = Object.entries(sectionData)
         .filter(([key, value]) => {
@@ -123,6 +141,12 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
         warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
       }
     });
+
+    console.log('=== DEBUG: Validation complete ===');
+    console.log('Template sections found:', Object.keys(templateSections));
+    console.log('Non-template sections (ignored):', Object.keys(nonTemplateSections));
+    console.log('Errors:', errors);
+    console.log('Warnings:', warnings);
 
     return { errors, warnings, isValid: Object.keys(errors).length === 0 };
   }, [data]);

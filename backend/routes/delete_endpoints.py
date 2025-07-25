@@ -38,24 +38,18 @@ def delete_visit(id: int, db: Session = Depends(get_db)):
     # Verificar si existe nota
     note = visit.note
     if note:
-        has_signatures = any([
-            note.therapist_signature,
-            note.patient_signature,
-            note.visit_date_signature
-        ])
-
-        has_sections = any(
-            s.get("content") for s in (note.sections_data or [])
-            if isinstance(s.get("content"), dict) and s["content"]
-        )
-
-        if has_signatures or has_sections:
+        # Si la visita tiene nota, simplemente ocultarla en lugar de eliminarla
+        # porque la nota puede contener información importante
+        has_content = bool(note.sections_data and len(note.sections_data) > 0)
+        
+        if has_content:
+            # La visita tiene nota con contenido, ocultarla
             visit.is_hidden = True
             db.commit()
-            return {"msg": "Visit has content and was hidden instead of deleted."}
-
-        # No hay contenido real, borrar nota primero
-        db.delete(note)
+            return {"msg": "Visit has note content and was hidden instead of deleted."}
+        else:
+            # La nota existe pero está vacía, eliminar la nota primero
+            db.delete(note)
 
     # Ahora sí, eliminar visita
     db.delete(visit)
@@ -72,17 +66,10 @@ def delete_visit_note(note_id: int, db: Session = Depends(get_db)):
 
     visit = note.visit
 
-    has_signatures = any([
-        note.therapist_signature,
-        note.patient_signature,
-        note.visit_date_signature
-    ])
-    has_content = any(
-        section.get("content") for section in (note.sections_data or [])
-        if isinstance(section.get("content"), dict) and section["content"]
-    )
+    # Verificar si la nota tiene contenido real
+    has_content = bool(note.sections_data and len(note.sections_data) > 0)
 
-    if not has_signatures and not has_content:
+    if not has_content:
         db.delete(note)
         if visit:
             db.delete(visit)

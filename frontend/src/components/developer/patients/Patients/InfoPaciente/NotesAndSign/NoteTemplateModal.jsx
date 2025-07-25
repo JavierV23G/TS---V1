@@ -64,28 +64,88 @@ const NoteTemplateModal = ({
     setIsSubmitting(true);
     
     try {
-      const validation = validateData();
+      console.log('=== DEBUG: handleSubmit called ===');
+      console.log('Current data state:', data);
+      console.log('Data keys:', Object.keys(data));
+      console.log('Template config:', templateConfig);
+      console.log('Template sections:', templateConfig?.sections);
+      console.log('Initial data received:', initialData);
+      console.log('Initial data keys:', Object.keys(initialData));
+      
+      const validation = validateData(data, templateConfig);
+      console.log('Validation result:', validation);
       
       if (!validation.isValid) {
+        console.log('Validation failed with errors:', validation.errors);
         alert(`Please fix the following errors:\n${Object.values(validation.errors).join('\n')}`);
         return;
       }
 
-      // Save final data with completed status
-      const finalData = {
-        ...data,
-        status: "Completed"
+      // Preparar datos para crear la nota en el formato VisitNoteCreate
+      const templateSectionIds = templateConfig?.sections?.map(section => section.id.toString()) || [];
+      console.log('Template section IDs:', templateSectionIds);
+      
+      // Extraer solo las secciones del template para sections_data
+      const sectionsData = {};
+      Object.entries(data).forEach(([key, value]) => {
+        if (templateSectionIds.includes(key)) {
+          sectionsData[key] = value;
+        }
+      });
+      
+      console.log('Extracted sections data:', sectionsData);
+      console.log('Visit ID from data:', data.id);
+      console.log('Staff ID from data:', data.staff_id);
+      
+      // Obtener nombre del terapeuta de los datos disponibles
+      // Prioridad: patientData.therapistName > data.therapist_name > fallback
+      const therapistName = patientData?.therapistName || 
+                           data.therapist_name || 
+                           data.patientName || // Fallback temporal 
+                           'Unknown Therapist';
+      
+      console.log('Therapist name resolved:', therapistName);
+      
+      // Crear objeto VisitNoteCreate según el schema del backend
+      const noteData = {
+        visit_id: data.id, // ID de la visita
+        status: "Completed",
+        sections_data: sectionsData,
+        therapist_name: therapistName
       };
       
-      const result = await saveData(finalData);
+      console.log('Final note data to send:', noteData);
       
-      if (onSave) {
-        await onSave(finalData, { 
-          templateConfig, 
-          validation,
-          completionStats: getCompletionStats(templateConfig),
-          isCompleted: true
+      // Llamar al endpoint de creación de notas
+      try {
+        const response = await fetch('http://localhost:8000/visit-notes/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(noteData)
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Backend error: ${response.status} - ${JSON.stringify(errorData)}`);
+        }
+
+        const result = await response.json();
+        console.log('Note created successfully:', result);
+        
+        // Llamar onSave si existe
+        if (onSave) {
+          await onSave(result, { 
+            templateConfig, 
+            validation,
+            completionStats: getCompletionStats(templateConfig),
+            isCompleted: true
+          });
+        }
+      } catch (backendError) {
+        console.error('Backend note creation failed:', backendError);
+        throw new Error(`Failed to create note: ${backendError.message}`);
       }
 
       onClose();

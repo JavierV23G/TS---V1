@@ -163,10 +163,43 @@ def get_exercises_of_patient(patient_id: int, db: Session = Depends(get_db)):
 
 @router.get("/visits/certperiod/{cert_id}", response_model=List[VisitResponse])
 def get_visits_by_certification_period(cert_id: int, db: Session = Depends(get_db)):
-    return db.query(Visit).filter(
+    visits = db.query(Visit).filter(
         Visit.certification_period_id == cert_id,
         Visit.is_hidden == False
     ).all()
+    
+    # Process each visit to include note information
+    visit_responses = []
+    for visit in visits:
+        # Check if visit has a note
+        note = db.query(VisitNote).filter(VisitNote.visit_id == visit.id).first()
+        
+        # Determine status based on note existence
+        final_status = visit.status
+        if note and visit.status == "Scheduled":
+            # If visit has a note and is still "Scheduled", update to "Completed"
+            final_status = "Completed"
+        elif note and note.status == "Completed":
+            # If note exists and is completed, ensure visit is marked as completed
+            final_status = "Completed"
+        
+        # Create response with note information
+        visit_response = VisitResponse(
+            id=visit.id,
+            patient_id=visit.patient_id,
+            staff_id=visit.staff_id,
+            certification_period_id=visit.certification_period_id,
+            visit_date=visit.visit_date,
+            visit_type=visit.visit_type,
+            therapy_type=visit.therapy_type,
+            status=final_status,
+            scheduled_time=visit.scheduled_time,
+            note_id=note.id if note else None
+        )
+        
+        visit_responses.append(visit_response)
+    
+    return visit_responses
 
 @router.get("/visits/certperiod/{cert_id}/deleted", response_model=List[VisitResponse])
 def get_deleted_visits(cert_id: int, db: Session = Depends(get_db)):

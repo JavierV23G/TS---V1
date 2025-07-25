@@ -402,12 +402,44 @@ const VisitModalComponent = ({
    */
   const handleEvaluationSave = async (evaluationData) => {
     try {
+      setIsLoading(true);
+      
+      // Get therapist name from visit data
+      const therapistName = getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id);
+      
+      // Prepare note data for backend
+      const noteData = {
+        visit_id: visitData.id,
+        status: "Completed",
+        sections_data: evaluationData,
+        therapist_name: therapistName
+      };
+      
+      // Send note to backend
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/visit-notes/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(noteData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to create note: ${response.status} - ${errorData}`);
+      }
+      
+      const createdNote = await response.json();
+      console.log('Note created successfully:', createdNote);
+      
       // Update visit status to Completed with saved indicator
       const updatedVisitData = {
         ...visitData,
         status: 'Completed',
         hasNoteSaved: true, // Show "Saved" indicator
-        evaluationData
+        evaluationData,
+        noteId: createdNote.id
       };
       
       if (onSave) {
@@ -418,7 +450,9 @@ const VisitModalComponent = ({
       
     } catch (err) {
       console.error('Error saving evaluation:', err);
-      setError('Failed to save evaluation. Please try again.');
+      setError(`Failed to save evaluation: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -852,12 +886,14 @@ const VisitModalComponent = ({
           isOpen={showEvaluationModal}
           onClose={() => setShowEvaluationModal(false)}
           patientData={patientInfo}
-          disciplina={visitData?.discipline || 'PT'}
-          tipoNota="evaluation"
+          disciplina={getTherapistDiscipline(formData.therapist || visitData.therapist || visitData.staff_id)}
+          tipoNota={formData.visitType || visitData.visit_type || visitData.visitType}
           initialData={{
-            ...visitData,
+            // Only pass metadata, not visit data that conflicts with section validation
             patientName: patientInfo?.full_name || 'Unknown',
-            date: formData.date
+            date: formData.date,
+            therapistName: getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id),
+            visitId: visitData?.id
           }}
           onSave={handleEvaluationSave}
         />

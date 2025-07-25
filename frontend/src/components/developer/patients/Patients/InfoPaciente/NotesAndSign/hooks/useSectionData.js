@@ -100,34 +100,55 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
   }, []);
 
   // Función para validar datos
-  const validateData = useCallback((dataToValidate = data) => {
+  const validateData = useCallback((dataToValidate = data, templateConfig = null) => {
     const errors = {};
     const warnings = {};
 
+    console.log('=== DEBUG: validateData called ===');
+    console.log('dataToValidate:', dataToValidate);
+    console.log('Type of dataToValidate:', typeof dataToValidate);
+
     // Verificar que dataToValidate existe y es un objeto
     if (!dataToValidate || typeof dataToValidate !== 'object') {
+      console.log('Data is null or not an object, returning valid');
       return { errors: {}, warnings: {}, isValid: true };
     }
 
-    // Validaciones básicas
+    console.log('Data entries to validate:', Object.entries(dataToValidate));
+
+    // Identificar qué campos son secciones del template vs campos de visita
+    const templateSectionIds = templateConfig?.sections?.map(section => section.id.toString()) || [];
+    console.log('Template section IDs:', templateSectionIds);
+
+    // Validaciones básicas solo para secciones del template
     Object.entries(dataToValidate).forEach(([sectionId, sectionData]) => {
-      if (!sectionData || typeof sectionData !== 'object') {
-        errors[sectionId] = 'Invalid section data';
-        return;
-      }
+      console.log(`Validating field "${sectionId}":`, sectionData, 'Type:', typeof sectionData);
+      
+      // Solo validar como sección si está en la lista de secciones del template
+      if (templateSectionIds.includes(sectionId)) {
+        console.log(`"${sectionId}" is a template section - validating as object`);
+        
+        if (!sectionData || typeof sectionData !== 'object') {
+          console.log(`Section "${sectionId}" failed validation - not an object:`, typeof sectionData);
+          errors[sectionId] = 'Invalid section data';
+          return;
+        }
 
-      // Validar campos requeridos (esto se podría hacer más específico por section)
-      const emptyFields = Object.entries(sectionData)
-        .filter(([key, value]) => {
-          if (typeof value === 'string') return value.trim() === '';
-          if (typeof value === 'number') return value === 0;
-          if (Array.isArray(value)) return value.length === 0;
-          return false;
-        })
-        .map(([key]) => key);
+        // Validar campos requeridos (esto se podría hacer más específico por section)
+        const emptyFields = Object.entries(sectionData)
+          .filter(([key, value]) => {
+            if (typeof value === 'string') return value.trim() === '';
+            if (typeof value === 'number') return value === 0;
+            if (Array.isArray(value)) return value.length === 0;
+            return false;
+          })
+          .map(([key]) => key);
 
-      if (emptyFields.length > 0) {
-        warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
+        if (emptyFields.length > 0) {
+          warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
+        }
+      } else {
+        console.log(`"${sectionId}" is not a template section - skipping validation`);
       }
     });
 
@@ -165,9 +186,16 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
   // Effect para actualizar datos cuando cambia initialData
   useEffect(() => {
+    console.log('=== DEBUG: useSectionData initialData effect ===');
+    console.log('Received initialData:', initialData);
+    
     const safeInitialData = initialData && typeof initialData === 'object' ? initialData : {};
+    console.log('Safe initial data:', safeInitialData);
+    
     setData(safeInitialData);
     setIsDirty(false);
+    
+    console.log('Data state after setting:', safeInitialData);
   }, [initialData]);
 
   // Función para obtener estadísticas de completitud
