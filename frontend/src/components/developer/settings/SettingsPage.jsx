@@ -51,7 +51,7 @@ const SettingsPage = () => {
     const loadingSteps = [
       { text: 'Connecting to TherapySync Settings...', duration: 600 },
       { text: 'Loading user preferences...', duration: 400 },
-      { text: 'Initializing premium interface...', duration: 500 },
+      { text: 'Initializing clinical interface...', duration: 500 },
       { text: 'Rendering advanced configurations...', duration: 500 }
     ];
 
@@ -325,15 +325,13 @@ const SettingsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="premium-loading-screen">
-        <div className="loading-background"></div>
-        <div className="loading-particles"></div>
-        
+      <div className="clinical-loading-screen">
         <div className="loading-content">
-          <div className="loading-logo">
+          <div className="medical-logo">
             <div className="logo-circle">
               <i className="fas fa-cog"></i>
             </div>
+            <div className="pulse-ring"></div>
           </div>
           
           <div className="loading-progress-container">
@@ -405,18 +403,14 @@ const SettingsPage = () => {
 
   return (
     <div className="premium-settings-page">
-      {/* Premium Background Effects */}
-      <div className="premium-background">
-        <div className="background-image"></div>
-        <div className="background-overlay"></div>
-        <div className="floating-particles">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className={`particle particle-${i + 1}`}></div>
-          ))}
-        </div>
+      {/* Clinical Medical Particles */}
+      <div className="clinical-particles">
+        {[...Array(15)].map((_, i) => (
+          <div key={i} className={`particle particle-${i + 1}`}></div>
+        ))}
       </div>
 
-      {/* Premium Header */}
+      {/* Clinical Header */}
       <header className={`premium-header ${animatingElements.includes('header') ? 'animate-in' : ''}`}>
         <div className="header-content">
           <div className="header-left">
@@ -427,7 +421,7 @@ const SettingsPage = () => {
             <div className="header-title">
               <h1>
                 <i className="fas fa-sliders-h"></i>
-                Premium Settings
+                Clinical Settings
               </h1>
               <p>Advanced configuration center for TherapySync</p>
             </div>
@@ -1129,22 +1123,6 @@ const SettingsPage = () => {
        </div>
      </div>
 
-     {/* Premium Particles Background */}
-     <div className="premium-particles-container">
-       {[...Array(50)].map((_, i) => (
-         <div 
-           key={i} 
-           className="premium-particle"
-           style={{
-             '--delay': `${Math.random() * 20}s`,
-             '--duration': `${15 + Math.random() * 10}s`,
-             '--size': `${2 + Math.random() * 4}px`,
-             '--x': `${Math.random() * 100}%`,
-             '--y': `${Math.random() * 100}%`
-           }}
-         ></div>
-       ))}
-     </div>
    </div>
  );
 };
