@@ -634,7 +634,7 @@
         align-items: center;
         gap: 16px;
         padding: 16px;
-        background: linear-gradient(135deg, var(--clinical-pearl) 0%, var(--clinical-accent) 100%);
+        background: linear-gradient(135deg, var(--clinical-white) 0%, rgba(59, 130, 246, 0.02) 100%);
         border-radius: var(--radius-medium);
         border: 1px solid var(--clinical-border);
         transition: var(--transition-swift);
@@ -895,7 +895,7 @@
             align-items: center;
             gap: 12px;
             padding: 16px;
-            background: linear-gradient(135deg, var(--clinical-pearl) 0%, var(--clinical-accent) 100%);
+            background: linear-gradient(135deg, var(--clinical-white) 0%, rgba(59, 130, 246, 0.03) 100%);
             border: 1px solid var(--clinical-border);
             border-radius: var(--radius-medium);
             font-size: 15px;
