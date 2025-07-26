@@ -493,30 +493,30 @@ const NotesModule = () => {
         >
           <div 
             style={{
-              backgroundColor: '#2C3E50',
-              borderRadius: '12px',
-              padding: '24px',
+              backgroundColor: 'var(--clinical-white)',
+              borderRadius: '16px',
+              padding: '32px',
               maxWidth: '600px',
               width: '90%',
               maxHeight: '90vh',
               overflowY: 'auto',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+              border: '1px solid var(--clinical-border)',
+              boxShadow: 'var(--clinical-shadow-xl)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#fff', fontSize: '1.25rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--clinical-text)', fontSize: '1.5rem', fontWeight: '600' }}>
                 {editingSection ? 'Edit Section' : 'Create Section'}
               </h3>
-              <button onClick={resetSectionForm} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '20px' }}>
+              <button onClick={resetSectionForm} style={{ background: 'none', border: 'none', color: 'var(--clinical-text-light)', cursor: 'pointer', fontSize: '24px', padding: '4px' }}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
             <form onSubmit={handleSectionFormSubmit}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Section Name *</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Section Name *</label>
                 <input
                   type="text"
                   value={sectionForm.section_name}
@@ -525,18 +525,19 @@ const NotesModule = () => {
                   required
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
-                    fontSize: '16px'
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-white)',
+                    color: 'var(--clinical-text)',
+                    fontSize: '16px',
+                    outline: 'none'
                   }}
                 />
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Description</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Description</label>
                 <textarea
                   value={sectionForm.description}
                   onChange={(e) => handleSectionFormChange('description', e.target.value)}
@@ -544,33 +545,34 @@ const NotesModule = () => {
                   rows="3"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-white)',
+                    color: 'var(--clinical-text)',
                     fontSize: '16px',
-                    resize: 'vertical'
+                    resize: 'vertical',
+                    outline: 'none'
                   }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={sectionForm.is_required}
                     onChange={(e) => handleSectionFormChange('is_required', e.target.checked)}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: '12px', accentColor: 'var(--clinical-primary)' }}
                   />
                   Required
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={sectionForm.has_static_image}
                     onChange={(e) => handleSectionFormChange('has_static_image', e.target.checked)}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: '12px', accentColor: 'var(--clinical-primary)' }}
                   />
                   Has Image
                 </label>
@@ -578,7 +580,7 @@ const NotesModule = () => {
 
               {sectionForm.has_static_image && (
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Image URL</label>
+                  <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Image URL</label>
                   <input
                     type="url"
                     value={sectionForm.static_image_url}
@@ -586,19 +588,20 @@ const NotesModule = () => {
                     placeholder="https://..."
                     style={{
                       width: '100%',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      color: '#fff',
-                      fontSize: '16px'
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--clinical-border)',
+                      backgroundColor: 'var(--clinical-white)',
+                      color: 'var(--clinical-text)',
+                      fontSize: '16px',
+                      outline: 'none'
                     }}
                   />
                 </div>
               )}
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Form Schema (JSON)</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Form Schema (JSON)</label>
                 <textarea
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
@@ -606,17 +609,18 @@ const NotesModule = () => {
                   rows="5"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-light-gray)',
+                    color: 'var(--clinical-text)',
                     fontSize: '14px',
                     fontFamily: 'monospace',
-                    resize: 'vertical'
+                    resize: 'vertical',
+                    outline: 'none'
                   }}
                 />
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--clinical-text-light)', marginTop: '6px', fontStyle: 'italic' }}>
                   Define the form structure for this section in JSON format
                 </div>
               </div>
@@ -627,11 +631,12 @@ const NotesModule = () => {
                   onClick={resetSectionForm}
                   style={{
                     padding: '12px 24px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'transparent',
-                    color: 'rgba(255, 255, 255, 0.8)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-light-gray)',
+                    color: 'var(--clinical-text)',
                     cursor: 'pointer',
+                    fontWeight: '500',
                     transition: 'all 0.3s ease'
                   }}
                 >
@@ -642,14 +647,15 @@ const NotesModule = () => {
                   disabled={isCreatingSection || !sectionForm.section_name.trim()}
                   style={{
                     padding: '12px 24px',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     border: 'none',
-                    backgroundColor: '#4CAF50',
+                    background: 'linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-accent) 100%)',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
+                    fontWeight: '600',
                     transition: 'all 0.3s ease',
                     opacity: (isCreatingSection || !sectionForm.section_name.trim()) ? 0.6 : 1
                   }}

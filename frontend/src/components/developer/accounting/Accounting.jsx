@@ -1092,61 +1092,6 @@ const DevAccounting = () => {
                       </div>
                     </div>
                     
-                    {/* User stats cards */}
-                    <div className="support-user-stats">
-                      <motion.div 
-                        className="stat-card"
-                        whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 212, 255, 0.2)" }}
-                      >
-                        <div className="stat-value">{userData.stats.visits}</div>
-                        <div className="stat-label">Visits</div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="stat-card"
-                        whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 212, 255, 0.2)" }}
-                      >
-                        <div className="stat-value">${userData.stats.revenue.toLocaleString()}</div>
-                        <div className="stat-label">Revenue</div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="stat-card"
-                        whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 212, 255, 0.2)" }}
-                      >
-                        <div className="stat-value">+{userData.stats.growth}%</div>
-                        <div className="stat-label">Growth</div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="stat-card"
-                        whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 212, 255, 0.2)" }}
-                      >
-                        <div className="stat-value">{userData.stats.completion}%</div>
-                        <div className="stat-label">Completion</div>
-                      </motion.div>
-                    </div>
-                    
-                    {/* Quick actions */}
-                    <div className="quick-actions">
-                      <motion.div 
-                        className="quick-action-btn"
-                        whileHover={{ y: -3, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)" }}
-                        whileTap={{ y: 0, scale: 0.95 }}
-                      >
-                        <i className="fas fa-sync-alt"></i>
-                        <span>Refresh</span>
-                      </motion.div>
-                      
-                      <motion.div 
-                        className="quick-action-btn"
-                        whileHover={{ y: -3, boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)" }}
-                        whileTap={{ y: 0, scale: 0.95 }}
-                      >
-                        <i className="fas fa-file-export"></i>
-                        <span>Export</span>
-                      </motion.div>
-                    </div>
                   </div>
                   
                   <div className="support-menu-section">
@@ -1155,6 +1100,10 @@ const DevAccounting = () => {
                       <motion.div 
                         className="support-menu-item"
                         whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
+                        onClick={() => {
+                          const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                          navigate(`/${baseRole}/profile`);
+                        }}
                       >
                         <i className="fas fa-user-circle"></i>
                         <span>My Profile</span>
@@ -1162,71 +1111,17 @@ const DevAccounting = () => {
                       <motion.div 
                         className="support-menu-item"
                         whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
+                        onClick={() => {
+                          const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                          navigate(`/${baseRole}/settings`);
+                        }}
                       >
                         <i className="fas fa-cog"></i>
                         <span>Settings</span>
                       </motion.div>
-                      <motion.div 
-                        className="support-menu-item"
-                        whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
-                      >
-                        <i className="fas fa-calendar-alt"></i>
-                        <span>My Schedule</span>
-                      </motion.div>
                     </div>
                   </div>
                   
-                  <div className="support-menu-section">
-                    <div className="section-title">Preferences</div>
-                    <div className="support-menu-items">
-                      <motion.div 
-                        className="support-menu-item"
-                        whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
-                      >
-                        <i className="fas fa-bell"></i>
-                        <span>Notifications</span>
-                        <div className="support-notification-badge">{notificationCount}</div>
-                      </motion.div>
-                      <div className="support-menu-item toggle-item">
-                        <div className="toggle-item-content">
-                          <i className="fas fa-moon"></i>
-                          <span>Dark Mode</span>
-                        </div>
-                        <div className="toggle-switch">
-                          <div className="toggle-handle active"></div>
-                        </div>
-                      </div>
-                      <div className="support-menu-item toggle-item">
-                        <div className="toggle-item-content">
-                          <i className="fas fa-volume-up"></i>
-                          <span>Sound Alerts</span>
-                        </div>
-                        <div className="toggle-switch">
-                          <div className="toggle-handle"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="support-menu-section">
-                    <div className="section-title">Support</div>
-                    <div className="support-menu-items">
-                      <motion.div 
-                        className="support-menu-item"
-                        whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
-                      >
-                        <i className="fas fa-headset"></i>
-                        <span>Contact Support</span>
-                      </motion.div>
-                      <motion.div 
-                        className="support-menu-item"
-                        whileHover={{ x: 5, backgroundColor: "rgba(0, 212, 255, 0.05)" }}
-                      >
-                        <i className="fas fa-bug"></i>
-                        <span>Report Issue</span>
-                      </motion.div>
-                    </div>
-                  </div>
                   
                   <div className="support-menu-footer">
                     <motion.div 
@@ -1238,7 +1133,7 @@ const DevAccounting = () => {
                       <span>Log Out</span>
                     </motion.div>
                     <div className="version-info">
-                      <span>TherapySync™ Premium</span>
+                      <span>TherapySync™</span>
                       <span>v2.7.0</span>
                     </div>
                   </div>

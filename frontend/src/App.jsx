@@ -17,7 +17,8 @@ import DevPatientInfoPage from './components/developer/patients/Patients/InfoPac
 import DevStaffingPage from './components/developer/patients/staffing/StaffingPage';
 import DevAccounting from './components/developer/accounting/Accounting';
 import DevUserProfile from './components/developer/profile/UserProfile';
-import DevSettingsPage from './components/developer/settings/SettingsPage.jsx'; 
+import DevSettingsPage from './components/developer/settings/SettingsPage.jsx';
+import DevSupportDashboard from './components/developer/support/SupportDashboard'; 
 
 // Import administrator components
 import AdminHomePage from './components/admin/welcome/Welcome';
@@ -81,6 +82,7 @@ function App() {
               <Route path="/developer/accounting" element={<><DevAccounting /><FloatingSupportButton /></>} />
               <Route path="/developer/profile" element={<><DevUserProfile /><FloatingSupportButton /></>} />
               <Route path="/developer/settings" element={<><DevSettingsPage /><FloatingSupportButton /></>} />
+              <Route path="/developer/support" element={<><DevSupportDashboard /><FloatingSupportButton /></>} />
             </Route>
 
             {/* Administrator-specific routes */}

@@ -1060,60 +1060,25 @@ const handleSubmit = async (e) => {
                <div className="support-menu-section">
                  <div className="section-title">Account</div>
                  <div className="support-menu-items">
-                   <div className="support-menu-item">
+                   <div 
+                     className="support-menu-item"
+                     onClick={() => {
+                       const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                       navigate(`/${baseRole}/profile`);
+                     }}
+                   >
                      <i className="fas fa-user-circle"></i>
                      <span>My Profile</span>
                    </div>
-                   <div className="support-menu-item">
+                   <div 
+                     className="support-menu-item"
+                     onClick={() => {
+                       const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                       navigate(`/${baseRole}/settings`);
+                     }}
+                   >
                      <i className="fas fa-cog"></i>
                      <span>Settings</span>
-                   </div>
-                   <div className="support-menu-item">
-                     <i className="fas fa-calendar-alt"></i>
-                     <span>My Schedule</span>
-                   </div>
-                 </div>
-               </div>
-               
-               <div className="support-menu-section">
-                 <div className="section-title">Preferences</div>
-                 <div className="support-menu-items">
-                   <div className="support-menu-item">
-                     <i className="fas fa-bell"></i>
-                     <span>Notifications</span>
-                     <div className="support-notification-badge">{notificationCount}</div>
-                   </div>
-                   <div className="support-menu-item toggle-item">
-                     <div className="toggle-item-content">
-                       <i className="fas fa-moon"></i>
-                       <span>Dark Mode</span>
-                     </div>
-                     <div className="toggle-switch">
-                       <div className="toggle-handle active"></div>
-                     </div>
-                   </div>
-                   <div className="support-menu-item toggle-item">
-                     <div className="toggle-item-content">
-                       <i className="fas fa-volume-up"></i>
-                       <span>Sound Alerts</span>
-                     </div>
-                     <div className="toggle-switch">
-                       <div className="toggle-handle"></div>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-               
-               <div className="support-menu-section">
-                 <div className="section-title">Support</div>
-                 <div className="support-menu-items">
-                   <div className="support-menu-item">
-                     <i className="fas fa-headset"></i>
-                     <span>Contact Support</span>
-                   </div>
-                   <div className="support-menu-item">
-                     <i className="fas fa-bug"></i>
-                     <span>Report Issue</span>
                    </div>
                  </div>
                </div>
@@ -1124,7 +1089,7 @@ const handleSubmit = async (e) => {
                    <span>Log Out</span>
                  </div>
                  <div className="version-info">
-                   <span>TherapySync™ Support</span>
+                   <span>TherapySync™</span>
                    <span>v2.7.0</span>
                  </div>
                </div>
