@@ -11,6 +11,7 @@ const NoteTemplateModal = ({
   disciplina = 'PT', 
   tipoNota = 'Initial Evaluation',
   initialData = {},
+  existingNoteId = null,
   onSave 
 }) => {
   const [currentStep, setCurrentStep] = useState('template');
@@ -41,6 +42,7 @@ const NoteTemplateModal = ({
     interval: templateConfig?.navigation?.autoSaveInterval || 30000,
     onSave: onSave
   });
+
 
 
   // Early return if modal is not open - after hooks
@@ -82,57 +84,83 @@ const NoteTemplateModal = ({
       }
 
       // Preparar datos para crear la nota en el formato VisitNoteCreate
-      const templateSectionIds = templateConfig?.sections?.map(section => section.id.toString()) || [];
-      console.log('Template section IDs:', templateSectionIds);
+      const templateSectionNames = templateConfig?.sections?.map(section => section.section_name) || [];
+      console.log('Template section names:', templateSectionNames);
       
       // Extraer solo las secciones del template para sections_data
       const sectionsData = {};
       Object.entries(data).forEach(([key, value]) => {
-        if (templateSectionIds.includes(key)) {
+        if (templateSectionNames.includes(key)) {
           sectionsData[key] = value;
         }
       });
       
-      console.log('Extracted sections data:', sectionsData);
-      console.log('Visit ID from data:', data.id);
+      console.log('Extracted sections data for save:', sectionsData);
+      console.log('Template section names:', templateSectionNames);
+      console.log('All data keys:', Object.keys(data));
+      console.log('Visit ID from data:', data.visit_id || data.id);
       console.log('Staff ID from data:', data.staff_id);
       
-      // Obtener nombre del terapeuta de los datos disponibles
-      // Prioridad: patientData.therapistName > data.therapist_name > fallback
-      const therapistName = patientData?.therapistName || 
-                           data.therapist_name || 
-                           data.patientName || // Fallback temporal 
-                           'Unknown Therapist';
+      // El backend obtiene automáticamente el therapist_name del staff de la visita
+      // No necesitamos enviarlo desde el frontend
       
-      console.log('Therapist name resolved:', therapistName);
-      
-      // Crear objeto VisitNoteCreate según el schema del backend
-      const noteData = {
-        visit_id: data.id, // ID de la visita
-        status: "Completed",
-        sections_data: sectionsData,
-        therapist_name: therapistName
-      };
-      
-      console.log('Final note data to send:', noteData);
-      
-      // Llamar al endpoint de creación de notas
+      // Llamar al endpoint apropiado según si es edición o creación
       try {
-        const response = await fetch('http://localhost:8000/visit-notes/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(noteData)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Backend error: ${response.status} - ${JSON.stringify(errorData)}`);
+        let response, result;
+        
+        if (existingNoteId) {
+          // UPDATE existing note using PUT
+          console.log('Updating existing note:', existingNoteId);
+          
+          const updateData = {
+            sections_data: sectionsData,
+            therapist_name: "Auto-calculated by backend"
+          };
+          
+          console.log('Update data to send:', updateData);
+          
+          response = await fetch(`http://localhost:8000/visit-notes/${existingNoteId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to update note: ${response.status} - ${JSON.stringify(errorData)}`);
+          }
+          
+          result = await response.json();
+          console.log('Note updated successfully:', result);
+        } else {
+          // CREATE new note using POST
+          console.log('Creating new note for visit:', data.id);
+          
+          const noteData = {
+            visit_id: data.visit_id || data.id,
+            sections_data: sectionsData,
+            therapist_name: "Auto-calculated by backend"
+          };
+          
+          
+          response = await fetch('http://localhost:8000/visit-notes/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(noteData)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to create note: ${response.status} - ${JSON.stringify(errorData)}`);
+          }
+          
+          result = await response.json();
+          console.log('Note created successfully:', result);
         }
-
-        const result = await response.json();
-        console.log('Note created successfully:', result);
         
         // Llamar onSave si existe
         if (onSave) {
@@ -144,8 +172,8 @@ const NoteTemplateModal = ({
           });
         }
       } catch (backendError) {
-        console.error('Backend note creation failed:', backendError);
-        throw new Error(`Failed to create note: ${backendError.message}`);
+        console.error('Backend operation failed:', backendError);
+        throw new Error(`Failed to save note: ${backendError.message}`);
       }
 
       onClose();

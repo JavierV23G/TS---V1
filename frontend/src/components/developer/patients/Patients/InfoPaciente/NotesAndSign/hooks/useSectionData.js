@@ -117,20 +117,20 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
     console.log('Data entries to validate:', Object.entries(dataToValidate));
 
     // Identificar qué campos son secciones del template vs campos de visita
-    const templateSectionIds = templateConfig?.sections?.map(section => section.id.toString()) || [];
-    console.log('Template section IDs:', templateSectionIds);
+    const templateSectionNames = templateConfig?.sections?.map(section => section.section_name) || [];
+    console.log('Template section names:', templateSectionNames);
 
     // Validaciones básicas solo para secciones del template
-    Object.entries(dataToValidate).forEach(([sectionId, sectionData]) => {
-      console.log(`Validating field "${sectionId}":`, sectionData, 'Type:', typeof sectionData);
+    Object.entries(dataToValidate).forEach(([sectionKey, sectionData]) => {
+      console.log(`Validating field "${sectionKey}":`, sectionData, 'Type:', typeof sectionData);
       
       // Solo validar como sección si está en la lista de secciones del template
-      if (templateSectionIds.includes(sectionId)) {
-        console.log(`"${sectionId}" is a template section - validating as object`);
+      if (templateSectionNames.includes(sectionKey)) {
+        console.log(`"${sectionKey}" is a template section - validating as object`);
         
         if (!sectionData || typeof sectionData !== 'object') {
-          console.log(`Section "${sectionId}" failed validation - not an object:`, typeof sectionData);
-          errors[sectionId] = 'Invalid section data';
+          console.log(`Section "${sectionKey}" failed validation - not an object:`, typeof sectionData);
+          errors[sectionKey] = 'Invalid section data';
           return;
         }
 
@@ -145,10 +145,10 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
           .map(([key]) => key);
 
         if (emptyFields.length > 0) {
-          warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
+          warnings[sectionKey] = `Empty fields: ${emptyFields.join(', ')}`;
         }
       } else {
-        console.log(`"${sectionId}" is not a template section - skipping validation`);
+        console.log(`"${sectionKey}" is not a template section - skipping validation`);
       }
     });
 
@@ -222,7 +222,7 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
     // Contar secciones completadas basándose en templateConfig.sections
     const completedSections = templateConfig.sections.filter(section => {
-      const sectionData = data[section.id];
+      const sectionData = data[section.section_name];
       if (!sectionData || typeof sectionData !== 'object') return false;
       
       return Object.values(sectionData).some(value => {

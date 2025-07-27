@@ -2,6 +2,10 @@ import React from 'react';
 import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/VitalsSection.scss';
 
 const VitalsSection = ({ data, onChange, sectionId, config }) => {
+  // Debug logging
+  console.log('VitalsSection - Received data keys:', Object.keys(data || {}));
+  console.log('VitalsSection - at_rest heart_rate:', data?.at_rest?.heart_rate);
+  
   // Helper to handle nested field changes
   const handleNestedChange = (section, field, value) => {
     const updatedData = {

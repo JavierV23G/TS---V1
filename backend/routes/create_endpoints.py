@@ -28,6 +28,60 @@ from auth.auth_middleware import role_required, get_current_user
 
 router = APIRouter()
 
+def determine_note_status(sections_data, template, db):
+    """
+    Determines note status based on data completeness:
+    - "Completed": All required fields filled (80%+ completion)
+    - "Saved": Some data present but incomplete  
+    - "Pending": Empty or minimal data
+    """
+    if not sections_data:
+        return "Pending"
+    
+    # Get template sections to check requirements
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).all()
+    
+    total_fields = 0
+    completed_fields = 0
+    
+    for ts in template_sections:
+        section = db.query(NoteSection).filter(NoteSection.id == ts.section_id).first()
+        if section:
+            if section.section_name in sections_data:
+                section_data = sections_data[section.section_name]
+                
+                if section_data and isinstance(section_data, dict):
+                    # Count fields in this section
+                    for key, value in section_data.items():
+                        total_fields += 1
+                        
+                        # Check if field has meaningful data
+                        if value is not None:
+                            if isinstance(value, str) and value.strip():
+                                completed_fields += 1
+                            elif isinstance(value, (int, float)) and value > 0:
+                                completed_fields += 1
+                            elif isinstance(value, bool) and value:
+                                completed_fields += 1
+                            elif isinstance(value, list) and len(value) > 0:
+                                completed_fields += 1
+                            elif isinstance(value, dict) and any(v for v in value.values() if v):
+                                completed_fields += 1
+    
+    if total_fields == 0:
+        return "Pending"
+    
+    completion_percentage = (completed_fields / total_fields) * 100
+    
+    if completion_percentage >= 80:
+        return "Completed"
+    elif completion_percentage > 0:
+        return "Saved"
+    else:
+        return "Pending"
+
 BASE_STORAGE_PATH = "/app/storage/docs"
 
 #====================== STAFF ======================#
@@ -280,20 +334,41 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
             detail=f"No active template found for discipline '{visit.therapy_type}' and note type '{visit.visit_type}'"
         )
     
+    # Process sections_data to ensure we use section names, not IDs
     sections_data = note_data.sections_data
     if not sections_data or len(sections_data) == 0:
+        # Create empty sections with names when no data provided
         sections = db.query(NoteTemplateSection).filter(
             NoteTemplateSection.template_id == template.id
         ).order_by(NoteTemplateSection.position.asc()).all()
-        sections_data = {str(s.section_id): {} for s in sections}
+        sections_data = {}
+        for s in sections:
+            section = db.query(NoteSection).filter(NoteSection.id == s.section_id).first()
+            if section:
+                sections_data[section.section_name] = {}
+    # Note: Frontend should always send section names, not IDs
+    # If we receive IDs, they will be handled in future iterations
+    
+    # Determine note status based on completeness
+    note_status = determine_note_status(sections_data, template, db)
+    
+    # Get therapist name from the visit's assigned staff
+    staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
+    therapist_name = staff.name if staff else "Unknown Therapist"
     
     note = VisitNote(
         visit_id=note_data.visit_id,
-        status=note_data.status,
+        status=note_status,
         sections_data=sections_data,
-        therapist_name=note_data.therapist_name
+        therapist_name=therapist_name
     )
     db.add(note)
+    
+    # Update visit status based on note status
+    visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
+    if visit:
+        visit.status = note_status
+    
     db.commit()
     db.refresh(note)
     return note

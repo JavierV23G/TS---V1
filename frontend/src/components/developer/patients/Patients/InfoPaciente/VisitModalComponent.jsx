@@ -45,7 +45,9 @@ const VisitModalComponent = ({
     certPeriod: '',
     noteHeaderFrequency: '1w1',
     telehealth: false,
-    documents: []
+    documents: [],
+    existingNoteId: null,
+    existingNoteData: {}
   });
 
   // File upload state
@@ -53,15 +55,9 @@ const VisitModalComponent = ({
   
   // ===== CONSTANTS =====
   
-  // Therapist data (should come from API in real implementation)
-  const therapists = [
-    { id: 'pt1', name: 'Dr. Michael Chen', type: 'PT', role: 'PT' },
-    { id: 'pta1', name: 'Maria Gonzalez', type: 'PTA', role: 'PTA' },
-    { id: 'ot1', name: 'Dr. Emily Parker', type: 'OT', role: 'OT' },
-    { id: 'cota1', name: 'Thomas Smith', type: 'COTA', role: 'COTA' },
-    { id: 'st1', name: 'Dr. Jessica Lee', type: 'ST', role: 'ST' },
-    { id: 'sta1', name: 'Robert Williams', type: 'STA', role: 'STA' },
-  ];
+  // Therapist data - same as VisitStatusModal
+  const [assignedTherapist, setAssignedTherapist] = useState(null);
+  const [availableTherapists, setAvailableTherapists] = useState([]);
 
   // Visit types - Exact 5 types as requested
   const visitTypes = [
@@ -86,13 +82,57 @@ const VisitModalComponent = ({
   // ===== UTILITY FUNCTIONS =====
   
   /**
+   * Get display text for visit status
+   */
+  const getVisitStatusDisplay = (status) => {
+    const statusMap = {
+      'Scheduled': 'Scheduled',
+      'Pending': 'Pending', 
+      'Saved': 'In Progress',
+      'Completed': 'Complete'
+    };
+    return statusMap[status] || status || 'Unknown';
+  };
+
+  /**
+   * Render status indicator based on visit status
+   */
+  const renderStatusIndicator = (status) => {
+    switch (status) {
+      case 'Saved':
+        return (
+          <div className="note-saved-indicator">
+            <i className="fas fa-clock"></i>
+            <span>In Progress</span>
+          </div>
+        );
+      case 'Completed':
+        return (
+          <div className="note-completed-indicator">
+            <i className="fas fa-check-circle"></i>
+            <span>Complete</span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+  
+  /**
    * Get therapist discipline for evaluation title
    */
   const getTherapistDiscipline = (therapistId) => {
-    const therapist = therapists.find(t => t.id === therapistId || t.id === String(therapistId));
+    // Use assignedTherapist if it matches, otherwise look in availableTherapists
+    let therapist = null;
+    if (assignedTherapist && (assignedTherapist.id === therapistId || assignedTherapist.id === String(therapistId))) {
+      therapist = assignedTherapist;
+    } else {
+      therapist = availableTherapists.find(t => t.id === therapistId || t.id === String(therapistId));
+    }
+    
     if (!therapist) return 'PT';
     
-    const role = therapist.role?.toUpperCase() || therapist.type?.toUpperCase();
+    const role = therapist.role?.toUpperCase();
     
     if (['OT', 'COTA'].includes(role)) return 'OT';
     if (['ST', 'STA'].includes(role)) return 'ST';
@@ -103,13 +143,15 @@ const VisitModalComponent = ({
    * Get therapist name with role
    */
   const getTherapistName = (therapistId) => {
-    // If visitData has therapistName, use it directly
-    if (visitData?.therapistName) {
-      return visitData.therapistName;
+    // Use assignedTherapist if it matches, otherwise look in availableTherapists
+    let therapist = null;
+    if (assignedTherapist && (assignedTherapist.id === therapistId || assignedTherapist.id === String(therapistId))) {
+      therapist = assignedTherapist;
+    } else {
+      therapist = availableTherapists.find(t => t.id === therapistId || t.id === String(therapistId));
     }
     
-    const therapist = therapists.find(t => t.id === therapistId || t.id === String(therapistId));
-    return therapist ? `${therapist.name} (${therapist.role || therapist.type})` : `Therapist ID: ${therapistId || 'Not assigned'}`;
+    return therapist ? `${therapist.name} (${therapist.role})` : `Therapist ID: ${therapistId || 'Not assigned'}`;
   };
 
   /**
@@ -170,7 +212,66 @@ const VisitModalComponent = ({
     else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
+  // ===== API FUNCTIONS (copied from VisitStatusModal) =====
+  
+  // Fetch assigned therapist data
+  const fetchAssignedTherapist = async () => {
+    try {
+      if (visitData?.staff_id) {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/staff/${visitData.staff_id}`, {
+          method: 'GET',  
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setAssignedTherapist(data);
+        } else {
+          console.error('Failed to fetch assigned therapist:', response.status, response.statusText);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching assigned therapist data:', error);
+    }
+  };
+
+  // Fetch available therapists for selection
+  const fetchAvailableTherapists = async () => {
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/staff/`, {
+        method: 'GET',  
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Filter only therapy roles (PT, OT, ST, PTA, COTA, STA)
+        const therapyRoles = ['PT', 'OT', 'ST', 'PTA', 'COTA', 'STA'];
+        const therapists = data.filter(staff => therapyRoles.includes(staff.role) && staff.is_active);
+        setAvailableTherapists(therapists);
+      } else {
+        console.error('Failed to fetch available therapists:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching available therapists:', error);
+    }
+  };
+
   // ===== EFFECTS =====
+  
+  // Load therapist data when modal opens (copied from VisitStatusModal)
+  useEffect(() => {
+    if (isOpen && visitData) {
+      fetchAssignedTherapist();
+      fetchAvailableTherapists();
+    }
+  }, [isOpen, visitData]);
   
   /**
    * Initialize form data when visit data changes
@@ -357,9 +458,9 @@ const VisitModalComponent = ({
     setIsProcessing(true);
     
     try {
-      // Update status to Pending via backend
+      // Update status to Saved via backend (completed note returned for review)
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}?status=Pending`, {
+      const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}?status=Saved`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -370,13 +471,11 @@ const VisitModalComponent = ({
 
       const updatedVisit = await response.json();
       
-      // Notify parent with status change and remove saved indicator
+      // Notify parent with updated status
       if (onSave) {
         onSave({
           ...visitData,
-          ...updatedVisit,
-          status: 'Pending',
-          hasNoteSaved: false // Remove saved indicator
+          ...updatedVisit
         });
       }
       
@@ -391,62 +490,151 @@ const VisitModalComponent = ({
   };
 
   /**
-   * Handle edit evaluation
+   * Handle edit evaluation - Load existing note for editing
    */
-  const handleEditEvaluation = () => {
-    setShowEvaluationModal(true);
+  const handleEditEvaluation = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Load existing note for editing
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/visit-notes/${visitData.id}`);
+      
+      if (response.ok) {
+        const existingNote = await response.json();
+        
+        // Extract sections_data - handle nested structure from backend
+        let sectionsData = existingNote.sections_data || {};
+        
+        // If sections_data contains nested structure, extract the actual sections
+        if (sectionsData.sections_data) {
+          sectionsData = sectionsData.sections_data;
+        }
+        
+        
+        setFormData(prev => ({
+          ...prev,
+          existingNoteId: existingNote.id,
+          existingNoteData: existingNote,
+          extractedSectionsData: sectionsData  // Store the correctly extracted sections
+        }));
+        
+        setShowEvaluationModal(true);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load note. Status:', response.status, 'Error:', errorText);
+        throw new Error(`Failed to load existing note: ${response.status} - ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error loading existing note:', err);
+      setError('Failed to load note for editing. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
-   * Handle evaluation modal save - REGLA: Pending → Completed con "Saved"
+   * Handle evaluation modal save - For editing existing notes, use PUT
    */
-  const handleEvaluationSave = async (evaluationData) => {
+  const handleEvaluationSave = async (evaluationData, metadata = {}) => {
     try {
       setIsLoading(true);
       
       // Get therapist name from visit data
       const therapistName = getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id);
       
-      // Prepare note data for backend
-      const noteData = {
-        visit_id: visitData.id,
-        status: "Completed",
-        sections_data: evaluationData,
-        therapist_name: therapistName
-      };
-      
-      // Send note to backend
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_BASE_URL}/visit-notes/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(noteData)
-      });
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Failed to create note: ${response.status} - ${errorData}`);
+      if (formData.existingNoteId) {
+        // UPDATE existing note using PUT
+        console.log('Updating existing note:', formData.existingNoteId);
+        console.log('Evaluation data from modal:', evaluationData);
+        
+        // Use evaluation data directly - no conversion needed
+        const updateData = {
+          status: "Completed",
+          sections_data: evaluationData,
+          therapist_name: therapistName
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/visit-notes/${formData.existingNoteId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`Failed to update note: ${response.status} - ${errorData}`);
+        }
+        
+        const savedNote = await response.json();
+        console.log('Note updated successfully:', savedNote);
+        
+        // Update visit data - backend automatically determines status
+        const updatedVisitData = {
+          ...visitData,
+          status: savedNote.status, // Backend automatically sets correct status
+          evaluationData,
+          noteId: savedNote.id
+        };
+        
+        if (onSave) {
+          onSave(updatedVisitData);
+        }
+        
+        // Clear the form state to ensure fresh data on next edit
+        setFormData(prev => ({
+          ...prev,
+          existingNoteId: null,
+          existingNoteData: {}
+        }));
+        
+        setShowEvaluationModal(false);
+        
+      } else {
+        // This shouldn't happen for Edit button, but fallback to CREATE
+        console.log('No existing note ID found, creating new note for visit:', visitData.id);
+        
+        const noteData = {
+          visit_id: visitData.id,
+          status: "Completed",
+          sections_data: evaluationData,
+          therapist_name: therapistName
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/visit-notes/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(noteData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`Failed to create note: ${response.status} - ${errorData}`);
+        }
+        
+        const savedNote = await response.json();
+        console.log('Note created successfully:', savedNote);
+        
+        // Update visit data - backend automatically determines status
+        const updatedVisitData = {
+          ...visitData,
+          status: savedNote.status, // Backend automatically sets correct status
+          evaluationData,
+          noteId: savedNote.id
+        };
+        
+        if (onSave) {
+          onSave(updatedVisitData);
+        }
+        
+        setShowEvaluationModal(false);
       }
-      
-      const createdNote = await response.json();
-      console.log('Note created successfully:', createdNote);
-      
-      // Update visit status to Completed with saved indicator
-      const updatedVisitData = {
-        ...visitData,
-        status: 'Completed',
-        hasNoteSaved: true, // Show "Saved" indicator
-        evaluationData,
-        noteId: createdNote.id
-      };
-      
-      if (onSave) {
-        onSave(updatedVisitData);
-      }
-      
-      setShowEvaluationModal(false);
       
     } catch (err) {
       console.error('Error saving evaluation:', err);
@@ -549,12 +737,12 @@ const VisitModalComponent = ({
             <label>Therapist</label>
             <select
               name="therapist"
-              value={formData.therapist}
+              value={formData.therapist || ''}
               onChange={handleInputChange}
               className="form-input"
             >
               <option value="">Select Therapist</option>
-              {therapists.map((therapist) => (
+              {availableTherapists.map((therapist) => (
                 <option key={therapist.id} value={therapist.id}>
                   {therapist.name} ({therapist.role})
                 </option>
@@ -741,19 +929,14 @@ const VisitModalComponent = ({
             
             <div className="eval-details">
               <p>Therapist: {therapistName}</p>
-              <p>Status: {visitData?.status === 'Pending' ? 'Pending' : (visitData?.status || visitStatus || 'Complete')}</p>
+              <p>Status: {getVisitStatusDisplay(visitData?.status)}</p>
               
-              {/* Show Saved indicator when note is saved */}
-              {visitData?.hasNoteSaved && visitData?.status === 'Completed' && (
-                <div className="note-saved-indicator">
-                  <i className="fas fa-check-circle"></i>
-                  <span>Saved</span>
-                </div>
-              )}
+              {/* Show status indicator based on backend status */}
+              {renderStatusIndicator(visitData?.status)}
             </div>
 
-            {/* Return to Therapist Button - Always visible for completed visits */}
-            {(visitData?.status === 'Completed' || visitStatus === 'COMPLETED') && (
+            {/* Return to Therapist Button - Only visible for completed visits */}
+            {visitData?.status === 'Completed' && (
               <div className="return-action-section">
                 <button 
                   className="return-to-therapist-btn" 
@@ -881,23 +1064,38 @@ const VisitModalComponent = ({
       </div>
 
       {/* Evaluation Modal */}
-      {showEvaluationModal && (
-        <NoteTemplateModal
-          isOpen={showEvaluationModal}
-          onClose={() => setShowEvaluationModal(false)}
-          patientData={patientInfo}
-          disciplina={getTherapistDiscipline(formData.therapist || visitData.therapist || visitData.staff_id)}
-          tipoNota={formData.visitType || visitData.visit_type || visitData.visitType}
-          initialData={{
-            // Only pass metadata, not visit data that conflicts with section validation
-            patientName: patientInfo?.full_name || 'Unknown',
-            date: formData.date,
-            therapistName: getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id),
-            visitId: visitData?.id
-          }}
-          onSave={handleEvaluationSave}
-        />
-      )}
+      {showEvaluationModal && (() => {
+        // Use the correctly extracted sections data from state
+        const sectionsDataOnly = formData.extractedSectionsData || {};
+
+        const initialDataForModal = {
+          // Pass metadata with unique names to avoid conflicts
+          patientName: patientInfo?.full_name || 'Unknown',
+          date: formData.date,
+          therapistName: getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id),
+          visitId: visitData?.id,
+          visit_id: visitData?.id,  // For API calls
+          staff_id: formData.therapist || visitData.therapist || visitData.staff_id,
+          // Include ONLY the sections data (spread last to avoid being overwritten)
+          ...sectionsDataOnly
+        };
+        
+        
+        // Pass existing note data to modal for editing
+        
+        return (
+          <NoteTemplateModal
+            isOpen={showEvaluationModal}
+            onClose={() => setShowEvaluationModal(false)}
+            patientData={patientInfo}
+            disciplina={getTherapistDiscipline(formData.therapist || visitData.therapist || visitData.staff_id)}
+            tipoNota={formData.visitType || visitData.visit_type || visitData.visitType}
+            initialData={initialDataForModal}
+            existingNoteId={formData.existingNoteId}
+            onSave={handleEvaluationSave}
+          />
+        );
+      })()}
     </>
   );
 };

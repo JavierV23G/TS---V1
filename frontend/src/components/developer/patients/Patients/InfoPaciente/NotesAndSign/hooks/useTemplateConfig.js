@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 // Map backend section names to frontend components
 const mapSectionNameToComponent = (sectionName) => {
   const sectionMap = {
-    // Solo las 3 secciones que necesitamos del backend
-    'VITALS': 'VitalsSection',
-    'PAIN': 'PainSection', 
+    // Solo las 3 secciones que necesitamos del backend (nombres consistentes)
+    'Vitals': 'VitalsSection',
+    'Pain': 'PainSection', 
     'Transfers / Functional Independence': 'TransfersFunctionalSection',
   };
   

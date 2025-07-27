@@ -22,6 +22,9 @@ from auth.auth_middleware import role_required, get_current_user
 
 router = APIRouter()
 
+# Import helper function from create_endpoints
+from .create_endpoints import determine_note_status
+
 #====================== STAFF ======================#
 
 @router.put("/staff/{staff_id}")
@@ -353,16 +356,28 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
             if visit:
                 visit.status = "Completed"
 
-    if data.therapist_name is not None:
-        note.therapist_name = data.therapist_name
-
     if data.sections_data is not None:
         note.sections_data = data.sections_data
-        if note.status.lower() == "completed" and data.status is None:
-            note.status = "Pending"
-            visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
-            if visit:
-                visit.status = "Pending"
+        
+        # Get template to determine status
+        visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
+        if visit:
+            # Get therapist name from the visit's assigned staff
+            staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
+            if staff:
+                note.therapist_name = staff.name
+            
+            template = db.query(NoteTemplate).filter_by(
+                discipline=visit.therapy_type.upper(),
+                note_type=visit.visit_type,
+                is_active=True
+            ).first()
+            
+            if template:
+                # Determine status based on completeness
+                auto_status = determine_note_status(data.sections_data, template, db)
+                note.status = auto_status
+                visit.status = auto_status
 
     db.commit()
     db.refresh(note)

@@ -19,9 +19,9 @@ const TemplateRenderer = ({
   // Map backend section names to frontend components
   const getSectionComponent = (sectionName) => {
     const sectionMap = {
-      'VITALS': 'VitalsSection',
+      'Vitals': 'VitalsSection',
       'Transfers / Functional Independence': 'TransfersFunctionalSection',
-      'PAIN': 'PainSection'
+      'Pain': 'PainSection'
     };
     
     return sectionMap[sectionName] || null;
