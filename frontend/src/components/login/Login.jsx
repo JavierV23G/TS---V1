@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLoadingModal from './AuthLoadingModal';
+import AccountLockoutModal from './AccountLockoutModal';
+import failedAttemptsService from './FailedAttemptsService';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import { useAuth } from './AuthContext';
 
@@ -15,6 +17,13 @@ const Login = ({ onForgotPassword }) => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // States for failed attempts system
+  const [lockoutModal, setLockoutModal] = useState({
+    isVisible: false,
+    lockoutInfo: null,
+    username: ''
+  });
 
   // Detectar tamaño de pantalla para ajustes responsive
   useEffect(() => {
@@ -36,6 +45,29 @@ const Login = ({ onForgotPassword }) => {
       setFormData(prev => ({ ...prev, username: savedUsername }));
       setRememberMe(true);
     }
+
+    // Configure failed attempts service callbacks
+    failedAttemptsService.setCallbacks({
+      onLockout: (lockoutInfo) => {
+        setLockoutModal({
+          isVisible: true,
+          lockoutInfo,
+          username: lockoutInfo.username
+        });
+        setAuthModal({ isOpen: false, status: 'loading', message: '' });
+      },
+      onAttemptFailed: (attemptInfo) => {
+        const remainingAttempts = attemptInfo.remainingAttempts;
+        setErrors({
+          username: false,
+          password: true,
+          message: `Invalid credentials. ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt remaining' : 'attempts remaining'}.`
+        });
+      },
+      onAccountUnlocked: (username) => {
+        console.log(`Account ${username} unlocked`);
+      }
+    });
   }, []);
 
   const handleInputChange = (e) => {
@@ -115,6 +147,17 @@ const Login = ({ onForgotPassword }) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    // Check if account is locked
+    const lockStatus = failedAttemptsService.isAccountLocked(formData.username);
+    if (lockStatus.isLocked) {
+      setLockoutModal({
+        isVisible: true,
+        lockoutInfo: lockStatus,
+        username: formData.username
+      });
+      return;
+    }
+
     setAuthModal({
       isOpen: true,
       status: 'loading',
@@ -129,9 +172,16 @@ const Login = ({ onForgotPassword }) => {
         body: JSON.stringify(formData)
       });
 
-      if (!credentialsRes.ok) throw new Error('Invalid username or password');
+      if (!credentialsRes.ok) {
+        // Record failed attempt
+        failedAttemptsService.recordFailedAttempt(formData.username);
+        throw new Error('Invalid username or password');
+      }
 
       const userCredentials = await credentialsRes.json();
+      
+      // Successful login - clear failed attempts
+      failedAttemptsService.clearAttempts(formData.username);
       
       setAuthModal({
         isOpen: true,
@@ -188,6 +238,20 @@ const Login = ({ onForgotPassword }) => {
         message: err.message || 'Login failed'
       });
     }
+  };
+
+  // Functions to handle lockout modal
+  const handleContactAdmin = () => {
+    // Here we could implement logic to contact admin
+    alert('Please contact the system administrator to unlock your account.');
+  };
+
+  const handleTryAgainLater = () => {
+    setLockoutModal({
+      isVisible: false,
+      lockoutInfo: null,
+      username: ''
+    });
   };
 
   return (
@@ -273,6 +337,14 @@ const Login = ({ onForgotPassword }) => {
       </div>
 
       <AuthLoadingModal {...authModal} onClose={closeAuthModal} userData={{ fullname: formData.username }} />
+      
+      <AccountLockoutModal
+        isVisible={lockoutModal.isVisible}
+        lockoutInfo={lockoutModal.lockoutInfo}
+        username={lockoutModal.username}
+        onContactAdmin={handleContactAdmin}
+        onTryAgainLater={handleTryAgainLater}
+      />
     </>
   );
 };

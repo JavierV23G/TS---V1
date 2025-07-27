@@ -1,6 +1,8 @@
 // components/login/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import GeolocationService from './GeolocationService';
+import sessionTimeoutService from './SessionTimeoutService';
+import SessionTimeoutModal from './SessionTimeoutModal';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -12,6 +14,11 @@ export const AuthProvider = ({ children }) => {
     currentUser: null,
     token: null,
     error: null
+  });
+
+  const [sessionWarning, setSessionWarning] = useState({
+    showWarning: false,
+    timeRemaining: 180
   });
 
   useEffect(() => {
@@ -28,6 +35,9 @@ export const AuthProvider = ({ children }) => {
           token,
           error: null
         });
+        
+        // Iniciar monitoreo de timeout de sesión
+        iniciarMonitoreoSesion();
       } catch (err) {
         clearAuthData();
         setAuthState(prev => ({
@@ -42,11 +52,48 @@ export const AuthProvider = ({ children }) => {
         loading: false
       }));
     }
+
+    // Cleanup al desmontar
+    return () => {
+      sessionTimeoutService.detenerMonitoreo();
+    };
   }, []);
 
   const clearAuthData = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+  };
+
+  const iniciarMonitoreoSesion = () => {
+    sessionTimeoutService.iniciarMonitoreo({
+      onTimeout: () => {
+        // Cuando se agota el tiempo, cerrar sesión
+        console.log('Sesión expirada por inactividad');
+        logout();
+      },
+      onWarning: (mostrar) => {
+        // Mostrar/ocultar advertencia
+        setSessionWarning(prev => ({
+          ...prev,
+          showWarning: mostrar
+        }));
+      },
+      onCountdownUpdate: (tiempoRestante) => {
+        // Actualizar tiempo restante en el modal
+        setSessionWarning(prev => ({
+          ...prev,
+          timeRemaining: tiempoRestante
+        }));
+      }
+    });
+  };
+
+  const extenderSesion = () => {
+    sessionTimeoutService.extenderSesion();
+    setSessionWarning({
+      showWarning: false,
+      timeRemaining: 180
+    });
   };
 
   const login = async ({ token, user }) => {
@@ -69,6 +116,9 @@ export const AuthProvider = ({ children }) => {
         error: null
       });
 
+      // Iniciar monitoreo de timeout de sesión después del login exitoso
+      iniciarMonitoreoSesion();
+
       return { success: true };
     } catch (error) {
       console.error('Error during login context:', error);
@@ -85,6 +135,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Detener monitoreo de sesión
+    sessionTimeoutService.detenerMonitoreo();
+    
     clearAuthData();
     setAuthState({
       isAuthenticated: false,
@@ -93,6 +146,13 @@ export const AuthProvider = ({ children }) => {
       token: null,
       error: null
     });
+    
+    // Resetear estado de advertencia
+    setSessionWarning({
+      showWarning: false,
+      timeRemaining: 180
+    });
+    
     window.location.href = '/';
   };
 
@@ -109,6 +169,13 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
+      {authState.isAuthenticated && (
+        <SessionTimeoutModal
+          timeRemaining={sessionWarning.timeRemaining}
+          onExtendSession={extenderSesion}
+          isVisible={sessionWarning.showWarning}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

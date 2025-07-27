@@ -1,0 +1,282 @@
+import '../../styles/Login/AccountLockoutModal.scss';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLock, faExclamationTriangle, faShieldAlt, faClock } from '@fortawesome/free-solid-svg-icons';
+
+const AccountLockoutModal = ({ 
+    isVisible, 
+    lockoutInfo, 
+    username, 
+    onContactAdmin,
+    onTryAgainLater 
+}) => {
+    const [timeRemaining, setTimeRemaining] = useState(0);
+    const [formattedTime, setFormattedTime] = useState('');
+
+    useEffect(() => {
+        if (lockoutInfo && lockoutInfo.lockoutUntil) {
+            const updateCountdown = () => {
+                const now = Date.now();
+                const remaining = Math.max(0, lockoutInfo.lockoutUntil - now);
+                setTimeRemaining(remaining);
+                
+                if (remaining > 0) {
+                    setFormattedTime(formatTime(remaining));
+                } else {
+                    setFormattedTime('');
+                    // Auto close modal when expired
+                    if (onTryAgainLater) {
+                        setTimeout(() => onTryAgainLater(), 1000);
+                    }
+                }
+            };
+
+            updateCountdown();
+            const interval = setInterval(updateCountdown, 1000);
+            
+            return () => clearInterval(interval);
+        }
+    }, [lockoutInfo, onTryAgainLater]);
+
+    const formatTime = (milliseconds) => {
+        const hours = Math.floor(milliseconds / 3600000);
+        const minutes = Math.floor((milliseconds % 3600000) / 60000);
+        const seconds = Math.floor((milliseconds % 60000) / 1000);
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    };
+
+    const getLockoutSeverity = () => {
+        if (!lockoutInfo) return 'low';
+        
+        if (lockoutInfo.isMaxLevel) return 'critical';
+        if (lockoutInfo.lockoutLevel >= 4) return 'high';
+        if (lockoutInfo.lockoutLevel >= 2) return 'medium';
+        return 'low';
+    };
+
+    const getSeverityConfig = () => {
+        const severity = getLockoutSeverity();
+        
+        const configs = {
+            low: {
+                iconColor: '#f59e0b',
+                progressColor: '#fbbf24',
+                title: 'Account Temporarily Locked',
+                description: 'Your account has been locked due to multiple failed login attempts.'
+            },
+            medium: {
+                iconColor: '#f97316', 
+                progressColor: '#fb923c',
+                title: 'Security Lock Active',
+                description: 'Extended lockout due to repeated access attempts.'
+            },
+            high: {
+                iconColor: '#dc2626',
+                progressColor: '#ef4444', 
+                title: 'Advanced Security Lock',
+                description: 'Your account requires additional time before the next attempt.'
+            },
+            critical: {
+                iconColor: '#991b1b',
+                progressColor: '#dc2626',
+                title: 'Maximum Security Lock',
+                description: 'Contact the system administrator to restore access.'
+            }
+        };
+        
+        return configs[severity];
+    };
+
+    const config = getSeverityConfig();
+    const progressPercentage = lockoutInfo?.lockoutDuration ? 
+        ((lockoutInfo.lockoutDuration - timeRemaining) / lockoutInfo.lockoutDuration) * 100 : 0;
+
+    return (
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div 
+                    className="account-lockout-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <motion.div 
+                        className="account-lockout-modal"
+                        initial={{ scale: 0.8, opacity: 0, y: -50 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.8, opacity: 0, y: -50 }}
+                        transition={{ 
+                            type: "spring", 
+                            stiffness: 300, 
+                            damping: 25 
+                        }}
+                    >
+                        <div className="modal-header">
+                            <motion.div 
+                                className="security-icon"
+                                animate={{ 
+                                    scale: [1, 1.1, 1],
+                                    rotate: [0, -5, 5, 0]
+                                }}
+                                transition={{ 
+                                    duration: 2, 
+                                    repeat: Infinity,
+                                    repeatDelay: 3
+                                }}
+                            >
+                                <FontAwesomeIcon 
+                                    icon={faShieldAlt} 
+                                    className="icon-shield"
+                                    style={{ color: config.iconColor }}
+                                />
+                                <FontAwesomeIcon 
+                                    icon={faLock} 
+                                    className="icon-lock"
+                                />
+                            </motion.div>
+                            <h2>{config.title}</h2>
+                        </div>
+
+                        <div className="modal-body">
+                            <div className="lockout-info">
+                                <div className="user-info">
+                                    <strong>User:</strong> {username}
+                                </div>
+                                
+                                <div className="description">
+                                    {config.description}
+                                </div>
+
+                                {timeRemaining > 0 && (
+                                    <div className="countdown-section">
+                                        <div className="time-display">
+                                            <FontAwesomeIcon 
+                                                icon={faClock} 
+                                                className="clock-icon"
+                                                spin
+                                            />
+                                            <motion.span 
+                                                className="time-text"
+                                                key={formattedTime}
+                                                initial={{ scale: 1.2, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                {formattedTime}
+                                            </motion.span>
+                                        </div>
+
+                                        <div className="progress-container">
+                                            <motion.div 
+                                                className="progress-bar"
+                                                style={{ 
+                                                    width: `${progressPercentage}%`,
+                                                    backgroundColor: config.progressColor
+                                                }}
+                                                initial={{ width: '0%' }}
+                                                animate={{ width: `${progressPercentage}%` }}
+                                                transition={{ duration: 0.5 }}
+                                            />
+                                        </div>
+
+                                        <div className="progress-label">
+                                            Lockout time elapsed
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="security-details">
+                                    <div className="detail-item">
+                                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                                        <span>Lockout level: {lockoutInfo?.lockoutLevel || 1}</span>
+                                    </div>
+                                    
+                                    <div className="detail-item">
+                                        <FontAwesomeIcon icon={faLock} />
+                                        <span>
+                                            {lockoutInfo?.isMaxLevel 
+                                                ? 'Maximum lockout reached' 
+                                                : 'Temporary lockout active'
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <motion.div 
+                                className="action-buttons"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                {lockoutInfo?.isMaxLevel ? (
+                                    <motion.button 
+                                        className="contact-admin-button"
+                                        onClick={onContactAdmin}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <FontAwesomeIcon icon={faShieldAlt} className="button-icon" />
+                                        Contact Administrator
+                                    </motion.button>
+                                ) : (
+                                    <motion.button 
+                                        className="try-later-button"
+                                        onClick={onTryAgainLater}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        disabled={timeRemaining > 0}
+                                    >
+                                        <FontAwesomeIcon icon={faClock} className="button-icon" />
+                                        {timeRemaining > 0 ? 'Waiting...' : 'Try Again'}
+                                    </motion.button>
+                                )}
+                            </motion.div>
+
+                            <div className="security-notice">
+                                <FontAwesomeIcon icon={faShieldAlt} />
+                                <span>
+                                    This measure protects system security and medical data privacy.
+                                </span>
+                            </div>
+                        </div>
+
+                        <motion.div 
+                            className="decorative-element element-1"
+                            animate={{ 
+                                rotate: 360,
+                                scale: [1, 1.1, 1]
+                            }}
+                            transition={{ 
+                                duration: 25, 
+                                repeat: Infinity,
+                                ease: "linear"
+                            }}
+                        />
+                        <motion.div 
+                            className="decorative-element element-2"
+                            animate={{ 
+                                rotate: -360,
+                                scale: [1, 0.9, 1]
+                            }}
+                            transition={{ 
+                                duration: 20, 
+                                repeat: Infinity,
+                                ease: "linear"
+                            }}
+                        />
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
+export default AccountLockoutModal;
