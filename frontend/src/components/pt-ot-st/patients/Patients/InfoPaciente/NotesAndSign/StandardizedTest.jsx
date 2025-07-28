@@ -1,6 +1,6 @@
 // StandardizedTest.jsx
 import React from 'react';
-import '../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/StandardizedTest.scss';
+import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/StandardizedTest.scss';
 
 const StandardizedTest = ({ title, isComplete, score, onOpen }) => {
   // Determinar qué icono mostrar según el tipo de prueba

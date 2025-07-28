@@ -9,7 +9,7 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
   
   // Enhanced state for animations with performance optimizations
   const [animatedStats, setAnimatedStats] = useState({
-    activePatients: 0,
+    activeClients: 0,
     revenue: 0,
     completedSessions: 0
   });
@@ -26,100 +26,110 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
   const [isLoadingPatients, setIsLoadingPatients] = useState(true);
   const [error, setError] = useState(null);
   
-  // Calculate statistics dynamically from API data
+  // Calculate statistics for SaaS platform
   const [stats, setStats] = useState({
-    activePatients: 0,
-    totalPatients: 0,
-    revenue: 0,
+    activeClients: 0, // Agencias activas usando la plataforma
+    totalClients: 0,  // Total de agencias registradas
+    monthlyRevenue: 0, // Ingresos mensuales de suscripciones
+    pendingPayments: 0, // Pagos pendientes de agencias
+    totalRevenue: 0,
     completedSessions: 0
   });
   
-  // Financial data
-  const [financialData, setFinancialData] = useState({
-    totalRevenue: 58750,
-    monthlyRevenue: 12450,
-    pendingPayments: 3200,
-    revenueGrowth: 18,
+  // SaaS Platform Financial Data - Developer Revenue Model
+  const [platformData, setPlatformData] = useState({
+    // Datos estáticos para desarrollo - luego será dinámico
+    activeAgencies: 1, // Motive Home Care por ahora
+    totalAgencies: 3,  // Motive + 2 en proceso de onboarding
+    monthlySubscriptionRate: 100, // $100 por agencia por mes
+    currentMonthRevenue: 100, // 1 agencia × $100
+    totalRevenue: 1200, // 12 meses × $100 (ejemplo)
+    pendingPayments: 200, // Pagos atrasados
+    revenueGrowth: 25, // Crecimiento del 25%
+    platformUsers: 350, // Total users across all agencies
     completedSessions: 145
   });
 
   // API Base URL
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Function to fetch patients from API
-  const fetchPatients = async () => {
+  // Function to fetch platform statistics for SaaS dashboard
+  const fetchPlatformStats = async () => {
     try {
       setIsLoadingPatients(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/patients/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // En el futuro, esto será una API que traiga estadísticas de la plataforma
+      // Por ahora usamos datos simulados basados en la realidad actual
+      
+      // Simular llamada API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Datos realistas actuales de TherapySync
+      const platformStats = {
+        activeAgencies: platformData.activeAgencies,
+        totalAgencies: platformData.totalAgencies,
+        monthlyRevenue: platformData.currentMonthRevenue,
+        totalRevenue: platformData.totalRevenue,
+        pendingPayments: platformData.pendingPayments,
+        platformUsers: platformData.platformUsers,
+        completedSessions: platformData.completedSessions
+      };
+      
+      console.log('Platform stats loaded:', platformStats);
+      
+      setStats({
+        activeClients: platformStats.activeAgencies,
+        totalClients: platformStats.totalAgencies,
+        monthlyRevenue: platformStats.monthlyRevenue,
+        pendingPayments: platformStats.pendingPayments,
+        totalRevenue: platformStats.totalRevenue,
+        completedSessions: platformStats.completedSessions
       });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch patients: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fetched patients:', data);
-      
-      // Normalize patient data and determine status
-      const normalizedPatients = data.map(patient => {
-        let status;
-        if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
-          status = 'Active';
-        } else if (patient.is_active === false || patient.is_active === 'false' || patient.is_active === 0) {
-          status = 'Inactive';
-        } else {
-          status = 'Active'; // Default to active if undefined
-        }
-        
-        return {
-          ...patient,
-          status: status,
-        };
-      });
-      
-      setPatients(normalizedPatients);
       
     } catch (err) {
-      console.error('Error fetching patients:', err);
+      console.error('Error fetching platform stats:', err);
       setError(err.message);
     } finally {
       setIsLoadingPatients(false);
     }
   };
 
-  // Effect to calculate statistics when patients change
+  // Calculate platform revenue and client metrics
   useEffect(() => {
-    if (patients && Array.isArray(patients)) {
-      const totalPatients = patients.length;
-      const activePatients = patients.filter(p => p.status === "Active").length;
+    // Calcular métricas en tiempo real de la plataforma SaaS
+    const calculatePlatformMetrics = () => {
+      const currentMonthRevenue = platformData.activeAgencies * platformData.monthlySubscriptionRate;
+      const projectedAnnualRevenue = currentMonthRevenue * 12;
       
-      console.log('Calculating stats:', {
-        totalPatients,
-        activePatients
+      console.log('Platform SaaS Metrics:', {
+        activeAgencies: platformData.activeAgencies,
+        monthlyRate: platformData.monthlySubscriptionRate,
+        currentMonthRevenue,
+        projectedAnnualRevenue
       });
       
-      setStats({
-        activePatients,
-        totalPatients,
-        revenue: financialData.totalRevenue,
-        completedSessions: financialData.completedSessions
-      });
-    }
-  }, [patients, financialData]);
-
-  // Fetch patients on component mount
-  useEffect(() => {
-    fetchPatients();
+      return {
+        activeClients: platformData.activeAgencies,
+        totalClients: platformData.totalAgencies,
+        monthlyRevenue: currentMonthRevenue,
+        totalRevenue: platformData.totalRevenue,
+        pendingPayments: platformData.pendingPayments,
+        completedSessions: platformData.completedSessions
+      };
+    };
     
-    // Refresh data every 5 minutes
+    const metrics = calculatePlatformMetrics();
+    setStats(metrics);
+  }, [platformData]);
+
+  // Fetch platform stats on component mount
+  useEffect(() => {
+    fetchPlatformStats();
+    
+    // Refresh platform data every 5 minutes
     const interval = setInterval(() => {
-      fetchPatients();
+      fetchPlatformStats();
     }, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
@@ -142,8 +152,8 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
       const eased = 1 - Math.pow(1 - progress, 3);
       
       setAnimatedStats({
-        activePatients: Math.round(eased * stats.activePatients),
-        revenue: Math.round(eased * stats.revenue),
+        activeClients: Math.round(eased * stats.activeClients),
+        revenue: Math.round(eased * stats.totalRevenue),
         completedSessions: Math.round(eased * stats.completedSessions)
       });
       
@@ -218,16 +228,22 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     return { x, y };
   };
 
-  // Function to navigate to patients list
-  const handleViewPatientsList = () => {
+  // Function to navigate to patients (same as clients for developer)
+  const handleViewClientsList = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-    navigate(`/${baseRole}/patients?scrollTo=patients`);
+    navigate(`/${baseRole}/patients`);
   };
   
-  // Function to navigate to financial reports
-  const handleViewFinancialReports = () => {
+  // Function to navigate to accounting dashboard
+  const handleViewRevenueDashboard = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-    navigate(`/${baseRole}/finance?scrollTo=finance`);
+    navigate(`/${baseRole}/accounting`);
+  };
+
+  // Function to navigate to platform settings
+  const handleViewPlatformSettings = () => {
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+    navigate(`/${baseRole}/settings`);
   };
 
   // Format number with commas for thousands
@@ -235,9 +251,9 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // Function to refresh data
+  // Function to refresh platform data
   const handleRefreshData = () => {
-    fetchPatients();
+    fetchPlatformStats();
   };
 
 
@@ -257,15 +273,15 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
 
       {/* Premium dashboard cards with responsive layout */}
       <div className="dashboard-cards">
-        {/* Patients card with enhanced responsive design */}
+        {/* Active Clients card - SaaS Dashboard */}
         <div 
-          className={`dashboard-card ${activeCard === 'patients' ? 'active' : ''} ${isLoadingPatients ? 'loading' : ''}`}
-          onMouseEnter={() => handleCardMouseEnter('patients')}
+          className={`dashboard-card ${activeCard === 'clients' ? 'active' : ''} ${isLoadingPatients ? 'loading' : ''}`}
+          onMouseEnter={() => handleCardMouseEnter('clients')}
           onMouseLeave={handleCardMouseLeave}
           ref={cardRefs.patients}
         >
           {/* Neon border effect */}
-          {activeCard === 'patients' && (
+          {activeCard === 'clients' && (
             <div className="neon-border-container">
               <div 
                 className="neon-dot" 
@@ -280,11 +296,11 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
           
           <div className="card-content">
             <div className="card-header">
-              <div className="icon-container patients-icon">
+              <div className="icon-container clients-icon">
                 <div className="icon-background"></div>
-                <i className="fas fa-user-injured"></i>
+                <i className="fas fa-building"></i>
               </div>
-              <h3>Active Patients</h3>
+              <h3>Client Agencies</h3>
               {isLoadingPatients && (
                 <div className="loading-spinner">
                   <i className="fas fa-spinner fa-spin"></i>
@@ -296,48 +312,69 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
                 {isLoadingPatients ? (
                   <div className="skeleton-counter"></div>
                 ) : (
-                  animatedStats.activePatients
+                  animatedStats.activeClients
                 )}
               </span>
-              <div className="counter-badge">
+              <div className="counter-badge success">
                 <i className="fas fa-arrow-up"></i>
-                <span>12%</span>
+                <span>100%</span>
               </div>
             </div>
             <div className="card-stats">
               <div className="stat-item">
-                <div className="stat-label">Active patients</div>
+                <div className="stat-label">Active subscriptions</div>
                 <div className="stat-value">
                   {isLoadingPatients ? (
                     <div className="skeleton-stat"></div>
                   ) : (
-                    stats.activePatients
+                    stats.activeClients
                   )}
                 </div>
               </div>
               <div className="stat-item">
-                <div className="stat-label">Total patients</div>
+                <div className="stat-label">Pipeline prospects</div>
                 <div className="stat-value">
                   {isLoadingPatients ? (
                     <div className="skeleton-stat"></div>
                   ) : (
-                    stats.totalPatients
+                    stats.totalClients - stats.activeClients
                   )}
                 </div>
+              </div>
+            </div>
+            <div className="client-agencies-list">
+              <div className="agencies-header">
+                <span>Current Active Clients:</span>
+              </div>
+              <div className="agency-item active">
+                <div className="agency-status"></div>
+                <div className="agency-info">
+                  <span className="agency-name">Motive Home Care</span>
+                  <span className="agency-status-text">Active • $100/month</span>
+                </div>
+                <div className="agency-revenue">$1,200 YTD</div>
+              </div>
+              <div className="agency-item pipeline">
+                <div className="agency-status"></div>
+                <div className="agency-info">
+                  <span className="agency-name">Supportive Health LLC</span>
+                  <span className="agency-status-text">Onboarding</span>
+                </div>
+                <div className="agency-revenue">Pending</div>
               </div>
             </div>
             <div className="card-footer">
               <button 
                 className="action-button"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent card click event
-                  handleViewPatientsList();
+                  e.stopPropagation();
+                  handleViewClientsList();
                 }}
                 disabled={isLoadingPatients}
               >
                 <div className="button-content">
-                  <i className="fas fa-clipboard-list"></i>
-                  <span>View patients</span>
+                  <i className="fas fa-handshake"></i>
+                  <span>Manage Agency Clients</span>
                 </div>
                 <div className="button-hover-effect"></div>
               </button>
@@ -354,7 +391,7 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
           </div>
         </div>
         
-        {/* Finance card with enhanced responsive design */}
+        {/* Platform Revenue card - SaaS Financial Dashboard */}
         <div 
           className={`dashboard-card ${activeCard === 'finance' ? 'active' : ''}`}
           onMouseEnter={() => handleCardMouseEnter('finance')}
@@ -379,35 +416,56 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
             <div className="card-header">
               <div className="icon-container finance-icon">
                 <div className="icon-background"></div>
-                <i className="fas fa-chart-line"></i>
+                <i className="fas fa-dollar-sign"></i>
               </div>
-              <h3>Financial Overview</h3>
+              <h3>Platform Revenue</h3>
             </div>
             <div className="card-value">
               <span className="currency">$</span>
               <span className="counter">{formatNumber(animatedStats.revenue)}</span>
               <div className="counter-badge">
                 <i className="fas fa-arrow-up"></i>
-                <span>{financialData.revenueGrowth}%</span>
+                <span>{platformData.revenueGrowth}%</span>
               </div>
             </div>
             <div className="finance-metrics">
               <div className="metric-item">
                 <div className="metric-icon">
-                  <i className="fas fa-calendar-check"></i>
+                  <i className="fas fa-calendar-alt"></i>
                 </div>
                 <div className="metric-details">
-                  <div className="metric-label">Monthly Revenue</div>
-                  <div className="metric-value">${formatNumber(financialData.monthlyRevenue)}</div>
+                  <div className="metric-label">This Month (July)</div>
+                  <div className="metric-value">${formatNumber(stats.monthlyRevenue)}</div>
                 </div>
               </div>
               <div className="metric-item">
                 <div className="metric-icon">
-                  <i className="fas fa-clock"></i>
+                  <i className="fas fa-user-friends"></i>
                 </div>
                 <div className="metric-details">
-                  <div className="metric-label">Pending Payments</div>
-                  <div className="metric-value">${formatNumber(financialData.pendingPayments)}</div>
+                  <div className="metric-label">Platform Users</div>
+                  <div className="metric-value">{formatNumber(platformData.platformUsers)}</div>
+                </div>
+              </div>
+            </div>
+            <div className="saas-revenue-breakdown">
+              <div className="revenue-header">
+                <span>Revenue Model: $100/month per agency</span>
+              </div>
+              <div className="revenue-calculation">
+                <div className="calc-item">
+                  <span className="calc-label">Active Agencies:</span>
+                  <span className="calc-value">{stats.activeClients}</span>
+                </div>
+                <div className="calc-operator">×</div>
+                <div className="calc-item">
+                  <span className="calc-label">Monthly Rate:</span>
+                  <span className="calc-value">$100</span>
+                </div>
+                <div className="calc-operator">=</div>
+                <div className="calc-item result">
+                  <span className="calc-label">Monthly Revenue:</span>
+                  <span className="calc-value">${stats.monthlyRevenue}</span>
                 </div>
               </div>
             </div>
@@ -416,12 +474,12 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
                 className="action-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewFinancialReports();
+                  handleViewRevenueDashboard();
                 }}
               >
                 <div className="button-content">
-                  <i className="fas fa-file-invoice-dollar"></i>
-                  <span>View reports</span>
+                  <i className="fas fa-calculator"></i>
+                  <span>Financial Dashboard</span>
                 </div>
                 <div className="button-hover-effect"></div>
               </button>
@@ -461,47 +519,84 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
           
           <div className="card-content">
             <div className="card-header">
-              <div className="icon-container learning-icon">
+              <div className="icon-container control-icon">
                 <div className="icon-background"></div>
-                <i className="fas fa-book-open"></i>
+                <i className="fas fa-cogs"></i>
               </div>
-              <h3>Learning Center</h3>
+              <h3>Platform Control</h3>
             </div>
             <div className="card-description">
-              <p>Resources and tutorials to optimize your experience</p>
+              <p>System administration and platform configuration tools</p>
             </div>
-            <div className="learning-progress">
-              <div className="progress-header">
-                <span>Learning progress</span>
-                <span className="progress-percent">65%</span>
+            <div className="system-status">
+              <div className="status-header">
+                <span>Platform Status</span>
+                <span className="status-indicator online">
+                  <i className="fas fa-circle"></i> Online
+                </span>
               </div>
-              <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: '65%' }}>
-                  <div className="progress-glow"></div>
+              <div className="status-metrics">
+                <div className="metric-row">
+                  <span className="metric-label">Server Load:</span>
+                  <span className="metric-value">23%</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Database:</span>
+                  <span className="metric-value">Healthy</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Last Backup:</span>
+                  <span className="metric-value">2 hours ago</span>
                 </div>
               </div>
             </div>
-            <div className="completed-sessions">
-              <div className="sessions-icon">
-                <i className="fas fa-graduation-cap"></i>
+            <div className="platform-tools">
+              <div className="tool-stat">
+                <div className="stat-icon">
+                  <i className="fas fa-users-cog"></i>
+                </div>
+                <div className="stat-details">
+                  <div className="stat-value">{platformData.platformUsers}</div>
+                  <div className="stat-label">Total Users</div>
+                </div>
               </div>
-              <div className="sessions-details">
-                <div className="sessions-value">{animatedStats.completedSessions}</div>
-                <div className="sessions-label">Completed sessions</div>
+              <div className="tool-stat">
+                <div className="stat-icon">
+                  <i className="fas fa-server"></i>
+                </div>
+                <div className="stat-details">
+                  <div className="stat-value">99.9%</div>
+                  <div className="stat-label">Uptime</div>
+                </div>
+              </div>
+              <div className="tool-stat">
+                <div className="stat-icon">
+                  <i className="fas fa-shield-alt"></i>
+                </div>
+                <div className="stat-details">
+                  <div className="stat-value">Secure</div>
+                  <div className="stat-label">SSL Status</div>
+                </div>
               </div>
             </div>
-            <div className="card-footer tutorial-options">
-              <button className="tutorial-button">
+            <div className="card-footer platform-actions">
+              <button 
+                className="platform-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewPlatformSettings();
+                }}
+              >
                 <div className="button-content">
-                  <i className="fas fa-play-circle"></i>
-                  <span>Video tutorial</span>
+                  <i className="fas fa-cogs"></i>
+                  <span>Platform Settings</span>
                 </div>
                 <div className="button-hover-effect"></div>
               </button>
-              <button className="tutorial-button">
+              <button className="platform-button">
                 <div className="button-content">
-                  <i className="fas fa-file-alt"></i>
-                  <span>PDF Guide</span>
+                  <i className="fas fa-database"></i>
+                  <span>Database Admin</span>
                 </div>
                 <div className="button-hover-effect"></div>
               </button>

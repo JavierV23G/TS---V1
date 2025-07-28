@@ -10,7 +10,7 @@ const Header = ({ onLogout }) => {
   const location = useLocation();
   const { currentUser } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [activeMenuIndex, setActiveMenuIndex] = useState(1); // Comenzamos con Referrals activo
+  const [activeMenuIndex, setActiveMenuIndex] = useState(0); // Inicializar con 0 por defecto
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [headerGlow, setHeaderGlow] = useState(false);
   const [parallaxPosition, setParallaxPosition] = useState({ x: 0, y: 0 });
@@ -47,8 +47,10 @@ const Header = ({ onLogout }) => {
       roleType = 'admin';
     } else if (['pt', 'ot', 'st', 'pta', 'cota', 'sta'].includes(baseRole)) {
       roleType = 'therapist';
-    } else if (['supportive', 'support', 'agency'].includes(baseRole)) {
+    } else if (['supportive', 'support'].includes(baseRole)) {
       roleType = 'support';
+    } else if (baseRole === 'agency' || roleLower.includes('agency')) {
+      roleType = 'agency';
     }
     
     return { baseRole, roleType };
@@ -63,14 +65,28 @@ const Header = ({ onLogout }) => {
       { id: 3, name: "Accounting", icon: "fa-chart-pie", route: `/${baseRole}/accounting`, color: "#4CAF50" }
     ];
     
+    // Verificar específicamente si es agencia (múltiples verificaciones)
+    const isAgency = roleType === 'agency' || 
+                     baseRole === 'agency' || 
+                     (currentUser?.role && currentUser.role.toLowerCase().includes('agency'));
+    
+    console.log('Is Agency check:', isAgency, 'roleType:', roleType, 'baseRole:', baseRole);
+    
     // Filtrar según el tipo de rol
     if (roleType === 'developer' || roleType === 'admin') {
       // Developer y Admin ven todas las opciones
       return allMenuOptions;
+    } else if (isAgency) {
+      // Agencias solo ven Patients y Accounting (NO Referrals)
+      const filtered = allMenuOptions.filter(option => 
+        option.name === "Patients" || option.name === "Accounting"
+      );
+      console.log('Agency filtered menu:', filtered.map(opt => opt.name));
+      return filtered;
     } else if (roleType === 'therapist' || roleType === 'support') {
-      // Terapistas y support solo ven Patients y Referrals
+      // Terapistas y support ven Patients y Accounting (NO pueden crear referrals)
       return allMenuOptions.filter(option => 
-        option.name === "Patients" || option.name === "Referrals"
+        option.name === "Patients" || option.name === "Accounting"
       );
     }
     
@@ -96,6 +112,14 @@ const Header = ({ onLogout }) => {
   const menuOptions = isReferralsPage && (roleType === 'developer' || roleType === 'admin') 
     ? referralsMenuOptions 
     : defaultMenuOptions;
+    
+  // Debug para agencias - remover después
+  console.log('Current roleType:', roleType);
+  console.log('Current baseRole:', baseRole);
+  console.log('Current user role:', currentUser?.role);
+  if (roleType === 'agency') {
+    console.log('Agency menuOptions:', menuOptions.map(opt => opt.name));
+  }
   
   // Datos de usuario
   const userData = currentUser ? {
@@ -134,6 +158,20 @@ const Header = ({ onLogout }) => {
     
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Ajustar índice inicial según el rol
+  useEffect(() => {
+    if (roleType === 'agency') {
+      // Para agencias, comenzar con Patients (índice 0)
+      setActiveMenuIndex(0);
+    } else if (roleType === 'therapist' || roleType === 'support') {
+      // Para terapistas, comenzar con Patients (índice 0) 
+      setActiveMenuIndex(0);
+    } else {
+      // Para developers y admins, comenzar con Patients (índice 0)
+      setActiveMenuIndex(0);
+    }
+  }, [roleType]);
   
   // Auto-rotation carousel effect with responsive timing
   useEffect(() => {

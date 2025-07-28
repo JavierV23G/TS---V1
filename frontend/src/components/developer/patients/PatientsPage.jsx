@@ -5,6 +5,261 @@ import logoImg from '../../../assets/LogoMHC.jpeg';
 import '../../../styles/developer/Patients/PatientsPage.scss';
 import LogoutAnimation from '../../../components/LogOut/LogOut';
 
+// Company Gateway Screen - Obligatory selection before access
+const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
+  const [hoveredCompany, setHoveredCompany] = useState(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCompanies, setFilteredCompanies] = useState(companies);
+  const [currentColorScheme, setCurrentColorScheme] = useState(0);
+  
+  // Array of nebula color schemes that rotate on each reload
+  const nebulaSchemes = [
+    { // Cosmic Blue
+      primary: '#0f0f23',
+      secondary: '#1a1a3a', 
+      accent: '#2d4de0',
+      nebula: '#87ceeb'
+    },
+    { // Purple Galaxy
+      primary: '#1a0d2e',
+      secondary: '#16213e',
+      accent: '#7209b7',
+      nebula: '#c589e8'
+    },
+    { // Green Cosmic
+      primary: '#0d1b0d',
+      secondary: '#1e2a1e',
+      accent: '#39ff14',
+      nebula: '#90ee90'
+    },
+    { // Orange Nebula
+      primary: '#2e1f0d',
+      secondary: '#3e2a16',
+      accent: '#ff6600',
+      nebula: '#ffb366'
+    },
+    { // Pink Cosmos
+      primary: '#2e0d1f',
+      secondary: '#3e1629',
+      accent: '#ff1493',
+      nebula: '#ffb3d9'
+    },
+    { // Teal Galaxy
+      primary: '#0d2e2e',
+      secondary: '#163e3e',
+      accent: '#20b2aa',
+      nebula: '#7fffd4'
+    }
+  ];
+  
+  // Select random color scheme on mount
+  useEffect(() => {
+    const randomScheme = Math.floor(Math.random() * nebulaSchemes.length);
+    setCurrentColorScheme(randomScheme);
+  }, []);
+
+  const handleCompanySelect = (company) => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      onCompanySelect(company);
+    }, 800);
+  };
+
+  // Filter companies based on search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCompanies(companies);
+    } else {
+      const filtered = companies.filter(company => 
+        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredCompanies(filtered);
+    }
+  }, [searchTerm, companies]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
+  return (
+    <div 
+      className={`company-gateway-screen ${isAnimating ? 'animating-out' : ''}`}
+      style={{
+        '--nebula-primary': nebulaSchemes[currentColorScheme]?.primary,
+        '--nebula-secondary': nebulaSchemes[currentColorScheme]?.secondary,
+        '--nebula-accent': nebulaSchemes[currentColorScheme]?.accent,
+        '--nebula-color': nebulaSchemes[currentColorScheme]?.nebula
+      }}
+    >
+      
+      
+      <div className="gateway-content">
+        <div className="gateway-header">
+          <div className="brand-logo-nebula">
+            <div className="nebula-logo-container">
+              <div className="logo-constellation">
+                <div className="star star-1"></div>
+                <div className="star star-2"></div>
+                <div className="star star-3"></div>
+              </div>
+              <div className="logo-icon-nebula">
+                <div className="icon-glow"></div>
+                <i className="fas fa-user-md"></i>
+                <div className="icon-ring"></div>
+              </div>
+              <div className="logo-particles">
+                <div className="particle p-1"></div>
+                <div className="particle p-2"></div>
+                <div className="particle p-3"></div>
+                <div className="particle p-4"></div>
+              </div>
+            </div>
+            <h1 className="nebula-title">
+              <span className="title-char">T</span>
+              <span className="title-char">h</span>
+              <span className="title-char">e</span>
+              <span className="title-char">r</span>
+              <span className="title-char">a</span>
+              <span className="title-char">p</span>
+              <span className="title-char">y</span>
+              <span className="title-separator">S</span>
+              <span className="title-char">y</span>
+              <span className="title-char">n</span>
+              <span className="title-char">c</span>
+            </h1>
+            <div className="cosmic-underline"></div>
+          </div>
+          
+          <div className="gateway-title-nebula">
+            <h2 className="cosmic-header">
+              <span className="cosmic-text">Select Your Healthcare Agency</span>
+              <div className="text-aurora"></div>
+            </h2>
+            <p className="cosmic-description">
+              Choose the home healthcare agency to access the patient management platform
+              <div className="description-shimmer"></div>
+            </p>
+          </div>
+          
+          <div className="search-container">
+            <div className="search-box">
+              <div className="search-icon">
+                <i className="fas fa-search"></i>
+              </div>
+              <input
+                type="text"
+                placeholder="Search ..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+              {searchTerm && (
+                <button className="clear-search" onClick={clearSearch}>
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            <div className="search-info">
+              <span>Showing {filteredCompanies.length} of {companies.length} agencies</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="companies-grid">
+          {filteredCompanies.length > 0 ? filteredCompanies.map((company) => (
+            <div 
+              key={company.id}
+              className={`company-card ${hoveredCompany === company.id ? 'hovered' : ''}`}
+              onMouseEnter={() => setHoveredCompany(company.id)}
+              onMouseLeave={() => setHoveredCompany(null)}
+              onClick={() => handleCompanySelect(company)}
+            >
+              <div className="company-card-background">
+                <div className="card-gradient"></div>
+                <div className="card-pattern"></div>
+              </div>
+              
+              <div className="company-card-content">
+                <div className="company-icon">
+                  <div className="icon-background"></div>
+                  <i className="fas fa-hospital-alt"></i>
+                  <div className="icon-pulse"></div>
+                </div>
+                
+                <div className="company-info">
+                  <h3>{company.name}</h3>
+                  <p className="company-type">{company.type}</p>
+                  <div className="company-stats">
+                    <div className="stat">
+                      <i className="fas fa-users"></i>
+                      <span>{company.patientCount} patients</span>
+                    </div>
+                    <div className="stat">
+                      <i className="fas fa-map-marker-alt"></i>
+                      <span>{company.location}</span>
+                    </div>
+                    <div className="stat">
+                      <i className="fas fa-folder"></i>
+                      <span>Agency #{company.id}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="company-action">
+                  <div className="access-button">
+                    <span>Access Platform</span>
+                    <i className="fas fa-arrow-right"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="card-glow"></div>
+            </div>
+          )) : (
+            <div className="no-results">
+              <div className="no-results-icon">
+                <i className="fas fa-search"></i>
+              </div>
+              <h3>No agencies found</h3>
+              <p>Try adjusting your search terms or browse all available agencies</p>
+              <button className="clear-search-btn" onClick={clearSearch}>
+                <i className="fas fa-refresh"></i>
+                Show All Agencies
+              </button>
+            </div>
+          )}
+        </div>
+        
+        <div className="gateway-footer-nebula">
+          <div className="footer-constellation">
+            <div className="constellation-line"></div>
+            <div className="footer-star"></div>
+            <div className="constellation-line"></div>
+          </div>
+          <p className="footer-main">Developer Dashboard • Patient Management System</p>
+          <div className="database-info-nebula">
+            <div className="info-glow"></div>
+            <i className="fas fa-database"></i>
+            <span>Future: Each agency will have its dedicated database folder</span>
+            <div className="info-particles">
+              <div className="info-particle"></div>
+              <div className="info-particle"></div>
+              <div className="info-particle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Premium Tabs component
 const PremiumTabs = ({ activeTab, onChangeTab }) => {
   return (
@@ -327,6 +582,12 @@ const DevPatientsPage = () => {
     { title: "Inactive Patients", value: 0, icon: "fa-user-times", color: "red" },
   ]);
   
+  // Company selector states
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [hostingCompanies, setHostingCompanies] = useState([]);
+  const [hasSelectedCompany, setHasSelectedCompany] = useState(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
+  
   // Search and filter states - Inicializar con 'Active'
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [agencySearchTerm, setAgencySearchTerm] = useState('');
@@ -350,12 +611,87 @@ const DevPatientsPage = () => {
     }
     return name.substring(0, 2).toUpperCase();
   }, []);
+
+  // Initialize static hosting companies
+  const initializeHostingCompanies = useCallback(() => {
+    setIsLoadingCompanies(true);
+    
+    // Simulate loading time for better UX
+    setTimeout(() => {
+      const companies = [
+        {
+          id: 1,
+          name: "Motive Home Care",
+          type: "Agencia de Salud Domiciliaria",
+          patientCount: 245,
+          location: "Miami, FL",
+          status: "Activa",
+          description: "Servicios premium de atención médica domiciliaria",
+          color: "#667eea"
+        },
+        {
+          id: 2,
+          name: "Caring Hands Healthcare",
+          type: "Agencia de Salud Domiciliaria", 
+          patientCount: 189,
+          location: "Tampa, FL",
+          status: "Activa",
+          description: "Soluciones integrales de atención domiciliaria",
+          color: "#764ba2"
+        },
+        {
+          id: 3,
+          name: "Sunshine Health Services",
+          type: "Agencia de Salud Domiciliaria",
+          patientCount: 156,
+          location: "Orlando, FL", 
+          status: "Activa",
+          description: "Servicios especializados de rehabilitación",
+          color: "#f093fb"
+        }
+      ];
+      
+      setHostingCompanies(companies);
+      setIsLoadingCompanies(false);
+    }, 1200);
+  }, []);
+
+  // Company selection handler for gateway
+  const handleCompanySelect = useCallback((company) => {
+    if (isLoggingOut) return;
+    
+    setSelectedCompany(company);
+    setHasSelectedCompany(true);
+    
+    // Reset filters when selecting company
+    setPatientSearchTerm('');
+    setAgencySearchTerm('');
+    setSelectedAgency('all');
+    setSelectedStatus('Active');
+    setActivePage(1);
+    
+    // Note: fetchPatients will be called in useEffect when selectedCompany changes
+  }, [isLoggingOut]);
+
+  // Company change handler for already selected company (if needed later)
+  const handleCompanyChange = useCallback((company) => {
+    if (isLoggingOut) return;
+    
+    setSelectedCompany(company);
+    
+    // Reset filters when changing company
+    setPatientSearchTerm('');
+    setAgencySearchTerm('');
+    setSelectedAgency('all');
+    setSelectedStatus('Active');
+    setActivePage(1);
+  }, [isLoggingOut]);
   
   // User data
   const userData = {
     name: currentUser?.fullname || currentUser?.username || 'Usuario',
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
-    email: currentUser?.email || 'usuario@ejemplo.com',
+    
     role: currentUser?.role || 'Usuario',
     status: 'online'
   };
@@ -735,12 +1071,23 @@ const DevPatientsPage = () => {
 
   // Effects
   useEffect(() => {
+    initializeHostingCompanies();
+  }, [initializeHostingCompanies]);
+
+  useEffect(() => {
     if (patients && Array.isArray(patients)) {
       const newStats = calculateStats(patients);
       setStats(newStats);
       setIsLoadingStats(false);
     }
   }, [patients]);
+
+  // Effect to refetch patients when company changes
+  useEffect(() => {
+    if (selectedCompany) {
+      fetchPatients();
+    }
+  }, [selectedCompany, fetchPatients]);
   
   useEffect(() => {
     fetchPatients();
@@ -806,6 +1153,25 @@ const DevPatientsPage = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Show gateway screen if no company selected yet
+  if (!hasSelectedCompany || !selectedCompany) {
+    return (
+      <div className="patients-dashboard gateway-mode">
+        {isLoggingOut && (
+          <LogoutAnimation 
+            isMobile={isMobile} 
+            onAnimationComplete={handleLogoutAnimationComplete} 
+          />
+        )}
+        
+        <CompanyGatewayScreen 
+          companies={hostingCompanies}
+          onCompanySelect={handleCompanySelect}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`patients-dashboard ${menuTransitioning ? 'transitioning' : ''} ${isLoggingOut ? 'logging-out' : ''}`}>
@@ -950,13 +1316,23 @@ const DevPatientsPage = () => {
       
       <main className={`patients-content ${isLoggingOut ? 'fade-out' : ''}`}>
         <div className="patients-container">
-         
           
           <div className="patients-header">
             <div className="patients-title-container">
-              <h1 className="patients-title">Patient Management Center</h1>
+              <h1 className="patients-title">
+                Patient Management Center
+                {selectedCompany && (
+                  <span className="company-indicator">
+                    <i className="fas fa-building"></i>
+                    {selectedCompany.name}
+                  </span>
+                )}
+              </h1>
               <p className="patients-subtitle">
-                Streamline your therapy workflow with complete patient information at your fingertips
+                {selectedCompany 
+                  ? `Managing ${selectedCompany.patientCount} patients for ${selectedCompany.name} - ${selectedCompany.location}`
+                  : "Streamline your therapy workflow with complete patient information at your fingertips"
+                }
               </p>
               <div className="header-actions">
                 <button 

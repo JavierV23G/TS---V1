@@ -14,16 +14,15 @@ import LogoutAnimation from '../../../../../components/LogOut/LogOut';
 import '../../../../../styles/developer/Patients/InfoPaciente/PatientInfoPage.scss';
 
 // Patient Info Header Component
-const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus }) => {
+const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus, isUpdatingStatus }) => {
   const navigate = useNavigate();
-  const rolePrefix = window.location.hash.split('/')[1]; // Extract role from URL (developer, admin, etc.)
+  const rolePrefix = window.location.hash.split('/')[1];
 
-  // Handle back to patients list
   const handleBackToPatients = () => {
     navigate(`/${rolePrefix}/patients`);
   };
 
-  const isActive = patient?.status === 'Active';
+  const isActive = patient?.is_active;
 
   return (
     <div className="patient-info-header">
@@ -33,8 +32,10 @@ const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus })
           <span>Back to Patients</span>
         </button>
         <h1 className="patient-name">
-          {patient?.name || 'Patient Information'}
-          <span className={`status-indicator ${patient?.status?.toLowerCase()}`}>{patient?.status}</span>
+          {patient?.full_name || 'Patient Information'}
+          <span className={`status-indicator ${isActive ? 'active' : 'inactive'}`}>
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
         </h1>
         <div className="patient-id">#{patient?.id || '0'}</div>
       </div>
@@ -42,13 +43,11 @@ const PatientInfoHeader = ({ patient, activeTab, setActiveTab, onToggleStatus })
         <button 
           className={`action-button status-toggle ${isActive ? 'deactivate' : 'activate'}`} 
           onClick={onToggleStatus}
+          disabled={isUpdatingStatus}
+          title={isActive ? 'Deactivate patient' : 'Activate patient'}
         >
           <i className={`fas ${isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
-          <span>{isActive ? 'Deactivate' : 'Activate'}</span>
-        </button>
-        <button className="action-button print">
-          <i className="fas fa-print"></i>
-          <span>Print</span>
+          <span>{isUpdatingStatus ? 'Updating...' : (isActive ? 'Deactivate' : 'Activate')}</span>
         </button>
       </div>
     </div>
@@ -85,38 +84,162 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Personal Information Card Component
-const PersonalInfoCard = ({ patient }) => {
+// Personal Information Card Component - EDIT FUNCTIONALITY FIXED
+const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    birthday: '',
+    gender: '',
+    address: '',
+  });
+  const [primaryContactPhone, setPrimaryContactPhone] = useState('');
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  const toggleEdit = () => {
-    setIsEditing(!isEditing);
+  const getPrimaryContactPhoneDisplay = (contactInfo) => {
+    const primaryPhone = getPrimaryPhoneNumber(contactInfo);
+    if (!primaryPhone) return 'Not available';
+    return formatPhoneNumber(primaryPhone);
+  };
+
+  useEffect(() => {
+    if (patient) {
+      setFormData({
+        full_name: patient.full_name || '',
+        birthday: patient.birthday || '',
+        gender: patient.gender || '',
+        address: patient.address || '',
+      });
+      
+      setPrimaryContactPhone(getPrimaryPhoneNumber(patient.contact_info));
+    }
+  }, [patient]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhoneInputChange = (e) => {
+    const cleaned = e.target.value.replace(/\D/g, '');
+    setPrimaryContactPhone(cleaned);
+  };
+
+  const handleSave = async () => {
+    if (!patient?.id) {
+      setError('Patient ID not available');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      // Crear estructura de diccionario para contact_info
+      let contactDict = {};
+      
+      // Si existe contact_info previo, preservarlo
+      if (patient.contact_info && typeof patient.contact_info === 'object') {
+        contactDict = { ...patient.contact_info };
+      }
+      
+      // Actualizar el número principal (formateado)
+      contactDict['primary#'] = formatPhoneNumber(primaryContactPhone);
+
+      // Crear parámetros de URL solo para campos que han cambiado
+      const params = new URLSearchParams();
+      
+      // Solo agregar campos que son diferentes a los originales
+      if (formData.full_name !== patient.full_name) {
+        params.append('full_name', formData.full_name);
+      }
+      if (formData.birthday !== patient.birthday) {
+        params.append('birthday', formData.birthday);
+      }
+      if (formData.gender !== patient.gender) {
+        params.append('gender', formData.gender);
+      }
+      if (formData.address !== patient.address) {
+        params.append('address', formData.address);
+      }
+      
+      // Solo actualizar contact_info si el teléfono principal cambió
+      const currentPrimaryPhone = getPrimaryPhoneNumber(patient.contact_info);
+      if (formatPhoneNumber(primaryContactPhone) !== currentPrimaryPhone) {
+        params.append('contact_info', JSON.stringify(contactDict));
+      }
+
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Update failed');
+      
+      const updatedPatientData = await response.json();
+      const updatedPatient = { ...patient, ...updatedPatientData };
+      onUpdatePatient(updatedPatient);
+      setIsEditing(false);
+      
+      // Update local state with new data
+      setFormData({
+        full_name: updatedPatientData.full_name || '',
+        birthday: updatedPatientData.birthday || '',
+        gender: updatedPatientData.gender || '',
+        address: updatedPatientData.address || '',
+      });
+      setPrimaryContactPhone(getPrimaryPhoneNumber(updatedPatientData.contact_info));
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
   
+  const handleCancel = () => {
+    setIsEditing(false);
+    setError(null);
+    // Reset state from patient prop
+    if (patient) {
+        setFormData({
+            full_name: patient.full_name || '',
+            birthday: patient.birthday || '',
+            gender: patient.gender || '',
+            address: patient.address || '',
+        });
+        const phone = getPrimaryPhoneNumber(patient.contact_info);
+        setPrimaryContactPhone(phone);
+    }
+  };
+
+  if (!patient) return <div>Loading...</div>;
+
   return (
     <div className="info-card personal-info">
       <div className="card-header">
         <h3><i className="fas fa-user-circle"></i> Personal Information</h3>
-        <button className="edit-button" onClick={toggleEdit}>
-          <i className={`fas ${isEditing ? 'fa-check' : 'fa-pen'}`}></i>
-          <span className="tooltip">{isEditing ? 'Save Changes' : 'Edit Information'}</span>
+        <button className="edit-button" onClick={() => setIsEditing(!isEditing)} disabled={isSaving}>
+          <i className={`fas ${isEditing ? 'fa-times' : 'fa-pen'}`}></i>
         </button>
       </div>
       <div className="card-body">
+        {error && <div className="error-message">{error}</div>}
         {isEditing ? (
-          // Edit form
           <div className="edit-form">
             <div className="form-group">
               <label>Full Name</label>
-              <input type="text" defaultValue={patient?.name || ''} />
+              <input type="text" name="full_name" value={formData.full_name} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
               <label>Date of Birth</label>
-              <input type="text" defaultValue={patient?.dob || ''} />
+              <input type="date" name="birthday" value={formData.birthday} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
               <label>Gender</label>
-              <select defaultValue={patient?.gender || ''}>
+              <select name="gender" value={formData.gender} onChange={handleInputChange} disabled={isSaving}>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -124,75 +247,50 @@ const PersonalInfoCard = ({ patient }) => {
             </div>
             <div className="form-group">
               <label>Address</label>
-              <input type="text" defaultValue={patient?.street || ''} placeholder="Street" />
-              <div className="address-inline">
-                <input type="text" defaultValue={patient?.city || ''} placeholder="City" />
-                <input type="text" defaultValue={patient?.state || ''} placeholder="State" className="state-input" />
-                <input type="text" defaultValue={patient?.zip || ''} placeholder="ZIP Code" className="zip-input" />
-              </div>
+              <input type="text" name="address" value={formData.address} onChange={handleInputChange} disabled={isSaving} />
             </div>
             <div className="form-group">
-              <label>Phone</label>
-              <input type="text" defaultValue={patient?.phone || ''} />
+              <label>Primary Contact Phone</label>
+              <input type="tel" value={formatPhoneNumber(primaryContactPhone)} onChange={handlePhoneInputChange} disabled={isSaving} placeholder="(XXX) XXX-XXXX" />
             </div>
             <div className="form-actions">
-              <button className="cancel-btn" onClick={toggleEdit}>Cancel</button>
-              <button className="save-btn" onClick={toggleEdit}>Save Changes</button>
+              <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>Cancel</button>
+              <button className="save-btn" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         ) : (
-          // View mode
-          <>
+          <div className="patient-info-display">
             <div className="info-row">
               <div className="info-label">Full Name</div>
-              <div className="info-value">{patient?.name || 'Not available'}</div>
+              <div className="info-value">{patient.full_name || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Date of Birth</div>
-              <div className="info-value">{patient?.dob || 'Not available'}</div>
+              <div className="info-value">{patient.birthday || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Gender</div>
-              <div className="info-value">{patient?.gender || 'Not available'}</div>
+              <div className="info-value">{patient.gender || 'Not available'}</div>
             </div>
             <div className="info-row">
               <div className="info-label">Address</div>
-              <div className="info-value">
-                {patient?.street ? (
-                  <>
-                    {patient.street}<br />
-                    {patient.city}, {patient.state} {patient.zip}
-                  </>
-                ) : (
-                  'Not available'
-                )}
-              </div>
+              <div className="info-value">{patient.address || 'Not available'}</div>
             </div>
             <div className="info-row">
-              <div className="info-label">Phone</div>
-              <div className="info-value">{patient?.phone || 'Not available'}</div>
+              <div className="info-label">Primary Contact</div>
+              <div className="info-value">{getPrimaryContactPhoneDisplay(patient.contact_info)}</div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-// Format date for input fields
-const formatDateForInput = (dateStr) => {
-  if (!dateStr) return '';
-  try {
-    const [month, day, year] = dateStr.split('-').map(Number);
-    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return '';
-  }
-};
-
 // General Information Section Component
-const GeneralInformationSection = ({ patient, setCertPeriodDates }) => {
+const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient, setCurrentCertPeriod }) => {
   // Handler for certification period updates
   const handleUpdateCertPeriod = (updatedCertData) => {
     console.log('Certification period updated:', updatedCertData);
@@ -201,61 +299,111 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates }) => {
         startDate: updatedCertData.startDate, 
         endDate: updatedCertData.endDate 
       });
+      
+      // Update currentCertPeriod when certification period is updated
+      const activeCertPeriod = patient?.certification_periods?.find(cp => 
+        cp.start_date === updatedCertData.startDate && 
+        cp.end_date === updatedCertData.endDate && 
+        cp.is_active
+      );
+      
+      if (activeCertPeriod) {
+        setCurrentCertPeriod({
+          id: activeCertPeriod.id,
+          startDate: updatedCertData.startDate,
+          endDate: updatedCertData.endDate
+        });
+      }
     }
+  };
+
+  // Handler for emergency contacts updates
+  const handleUpdateContacts = (updatedContacts) => {
+    console.log('Emergency contacts updated:', updatedContacts);
   };
   
   return (
     <div className="general-info-section">
-      <PersonalInfoCard patient={patient} />
+      <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} setPatient={setPatient} />
       <CertificationPeriodComponent 
         patient={patient} 
         onUpdateCertPeriod={handleUpdateCertPeriod}
       />
-      <EmergencyContactsComponent patient={patient} />
+      <EmergencyContactsComponent 
+        patient={patient} 
+        onUpdateContacts={handleUpdateContacts}
+      />
     </div>
   );
 };
 
 // Medical Information Section Component
-const MedicalInformationSection = ({ patient }) => {
-  // Handler for medical info updates
+const MedicalInformationSection = ({ 
+  patient, 
+  onUpdatePatient, 
+  scheduledVisits, 
+  disciplines, 
+  onSyncVisitsData 
+}) => {
   const handleUpdateMedicalInfo = (updatedMedicalData) => {
     console.log('Medical information updated:', updatedMedicalData);
-    // Here you would typically update the state or send data to an API
+    if (onUpdatePatient) {
+      onUpdatePatient({ ...patient, ...updatedMedicalData });
+    }
   };
-  
+
   return (
     <div className="medical-info-section">
-      <MedicalInfoComponent patient={patient} onUpdateMedicalInfo={handleUpdateMedicalInfo} />
+      <MedicalInfoComponent 
+        patient={patient} 
+        onUpdateMedicalInfo={handleUpdateMedicalInfo}
+        scheduledVisits={scheduledVisits}
+        disciplines={disciplines}
+        onSyncVisitsData={onSyncVisitsData}
+      />
     </div>
   );
 };
 
 // Disciplines Section Component
-const DisciplinesSection = ({ patient, setPatient }) => {
-  // Handler for disciplines updates
+const DisciplinesSection = ({ 
+  patient, 
+  onUpdatePatient, 
+  scheduledVisits, 
+  approvedVisits, 
+  onSyncDisciplinesData 
+}) => {
   const handleUpdateDisciplines = (updatedDisciplines) => {
-    console.log('Disciplines updated in PatientInfoPage:', updatedDisciplines);
-    // Actualizar el estado del paciente con las nuevas disciplinas
-    setPatient((prevPatient) => ({
-      ...prevPatient,
-      disciplines: updatedDisciplines
-    }));
+    console.log('Disciplines updated:', updatedDisciplines);
+    if (onUpdatePatient) {
+      onUpdatePatient({ ...patient, required_disciplines: updatedDisciplines });
+    }
   };
-  
+
   return (
     <div className="disciplines-section">
-      <DisciplinesComponent patient={patient} onUpdateDisciplines={handleUpdateDisciplines} />
+      <DisciplinesComponent 
+        patient={patient} 
+        onUpdateDisciplines={handleUpdateDisciplines}
+        scheduledVisits={scheduledVisits}
+        approvedVisits={approvedVisits}
+        onSyncDisciplinesData={onSyncDisciplinesData}
+      />
     </div>
   );
 };
 
 // Schedule Section Component
-const ScheduleSection = ({ patient, certPeriodDates }) => {
-  // Handler for schedule updates
+const ScheduleSection = ({ 
+  patient, 
+  certPeriodDates, 
+  currentCertPeriod, 
+  approvedVisits, 
+  disciplines, 
+  onSyncScheduleData 
+}) => {
   const handleUpdateSchedule = (updatedSchedule) => {
     console.log('Schedule updated:', updatedSchedule);
-    // Here you would typically update the state or send data to an API
   };
   
   return (
@@ -264,6 +412,10 @@ const ScheduleSection = ({ patient, certPeriodDates }) => {
         patient={patient} 
         onUpdateSchedule={handleUpdateSchedule} 
         certPeriodDates={certPeriodDates}
+        currentCertPeriod={currentCertPeriod}
+        approvedVisits={approvedVisits}
+        disciplines={disciplines}
+        onSyncScheduleData={onSyncScheduleData}
       />
     </div>
   );
@@ -271,10 +423,8 @@ const ScheduleSection = ({ patient, certPeriodDates }) => {
 
 // Exercises Section Component
 const ExercisesSection = ({ patient }) => {
-  // Handler for exercises updates
   const handleUpdateExercises = (updatedExercises) => {
     console.log('Exercises updated:', updatedExercises);
-    // Here you would typically update the state or send data to an API
   };
   
   return (
@@ -286,10 +436,8 @@ const ExercisesSection = ({ patient }) => {
 
 // Documents Section Component
 const DocumentsSection = ({ patient }) => {
-  // Handler for documents updates
   const handleUpdateDocuments = (updatedDocuments) => {
     console.log('Documents updated:', updatedDocuments);
-    // Here you would typically update the state or send data to an API
   };
   
   return (
@@ -301,10 +449,8 @@ const DocumentsSection = ({ patient }) => {
 
 // Notes Section Component
 const NotesSection = ({ patient }) => {
-  // Handler for notes updates
   const handleUpdateNotes = (updatedNotes) => {
     console.log('Notes updated:', updatedNotes);
-    // Here you would typically update the state or send data to an API
   };
   
   return (
@@ -314,21 +460,114 @@ const NotesSection = ({ patient }) => {
   );
 };
 
+// Función para formatear número telefónico
+const formatPhoneNumber = (phoneStr) => {
+  if (!phoneStr) return '';
+  
+  // Limpiar el string - solo números
+  const cleaned = phoneStr.replace(/\D/g, '');
+  
+  // Validar que tiene al menos 10 dígitos
+  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+  
+  // Formatear como (123) 456-7890
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  
+  return phoneStr; // Devolver original si no coincide el patrón
+};
+
+// Función para obtener el número de teléfono principal del diccionario
+const getPrimaryPhoneNumber = (contactInfo) => {
+  if (!contactInfo) return '';
+  
+  let phoneNumber = '';
+  
+  // Si es diccionario (nueva estructura)
+  if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+    phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
+    
+    // Si no hay primary ni secondary, buscar en otros contactos
+    if (!phoneNumber) {
+      const otherContacts = Object.entries(contactInfo).filter(([key]) => 
+        key !== 'primary#' && key !== 'primary' && key !== 'secondary'
+      );
+      if (otherContacts.length > 0) {
+        const firstContact = otherContacts[0][1];
+        if (typeof firstContact === 'string' && firstContact.includes('|')) {
+          phoneNumber = firstContact.split('|')[0]; // Obtener el teléfono del formato phone|relation
+        } else if (typeof firstContact === 'object') {
+          phoneNumber = firstContact.phone;
+        } else {
+          phoneNumber = firstContact;
+        }
+      }
+    }
+  } else if (typeof contactInfo === 'string') {
+    // Compatibilidad con estructura antigua
+    try {
+      const parsed = JSON.parse(contactInfo);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        phoneNumber = parsed[0].phone || parsed[0] || '';
+      } else {
+        phoneNumber = contactInfo;
+      }
+    } catch (e) {
+      phoneNumber = contactInfo;
+    }
+  }
+  
+  // Devolver número formateado
+  return phoneNumber ? formatPhoneNumber(phoneNumber) : '';
+};
+
 // Main Patient Information Page Component
 const PatientInfoPage = () => {
   const { patientId } = useParams();
   const [activeTab, setActiveTab] = useState('general');
   const [patient, setPatient] = useState(null);
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const rolePrefix = window.location.hash.split('/')[1]; // Extract role from URL (developer, admin, etc.)
+  const rolePrefix = window.location.hash.split('/')[1];
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [notificationCount, setNotificationCount] = useState(5);
   const [isMobile, setIsMobile] = useState(false);
   const userMenuRef = useRef(null);
   const [certPeriodDates, setCertPeriodDates] = useState({ startDate: '', endDate: '' });
+  const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
+
+  // ===== ESTADO COMPARTIDO PARA SINCRONIZACIÓN =====
+  const [scheduledVisits, setScheduledVisits] = useState([]);
+  const [approvedVisits, setApprovedVisits] = useState(null);
+  const [disciplines, setDisciplines] = useState(null);
+
+  useEffect(() => {
+    if (patient?.certification_periods?.length > 0) {
+      const activeCertPeriod = patient.certification_periods.find(cp => 
+        new Date(cp.end_date) >= new Date() && cp.is_active
+      );
+      if (activeCertPeriod) {
+        setCurrentCertPeriod({
+          id: activeCertPeriod.id,
+          startDate: activeCertPeriod.start_date,
+          endDate: activeCertPeriod.end_date
+        });
+        setCertPeriodDates({
+          startDate: activeCertPeriod.start_date,
+          endDate: activeCertPeriod.end_date
+        });
+      }
+    }
+  }, [patient]);
+
+  // API Configuration
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
   // Detect device size
   useEffect(() => {
@@ -336,7 +575,7 @@ const PatientInfoPage = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
-    handleResize(); // Initial check
+    handleResize();
     window.addEventListener('resize', handleResize);
     
     return () => window.removeEventListener('resize', handleResize);
@@ -352,7 +591,7 @@ const PatientInfoPage = () => {
     return name.substring(0, 2).toUpperCase();
   }
   
-  // Use user data from auth context
+  // User data from auth context
   const userData = currentUser ? {
     name: currentUser.fullname || currentUser.username,
     avatar: getInitials(currentUser.fullname || currentUser.username),
@@ -371,16 +610,11 @@ const PatientInfoPage = () => {
   const handleLogout = () => {
     setIsLoggingOut(true);
     setShowUserMenu(false);
-    
-    // Add logout classes to body
     document.body.classList.add('logging-out');
   };
   
-  // Handle logout animation completion
   const handleLogoutAnimationComplete = () => {
-    // Execute the logout from auth context
     logout();
-    // Navigate to the login page
     navigate('/');
   };
 
@@ -398,328 +632,145 @@ const PatientInfoPage = () => {
     };
   }, []);
 
-  // Handle patient status toggle (activate/deactivate)
-  const handleToggleStatus = () => {
-    if (patient) {
-      const newStatus = patient.status === 'Active' ? 'Inactive' : 'Active';
-      setPatient({
-        ...patient,
-        status: newStatus
+  // Handle patient status toggle
+  const handleStatusChange = async (patientId, action) => {
+    if (isLoggingOut) return;
+    
+    try {
+      setIsUpdatingStatus(true);
+      setError(null);
+      const isActive = action === 'activate';
+      
+      // Primero actualizar el estado
+      const params = new URLSearchParams();
+      params.append('is_active', isActive.toString());
+      
+      const updateResponse = await fetch(`${API_BASE_URL}/patients/${patientId}?${params.toString()}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to ${action} patient`);
+      }
+
+      // Luego obtener los datos completos del paciente
+      const getResponse = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!getResponse.ok) {
+        throw new Error('Failed to fetch updated patient data');
+      }
+
+      const completePatientData = await getResponse.json();
+      setPatient(completePatientData);
       
-      // In a real app, you would make an API call to update the patient status
-      console.log(`Patient ${patient.id} status updated to ${newStatus}`);
-      
-      // You could also show a notification to the user
-      // Example: toast.success(`Patient ${patient.name} has been ${newStatus.toLowerCase()}`);
+    } catch (error) {
+      console.error(`Error ${action}ing patient:`, error);
+      setError(`Failed to ${action} patient: ${error.message}`);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
-  // Fetch patient data
+  const handleUpdatePatient = async (updatedPatient) => {
+    if (!updatedPatient || !updatedPatient.id) {
+      console.error('Invalid updated patient data received');
+      return;
+    }
+
+    try {
+      // Primero actualizar el estado local inmediatamente
+      setPatient(updatedPatient);
+
+      // Luego refrescar los datos del backend
+      const response = await fetch(`${API_BASE_URL}/patients/${updatedPatient.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch updated patient data');
+      const latestPatientData = await response.json();
+      setPatient(latestPatientData);
+    } catch (err) {
+      console.error('Error updating patient:', err);
+    }
+  };
+
+  // Fetch specific patient by ID using the correct endpoint
   useEffect(() => {
-    // Simulating API call - in a real app, this would be replaced with actual fetch
-    const fetchPatient = () => {
-      setLoading(true);
-      
-      // Mock data - replace this with actual API call
-      const mockPatients = [
-        {
-          id: 1,
-          name: "Vargas, Javier",
-          therapist: "Regina Araquel",
-          therapistType: "PT",
-          agency: "Supportive Health Group",
-          street: "1800 Camden Avenue",
-          city: "Los Angeles",
-          state: "CA",
-          zip: "90025",
-          phone: "(310) 808-5631",
-          certPeriod: "04-19-2023 to 04-19-2025",
-          status: "Active",
-          dob: "05/12/1965",
-          gender: "Male",
-          insurance: "Blue Cross Blue Shield",
-          policyNumber: "BCB-123456789",
-          emergencyContact: "Mohammed Ali",
-          emergencyPhone: "(310) 555-7890",
-          notes: "Patient recovering well. Following exercise regimen as prescribed.",
-          // Medical data
-          medicalInfo: {
-            weight: 185.5,
-            nursingDiagnosis: "Chronic Obstructive Pulmonary Disease (COPD) with decreased exercise tolerance",
-            pmh: "Hypertension, Type 2 Diabetes (controlled), COPD diagnosed 2018, Right knee replacement (2020)",
-            wbs: "No active wounds present",
-            clinicalGrouping: "MMTA - Respiratory",
-            homebound: "Patient experiences significant dyspnea with minimal exertion requiring intermittent rest periods"
-          },
-          // Disciplines data
-          disciplines: {
-            PT: {
-              isActive: true,
-              therapist: { 
-                id: 'pt1', 
-                name: 'Dr. James Wilson', 
-                type: 'PT', 
-                phone: '(310) 555-1234', 
-                email: 'jwilson@therapysync.com', 
-                licenseNumber: 'PT12345' 
-              },
-              assistant: { 
-                id: 'pta1', 
-                name: 'Carlos Rodriguez', 
-                type: 'PTA', 
-                phone: '(310) 555-8901', 
-                email: 'crodriguez@therapysync.com', 
-                licenseNumber: 'PTA12345' 
-              },
-              frequency: '2w3'
-            },
-            OT: {
-              isActive: false,
-              therapist: null,
-              assistant: null,
-              frequency: ''
-            },
-            ST: {
-              isActive: false,
-              therapist: null,
-              assistant: null,
-              frequency: ''
-            }
-          },
-          // Exercises data
-          exercises: [
-            {
-              id: 1,
-              name: 'Forward Lunge in Standing',
-              description: 'Lower body strengthening exercise for hip and knee muscles.',
-              bodyPart: 'Hip',
-              category: 'Strengthening',
-              subCategory: 'Functional',
-              discipline: 'PT',
-              imageUrl: '/exercise-images/forward-lunge.jpg',
-              sets: 3,
-              reps: 10,
-              sessions: 1,
-              isHEP: true
-            },
-            {
-              id: 2,
-              name: 'Arm Chair Push',
-              description: 'Upper body strengthening exercise using a chair for support.',
-              bodyPart: 'Shoulder',
-              category: 'Strengthening',
-              subCategory: 'Functional',
-              discipline: 'PT',
-              imageUrl: '/exercise-images/arm-chair-push.jpg',
-              sets: 3,
-              reps: 15,
-              sessions: 1,
-              isHEP: true
-            },
-            {
-              id: 3,
-              name: 'Deep Squat',
-              description: 'Lower body strengthening exercise for multiple muscle groups.',
-              bodyPart: 'Knee',
-              category: 'Strengthening',
-              subCategory: 'Functional',
-              discipline: 'PT',
-              imageUrl: '/exercise-images/deep-squat.jpg',
-              sets: 3,
-              reps: 10,
-              sessions: 1,
-              isHEP: true
-            }
-          ],
-          // Documents data
-          documents: [
-            {
-              id: 1,
-              name: 'Evaluation Report.pdf',
-              type: 'pdf',
-              size: 2456000,
-              category: 'Medical Reports',
-              uploadedBy: 'Dr. James Wilson',
-              uploadDate: '2025-02-15T14:30:00',
-              description: 'Initial evaluation report by PT',
-              url: '/documents/eval-report.pdf'
-            },
-            {
-              id: 2,
-              name: 'Insurance Approval.pdf',
-              type: 'pdf',
-              size: 1240000,
-              category: 'Insurance',
-              uploadedBy: 'Admin Staff',
-              uploadDate: '2025-02-10T09:15:00',
-              description: 'Insurance approval for therapy sessions',
-              url: '/documents/insurance-approval.pdf'
-            }
-          ]
-        },
-        {
-          id: 2,
-          name: "Nava, Luis",
-          therapist: "James Lee",
-          therapistType: "OT",
-          agency: "Intra Care Home Health",
-          street: "1800 Camden Avenue",
-          city: "Los Angeles",
-          state: "CA",
-          zip: "90025",
-          phone: "(310) 808-5631",
-          certPeriod: "04-05-2025 to 06-04-2025",
-          status: "Active",
-          dob: "05/12/1965",
-          gender: "Male",
-          insurance: "Blue Cross Blue Shield",
-          policyNumber: "BCB-123456789",
-          emergencyContact: "Rick Grimes",
-          emergencyPhone: "(310) 555-7890",
-          notes: "Patient recovering well. Following exercise regimen as prescribed.",
-          // Medical data
-          medicalInfo: {
-            weight: 172.0,
-            nursingDiagnosis: "Left CVA with right-sided hemiparesis",
-            pmh: "Cerebrovascular accident (03/2023), Hypertension, Hyperlipidemia",
-            wbs: "No wounds present",
-            clinicalGrouping: "Neuro Rehabilitation",
-            homebound: "Patient requires maximum assistance for transfers and ambulation due to right-sided weakness and balance deficits"
-          },
-          // Disciplines data
-          disciplines: {
-            PT: {
-              isActive: true,
-              therapist: { 
-                id: 'pt3', 
-                name: 'Dr. Michael Chen', 
-                type: 'PT', 
-                phone: '(310) 555-3456', 
-                email: 'mchen@therapysync.com', 
-                licenseNumber: 'PT34567' 
-              },
-              assistant: { 
-                id: 'pta2', 
-                name: 'Maria Gonzalez', 
-                type: 'PTA', 
-                phone: '(310) 555-9012', 
-                email: 'mgonzalez@therapysync.com', 
-                licenseNumber: 'PTA23456' 
-              },
-              frequency: '1w2'
-            },
-            OT: {
-              isActive: true,
-              therapist: { 
-                id: 'ot1', 
-                name: 'Dr. Emily Parker', 
-                type: 'OT', 
-                phone: '(310) 555-4567', 
-                email: 'eparker@therapysync.com', 
-                licenseNumber: 'OT12345' 
-              },
-              assistant: { 
-                id: 'cota1', 
-                name: 'Thomas Smith', 
-                type: 'COTA', 
-                phone: '(310) 555-0123', 
-                email: 'tsmith@therapysync.com', 
-                licenseNumber: 'COTA12345' 
-              },
-              frequency: '1w3'
-            },
-            ST: {
-              isActive: false,
-              therapist: null,
-              assistant: null,
-              frequency: ''
-            }
-          },
-          // Exercises data for OT
-          exercises: [
-            {
-              id: 4,
-              name: 'Shoulder Flexion',
-              description: 'Range of motion exercise for the shoulder joint.',
-              bodyPart: 'Shoulder',
-              category: 'Range of Motion',
-              subCategory: 'Active',
-              discipline: 'OT',
-              imageUrl: '/exercise-images/shoulder-flexion.jpg',
-              sets: 2,
-              reps: 15,
-              sessions: 2,
-              isHEP: true
-            },
-            {
-              id: 5,
-              name: 'Wrist Extension',
-              description: 'Stretching exercise for the wrist extensors.',
-              bodyPart: 'Wrist',
-              category: 'Stretching',
-              subCategory: 'Static',
-              discipline: 'OT',
-              imageUrl: '/exercise-images/wrist-extension.jpg',
-              sets: 3,
-              reps: 10,
-              sessions: 2,
-              isHEP: true
-            }
-          ],
-          // Documents data for second patient
-          documents: [
-            {
-              id: 3,
-              name: 'Progress Notes - Week 1.docx',
-              type: 'docx',
-              size: 350000,
-              category: 'Progress Notes',
-              uploadedBy: 'Dr. Michael Chen',
-              uploadDate: '2025-02-20T16:45:00',
-              description: 'Weekly progress notes after first week of therapy',
-              url: '/documents/progress-notes-w1.docx'
-            },
-            {
-              id: 4,
-              name: 'Exercise Program.jpg',
-              type: 'jpg',
-              size: 1750000,
-              category: 'Assessments',
-              uploadedBy: 'Maria Gonzalez',
-              uploadDate: '2025-02-25T10:20:00',
-              description: 'Custom exercise program illustration',
-              url: '/documents/exercise-program.jpg'
-            },
-            {
-              id: 5,
-              name: 'Medical History.pdf',
-              type: 'pdf',
-              size: 3200000,
-              category: 'Medical Reports',
-              uploadedBy: 'Dr. Emily Parker',
-              uploadDate: '2025-03-05T09:30:00',
-              description: 'Complete medical history including past treatments',
-              url: '/documents/medical-history.pdf'
-            }
-          ]
-        }
-      ];
-      
-      const foundPatient = mockPatients.find(p => p.id.toString() === patientId);
-      
-      if (foundPatient) {
-        setPatient(foundPatient);
-      } else {
-        // Handle not found
-        console.error('Patient not found');
+    const fetchPatient = async () => {
+      if (!patientId) {
+        setError('Patient ID not provided');
+        setLoading(false);
+        return;
       }
       
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching patient from:', `${API_BASE_URL}/patients/${patientId}`);
+        
+        const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+          method: 'GET',  
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Patient not found');
+          }
+          throw new Error(`Failed to fetch patient: ${response.status} ${response.statusText}`);
+        }
+        
+        const patientData = await response.json();
+        console.log('Received patient data:', patientData);
+        
+        setPatient(patientData);
+        
+      } catch (err) {
+        console.error('Error fetching patient:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
     
     fetchPatient();
-  }, [patientId]);
+  }, [patientId, API_BASE_URL]);
+
+  // ===== FUNCIONES DE SINCRONIZACIÓN BIDIRECCIONAL =====
+  
+  // Sincronización desde MedicalInfoComponent
+  const handleSyncVisitsData = (syncData) => {
+    if (syncData.type === 'approved_visits_changed' && syncData.allVisits) {
+      setApprovedVisits(syncData.allVisits);
+    }
+  };
+
+  // Sincronización desde DisciplinesComponent  
+  const handleSyncDisciplinesData = (syncData) => {
+    if (syncData.type === 'frequency_manually_changed' && syncData.disciplines) {
+      setDisciplines(syncData.disciplines);
+    }
+  };
+
+  // Sincronización desde ScheduleComponent
+  const handleSyncScheduleData = (syncData) => {
+    if (syncData.type === 'visits_updated' && syncData.visits) {
+      setScheduledVisits(syncData.visits);
+    }
+  };
+
 
   // Render loading state
   if (loading) {
@@ -736,6 +787,25 @@ const PatientInfoPage = () => {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="patient-not-found">
+        <div className="error-icon">
+          <i className="fas fa-exclamation-triangle"></i>
+        </div>
+        <h2>Error Loading Patient</h2>
+        <p>{error}</p>
+        <button 
+          className="back-button"
+          onClick={() => navigate(`/${rolePrefix}/patients`)}
+        >
+          <i className="fas fa-arrow-left"></i> Back to Patients List
+        </button>
       </div>
     );
   }
@@ -761,7 +831,7 @@ const PatientInfoPage = () => {
 
   return (
     <div className={`patient-info-page ${isLoggingOut ? 'logging-out' : ''}`}>
-      {/* Logout Animation Component - Only show when logging out */}
+      {/* Logout Animation Component */}
       {isLoggingOut && (
         <LogoutAnimation 
           isMobile={isMobile} 
@@ -853,50 +923,16 @@ const PatientInfoPage = () => {
                       <i className="fas fa-user-circle"></i>
                       <span>My Profile</span>
                     </div>
-                    <div className="support-menu-item">
+                    <div 
+                      className="support-menu-item"
+                      onClick={() => navigate(`/${rolePrefix}/settings`)}
+                    >
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
                     </div>
-                    <div className="support-menu-item">
-                      <i className="fas fa-calendar-alt"></i>
-                      <span>My Schedule</span>
-                    </div>
                   </div>
                 </div>
                 
-                <div className="support-menu-section">
-                  <div className="section-title">Preferences</div>
-                  <div className="support-menu-items">
-                    <div className="support-menu-item">
-                      <i className="fas fa-bell"></i>
-                      <span>Notifications</span>
-                      <div className="support-notification-badge">{notificationCount}</div>
-                    </div>
-                    <div className="support-menu-item toggle-item">
-                      <div className="toggle-item-content">
-                        <i className="fas fa-volume-up"></i>
-                        <span>Sound Alerts</span>
-                      </div>
-                      <div className="toggle-switch">
-                        <div className="toggle-handle"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="support-menu-section">
-                  <div className="section-title">Support</div>
-                  <div className="support-menu-items">
-                    <div className="support-menu-item">
-                      <i className="fas fa-headset"></i>
-                      <span>Contact Support</span>
-                    </div>
-                    <div className="support-menu-item">
-                      <i className="fas fa-bug"></i>
-                      <span>Report Issue</span>
-                    </div>
-                  </div>
-                </div>
                 
                 <div className="support-menu-footer">
                   <div className="support-menu-item logout" onClick={handleLogout}>
@@ -904,7 +940,7 @@ const PatientInfoPage = () => {
                     <span>Log Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™ Support</span>
+                    <span>TherapySync™</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -922,7 +958,8 @@ const PatientInfoPage = () => {
             patient={patient} 
             activeTab={activeTab} 
             setActiveTab={setActiveTab}
-            onToggleStatus={handleToggleStatus}
+            onToggleStatus={() => handleStatusChange(patient.id, patient.is_active ? 'deactivate' : 'activate')}
+            isUpdatingStatus={isUpdatingStatus}
           />
           
           {/* Tabs navigation */}
@@ -934,18 +971,37 @@ const PatientInfoPage = () => {
               <GeneralInformationSection 
                 patient={patient} 
                 setCertPeriodDates={setCertPeriodDates}
+                onUpdatePatient={handleUpdatePatient}
+                setPatient={setPatient}
+                setCurrentCertPeriod={setCurrentCertPeriod}
               />
             )}
             {activeTab === 'medical' && (
-              <MedicalInformationSection patient={patient} />
+              <MedicalInformationSection 
+                patient={patient} 
+                onUpdatePatient={handleUpdatePatient}
+                scheduledVisits={scheduledVisits}
+                disciplines={disciplines}
+                onSyncVisitsData={handleSyncVisitsData}
+              />
             )}
             {activeTab === 'disciplines' && (
-              <DisciplinesSection patient={patient} setPatient={setPatient} />
+              <DisciplinesSection 
+                patient={patient} 
+                onUpdatePatient={handleUpdatePatient}
+                scheduledVisits={scheduledVisits}
+                approvedVisits={approvedVisits}
+                onSyncDisciplinesData={handleSyncDisciplinesData}
+              />
             )}
             {activeTab === 'schedule' && (
               <ScheduleSection 
                 patient={patient} 
-                certPeriodDates={certPeriodDates} 
+                certPeriodDates={certPeriodDates}
+                currentCertPeriod={currentCertPeriod}
+                approvedVisits={approvedVisits}
+                disciplines={disciplines}
+                onSyncScheduleData={handleSyncScheduleData}
               />
             )}
             {activeTab === 'exercises' && (
@@ -964,4 +1020,4 @@ const PatientInfoPage = () => {
   );
 };
 
-export default PatientInfoPage;
+export default PatientInfoPage;       
