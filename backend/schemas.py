@@ -258,12 +258,10 @@ class VisitNoteCreate(BaseModel):
     visit_id: int
     status: Optional[str] = "Pending"
     sections_data: Optional[dict] = None
-    therapist_name: str
 
 class VisitNoteUpdate(BaseModel):
     status: Optional[str] = None
     sections_data: Optional[dict] = None
-    therapist_name: Optional[str] = None
 
 class VisitNoteResponse(BaseModel):
     id: int

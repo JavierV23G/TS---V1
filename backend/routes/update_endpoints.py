@@ -345,6 +345,7 @@ def update_template(
 
 @router.put("/visit-notes/{note_id}", response_model=VisitNoteResponse)
 def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends(get_db)):
+    
     note = db.query(VisitNote).filter(VisitNote.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Visit note not found")
@@ -381,6 +382,8 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
 
     db.commit()
     db.refresh(note)
+    
+    
     return note
 
 #====================== CERTIFICATION PERIODS ======================#

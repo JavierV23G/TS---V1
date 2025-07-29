@@ -66,13 +66,14 @@ const NoteTemplateModal = ({
     setIsSubmitting(true);
     
     try {
-      console.log('=== DEBUG: handleSubmit called ===');
-      console.log('Current data state:', data);
-      console.log('Data keys:', Object.keys(data));
-      console.log('Template config:', templateConfig);
-      console.log('Template sections:', templateConfig?.sections);
-      console.log('Initial data received:', initialData);
-      console.log('Initial data keys:', Object.keys(initialData));
+      console.log('=== 🔍 DEBUG: handleSubmit called ===');
+      console.log('🔍 existingNoteId:', existingNoteId);
+      console.log('🔍 Current data state:', data);
+      console.log('🔍 Data keys:', Object.keys(data));
+      console.log('🔍 Template config:', templateConfig);
+      console.log('🔍 Template sections:', templateConfig?.sections);
+      console.log('🔍 Initial data received:', initialData);
+      console.log('🔍 Initial data keys:', Object.keys(initialData));
       
       const validation = validateData(data, templateConfig);
       console.log('Validation result:', validation);
@@ -102,19 +103,22 @@ const NoteTemplateModal = ({
       console.log('Staff ID from data:', data.staff_id);
       
       // El backend obtiene automáticamente el therapist_name del staff de la visita
-      // No necesitamos enviarlo desde el frontend
+      // No enviamos therapist_name desde el frontend para evitar duplicación
       
       // Llamar al endpoint apropiado según si es edición o creación
+      console.log('🔄 About to call backend...');
+      console.log('🔄 existingNoteId check:', existingNoteId, typeof existingNoteId);
+      
       try {
         let response, result;
         
         if (existingNoteId) {
+          console.log('🔄 Taking UPDATE path');
           // UPDATE existing note using PUT
           console.log('Updating existing note:', existingNoteId);
           
           const updateData = {
-            sections_data: sectionsData,
-            therapist_name: "Auto-calculated by backend"
+            sections_data: sectionsData
           };
           
           console.log('Update data to send:', updateData);
@@ -135,13 +139,13 @@ const NoteTemplateModal = ({
           result = await response.json();
           console.log('Note updated successfully:', result);
         } else {
+          console.log('🔄 Taking CREATE path');
           // CREATE new note using POST
           console.log('Creating new note for visit:', data.id);
           
           const noteData = {
             visit_id: data.visit_id || data.id,
-            sections_data: sectionsData,
-            therapist_name: "Auto-calculated by backend"
+            sections_data: sectionsData
           };
           
           
@@ -178,8 +182,10 @@ const NoteTemplateModal = ({
 
       onClose();
     } catch (error) {
-      console.error('Error submitting template:', error);
-      alert('Failed to save template. Please try again.');
+      console.error('🚨 ERROR submitting template:', error);
+      console.error('🚨 Error message:', error.message);
+      console.error('🚨 Error stack:', error.stack);
+      alert(`Failed to save template: ${error.message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

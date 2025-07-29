@@ -30,55 +30,57 @@ router = APIRouter()
 
 def determine_note_status(sections_data, template, db):
     """
-    Determines note status based on data completeness:
-    - "Completed": All required fields filled (80%+ completion)
-    - "Saved": Some data present but incomplete  
-    - "Pending": Empty or minimal data
+    Determines note status based on simple 3-state logic:
+    - "Scheduled": No data (completely empty)
+    - "Pending": Some data (partially filled)  
+    - "Completed": All template sections have some data
     """
-    if not sections_data:
-        return "Pending"
+    if not sections_data or len(sections_data) == 0:
+        return "Scheduled"
     
-    # Get template sections to check requirements
+    # Get template sections
     template_sections = db.query(NoteTemplateSection).filter(
         NoteTemplateSection.template_id == template.id
     ).all()
     
-    total_fields = 0
-    completed_fields = 0
+    total_sections = len(template_sections)
+    sections_with_data = 0
     
+    # Check each template section
     for ts in template_sections:
         section = db.query(NoteSection).filter(NoteSection.id == ts.section_id).first()
-        if section:
-            if section.section_name in sections_data:
-                section_data = sections_data[section.section_name]
+        if section and section.section_name in sections_data:
+            section_data = sections_data[section.section_name]
+            
+            # Check if section has any meaningful data
+            if section_data and isinstance(section_data, dict):
+                has_data = False
+                for key, value in section_data.items():
+                    if value is not None:
+                        if isinstance(value, str) and value.strip():
+                            has_data = True
+                            break
+                        elif isinstance(value, (int, float)) and value > 0:
+                            has_data = True
+                            break
+                        elif isinstance(value, bool) and value:
+                            has_data = True
+                            break
+                        elif isinstance(value, list) and len(value) > 0:
+                            has_data = True
+                            break
+                        elif isinstance(value, dict) and any(v for v in value.values() if v):
+                            has_data = True
+                            break
                 
-                if section_data and isinstance(section_data, dict):
-                    # Count fields in this section
-                    for key, value in section_data.items():
-                        total_fields += 1
-                        
-                        # Check if field has meaningful data
-                        if value is not None:
-                            if isinstance(value, str) and value.strip():
-                                completed_fields += 1
-                            elif isinstance(value, (int, float)) and value > 0:
-                                completed_fields += 1
-                            elif isinstance(value, bool) and value:
-                                completed_fields += 1
-                            elif isinstance(value, list) and len(value) > 0:
-                                completed_fields += 1
-                            elif isinstance(value, dict) and any(v for v in value.values() if v):
-                                completed_fields += 1
+                if has_data:
+                    sections_with_data += 1
     
-    if total_fields == 0:
-        return "Pending"
-    
-    completion_percentage = (completed_fields / total_fields) * 100
-    
-    if completion_percentage >= 80:
+    # Simple 3-state logic
+    if sections_with_data == 0:
+        return "Scheduled"
+    elif sections_with_data == total_sections:
         return "Completed"
-    elif completion_percentage > 0:
-        return "Saved"
     else:
         return "Pending"
 
@@ -314,6 +316,7 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
 
 @router.post("/visit-notes/", response_model=VisitNoteResponse)
 def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db)):
+    
     visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
@@ -356,6 +359,8 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
     staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
     therapist_name = staff.name if staff else "Unknown Therapist"
     
+    
+    
     note = VisitNote(
         visit_id=note_data.visit_id,
         status=note_status,
@@ -371,6 +376,8 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
     
     db.commit()
     db.refresh(note)
+    
+    
     return note
 
 #====================== NOTES ======================

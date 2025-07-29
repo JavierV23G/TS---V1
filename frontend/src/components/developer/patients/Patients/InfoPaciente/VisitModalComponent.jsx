@@ -82,43 +82,6 @@ const VisitModalComponent = ({
   // ===== UTILITY FUNCTIONS =====
   
   /**
-   * Get display text for visit status
-   */
-  const getVisitStatusDisplay = (status) => {
-    const statusMap = {
-      'Scheduled': 'Scheduled',
-      'Pending': 'Pending', 
-      'Saved': 'In Progress',
-      'Completed': 'Complete'
-    };
-    return statusMap[status] || status || 'Unknown';
-  };
-
-  /**
-   * Render status indicator based on visit status
-   */
-  const renderStatusIndicator = (status) => {
-    switch (status) {
-      case 'Saved':
-        return (
-          <div className="note-saved-indicator">
-            <i className="fas fa-clock"></i>
-            <span>In Progress</span>
-          </div>
-        );
-      case 'Completed':
-        return (
-          <div className="note-completed-indicator">
-            <i className="fas fa-check-circle"></i>
-            <span>Complete</span>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-  
-  /**
    * Get therapist discipline for evaluation title
    */
   const getTherapistDiscipline = (therapistId) => {
@@ -458,9 +421,9 @@ const VisitModalComponent = ({
     setIsProcessing(true);
     
     try {
-      // Update status to Saved via backend (completed note returned for review)
+      // Update status to Pending via backend
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}?status=Saved`, {
+      const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}?status=Pending`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -471,11 +434,13 @@ const VisitModalComponent = ({
 
       const updatedVisit = await response.json();
       
-      // Notify parent with updated status
+      // Notify parent with status change and remove saved indicator
       if (onSave) {
         onSave({
           ...visitData,
-          ...updatedVisit
+          ...updatedVisit,
+          status: 'Pending',
+          hasNoteSaved: false // Remove saved indicator
         });
       }
       
@@ -502,28 +467,32 @@ const VisitModalComponent = ({
       
       if (response.ok) {
         const existingNote = await response.json();
+        console.log('Loading existing note for editing:', existingNote);
         
-        // Extract sections_data - handle nested structure from backend
+        // Extract sections_data and handle both corrupted (nested) and clean structures
         let sectionsData = existingNote.sections_data || {};
         
-        // If sections_data contains nested structure, extract the actual sections
+        // Handle corrupted nested structure from old notes
         if (sectionsData.sections_data) {
+          console.log('🔧 Fixing corrupted nested sections_data structure');
           sectionsData = sectionsData.sections_data;
         }
         
+        console.log('Extracted sections data:', sectionsData);
         
-        setFormData(prev => ({
-          ...prev,
-          existingNoteId: existingNote.id,
-          existingNoteData: existingNote,
-          extractedSectionsData: sectionsData  // Store the correctly extracted sections
-        }));
+        setFormData(prev => {
+          const updatedFormData = {
+            ...prev,
+            existingNoteId: existingNote.id,
+            existingNoteData: sectionsData  // This will be spread into initialData
+          };
+          console.log('Updated formData for editing:', updatedFormData);
+          return updatedFormData;
+        });
         
         setShowEvaluationModal(true);
       } else {
-        const errorText = await response.text();
-        console.error('Failed to load note. Status:', response.status, 'Error:', errorText);
-        throw new Error(`Failed to load existing note: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to load existing note: ${response.status}`);
       }
     } catch (err) {
       console.error('Error loading existing note:', err);
@@ -536,7 +505,7 @@ const VisitModalComponent = ({
   /**
    * Handle evaluation modal save - For editing existing notes, use PUT
    */
-  const handleEvaluationSave = async (evaluationData, metadata = {}) => {
+  const handleEvaluationSave = async (evaluationData) => {
     try {
       setIsLoading(true);
       
@@ -573,10 +542,11 @@ const VisitModalComponent = ({
         const savedNote = await response.json();
         console.log('Note updated successfully:', savedNote);
         
-        // Update visit data - backend automatically determines status
+        // Update visit status to Completed with saved indicator
         const updatedVisitData = {
           ...visitData,
-          status: savedNote.status, // Backend automatically sets correct status
+          status: 'Completed',
+          hasNoteSaved: true, // Show "Saved" indicator
           evaluationData,
           noteId: savedNote.id
         };
@@ -584,13 +554,6 @@ const VisitModalComponent = ({
         if (onSave) {
           onSave(updatedVisitData);
         }
-        
-        // Clear the form state to ensure fresh data on next edit
-        setFormData(prev => ({
-          ...prev,
-          existingNoteId: null,
-          existingNoteData: {}
-        }));
         
         setShowEvaluationModal(false);
         
@@ -621,10 +584,11 @@ const VisitModalComponent = ({
         const savedNote = await response.json();
         console.log('Note created successfully:', savedNote);
         
-        // Update visit data - backend automatically determines status
+        // Update visit status to Completed with saved indicator
         const updatedVisitData = {
           ...visitData,
-          status: savedNote.status, // Backend automatically sets correct status
+          status: 'Completed',
+          hasNoteSaved: true, // Show "Saved" indicator
           evaluationData,
           noteId: savedNote.id
         };
@@ -929,14 +893,19 @@ const VisitModalComponent = ({
             
             <div className="eval-details">
               <p>Therapist: {therapistName}</p>
-              <p>Status: {getVisitStatusDisplay(visitData?.status)}</p>
+              <p>Status: {visitData?.status === 'Pending' ? 'Pending' : (visitData?.status || visitStatus || 'Complete')}</p>
               
-              {/* Show status indicator based on backend status */}
-              {renderStatusIndicator(visitData?.status)}
+              {/* Show Saved indicator when note is saved */}
+              {visitData?.hasNoteSaved && visitData?.status === 'Completed' && (
+                <div className="note-saved-indicator">
+                  <i className="fas fa-check-circle"></i>
+                  <span>Saved</span>
+                </div>
+              )}
             </div>
 
-            {/* Return to Therapist Button - Only visible for completed visits */}
-            {visitData?.status === 'Completed' && (
+            {/* Return to Therapist Button - Always visible for completed visits */}
+            {(visitData?.status === 'Completed' || visitStatus === 'COMPLETED') && (
               <div className="return-action-section">
                 <button 
                   className="return-to-therapist-btn" 
@@ -1065,23 +1034,26 @@ const VisitModalComponent = ({
 
       {/* Evaluation Modal */}
       {showEvaluationModal && (() => {
-        // Use the correctly extracted sections data from state
-        const sectionsDataOnly = formData.extractedSectionsData || {};
-
         const initialDataForModal = {
-          // Pass metadata with unique names to avoid conflicts
+          // Pass metadata
           patientName: patientInfo?.full_name || 'Unknown',
           date: formData.date,
           therapistName: getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id),
           visitId: visitData?.id,
-          visit_id: visitData?.id,  // For API calls
+          // Include existing note data for editing (merge with metadata)
+          ...formData.existingNoteData,
+          // Ensure these fields always take precedences
+          id: visitData?.id,
           staff_id: formData.therapist || visitData.therapist || visitData.staff_id,
-          // Include ONLY the sections data (spread last to avoid being overwritten)
-          ...sectionsDataOnly
+          therapist_name: getTherapistName(formData.therapist || visitData.therapist || visitData.staff_id)
         };
         
+        console.log('Passing initialData to NoteTemplateModal:', initialDataForModal);
+        console.log('formData.existingNoteData:', formData.existingNoteData);
+        console.log('🔍 VisitModalComponent: Passing existingNoteId:', formData.existingNoteId);
         
-        // Pass existing note data to modal for editing
+        // Debug: Log section data summary
+        console.log('Sections found:', Object.keys(formData.existingNoteData));
         
         return (
           <NoteTemplateModal

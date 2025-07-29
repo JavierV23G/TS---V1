@@ -1074,7 +1074,7 @@ const ScheduleComponent = ({
     setActiveFilter(prevFilter => prevFilter); // Trigger re-render
   };
 
-  const handleCompleteVisit = (visitData) => {
+  const handleCompleteVisit = async (visitData) => {
     
     // Close status modal
     setShowVisitStatusModal(false);
@@ -1097,9 +1097,42 @@ const ScheduleComponent = ({
     
     const discipline = disciplineMapping[therapistRole] || 'PT';
     
+    // Check if note already exists for this visit
+    let existingNote = null;
+    let initialNoteData = visitData; // Default to visit data
+    
+    try {
+      console.log('🔍 Checking for existing note with visit ID:', visitData.id);
+      const noteResponse = await fetch(`${API_BASE_URL}/visit-notes/${visitData.id}`);
+      console.log('🔍 Note response status:', noteResponse.status);
+      if (noteResponse.ok) {
+        existingNote = await noteResponse.json();
+        console.log('🔍 Found existing note for editing:', existingNote);
+        console.log('🔍 Existing note ID:', existingNote.id);
+        
+        // Handle both corrupted (nested) and clean sections_data structures
+        let sectionsData = existingNote.sections_data || {};
+        if (sectionsData.sections_data) {
+          console.log('🔧 ScheduleComponent: Fixing corrupted nested sections_data structure');
+          sectionsData = sectionsData.sections_data;
+        }
+        
+        // Merge note data with visit data for editing
+        initialNoteData = {
+          ...visitData,
+          ...sectionsData, // Spread section data into the root
+          existing_note_id: existingNote.id,
+          note_status: existingNote.status
+        };
+        console.log('🔧 Prepared initialData for editing:', initialNoteData);
+      }
+    } catch (error) {
+      console.log('📝 No existing note found, will create new one. Error:', error.message);
+    }
+    
     // Prepare visit data with discipline information
     const enrichedVisitData = {
-      ...visitData,
+      ...initialNoteData,
       discipline: discipline,
       therapist_role: therapistRole,
       patientId: patient?.id,
@@ -1107,7 +1140,12 @@ const ScheduleComponent = ({
     };
     
     
-    // Open note completion modal instead of directly changing status
+    // Debug available fields for existingNoteId
+    console.log('🔍 enrichedVisitData fields:', Object.keys(enrichedVisitData));
+    console.log('🔍 existing_note_id:', enrichedVisitData.existing_note_id);
+    console.log('🔍 note_id:', enrichedVisitData.note_id);
+    
+    // Open note completion modal
     setCompletionVisitData(enrichedVisitData);
     setShowCompletionModal(true);
     
@@ -1333,6 +1371,35 @@ const ScheduleComponent = ({
 
   const handleCompletionFormSave = async (formData, options = {}) => {
     try {
+      
+      // Smart filtering: extract sections from both direct fields and nested sections_data
+      const metadataFields = [
+        'id', 'visit_id', 'patient_id', 'staff_id', 'certification_period_id', 
+        'visit_date', 'visit_type', 'therapy_type', 'status', 'scheduled_time', 
+        'note_id', 'discipline', 'therapist_role', 'patientId', 'patientName', 
+        'therapist_name'
+      ];
+      
+      let cleanSectionsData = {};
+      
+      // First, get sections from direct fields (level 1)
+      Object.entries(formData).forEach(([key, value]) => {
+        if (!metadataFields.includes(key) && key !== 'sections_data') {
+          cleanSectionsData[key] = value;
+        }
+      });
+      
+      // Then, if there's nested sections_data, extract from there (level 2)
+      if (formData.sections_data && typeof formData.sections_data === 'object') {
+        Object.entries(formData.sections_data).forEach(([key, value]) => {
+          if (!metadataFields.includes(key)) {
+            cleanSectionsData[key] = value;
+          }
+        });
+      }
+      
+      
+      
       let noteData = null;
       
       // Try to get existing note for this visit
@@ -1349,7 +1416,7 @@ const ScheduleComponent = ({
           },
           body: JSON.stringify({
             status: options.isCompleted ? "Completed" : "Pending",
-            sections_data: formData
+            sections_data: cleanSectionsData
           })
         });
         
@@ -1359,10 +1426,8 @@ const ScheduleComponent = ({
         
         noteData = await updateResponse.json();
       } else {
-        // Note doesn't exist, create it using the new separated endpoint
-        // Get therapist info to get name
-        const therapist = assignedStaff.find(staff => staff.id === parseInt(completionVisitData.staff_id));
-        const therapistName = therapist ? therapist.name : 'Unknown Therapist';
+        // Note doesn't exist, create it
+        // Backend automatically calculates therapist_name from visit staff
         
         const createResponse = await fetch(`${API_BASE_URL}/visit-notes/`, {
           method: 'POST',
@@ -1372,8 +1437,7 @@ const ScheduleComponent = ({
           body: JSON.stringify({
             visit_id: completionVisitData.id,
             status: options.isCompleted ? "Completed" : "Pending",
-            sections_data: formData,
-            therapist_name: therapistName
+            sections_data: cleanSectionsData
           })
         });
         
@@ -2335,6 +2399,7 @@ const ScheduleComponent = ({
         disciplina={completionVisitData?.therapy_type || 'PT'}
         tipoNota={completionVisitData?.visit_type || 'Initial Evaluation'}
         initialData={completionVisitData || {}}
+        existingNoteId={completionVisitData?.existing_note_id || completionVisitData?.note_id || null}
         onSave={handleCompletionFormSave}
       />
 
