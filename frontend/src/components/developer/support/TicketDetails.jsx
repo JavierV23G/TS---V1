@@ -5,7 +5,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [activeTab, setActiveTab] = useState('conversation');
 
-  // Si no hay ticket seleccionado
   if (!ticket) {
     return (
       <div className="ticket-details empty">
@@ -20,7 +19,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
     );
   }
 
-  // Formatear fecha completa
   const formatFullDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
       weekday: 'long',
@@ -32,7 +30,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
     });
   };
 
-  // Obtener color de prioridad
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'critical': return '#EF4444';
@@ -43,7 +40,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
     }
   };
 
-  // Obtener color de estado
   const getStatusColor = (status) => {
     switch (status) {
       case 'new': return '#8B5CF6';
@@ -56,14 +52,12 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
     }
   };
 
-  // Manejar envío de respuesta
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
     setIsReplying(true);
     try {
-      // Simulamos la respuesta
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newResponse = {
@@ -84,25 +78,21 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
       
       setReplyText('');
     } catch (error) {
-      console.error('Error sending reply:', error);
     } finally {
       setIsReplying(false);
     }
   };
 
-  // Cambiar estado del ticket
   const handleStatusChange = (newStatus) => {
     onTicketUpdate(ticket.id, { status: newStatus });
   };
 
-  // Cambiar prioridad del ticket
   const handlePriorityChange = (newPriority) => {
     onTicketUpdate(ticket.id, { priority: newPriority });
   };
 
   return (
     <div className="ticket-details">
-      {/* Header del ticket */}
       <div className="details-header">
         <div className="ticket-title">
           <h2>{ticket.subject}</h2>
@@ -133,7 +123,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
         </div>
       </div>
 
-      {/* Información del usuario */}
       <div className="user-section">
         <div className="user-card">
           <div className="user-avatar">
@@ -162,7 +151,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
         </div>
       </div>
 
-      {/* Tabs de navegación */}
       <div className="details-tabs">
         <button
           className={`tab ${activeTab === 'conversation' ? 'active' : ''}`}
@@ -180,11 +168,9 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
         </button>
       </div>
 
-      {/* Contenido de tabs */}
       <div className="tab-content">
         {activeTab === 'conversation' && (
           <div className="conversation-tab">
-            {/* Conversación */}
             <div className="conversation">
               {ticket.responses.map((response, index) => (
                 <div
@@ -210,7 +196,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
               ))}
             </div>
 
-            {/* Formulario de respuesta */}
             <div className="reply-section">
               <form onSubmit={handleReplySubmit} className="reply-form">
                 <div className="reply-header">
@@ -250,7 +235,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
 
         {activeTab === 'actions' && (
           <div className="actions-tab">
-            {/* Cambio de estado */}
             <div className="action-section">
               <h4>
                 <i className="fas fa-tasks"></i>
@@ -275,7 +259,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
               </div>
             </div>
 
-            {/* Cambio de prioridad */}
             <div className="action-section">
               <h4>
                 <i className="fas fa-flag"></i>
@@ -300,7 +283,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
               </div>
             </div>
 
-            {/* Asignación */}
             <div className="action-section">
               <h4>
                 <i className="fas fa-user-plus"></i>
@@ -339,7 +321,6 @@ const TicketDetails = ({ ticket, onTicketUpdate }) => {
               </div>
             </div>
 
-            {/* Tags */}
             <div className="action-section">
               <h4>
                 <i className="fas fa-tags"></i>

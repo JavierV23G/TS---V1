@@ -6,7 +6,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
   const [editingPrices, setEditingPrices] = useState(false);
   const [customPrices, setCustomPrices] = useState({});
 
-  // Tipos de visitas con precios por defecto
   const defaultVisitTypes = {
     'Initial Evaluation': { agency_pays: 130, therapist_receives: 110 },
     'Follow Up': { agency_pays: 110, therapist_receives: 55 },
@@ -18,24 +17,20 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
     'Progress Review': { agency_pays: 90, therapist_receives: 70 }
   };
 
-  // Inicializar precios personalizados
   React.useEffect(() => {
     if (!Object.keys(customPrices).length) {
       setCustomPrices(defaultVisitTypes);
     }
   }, []);
 
-  // Filtrar visitas del terapeuta
   const therapistVisits = useMemo(() => {
     return visits.filter(visit => visit.staff_id === therapist.id);
   }, [visits, therapist.id]);
 
-  // Calcular estadísticas del terapeuta
   const therapistStats = useMemo(() => {
     const completedVisits = therapistVisits.filter(v => v.status === 'completed');
     const pendingVisits = therapistVisits.filter(v => v.status === 'pending' || v.status === 'scheduled');
     
-    // Obtener mes actual
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
@@ -44,19 +39,16 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
       return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
     });
 
-    // Calcular total a pagar al terapeuta
     const totalToPay = completedVisits.reduce((sum, visit) => {
       const pricing = customPrices[visit.visit_type] || defaultVisitTypes[visit.visit_type] || defaultVisitTypes['Follow Up'];
       return sum + pricing.therapist_receives;
     }, 0);
 
-    // Calcular total pendiente
     const totalPending = pendingVisits.reduce((sum, visit) => {
       const pricing = customPrices[visit.visit_type] || defaultVisitTypes[visit.visit_type] || defaultVisitTypes['Follow Up'];
       return sum + pricing.therapist_receives;
     }, 0);
 
-    // Agrupar visitas por paciente
     const visitsByPatient = therapistVisits.reduce((acc, visit) => {
       const patient = patients.find(p => p.id === visit.patient_id);
       if (!patient) return acc;
@@ -84,7 +76,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
       return acc;
     }, {});
 
-    // Obtener pacientes únicos del mes actual
     const currentMonthPatients = new Set(
       currentMonthVisits.map(visit => visit.patient_id)
     ).size;
@@ -100,7 +91,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
     };
   }, [therapistVisits, patients, customPrices]);
 
-  // Formatear currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -110,7 +100,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
     }).format(value || 0);
   };
 
-  // Manejar cambio de precios
   const handlePriceChange = (visitType, field, value) => {
     setCustomPrices(prev => ({
       ...prev,
@@ -121,19 +110,15 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
     }));
   };
 
-  // Guardar precios
   const handleSavePrices = () => {
-    // Aquí se guardarían los precios en la base de datos
     console.log('Saving custom prices for therapist:', therapist.id, customPrices);
     setEditingPrices(false);
   };
 
-  // Obtener color de estado de pago
   const getPaymentStatusColor = (isCompleted) => {
     return isCompleted ? '#4caf50' : '#ff9800';
   };
 
-  // Variants para animaciones
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { 
@@ -176,7 +161,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
         exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="modal-header">
           <div className="therapist-info">
             <div className="therapist-avatar">
@@ -195,7 +179,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="modal-tabs">
           {tabs.map(tab => (
             <button
@@ -209,7 +192,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
           ))}
         </div>
 
-        {/* Content */}
         <div className="modal-content">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
@@ -575,7 +557,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
           min-height: 400px;
         }
 
-        /* Overview Tab Styles */
         .overview-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -673,7 +654,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        /* Patients Tab Styles */
         .patients-header h3 {
           font-size: 16px;
           font-weight: 600;
@@ -776,7 +756,6 @@ const TherapistModal = ({ therapist, visits, patients, onClose, onPatientClick }
           opacity: 0.5;
         }
 
-        /* Pricing Tab Styles */
         .pricing-header {
           display: flex;
           justify-content: space-between;

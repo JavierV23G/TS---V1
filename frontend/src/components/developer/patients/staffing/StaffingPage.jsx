@@ -25,7 +25,6 @@ const DevStaffingPage = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Estados para los datos reales de la API
   const [staffData, setStaffData] = useState([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [statsError, setStatsError] = useState(null);
@@ -49,7 +48,6 @@ const DevStaffingPage = () => {
     status: 'online',
   };
 
-  // Función para convertir el rol del backend al frontend
   const convertRoleFromBackend = (role) => {
     const roleMapping = {
       'Developer': 'developer',
@@ -65,7 +63,6 @@ const DevStaffingPage = () => {
     return roleMapping[role] || role.toLowerCase();
   };
 
-  // Función para obtener datos del personal desde la API
   const fetchStaffData = async () => {
     try {
       setIsLoadingStats(true);
@@ -92,19 +89,16 @@ const DevStaffingPage = () => {
 
       setStaffData(processedData);
     } catch (error) {
-      console.error('Error al obtener la lista de personal:', error);
       setStatsError(error.message);
     } finally {
       setIsLoadingStats(false);
     }
   };
 
-  // Cargar datos al montar el componente
   useEffect(() => {
     fetchStaffData();
   }, []);
 
-  // Calcular estadísticas reales basadas en los datos de la API
   const calculateStats = () => {
     if (!staffData || staffData.length === 0) {
       return {
@@ -136,7 +130,7 @@ const DevStaffingPage = () => {
     const totalInternalStaff = Object.values(internalStaffCounts).reduce((sum, count) => sum + count, 0);
 
     const currentAgencies = activeStaff.filter(staff => staff.role === 'agency').length;
-    const previousMonthAgencies = 0; // Simulación simple, se puede mejorar con datos de fecha
+    const previousMonthAgencies = 0;
 
     return {
       therapistCounts,
@@ -214,29 +208,22 @@ const DevStaffingPage = () => {
     setShowStaffList(false);
   };
   
-  // Manejar la cancelación del formulario de compañía correctamente
   const handleCompanyFormCancel = (action) => {
     if (isLoggingOut) return;
     
     setShowCompanyForm(false);
     
-    // Si viene de la pantalla de éxito y se solicita ver todas las compañías
     if (action === 'viewCompanies') {
       setShowCompanyList(true);
     } else {
-      // Si simplemente se cancela, volver al estado de selección
       setSelectedOption('companies');
     }
   };
   
   const handleCompanySave = (companyData) => {
     if (isLoggingOut) return;
-    console.log('Saved company data:', companyData);
     
-    // Aquí iría la lógica para enviar datos a la API
     
-    // Mostrar notificación o mensaje de éxito
-    // Redirigir o resetear formulario según la lógica de UX deseada
     
     setShowCompanyForm(false);
   };
@@ -265,7 +252,6 @@ const DevStaffingPage = () => {
     }
   };
 
-  // Arreglado: Manejar correctamente ver todas las compañías
   const handleViewAllCompaniesClick = (e) => {
     if (isLoggingOut) return;
     if (e) e.stopPropagation();
@@ -329,11 +315,9 @@ const DevStaffingPage = () => {
     setShowStaffList(false);
     setShowCompanyForm(false);
     setShowCompanyList(false);
-    // Recargar datos cuando se cancela un formulario por si hubo cambios
     fetchStaffData();
   };
 
-  // Arreglado: Manejar correctamente volver a opciones
   const handleBackToOptions = () => {
     if (isLoggingOut) return;
 
@@ -341,7 +325,6 @@ const DevStaffingPage = () => {
     setShowAddStaffForm(false);
     setShowCompanyForm(false);
     setShowCompanyList(false);
-    // Recargar datos cuando se regresa a las opciones
     fetchStaffData();
   };
 
@@ -546,7 +529,6 @@ const DevStaffingPage = () => {
               </div>
             </div>
             
-            {/* Opción para Companies */}
             <div 
               className={`staffing-option-card ${selectedOption === 'companies' ? 'selected' : ''}`}
               onClick={() => handleOptionSelect('companies')}
@@ -581,7 +563,6 @@ const DevStaffingPage = () => {
             </div>
           </div>
           
-          {/* Sección de estadísticas con datos reales */}
           <div className="stats-container">
             <h2>Staffing Overview</h2>
             {isLoadingStats ? (
@@ -601,7 +582,6 @@ const DevStaffingPage = () => {
               </div>
             ) : (
               <div className="staffing-stats">
-                {/* Total Therapists con desglose real */}
                 <div className="stat-card therapists-card">
                   <div className="stat-header">
                     <div className="stat-icon">
@@ -642,7 +622,6 @@ const DevStaffingPage = () => {
                   </div>
                 </div>
 
-                {/* Active Agencies con datos reales */}
                 <div className="stat-card agencies-card">
                   <div className="stat-header">
                     <div className="stat-icon">
@@ -666,7 +645,6 @@ const DevStaffingPage = () => {
                   </div>
                 </div>
 
-                {/* Internal Staff con datos reales */}
                 <div className="stat-card internal-staff-card">
                   <div className="stat-header">
                     <div className="stat-icon">
@@ -693,7 +671,6 @@ const DevStaffingPage = () => {
                   </div>
                 </div>
 
-                {/* Botón para crear un nuevo paciente */}
                 <div className="stat-card action-card" onClick={handleNavigateToCreateReferral}>
                   <div className="stat-header">
                     <div className="stat-icon action-icon">
@@ -712,7 +689,6 @@ const DevStaffingPage = () => {
             )}
           </div>
           
-          {/* Renderizado condicional de componentes - ACTUALIZADO: Usando los nuevos componentes */}
           {selectedOption === 'therapists' && showAddStaffForm ? (
             <AddStaffForm 
               onCancel={handleCancelForm} 

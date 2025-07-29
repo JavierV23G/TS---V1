@@ -1,16 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * MONTHLY BREAKDOWN COMPONENT
- * Muestra métricas mensuales expandibles con:
- * - Grid de meses con dinero ganado
- * - Expansión al hacer clic mostrando visitas hechas, perdidas y % comparación
- */
 const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
   const [expandedMonth, setExpandedMonth] = useState(null);
 
-  // Obtener revenue por tipo de visita (MOVER ANTES DEL useMemo)
   const getVisitRevenue = (visitType) => {
     const revenueRates = {
       'Initial Evaluation': 130,
@@ -25,11 +18,9 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     return revenueRates[visitType] || 110; // Default Follow Up rate
   };
 
-  // Calcular datos por mes
   const monthlyData = useMemo(() => {
     if (!visits?.length) return [];
 
-    // Agrupar visitas por mes
     const groupedByMonth = visits.reduce((acc, visit) => {
       const date = new Date(visit.visit_date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -52,7 +43,6 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
       
       if (visit.status === 'completed') {
         acc[monthKey].completed++;
-        // Calcular revenue basado en tipo de visita
         const revenue = getVisitRevenue(visit.visit_type);
         acc[monthKey].revenue += revenue;
       } else {
@@ -62,12 +52,10 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
       return acc;
     }, {});
 
-    // Convertir a array y ordenar por fecha
     const monthsArray = Object.values(groupedByMonth).sort((a, b) => {
       return new Date(a.year, a.month - 1) - new Date(b.year, b.month - 1);
     });
 
-    // Calcular porcentaje de crecimiento comparado con mes anterior
     return monthsArray.map((month, index) => {
       const previousMonth = monthsArray[index - 1];
       let growthPercentage = 0;
@@ -84,7 +72,6 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     });
   }, [visits, getVisitRevenue]);
 
-  // Formatear currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -94,7 +81,6 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     }).format(value || 0);
   };
   
-  // Agrupar visitas por paciente para mostrar en el mes expandido
   const getUniquePatients = (visitsInMonth) => {
     const patientGroups = {};
     
@@ -109,7 +95,6 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
       
       patientGroups[visit.patient_id].visits.push(visit);
       
-      // Calcular ganancias solo de visitas completadas
       if (visit.status === 'completed') {
         const earnings = getVisitRevenue(visit.visit_type);
         patientGroups[visit.patient_id].totalEarnings += earnings;
@@ -119,7 +104,6 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     return Object.values(patientGroups).sort((a, b) => b.totalEarnings - a.totalEarnings);
   };
   
-  // Obtener nombre del paciente (simulado pero más extenso)
   const getPatientName = (patientId) => {
     const patientNames = {
       101: 'Maria Rodriguez',
@@ -147,13 +131,11 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     return patientNames[patientId] || `Patient ${patientId}`;
   };
   
-  // Obtener iniciales del paciente
   const getPatientInitials = (patientId) => {
     const name = getPatientName(patientId);
     return name.split(' ').map(word => word[0]).join('');
   };
 
-  // Manejar expansión de mes
   const handleMonthClick = (month) => {
     if (expandedMonth?.key === month.key) {
       setExpandedMonth(null);
@@ -164,14 +146,12 @@ const MonthlyBreakdown = ({ visits, onMonthSelect, selectedMonth }) => {
     }
   };
 
-  // Obtener color basado en el crecimiento
   const getGrowthColor = (growth) => {
     if (growth > 0) return '#4caf50';
     if (growth < 0) return '#f44336'; 
     return '#9e9e9e';
   };
 
-  // Variants para animaciones
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 

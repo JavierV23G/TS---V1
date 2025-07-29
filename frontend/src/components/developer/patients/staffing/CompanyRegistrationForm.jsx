@@ -32,7 +32,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
     status: 'active',
   });
 
-  // Simulated loading with dynamic messages
   useEffect(() => {
     const loadingMessages = [
       { message: 'Connecting to database...', time: 800 },
@@ -64,7 +63,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // Handle nested fields (address, contact)
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData({
@@ -86,14 +84,12 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
     const currentSpecialties = [...formData.specialties];
     
     if (currentSpecialties.includes(specialty)) {
-      // Remove if already exists
       const updatedSpecialties = currentSpecialties.filter(s => s !== specialty);
       setFormData({
         ...formData,
         specialties: updatedSpecialties
       });
     } else {
-      // Add if doesn't exist
       setFormData({
         ...formData,
         specialties: [...currentSpecialties, specialty]
@@ -114,15 +110,11 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
     e.preventDefault();
     setIsSaving(true);
     
-    // Simulated server submission with timeout
-    console.log('Company form data:', formData);
     
     setTimeout(() => {
-      // Show success message after "saving"
       setIsSaving(false);
       setShowSuccessMessage(true);
       
-      // After a delay, close or provide options
       setTimeout(() => {
         if (onSave) {
           onSave(formData);
@@ -184,7 +176,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
     }
   };
 
-  // Render success message
   if (showSuccessMessage) {
     return (
       <div className="company-registration-container">
@@ -231,7 +222,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
               className="view-companies-btn" 
               onClick={() => {
                 if (onCancel) {
-                  // Pass additional parameter to indicate we want to view company list
                   onCancel('viewCompanies');
                 }
               }}
@@ -284,7 +274,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
           </div>
           
           <form onSubmit={handleSubmit} className="company-form">
-            {/* Company Identity Section */}
             <div className="form-section">
               <div className="section-header">
                 <i className="fas fa-building"></i>
@@ -392,7 +381,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
               </div>
             </div>
             
-            {/* Address Section */}
             <div className="form-section">
               <div className="section-header">
                 <i className="fas fa-map-marker-alt"></i>
@@ -462,7 +450,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
               </div>
             </div>
             
-            {/* Contact Person Section */}
             <div className="form-section">
               <div className="section-header">
                 <i className="fas fa-user-tie"></i>
@@ -520,7 +507,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
               </div>
             </div>
             
-            {/* Services & Specialties Section - MEJORADO */}
             <div className="form-section services-section">
               <div className="section-header">
                 <i className="fas fa-stethoscope"></i>
@@ -551,7 +537,6 @@ const CompanyRegistrationForm = ({ onCancel, onSave }) => {
               </div>
             </div>
             
-            {/* Company Status */}
             <div className="form-section status-section">
               <div className="section-header">
                 <i className="fas fa-toggle-on"></i>

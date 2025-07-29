@@ -5,7 +5,6 @@ import logoImg from '../../../assets/LogoMHC.jpeg';
 import '../../../styles/developer/Patients/PatientsPage.scss';
 import LogoutAnimation from '../../../components/LogOut/LogOut';
 
-// Company Gateway Screen - Obligatory selection before access
 const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
   const [hoveredCompany, setHoveredCompany] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -13,39 +12,38 @@ const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
   const [filteredCompanies, setFilteredCompanies] = useState(companies);
   const [currentColorScheme, setCurrentColorScheme] = useState(0);
   
-  // Array of nebula color schemes that rotate on each reload
   const nebulaSchemes = [
-    { // Cosmic Blue
+    {
       primary: '#0f0f23',
       secondary: '#1a1a3a', 
       accent: '#2d4de0',
       nebula: '#87ceeb'
     },
-    { // Purple Galaxy
+    {
       primary: '#1a0d2e',
       secondary: '#16213e',
       accent: '#7209b7',
       nebula: '#c589e8'
     },
-    { // Green Cosmic
+    {
       primary: '#0d1b0d',
       secondary: '#1e2a1e',
       accent: '#39ff14',
       nebula: '#90ee90'
     },
-    { // Orange Nebula
+    {
       primary: '#2e1f0d',
       secondary: '#3e2a16',
       accent: '#ff6600',
       nebula: '#ffb366'
     },
-    { // Pink Cosmos
+    {
       primary: '#2e0d1f',
       secondary: '#3e1629',
       accent: '#ff1493',
       nebula: '#ffb3d9'
     },
-    { // Teal Galaxy
+    {
       primary: '#0d2e2e',
       secondary: '#163e3e',
       accent: '#20b2aa',
@@ -53,7 +51,6 @@ const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
     }
   ];
   
-  // Select random color scheme on mount
   useEffect(() => {
     const randomScheme = Math.floor(Math.random() * nebulaSchemes.length);
     setCurrentColorScheme(randomScheme);
@@ -66,7 +63,6 @@ const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
     }, 800);
   };
 
-  // Filter companies based on search
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredCompanies(companies);
@@ -260,7 +256,6 @@ const CompanyGatewayScreen = ({ companies, onCompanySelect }) => {
   );
 };
 
-// Premium Tabs component
 const PremiumTabs = ({ activeTab, onChangeTab }) => {
   return (
     <div className="premium-tabs">
@@ -290,7 +285,6 @@ const PremiumTabs = ({ activeTab, onChangeTab }) => {
   );
 };
 
-// Patient Card component
 const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
   const getStatusClass = (status) => {
     switch(status?.toLowerCase()) {
@@ -398,7 +392,6 @@ const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
   );
 };
 
-// Stat Card component
 const StatCard = ({ title, value, icon, color, isLoading }) => {
   return (
     <div className={`stat-card ${color} ${isLoading ? 'loading' : ''}`}>
@@ -426,7 +419,6 @@ const StatCard = ({ title, value, icon, color, isLoading }) => {
   );
 };
 
-// Loading skeleton component
 const PatientCardSkeleton = () => (
   <div className="patient-card skeleton">
     <div className="skeleton-header">
@@ -444,9 +436,7 @@ const PatientCardSkeleton = () => (
   </div>
 );
 
-// Calculate statistics - CORREGIDO
 const calculateStats = (patients) => {
-  console.log('Calculating stats for patients:', patients);
   
   if (!patients || !Array.isArray(patients)) {
     return [
@@ -458,29 +448,19 @@ const calculateStats = (patients) => {
 
   const total = patients.length;
   
-  // Conteo más explícito usando el campo 'status' que mapeamos desde 'is_active'
   const activePatients = patients.filter(p => {
     const isActive = p.status === "Active";
-    console.log(`Patient ${p.id} status check: "${p.status}" === "Active" ? ${isActive}`);
     return isActive;
   });
   
   const inactivePatients = patients.filter(p => {
     const isInactive = p.status === "Inactive";
-    console.log(`Patient ${p.id} status check: "${p.status}" === "Inactive" ? ${isInactive}`);
     return isInactive;
   });
   
   const active = activePatients.length;
   const inactive = inactivePatients.length;
   
-  console.log('Stats calculation:', {
-    total,
-    active,
-    inactive,
-    activePatients: activePatients.map(p => ({ id: p.id, name: p.full_name, status: p.status })),
-    inactivePatients: inactivePatients.map(p => ({ id: p.id, name: p.full_name, status: p.status }))
-  });
   
   return [
     { title: "Total Patients", value: total, icon: "fa-users", color: "blue" },
@@ -489,42 +469,35 @@ const calculateStats = (patients) => {
   ];
 };
 
-// Función para formatear número telefónico
 const formatPhoneNumber = (phoneStr) => {
   if (!phoneStr) return '';
   
-  // Limpiar el string - solo números
   const cleaned = phoneStr.replace(/\D/g, '');
   
-  // Validar que tiene al menos 10 dígitos
-  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
+  if (cleaned.length < 10) return phoneStr;
   
-  // Formatear como (123) 456-7890
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
   if (match) {
     return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
   
-  return phoneStr; // Devolver original si no coincide el patrón
+  return phoneStr;
 };
 
-// Función para obtener el número de teléfono principal del diccionario
 const getPrimaryPhoneNumber = (contactInfo) => {
   if (!contactInfo) return 'No phone available';
   
   let phoneNumber = '';
   
-  // Si es diccionario (nueva estructura)
   if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
     phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
     
-    // Si no hay primary ni secondary, buscar en emergency contacts
     if (!phoneNumber) {
       const emergencyContacts = Object.entries(contactInfo).filter(([key]) => key.startsWith('emergency_'));
       if (emergencyContacts.length > 0) {
         const firstEmergency = emergencyContacts[0][1];
         if (typeof firstEmergency === 'string' && firstEmergency.includes('|')) {
-          phoneNumber = firstEmergency.split('|')[1]; // Obtener el teléfono del formato codificado
+          phoneNumber = firstEmergency.split('|')[1];
         } else if (typeof firstEmergency === 'object') {
           phoneNumber = firstEmergency.phone;
         } else {
@@ -533,7 +506,6 @@ const getPrimaryPhoneNumber = (contactInfo) => {
       }
     }
   } else if (typeof contactInfo === 'string') {
-    // Compatibilidad con estructura antigua
     try {
       const parsed = JSON.parse(contactInfo);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -546,7 +518,6 @@ const getPrimaryPhoneNumber = (contactInfo) => {
     }
   }
   
-  // Formatear el número o devolver mensaje por defecto
   return phoneNumber ? formatPhoneNumber(phoneNumber) : 'No phone available';
 };
 
@@ -554,7 +525,6 @@ const DevPatientsPage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   
-  // UI States
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeMenuOption, setActiveMenuOption] = useState('Patients');
@@ -566,7 +536,6 @@ const DevPatientsPage = () => {
   const [isMobile, setIsMobile] = useState(false);
   const notificationCount = 0;
   
-  // API States
   const [patients, setPatients] = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [certPeriods, setCertPeriods] = useState([]);
@@ -575,34 +544,28 @@ const DevPatientsPage = () => {
   const [error, setError] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(null);
   
-  // Stats state
   const [stats, setStats] = useState([
     { title: "Total Patients", value: 0, icon: "fa-users", color: "blue" },
     { title: "Active Patients", value: 0, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: 0, icon: "fa-user-times", color: "red" },
   ]);
   
-  // Company selector states
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [hostingCompanies, setHostingCompanies] = useState([]);
   const [hasSelectedCompany, setHasSelectedCompany] = useState(false);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   
-  // Search and filter states - Inicializar con 'Active'
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [agencySearchTerm, setAgencySearchTerm] = useState('');
   const [selectedAgency, setSelectedAgency] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('Active'); // Cambio: Inicializar con 'Active'
+  const [selectedStatus, setSelectedStatus] = useState('Active');
   
-  // Refs
   const userMenuRef = useRef(null);
   const searchInputRef = useRef(null);
   
-  // Constants
   const statusOptions = ['all', 'Active', 'Inactive'];
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Helper functions
   const getInitials = useCallback((name) => {
     if (!name) return "U";
     const parts = name.split(' ');
@@ -612,11 +575,9 @@ const DevPatientsPage = () => {
     return name.substring(0, 2).toUpperCase();
   }, []);
 
-  // Initialize static hosting companies
   const initializeHostingCompanies = useCallback(() => {
     setIsLoadingCompanies(true);
     
-    // Simulate loading time for better UX
     setTimeout(() => {
       const companies = [
         {
@@ -656,30 +617,25 @@ const DevPatientsPage = () => {
     }, 1200);
   }, []);
 
-  // Company selection handler for gateway
   const handleCompanySelect = useCallback((company) => {
     if (isLoggingOut) return;
     
     setSelectedCompany(company);
     setHasSelectedCompany(true);
     
-    // Reset filters when selecting company
     setPatientSearchTerm('');
     setAgencySearchTerm('');
     setSelectedAgency('all');
     setSelectedStatus('Active');
     setActivePage(1);
     
-    // Note: fetchPatients will be called in useEffect when selectedCompany changes
   }, [isLoggingOut]);
 
-  // Company change handler for already selected company (if needed later)
   const handleCompanyChange = useCallback((company) => {
     if (isLoggingOut) return;
     
     setSelectedCompany(company);
     
-    // Reset filters when changing company
     setPatientSearchTerm('');
     setAgencySearchTerm('');
     setSelectedAgency('all');
@@ -687,7 +643,6 @@ const DevPatientsPage = () => {
     setActivePage(1);
   }, [isLoggingOut]);
   
-  // User data
   const userData = {
     name: currentUser?.fullname || currentUser?.username || 'Usuario',
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
@@ -696,7 +651,6 @@ const DevPatientsPage = () => {
     status: 'online'
   };
   
-  // API Functions
   const fetchAgenciesData = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/staff/`, {
@@ -755,7 +709,6 @@ const DevPatientsPage = () => {
     }
   }, [API_BASE_URL]);
   
-  // FUNCIÓN FETCHPATIENTS CORREGIDA
   const fetchPatients = useCallback(async () => {
     try {
       setIsLoadingPatients(true);
@@ -774,7 +727,6 @@ const DevPatientsPage = () => {
       
       const data = await response.json();
       
-      console.log('Raw data from API:', data); // Debug: Ver datos crudos
       
       const [agenciesData, certPeriodsData] = await Promise.all([
         fetchAgenciesData(),
@@ -787,9 +739,6 @@ const DevPatientsPage = () => {
         agency_name: patient.agency_name || 'Unknown Agency'
       }));
       
-      console.log('Normalized patients:', normalizedPatients);
-      console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));
-      console.log('Inactive patients:', normalizedPatients.filter(p => p.status === 'Inactive'));
       
       setPatients(normalizedPatients);
       setCertPeriods(certPeriodsData);
@@ -803,23 +752,15 @@ const DevPatientsPage = () => {
     }
   }, [API_BASE_URL, fetchAgenciesData, fetchAllCertPeriods]);
   
-  // Filter functions
   const uniqueAgencies = [...new Set(patients.map(patient => patient.agency_name).filter(Boolean))];
   
   const filteredAgencies = uniqueAgencies.filter(agency => 
     agency.toLowerCase().includes(agencySearchTerm.toLowerCase())
   );
   
-  // FUNCIÓN GETFILTEREDPATIENTS CORREGIDA
   const getFilteredPatients = useCallback(() => {
     if (!Array.isArray(patients)) return [];
     
-    console.log('Filtering patients:', {
-      totalPatients: patients.length,
-      selectedStatus,
-      patientSearchTerm,
-      selectedAgency
-    });
     
     const filtered = patients.filter(patient => {
       const searchFields = [
@@ -835,33 +776,18 @@ const DevPatientsPage = () => {
       const matchesAgency = selectedAgency === 'all' || 
         patient.agency_name === selectedAgency;
       
-      // CORRECCIÓN: Filtro de estado que maneja tanto 'all' como estados específicos
       const matchesStatus = selectedStatus === 'all' || patient.status === selectedStatus;
       
-      console.log(`Patient ${patient.id} filter check:`, {
-        name: patient.full_name,
-        status: patient.status,
-        selectedStatus,
-        matchesStatus,
-        matchesPatientSearch,
-        matchesAgency,
-        finalMatch: matchesPatientSearch && matchesAgency && matchesStatus
-      });
       
       return matchesPatientSearch && matchesAgency && matchesStatus;
     });
     
-    console.log('Filtered results:', {
-      filteredCount: filtered.length,
-      filteredPatients: filtered.map(p => ({ id: p.id, name: p.full_name, status: p.status }))
-    });
     
     return filtered;
   }, [patientSearchTerm, selectedAgency, selectedStatus, patients]);
   
   const filteredPatients = getFilteredPatients();
   
-  // Paginación - CAMBIO: De 8 a 20 pacientes por página
   const patientsPerPage = 20;
   const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
   
@@ -872,7 +798,6 @@ const DevPatientsPage = () => {
   
   const paginatedPatients = getPaginatedPatients();
   
-  // Event handlers
   const handleMainMenuTransition = useCallback(() => {
     if (isLoggingOut) return;
     
@@ -920,7 +845,7 @@ const DevPatientsPage = () => {
     setPatientSearchTerm('');
     setAgencySearchTerm('');
     setSelectedAgency('all');
-    setSelectedStatus('Active'); // CAMBIO: Resetear a 'Active' en lugar de 'all'
+    setSelectedStatus('Active');
     setActivePage(1);
   }, [isLoggingOut]);
   
@@ -955,7 +880,6 @@ const DevPatientsPage = () => {
   const handleActionClick = useCallback((action, patient) => {
     if (isLoggingOut) return;
     
-    console.log(`${action} clicked for patient:`, patient);
     
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     
@@ -1031,7 +955,6 @@ const DevPatientsPage = () => {
         throw new Error(`Failed to ${action} patient`);
       }
 
-      // Refresh the patients list to show updated status
       await fetchPatients();
       
     } catch (error) {
@@ -1069,7 +992,6 @@ const DevPatientsPage = () => {
     }
   }, [certPeriods]);
 
-  // Effects
   useEffect(() => {
     initializeHostingCompanies();
   }, [initializeHostingCompanies]);
@@ -1082,7 +1004,6 @@ const DevPatientsPage = () => {
     }
   }, [patients]);
 
-  // Effect to refetch patients when company changes
   useEffect(() => {
     if (selectedCompany) {
       fetchPatients();
@@ -1154,7 +1075,6 @@ const DevPatientsPage = () => {
     };
   }, []);
 
-  // Show gateway screen if no company selected yet
   if (!hasSelectedCompany || !selectedCompany) {
     return (
       <div className="patients-dashboard gateway-mode">

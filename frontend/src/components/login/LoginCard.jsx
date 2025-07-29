@@ -14,7 +14,6 @@ const LoginCard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [orientation, setOrientation] = useState(null);
 
-  // Detectar tamaño de pantalla y orientación
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 576);
@@ -42,10 +41,7 @@ const LoginCard = () => {
     setActiveCard('login');
   };
 
-  // Eliminado el autofocus del campo username para permitir 
-  // que el usuario decida cuándo empezar a escribir
   
-  // Efecto para manejar focus en inputs para efecto neón
   useEffect(() => {
     const handleFocus = (e) => {
       const group = e.target.closest('.login__form-group');
@@ -57,7 +53,6 @@ const LoginCard = () => {
       if (group) group.classList.remove('form-focus');
     };
     
-    // Aplicar a todos los inputs en ambas tarjetas
     const inputs = document.querySelectorAll('.login__input');
     inputs.forEach(input => {
       input.addEventListener('focus', handleFocus);

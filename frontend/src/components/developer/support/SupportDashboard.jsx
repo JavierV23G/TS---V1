@@ -10,7 +10,6 @@ const SupportDashboard = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
-  // Estados principales
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -25,7 +24,6 @@ const SupportDashboard = () => {
     avgResponseTime: '0h'
   });
 
-  // Estados de filtros
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -34,16 +32,13 @@ const SupportDashboard = () => {
     assignedTo: 'all'
   });
 
-  // Simulación de carga inicial
   useEffect(() => {
     loadTickets();
   }, []);
 
-  // Función para cargar tickets (simulada)
   const loadTickets = async () => {
     setIsLoading(true);
     try {
-      // Simulamos llamada a API
       await new Promise(resolve => setTimeout(resolve, 1200));
       
       const mockTickets = generateMockTickets();
@@ -52,13 +47,11 @@ const SupportDashboard = () => {
       calculateStats(mockTickets);
       
     } catch (error) {
-      console.error('Error loading tickets:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Generar tickets de muestra
   const generateMockTickets = () => {
     const categories = [
       { id: 'technical', name: 'Technical Issue', icon: 'cogs' },
@@ -132,7 +125,6 @@ const SupportDashboard = () => {
     });
   };
 
-  // Calcular estadísticas del dashboard
   const calculateStats = (ticketData) => {
     const stats = {
       total: ticketData.length,
@@ -145,17 +137,14 @@ const SupportDashboard = () => {
     setDashboardStats(stats);
   };
 
-  // Manejar cambios en filtros
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     applyFilters(tickets, newFilters);
   };
 
-  // Aplicar filtros
   const applyFilters = (ticketData, filterOptions) => {
     let filtered = [...ticketData];
 
-    // Filtro de búsqueda
     if (filterOptions.search) {
       const searchTerm = filterOptions.search.toLowerCase();
       filtered = filtered.filter(ticket =>
@@ -166,7 +155,6 @@ const SupportDashboard = () => {
       );
     }
 
-    // Filtros por estado, prioridad, categoría
     if (filterOptions.status !== 'all') {
       filtered = filtered.filter(ticket => ticket.status === filterOptions.status);
     }
@@ -179,28 +167,23 @@ const SupportDashboard = () => {
       filtered = filtered.filter(ticket => ticket.category === filterOptions.category);
     }
 
-    // Ordenar por fecha de creación (más recientes primero)
     filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     setFilteredTickets(filtered);
   };
 
-  // Manejar selección de ticket
   const handleTicketSelect = (ticket) => {
     setSelectedTicket(ticket);
     setIsModalOpen(true);
   };
 
-  // Manejar cierre del modal
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedTicket(null);
   };
 
-  // Manejar actualización de ticket
   const handleTicketUpdate = async (ticketId, updates) => {
     try {
-      // Simulamos llamada a API
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const updatedTickets = tickets.map(ticket =>
@@ -211,19 +194,16 @@ const SupportDashboard = () => {
       applyFilters(updatedTickets, filters);
       calculateStats(updatedTickets);
       
-      // Actualizar ticket seleccionado
       if (selectedTicket && selectedTicket.id === ticketId) {
         setSelectedTicket({ ...selectedTicket, ...updates });
       }
       
     } catch (error) {
-      console.error('Error updating ticket:', error);
     }
   };
 
   return (
     <div className="support-dashboard">
-      {/* Header clínico */}
       <div className="clinical-header">
         <div className="header-content">
           <div className="header-title">
@@ -258,7 +238,6 @@ const SupportDashboard = () => {
         </div>
       </div>
 
-      {/* Dashboard de estadísticas */}
       <div className="clinical-stats">
         <div className="stat-card total">
           <div className="stat-icon">
@@ -321,9 +300,7 @@ const SupportDashboard = () => {
         </div>
       </div>
 
-      {/* Contenido principal */}
       <div className="dashboard-content">
-        {/* Panel de filtros */}
         <div className="filters-panel">
           <TicketFilters
             filters={filters}
@@ -332,9 +309,7 @@ const SupportDashboard = () => {
           />
         </div>
 
-        {/* Layout principal */}
         <div className="main-layout">
-          {/* Lista de tickets */}
           <div className="tickets-section">
             <TicketList
               tickets={filteredTickets}
@@ -348,7 +323,6 @@ const SupportDashboard = () => {
         </div>
       </div>
 
-      {/* Modal de Ticket */}
       <TicketModal
         ticket={selectedTicket}
         isOpen={isModalOpen}

@@ -1,4 +1,3 @@
-// components/login/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import GeolocationService from './GeolocationService';
 import sessionTimeoutService from './SessionTimeoutService';
@@ -36,7 +35,6 @@ export const AuthProvider = ({ children }) => {
           error: null
         });
         
-        // Iniciar monitoreo de timeout de sesión
         iniciarMonitoreoSesion();
       } catch (err) {
         clearAuthData();
@@ -53,7 +51,6 @@ export const AuthProvider = ({ children }) => {
       }));
     }
 
-    // Cleanup al desmontar
     return () => {
       sessionTimeoutService.detenerMonitoreo();
     };
@@ -67,19 +64,15 @@ export const AuthProvider = ({ children }) => {
   const iniciarMonitoreoSesion = () => {
     sessionTimeoutService.iniciarMonitoreo({
       onTimeout: () => {
-        // Cuando se agota el tiempo, cerrar sesión
-        console.log('Sesión expirada por inactividad');
         logout();
       },
       onWarning: (mostrar) => {
-        // Mostrar/ocultar advertencia
         setSessionWarning(prev => ({
           ...prev,
           showWarning: mostrar
         }));
       },
       onCountdownUpdate: (tiempoRestante) => {
-        // Actualizar tiempo restante en el modal
         setSessionWarning(prev => ({
           ...prev,
           timeRemaining: tiempoRestante
@@ -98,13 +91,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async ({ token, user }) => {
     try {
-      // ✅ Verificación de ubicación
       const geoResult = await GeolocationService.verifyLocationAccess();
       if (!geoResult.allowed) {
         return { success: false, error: 'Access denied due to geographic restriction.' };
       }
 
-      // ✅ Guardar en localStorage
       localStorage.setItem('auth_token', token);
       localStorage.setItem('auth_user', JSON.stringify(user));
 
@@ -116,12 +107,10 @@ export const AuthProvider = ({ children }) => {
         error: null
       });
 
-      // Iniciar monitoreo de timeout de sesión después del login exitoso
       iniciarMonitoreoSesion();
 
       return { success: true };
     } catch (error) {
-      console.error('Error during login context:', error);
       clearAuthData();
       setAuthState({
         isAuthenticated: false,
@@ -135,7 +124,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Detener monitoreo de sesión
     sessionTimeoutService.detenerMonitoreo();
     
     clearAuthData();
@@ -147,7 +135,6 @@ export const AuthProvider = ({ children }) => {
       error: null
     });
     
-    // Resetear estado de advertencia
     setSessionWarning({
       showWarning: false,
       timeRemaining: 180

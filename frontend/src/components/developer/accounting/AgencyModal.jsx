@@ -6,7 +6,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
   const [editingPrices, setEditingPrices] = useState(false);
   const [customPrices, setCustomPrices] = useState({});
 
-  // Tipos de visitas con precios que las agencias pagan
   const defaultAgencyPrices = {
     'Initial Evaluation': 130,
     'Follow Up': 110,
@@ -18,42 +17,35 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
     'Progress Review': 90
   };
 
-  // Inicializar precios personalizados
   React.useEffect(() => {
     if (!Object.keys(customPrices).length) {
       setCustomPrices(defaultAgencyPrices);
     }
-  }, []);
+  }, [customPrices]);
 
-  // Filtrar pacientes de esta agencia
   const agencyPatients = useMemo(() => {
     return patients.filter(patient => patient.agency_id === agency.id);
   }, [patients, agency.id]);
 
-  // Filtrar visitas de pacientes de esta agencia
   const agencyVisits = useMemo(() => {
     const patientIds = agencyPatients.map(p => p.id);
     return visits.filter(visit => patientIds.includes(visit.patient_id));
   }, [visits, agencyPatients]);
 
-  // Calcular estadísticas de la agencia
   const agencyStats = useMemo(() => {
     const completedVisits = agencyVisits.filter(v => v.status === 'completed');
     const pendingVisits = agencyVisits.filter(v => v.status === 'pending' || v.status === 'scheduled');
     
-    // Calcular total que la agencia nos debe
     const totalOwed = completedVisits.reduce((sum, visit) => {
       const price = customPrices[visit.visit_type] || defaultAgencyPrices[visit.visit_type] || 110;
       return sum + price;
     }, 0);
 
-    // Calcular total pendiente
     const totalPending = pendingVisits.reduce((sum, visit) => {
       const price = customPrices[visit.visit_type] || defaultAgencyPrices[visit.visit_type] || 110;
       return sum + price;
     }, 0);
 
-    // Agrupar visitas por terapeuta
     const visitsByTherapist = agencyVisits.reduce((acc, visit) => {
       const therapist = staff.find(s => s.id === visit.staff_id);
       if (!therapist) return acc;
@@ -81,7 +73,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
       return acc;
     }, {});
 
-    // Agrupar visitas por paciente
     const visitsByPatient = agencyVisits.reduce((acc, visit) => {
       const patient = agencyPatients.find(p => p.id === visit.patient_id);
       if (!patient) return acc;
@@ -121,7 +112,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
     };
   }, [agencyVisits, agencyPatients, staff, customPrices]);
 
-  // Formatear currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -131,7 +121,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
     }).format(value || 0);
   };
 
-  // Manejar cambio de precios
   const handlePriceChange = (visitType, value) => {
     setCustomPrices(prev => ({
       ...prev,
@@ -139,13 +128,10 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
     }));
   };
 
-  // Guardar precios
   const handleSavePrices = () => {
-    console.log('Saving custom prices for agency:', agency.id, customPrices);
     setEditingPrices(false);
   };
 
-  // Variants para animaciones
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { 
@@ -189,7 +175,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
         exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="modal-header">
           <div className="agency-info">
             <div className="agency-avatar">
@@ -208,7 +193,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="modal-tabs">
           {tabs.map(tab => (
             <button
@@ -222,7 +206,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
           ))}
         </div>
 
-        {/* Content */}
         <div className="modal-content">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
@@ -621,7 +604,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
           min-height: 400px;
         }
 
-        /* Overview Tab Styles */
         .overview-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -725,7 +707,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        /* Patients Tab Styles */
         .patients-header h3, .therapists-header h3 {
           font-size: 16px;
           font-weight: 600;
@@ -863,7 +844,6 @@ const AgencyModal = ({ agency, visits, patients, staff, onClose, onPatientClick 
           opacity: 0.5;
         }
 
-        /* Pricing Tab Styles */
         .pricing-header {
           display: flex;
           justify-content: space-between;

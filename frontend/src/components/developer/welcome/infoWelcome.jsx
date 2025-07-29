@@ -7,7 +7,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
-  // Enhanced state for animations with performance optimizations
   const [animatedStats, setAnimatedStats] = useState({
     activeClients: 0,
     revenue: 0,
@@ -21,51 +20,41 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     learning: useRef(null)
   });
   
-  // API States
   const [patients, setPatients] = useState([]);
   const [isLoadingPatients, setIsLoadingPatients] = useState(true);
   const [error, setError] = useState(null);
   
-  // Calculate statistics for SaaS platform
   const [stats, setStats] = useState({
-    activeClients: 0, // Agencias activas usando la plataforma
-    totalClients: 0,  // Total de agencias registradas
-    monthlyRevenue: 0, // Ingresos mensuales de suscripciones
-    pendingPayments: 0, // Pagos pendientes de agencias
+    activeClients: 0,
+    totalClients: 0,
+    monthlyRevenue: 0,
+    pendingPayments: 0,
     totalRevenue: 0,
     completedSessions: 0
   });
   
-  // SaaS Platform Financial Data - Developer Revenue Model
   const [platformData, setPlatformData] = useState({
-    // Datos estáticos para desarrollo - luego será dinámico
-    activeAgencies: 1, // Motive Home Care por ahora
-    totalAgencies: 3,  // Motive + 2 en proceso de onboarding
-    monthlySubscriptionRate: 100, // $100 por agencia por mes
-    currentMonthRevenue: 100, // 1 agencia × $100
-    totalRevenue: 1200, // 12 meses × $100 (ejemplo)
-    pendingPayments: 200, // Pagos atrasados
-    revenueGrowth: 25, // Crecimiento del 25%
-    platformUsers: 350, // Total users across all agencies
+    activeAgencies: 1,
+    totalAgencies: 3,
+    monthlySubscriptionRate: 100,
+    currentMonthRevenue: 100,
+    totalRevenue: 1200,
+    pendingPayments: 200,
+    revenueGrowth: 25,
+    platformUsers: 350,
     completedSessions: 145
   });
 
-  // API Base URL
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Function to fetch platform statistics for SaaS dashboard
   const fetchPlatformStats = async () => {
     try {
       setIsLoadingPatients(true);
       setError(null);
       
-      // En el futuro, esto será una API que traiga estadísticas de la plataforma
-      // Por ahora usamos datos simulados basados en la realidad actual
       
-      // Simular llamada API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Datos realistas actuales de TherapySync
       const platformStats = {
         activeAgencies: platformData.activeAgencies,
         totalAgencies: platformData.totalAgencies,
@@ -76,7 +65,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
         completedSessions: platformData.completedSessions
       };
       
-      console.log('Platform stats loaded:', platformStats);
       
       setStats({
         activeClients: platformStats.activeAgencies,
@@ -88,26 +76,17 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
       });
       
     } catch (err) {
-      console.error('Error fetching platform stats:', err);
       setError(err.message);
     } finally {
       setIsLoadingPatients(false);
     }
   };
 
-  // Calculate platform revenue and client metrics
   useEffect(() => {
-    // Calcular métricas en tiempo real de la plataforma SaaS
     const calculatePlatformMetrics = () => {
       const currentMonthRevenue = platformData.activeAgencies * platformData.monthlySubscriptionRate;
       const projectedAnnualRevenue = currentMonthRevenue * 12;
       
-      console.log('Platform SaaS Metrics:', {
-        activeAgencies: platformData.activeAgencies,
-        monthlyRate: platformData.monthlySubscriptionRate,
-        currentMonthRevenue,
-        projectedAnnualRevenue
-      });
       
       return {
         activeClients: platformData.activeAgencies,
@@ -123,11 +102,9 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     setStats(metrics);
   }, [platformData]);
 
-  // Fetch platform stats on component mount
   useEffect(() => {
     fetchPlatformStats();
     
-    // Refresh platform data every 5 minutes
     const interval = setInterval(() => {
       fetchPlatformStats();
     }, 5 * 60 * 1000);
@@ -135,11 +112,8 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     return () => clearInterval(interval);
   }, []);
   
-  // Enhanced counter animation with optimized timing for mobile
   useEffect(() => {
-    // Shorter animation duration on mobile for better UX
     const duration = isMobile ? 1800 : 2500;
-    // Fewer steps on mobile for better performance
     const steps = isMobile ? 30 : 50;
     const stepTime = duration / steps;
     let current = 0;
@@ -148,7 +122,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
       current += 1;
       const progress = current / steps;
       
-      // Custom easing function with lighter computation for mobile
       const eased = 1 - Math.pow(1 - progress, 3);
       
       setAnimatedStats({
@@ -165,7 +138,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     return () => clearInterval(timer);
   }, [stats, isMobile]);
   
-  // Neon border effect animation
   useEffect(() => {
     if (activeCard) {
       const neonAnimationFrame = requestAnimationFrame(animateNeonEffect);
@@ -175,14 +147,12 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
   
   const animateNeonEffect = () => {
     setNeonPosition(prev => {
-      // Loop from 0 to 400 (represents percentage position around the border)
       const newPosition = (prev + 1) % 400;
       return newPosition;
     });
     requestAnimationFrame(animateNeonEffect);
   };
   
-  // Handle card interactions
   const handleCardMouseEnter = (card) => {
     if (!isMobile) {
       setActiveCard(card);
@@ -196,31 +166,21 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
   };
   
   const calculateNeonPosition = (percentage) => {
-    // Convert percentage (0-400) to position on card border
     const position = percentage % 400;
     
-    // Calculate x, y coordinates for each side
-    // 0-100: top edge (x increases from 0 to 100%, y is 0)
-    // 100-200: right edge (x is 100%, y increases from 0 to 100%)
-    // 200-300: bottom edge (x decreases from 100% to 0, y is 100%)
-    // 300-400: left edge (x is 0, y decreases from 100% to 0)
     
     let x, y;
     
     if (position < 100) {
-      // Top edge
       x = `${position}%`;
       y = '0%';
     } else if (position < 200) {
-      // Right edge
       x = '100%';
       y = `${position - 100}%`;
     } else if (position < 300) {
-      // Bottom edge
       x = `${300 - position}%`;
       y = '100%';
     } else {
-      // Left edge
       x = '0%';
       y = `${400 - position}%`;
     }
@@ -228,30 +188,25 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
     return { x, y };
   };
 
-  // Function to navigate to patients (same as clients for developer)
   const handleViewClientsList = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     navigate(`/${baseRole}/patients`);
   };
   
-  // Function to navigate to accounting dashboard
   const handleViewRevenueDashboard = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     navigate(`/${baseRole}/accounting`);
   };
 
-  // Function to navigate to platform settings
   const handleViewPlatformSettings = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     navigate(`/${baseRole}/settings`);
   };
 
-  // Format number with commas for thousands
   const formatNumber = (num) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // Function to refresh platform data
   const handleRefreshData = () => {
     fetchPlatformStats();
   };
@@ -260,7 +215,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
 
   return (
     <div className={`info-welcome-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`}>
-      {/* Error message */}
       {error && (
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
@@ -271,16 +225,13 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
         </div>
       )}
 
-      {/* Premium dashboard cards with responsive layout */}
       <div className="dashboard-cards">
-        {/* Active Clients card - SaaS Dashboard */}
         <div 
           className={`dashboard-card ${activeCard === 'clients' ? 'active' : ''} ${isLoadingPatients ? 'loading' : ''}`}
           onMouseEnter={() => handleCardMouseEnter('clients')}
           onMouseLeave={handleCardMouseLeave}
           ref={cardRefs.patients}
         >
-          {/* Neon border effect */}
           {activeCard === 'clients' && (
             <div className="neon-border-container">
               <div 
@@ -381,7 +332,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
             </div>
           </div>
           
-          {/* Enhanced background decorations */}
           <div className="card-bg-decoration"></div>
           <div className="card-grid-lines"></div>
           <div className="card-decoration">
@@ -391,14 +341,12 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
           </div>
         </div>
         
-        {/* Platform Revenue card - SaaS Financial Dashboard */}
         <div 
           className={`dashboard-card ${activeCard === 'finance' ? 'active' : ''}`}
           onMouseEnter={() => handleCardMouseEnter('finance')}
           onMouseLeave={handleCardMouseLeave}
           ref={cardRefs.finance}
         >
-          {/* Neon border effect */}
           {activeCard === 'finance' && (
             <div className="neon-border-container">
               <div 
@@ -486,7 +434,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
             </div>
           </div>
           
-          {/* Enhanced background decorations */}
           <div className="card-bg-decoration"></div>
           <div className="card-grid-lines"></div>
           <div className="card-decoration">
@@ -496,14 +443,12 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
           </div>
         </div>
         
-        {/* Learning center card with enhanced responsive design */}
         <div 
           className={`dashboard-card ${activeCard === 'learning' ? 'active' : ''}`}
           onMouseEnter={() => handleCardMouseEnter('learning')}
           onMouseLeave={handleCardMouseLeave}
           ref={cardRefs.learning}
         >
-          {/* Neon border effect */}
           {activeCard === 'learning' && (
             <div className="neon-border-container">
               <div 
@@ -603,7 +548,6 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
             </div>
           </div>
           
-          {/* Enhanced background decorations */}
           <div className="card-bg-decoration"></div>
           <div className="card-grid-lines"></div>
           <div className="card-decoration">

@@ -1,11 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * DISCIPLINE SELECTOR COMPONENT
- * Selector de disciplinas + AGENCIAS con listas de terapeutas/agencias
- * Orden: PT, OT, ST, PTA, COTA, STA, Agencias
- */
 const DisciplineSelector = ({ 
   staff, 
   agencies, 
@@ -16,7 +11,6 @@ const DisciplineSelector = ({
   onAgencySelect 
 }) => {
 
-  // Obtener revenue por tipo de visita (MOVER ANTES DEL useMemo)
   const getVisitRevenue = (visitType) => {
     const revenueRates = {
       'Initial Evaluation': 130,
@@ -28,7 +22,6 @@ const DisciplineSelector = ({
     return revenueRates[visitType] || 110;
   };
   
-  // Definir las disciplinas en el orden específico requerido
   const disciplines = [
     { key: 'PT', name: 'Physical Therapy', icon: 'fas fa-walking', color: '#2196f3' },
     { key: 'OT', name: 'Occupational Therapy', icon: 'fas fa-hand-holding', color: '#ff9800' },
@@ -39,27 +32,22 @@ const DisciplineSelector = ({
     { key: 'AGENCIES', name: 'Healthcare Agencies', icon: 'fas fa-building', color: '#9c27b0' }
   ];
 
-  // Calcular estadísticas por disciplina
   const disciplineStats = useMemo(() => {
     const stats = {};
     
     disciplines.forEach(discipline => {
       if (discipline.key === 'AGENCIES') {
-        // Para agencias, contar pacientes y visitas por agencia
         const agencyVisits = visits.filter(visit => {
-          // Aquí necesitaríamos relacionar las visitas con las agencias
-          // Por ahora simulamos datos
           return true;
         });
         
         stats[discipline.key] = {
           count: agencies?.length || 0,
           totalVisits: agencyVisits.length,
-          totalRevenue: agencyVisits.length * 110, // Precio promedio
+          totalRevenue: agencyVisits.length * 110,
           entities: agencies || []
         };
       } else {
-        // Para disciplinas médicas, filtrar staff por role
         const disciplineStaff = staff?.filter(s => s.role === discipline.key) || [];
         const disciplineVisits = visits?.filter(visit => {
           const therapist = staff?.find(s => s.id === visit.staff_id);
@@ -82,7 +70,6 @@ const DisciplineSelector = ({
     return stats;
   }, [staff, agencies, visits]);
 
-  // Formatear currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -92,7 +79,6 @@ const DisciplineSelector = ({
     }).format(value || 0);
   };
 
-  // Manejar selección de disciplina
   const handleDisciplineClick = (discipline) => {
     if (selectedDiscipline === discipline.key) {
       onDisciplineSelect(null);
@@ -101,7 +87,6 @@ const DisciplineSelector = ({
     }
   };
 
-  // Manejar selección de entidad (terapeuta o agencia)
   const handleEntityClick = (entity, disciplineKey) => {
     if (disciplineKey === 'AGENCIES') {
       onAgencySelect(entity);
@@ -110,22 +95,16 @@ const DisciplineSelector = ({
     }
   };
 
-  // Obtener las visitas de una entidad específica
   const getEntityVisits = (entity, disciplineKey) => {
     if (disciplineKey === 'AGENCIES') {
-      // Para agencias, buscar visitas de pacientes de esa agencia
       return visits.filter(visit => {
-        // Aquí necesitaríamos la relación paciente-agencia
-        // Por ahora simulamos
-        return Math.random() > 0.7; // Simular algunas visitas
+        return Math.random() > 0.7;
       });
     } else {
-      // Para terapeutas, buscar visitas donde staff_id coincida
       return visits.filter(visit => visit.staff_id === entity.id);
     }
   };
 
-  // Variants para animaciones
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 

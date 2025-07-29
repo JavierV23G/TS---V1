@@ -5,11 +5,8 @@ class SessionTimeoutService {
         this.countdownInterval = null;
         this.lastActivity = Date.now();
         
-        // Configuración de tiempos (en milisegundos)
-        // Para producción: 20 minutos = 1200000 ms, aviso a los 3 minutos = 180000 ms
-        // Para pruebas: 2 minutos = 120000 ms, aviso a 1 minuto = 60000 ms
-        this.SESSION_DURATION = 1200000; // 20 minutos
-        this.WARNING_TIME = 180000; // 3 minutos antes del cierre
+        this.SESSION_DURATION = 1200000;
+        this.WARNING_TIME = 180000;
         
         this.onTimeout = null;
         this.onWarning = null;
@@ -46,12 +43,10 @@ class SessionTimeoutService {
         this.lastActivity = Date.now();
         this.isWarningActive = false;
         
-        // Timer para mostrar advertencia
         this.warningTimeout = setTimeout(() => {
             this.mostrarAdvertencia();
         }, this.SESSION_DURATION - this.WARNING_TIME);
         
-        // Timer para cerrar sesión
         this.sessionTimeout = setTimeout(() => {
             this.ejecutarTimeout();
         }, this.SESSION_DURATION);
@@ -61,8 +56,7 @@ class SessionTimeoutService {
         this.isWarningActive = true;
         this.onWarning(true);
         
-        // Iniciar countdown
-        let tiempoRestante = Math.floor(this.WARNING_TIME / 1000); // convertir a segundos
+        let tiempoRestante = Math.floor(this.WARNING_TIME / 1000);
         
         this.countdownInterval = setInterval(() => {
             tiempoRestante--;

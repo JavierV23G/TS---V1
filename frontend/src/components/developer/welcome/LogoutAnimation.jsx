@@ -9,7 +9,6 @@ const DevLogoutAnimation = () => {
   const [matrixChars, setMatrixChars] = useState([]);
   const consoleRef = useRef(null);
   
-  // Mensajes de proceso para el cierre de sesión - más profesionales
   const logoutSteps = [
     "Finalizando sesión...",
     "Cerrando puertos seguros...",
@@ -19,11 +18,10 @@ const DevLogoutAnimation = () => {
     "Completando proceso..."
   ];
   
-  // Personajes aleatorios para efecto matrix
   const generateMatrixChars = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-    const columns = 60; // Número de columnas para el efecto matrix
-    const charsPerColumn = 25; // Caracteres por columna
+    const columns = 60;
+    const charsPerColumn = 25;
     
     const matrixGrid = [];
     
@@ -50,7 +48,6 @@ const DevLogoutAnimation = () => {
     setMatrixChars(matrixGrid);
   };
   
-  // Generar partículas aleatorias para el efecto de éxito
   const generateParticles = () => {
     const particlesArray = [];
     const particleColors = ['#4CAF50', '#8BC34A', '#CDDC39', '#2196F3', '#00BCD4'];
@@ -73,10 +70,8 @@ const DevLogoutAnimation = () => {
   };
   
   useEffect(() => {
-    // Generar caracteres matrix al inicio
     generateMatrixChars();
     
-    // Incrementar progreso continuamente
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         const newProgress = prev + (100 - prev) / 15;
@@ -84,17 +79,14 @@ const DevLogoutAnimation = () => {
       });
     }, 100);
     
-    // Cambiar paso cada intervalo variable (más rápido al final)
     const stepInterval = setInterval(() => {
       setCurrentStep(prev => {
         const next = prev + 1;
         
-        // Al llegar al penúltimo paso, asegurar que el progreso llegue a 99%
         if (next >= logoutSteps.length - 1) {
           clearInterval(progressInterval);
           setProgress(99);
           
-          // Mostrar pantalla de éxito después de un breve retraso
           setTimeout(() => {
             setProgress(100);
             setShowSuccess(true);
@@ -104,9 +96,8 @@ const DevLogoutAnimation = () => {
         
         return next < logoutSteps.length ? next : prev;
       });
-    }, 700); // Tiempo entre pasos
+    }, 700);
     
-    // Auto-scroll para la consola
     if (consoleRef.current) {
       const scrollInterval = setInterval(() => {
         if (consoleRef.current) {
@@ -125,7 +116,6 @@ const DevLogoutAnimation = () => {
   
   return (
     <div className={`logout-animation-container ${showSuccess ? 'success-mode' : ''}`}>
-      {/* Fondo oscuro con desenfoque y efecto matrix */}
       <div className="backdrop">
         <div className="matrix-effect">
           {matrixChars.map(column => (
@@ -153,7 +143,6 @@ const DevLogoutAnimation = () => {
         </div>
       </div>
       
-      {/* Partículas para el efecto de éxito */}
       {showSuccess && (
         <div className="success-particles">
           {particles.map(particle => (
@@ -177,22 +166,18 @@ const DevLogoutAnimation = () => {
       <div className="logout-modal">
         {!showSuccess ? (
           <>
-            {/* Ícono superior con efecto de scanning */}
             <div className="logout-icon">
               <div className="icon-ring"></div>
               <div className="icon-scanner"></div>
               <i className="fas fa-power-off"></i>
             </div>
             
-            {/* Título */}
             <h2 className="logout-title">Cerrando Sesión</h2>
             
-            {/* Mensaje de estado */}
             <div className="status-message">
               {logoutSteps[currentStep]}
             </div>
             
-            {/* Barra de progreso avanzada */}
             <div className="progress-container">
               <div className="progress-segments">
                 {[...Array(6)].map((_, i) => (
@@ -217,7 +202,6 @@ const DevLogoutAnimation = () => {
               </div>
             </div>
             
-            {/* Consola minimalista */}
             <div className="console-window">
               <div className="console-header">
                 <span className="console-title">system_logout.sh</span>
@@ -256,7 +240,6 @@ const DevLogoutAnimation = () => {
             </div>
           </>
         ) : (
-          /* Pantalla de éxito */
           <div className="logout-success">
             <div className="success-icon">
               <div className="success-ring"></div>

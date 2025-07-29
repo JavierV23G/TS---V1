@@ -15,7 +15,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
   const [logoFile, setLogoFile] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
   
-  // Available company types
   const companyTypes = [
     'Home Healthcare',
     'Hospital',
@@ -28,7 +27,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     'Multi-Specialty Care Center'
   ];
   
-  // Available specialties
   const specialtyOptions = [
     'Physical Therapy',
     'Occupational Therapy',
@@ -42,7 +40,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     'Disability Support'
   ];
   
-  // Simulated loading with dynamic messages
   useEffect(() => {
     setIsLoading(true);
     setLoadingMessage('Connecting to database...');
@@ -77,9 +74,7 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     };
   }, []);
   
-  // Simulated company data
   const fetchCompanyData = () => {
-    // Mock data from server
     const mockData = [
       {
         id: 1,
@@ -195,11 +190,9 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     setFilteredCompanies(mockData);
   };
   
-  // Filter and sort companies
   useEffect(() => {
     let filtered = [...companyList];
     
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(company => 
         company.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -209,12 +202,10 @@ const CompanyListComponent = ({ onBackToOptions }) => {
       );
     }
     
-    // Filter by company type
     if (filterType !== 'all') {
       filtered = filtered.filter(company => company.companyType === filterType);
     }
 
-    // Filter by status if not showing inactive
     if (!showInactive) {
       filtered = filtered.filter(company => company.status === 'active');
     }
@@ -222,15 +213,12 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     setFilteredCompanies(filtered);
   }, [companyList, searchTerm, filterType, showInactive]);
   
-  // Open company modal
   const handleOpenCompany = (company) => {
     setSelectedCompany(company);
-    // Create a deep copy of the company for editing
     setEditedCompany(JSON.parse(JSON.stringify(company)));
     setShowCompanyModal(true);
   };
   
-  // Close company modal
   const handleCloseCompany = () => {
     setShowCompanyModal(false);
     setSelectedCompany(null);
@@ -239,7 +227,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     setActiveTab('info');
   };
   
-  // Handle back button click
   const handleBackClick = () => {
     if (typeof onBackToOptions === 'function') {
       onBackToOptions();
@@ -248,7 +235,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     }
   };
   
-  // Handle input change for company details
   const handleInputChange = (e, section, field) => {
     const { value } = e.target;
     
@@ -268,13 +254,11 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     }
   };
   
-  // Handle company logo upload
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setLogoFile(file);
       
-      // Create a preview URL
       const reader = new FileReader();
       reader.onload = () => {
         setEditedCompany({
@@ -286,7 +270,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     }
   };
   
-  // Remove uploaded logo
   const handleRemoveLogo = () => {
     setLogoFile(null);
     setEditedCompany({
@@ -295,7 +278,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     });
   };
   
-  // Handle specialty toggle
   const handleSpecialtyToggle = (specialty) => {
     const specialties = [...editedCompany.specialties];
     
@@ -314,7 +296,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     }
   };
   
-  // Handle status toggle
   const handleStatusToggle = () => {
     setEditedCompany({
       ...editedCompany,
@@ -322,9 +303,7 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     });
   };
   
-  // Save company changes
   const handleSaveChanges = () => {
-    // Update the company in the list
     const updatedList = companyList.map(company => 
       company.id === editedCompany.id ? editedCompany : company
     );
@@ -332,11 +311,9 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     setCompanyList(updatedList);
     setFilteredCompanies(updatedList);
     
-    // Show success message or notification here
     handleCloseCompany();
   };
   
-  // Create new company button
   const handleAddNewCompany = () => {
     const newCompany = {
       id: Math.max(...companyList.map(c => c.id)) + 1,
@@ -371,7 +348,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
     setShowCompanyModal(true);
   };
   
-  // Render loading screen
   if (isLoading) {
     return (
       <div className="company-list-loading">
@@ -402,10 +378,8 @@ const CompanyListComponent = ({ onBackToOptions }) => {
   
   return (
     <div className="company-list-container">
-      {/* Enhanced Header */}
       <div className="company-list-header">
         <div className="header-content">
-          {/* Back button with explicit handler */}
           <button className="back-button" onClick={handleBackClick}>
             <i className="fas fa-arrow-left"></i>
             <span>Back</span>
@@ -439,7 +413,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
         </div>
       </div>
       
-      {/* Search and Filter Bar */}
       <div className="search-filter-container">
         <div className="search-bar">
           <div className="search-input-wrapper">
@@ -483,7 +456,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
               </div>
             </div>
             
-            {/* Toggle for showing inactive */}
             <div className="inactive-filter">
               <label className="toggle-switch">
                 <input 
@@ -502,7 +474,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
         </div>
       </div>
       
-      {/* Company Cards */}
       <div className="company-cards-container">
         {filteredCompanies.length > 0 ? (
           filteredCompanies.map(company => (
@@ -614,7 +585,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
         )}
       </div>
       
-      {/* Improved Company Form Modal */}
       {showCompanyModal && editedCompany && (
         <div className="company-modal-overlay" onClick={handleCloseCompany}>
           <div className="company-modal company-edit-modal" onClick={e => e.stopPropagation()}>
@@ -731,7 +701,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
             </div>
             
             <div className="modal-body">
-              {/* Company Information Section */}
               {activeTab === 'info' && (
                 <div className="company-form-section">
                   <h3>Company Information</h3>
@@ -793,7 +762,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
                 </div>
               )}
               
-              {/* Address Section */}
               {activeTab === 'address' && (
                 <div className="company-form-section">
                   <h3>Company Address</h3>
@@ -847,7 +815,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
                 </div>
               )}
               
-              {/* Contact Section */}
               {activeTab === 'contact' && (
                 <div className="company-form-section">
                   <h3>Primary Contact Person</h3>
@@ -892,7 +859,6 @@ const CompanyListComponent = ({ onBackToOptions }) => {
                 </div>
               )}
               
-              {/* Services & Specialties Section */}
               {activeTab === 'services' && (
                 <div className="company-form-section">
                   <h3>Services & Specialties</h3>

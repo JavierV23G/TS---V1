@@ -7,24 +7,17 @@ import LogoutAnimation from '../../LogOut/LogOut';
 import '../../../styles/developer/accounting/ClinicalAccounting.scss';
 import '../../../styles/Header/Header.scss';
 
-// Importar sub-componentes
 import ClinicalMetrics from './ClinicalMetrics';
 import MonthlyBreakdown from './MonthlyBreakdown';
 import DisciplineSelector from './DisciplineSelector';
 import TherapistModal from './TherapistModal';
 import AgencyModal from './AgencyModal';
 
-/**
- * CLINICAL ACCOUNTING - DEVELOPER VIEW
- * Sistema de empresas donde developer ve TODAS las agencias cliente
- * Usar datos REALES del backend sin modificar endpoints
- */
 const ClinicalAccounting = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const userMenuRef = useRef(null);
   
-  // Estados para sistema de empresas
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [showCompanySelector, setShowCompanySelector] = useState(true);
   const [availableCompanies] = useState([
@@ -36,10 +29,8 @@ const ClinicalAccounting = () => {
       established: '2020',
       location: 'California, USA'
     }
-    // Doc Luis dijo por ahora solo dejar Motive Home Care
   ]);
   
-  // Estados principales
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedDiscipline, setSelectedDiscipline] = useState(null);
@@ -48,19 +39,16 @@ const ClinicalAccounting = () => {
   const [showTherapistModal, setShowTherapistModal] = useState(false);
   const [showAgencyModal, setShowAgencyModal] = useState(false);
   
-  // Estados para header y navegación
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   
-  // Estados para datos REALES de API (filtrados por empresa)
   const [staff, setStaff] = useState([]);
   const [patients, setPatients] = useState([]);
   const [visits, setVisits] = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [certificationPeriods, setCertificationPeriods] = useState([]);
 
-  // Funciones para manejar header y navegación
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(word => word[0]).join('').toUpperCase();
@@ -90,14 +78,12 @@ const ClinicalAccounting = () => {
     
     document.body.classList.add('logging-out');
     
-    // No llamar logout() directamente, dejar que LogoutAnimation maneje todo
     setTimeout(() => {
       logout();
       navigate('/login');
-    }, 4000); // Tiempo para la animación completa
+    }, 4000);
   };
 
-  // Handle navigation to profile page
   const handleNavigateToProfile = () => {
     if (isLoggingOut) return;
     
@@ -106,7 +92,6 @@ const ClinicalAccounting = () => {
     navigate(`/${baseRole}/profile`);
   };
 
-  // Handle navigation to settings page
   const handleNavigateToSettings = () => {
     if (isLoggingOut) return;
     
@@ -119,7 +104,6 @@ const ClinicalAccounting = () => {
     setShowUserMenu(!showUserMenu);
   };
 
-  // Click outside handler para cerrar menú de usuario
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -133,7 +117,6 @@ const ClinicalAccounting = () => {
     }
   }, [showUserMenu]);
 
-  // Función para seleccionar empresa y cargar sus datos
   const handleCompanySelect = async (company) => {
     setSelectedCompany(company);
     setShowCompanySelector(false);
@@ -145,15 +128,12 @@ const ClinicalAccounting = () => {
         setIsLoading(false);
       }, 800);
     } catch (error) {
-      console.error('Error loading company data:', error);
       setIsLoading(false);
     }
   };
 
-  // Cargar datos reales filtrados por empresa
   const loadCompanyData = async (companyId) => {
     try {
-      // Cargar ALL staff first to use for both therapists and agencies
       const response = await fetch('http://localhost:8000/staff/');
       if (!response.ok) {
         setStaff([]);
@@ -163,12 +143,9 @@ const ClinicalAccounting = () => {
       }
       
       const allStaff = await response.json();
-      console.log('All staff from API:', allStaff);
       
-      // Process staff data for Motive Home Care
       await processMotiveHomeCarePart(companyId, allStaff);
       
-      // Load patients and extract agencies
       await loadRealPatientsData(companyId, allStaff);
       
     } catch (error) {
@@ -179,35 +156,29 @@ const ClinicalAccounting = () => {
     }
   };
   
-  // Process Motive Home Care therapists and agencies
   const processMotiveHomeCarePart = async (companyId, allStaff) => {
     if (companyId === 'motive-home-care') {
-      // Motive Home Care therapists
       const motiveTherapists = allStaff.filter(s => {
         const validRoles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'];
         return s.role && validRoles.includes(s.role) && s.is_active;
       });
       
       setStaff(motiveTherapists);
-      console.log('Motive Home Care therapists:', motiveTherapists);
     } else {
       setStaff([]);
     }
   };
 
 
-  // Cargar pacientes REALES desde API filtrados por empresa  
+  
   const loadRealPatientsData = async (companyId, allStaff) => {
     try {
       const response = await fetch('http://localhost:8000/patients/');
       if (response.ok) {
         const allPatients = await response.json();
-        console.log('All patients from API:', allPatients);
         
-        // Filter patients based on real data only
         const companyPatients = allPatients.filter(p => {
           if (companyId === 'motive-home-care') {
-            // Include patients that actually belong to Motive Home Care based on real data
             return p.agency_name?.toLowerCase().includes('motive') || 
                    p.agency_id === 1;
           }
@@ -215,10 +186,7 @@ const ClinicalAccounting = () => {
         });
         
         setPatients(companyPatients);
-        console.log('Filtered patients for company:', companyPatients);
         
-        // Extract REAL agencies from patient data using the staff already loaded
-        // Las agencias están en la tabla Staff, referenciadas por patient.agency_id
         const realAgencies = [];
         const seenAgencyIds = new Set();
         
@@ -226,7 +194,6 @@ const ClinicalAccounting = () => {
           if (patient.agency_id && !seenAgencyIds.has(patient.agency_id)) {
             seenAgencyIds.add(patient.agency_id);
             
-            // Find the staff member that corresponds to this agency_id
             const agencyStaff = allStaff.find(s => s.id === patient.agency_id);
             
             if (agencyStaff) {
@@ -238,7 +205,6 @@ const ClinicalAccounting = () => {
                 is_active: agencyStaff.is_active
               });
             } else {
-              // Fallback if staff not found - use patient.agency_name
               realAgencies.push({
                 id: patient.agency_id,
                 name: patient.agency_name || `Agency ${patient.agency_id}`,
@@ -251,9 +217,7 @@ const ClinicalAccounting = () => {
         });
         
         setAgencies(realAgencies);
-        console.log('Real agencies extracted from patient->staff relationship:', realAgencies);
         
-        // Load certification periods for these patients
         await loadCertificationPeriods(companyPatients.map(p => p.id));
         
         return companyPatients;
@@ -270,12 +234,10 @@ const ClinicalAccounting = () => {
     }
   };
 
-  // Cargar certification periods para obtener visitas
   const loadCertificationPeriods = async (patientIds) => {
     try {
       const allCertPeriods = [];
       
-      // Obtener cert periods para cada paciente
       for (const patientId of patientIds) {
         try {
           const response = await fetch(`http://localhost:8000/patient/${patientId}/cert-periods`);
@@ -284,17 +246,14 @@ const ClinicalAccounting = () => {
             allCertPeriods.push(...certPeriods);
           }
         } catch (error) {
-          console.log(`No cert periods for patient ${patientId}`);
         }
       }
       
       setCertificationPeriods(allCertPeriods);
       
-      // Cargar visitas para estos certification periods
       if (allCertPeriods.length > 0) {
         await loadRealVisitsData(selectedCompany?.id, allCertPeriods);
       } else {
-        // Si no hay cert periods, NO HAY visitas
         setVisits([]);
       }
       
@@ -306,13 +265,11 @@ const ClinicalAccounting = () => {
     }
   };
 
-  // Cargar visitas REALES desde API
   const loadRealVisitsData = async (companyId, certPeriodsToUse = null) => {
     try {
       const allVisits = [];
       const certPeriodsForVisits = certPeriodsToUse || certificationPeriods;
       
-      // Obtener visitas para cada certification period
       for (const certPeriod of certPeriodsForVisits) {
         try {
           const response = await fetch(`http://localhost:8000/visits/certperiod/${certPeriod.id}`);
@@ -321,28 +278,23 @@ const ClinicalAccounting = () => {
             allVisits.push(...visits);
           }
         } catch (error) {
-          console.log(`No visits for cert period ${certPeriod.id}`);
         }
       }
       
-      // Set visits - if no real visits, then there are NO visits
       setVisits(allVisits);
     } catch (error) {
       console.error('Error loading real visits:', error);
-      // If there's an error, NO visits
       setVisits([]);
     }
   };
 
 
-  // Calcular métricas financieras basadas en datos reales
   const calculateFinancialMetrics = () => {
     if (!visits.length) return null;
 
     const completedVisits = visits.filter(v => v.status === 'completed');
     const pendingVisits = visits.filter(v => v.status === 'pending' || v.status === 'scheduled');
 
-    // Precios reales por tipo de visita según Doc Luis
     const visitPrices = {
       'Initial Evaluation': { agency_pays: 130, therapist_receives: 110 },
       'Follow Up': { agency_pays: 110, therapist_receives: 55 },
@@ -351,7 +303,6 @@ const ClinicalAccounting = () => {
       'DC': { agency_pays: 100, therapist_receives: 80 }
     };
 
-    // Calcular totales
     const totalBilled = completedVisits.reduce((sum, visit) => {
       const price = visitPrices[visit.visit_type] || visitPrices['Follow Up'];
       return sum + price.agency_pays;
@@ -379,7 +330,6 @@ const ClinicalAccounting = () => {
     };
   };
 
-  // Handlers
   const handleDisciplineSelect = (discipline) => {
     setSelectedDiscipline(discipline);
     setSelectedTherapist(null);
@@ -410,7 +360,6 @@ const ClinicalAccounting = () => {
     setAgencies([]);
   };
 
-  // Animations
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -432,7 +381,6 @@ const ClinicalAccounting = () => {
     }
   };
 
-  // Mostrar selector de empresas
   if (showCompanySelector) {
     return (
       <motion.div 
@@ -441,10 +389,8 @@ const ClinicalAccounting = () => {
         animate="visible"
         variants={containerVariants}
       >
-        {/* Header Premium - Exact replica from Header.jsx */}
         <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
           <div className="header-container">
-            {/* Logo with effects */}
             <div className="logo-container">
               <div className="logo-glow"></div>
               <img 
@@ -454,7 +400,6 @@ const ClinicalAccounting = () => {
                 onClick={() => !isLoggingOut && handleMainMenuTransition()} 
               />
               
-              {/* Navigation buttons for accounting */}
               <div className="menu-navigation">
                 <button 
                   className="nav-button main-menu" 
@@ -476,7 +421,6 @@ const ClinicalAccounting = () => {
             </div>
             
             
-            {/* Enhanced user profile - exact replica */}
             <div className="support-user-profile" ref={userMenuRef}>
               <div 
                 className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -496,7 +440,6 @@ const ClinicalAccounting = () => {
                 <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
               </div>
               
-              {/* Enhanced dropdown menu - exact replica */}
               {showUserMenu && !isLoggingOut && (
                 <div className="support-user-menu">
                   <div className="support-menu-header">
@@ -598,7 +541,6 @@ const ClinicalAccounting = () => {
     );
   }
 
-  // Mostrar loading
   if (isLoading) {
     return (
       <div className="clinical-accounting">
@@ -619,10 +561,8 @@ const ClinicalAccounting = () => {
       animate="visible"
       variants={containerVariants}
     >
-      {/* Header Premium - Exact replica for main dashboard */}
       <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
         <div className="header-container">
-          {/* Logo with effects */}
           <div className="logo-container">
             <div className="logo-glow"></div>
             <img 
@@ -632,7 +572,6 @@ const ClinicalAccounting = () => {
               onClick={() => !isLoggingOut && handleMainMenuTransition()} 
             />
             
-            {/* Navigation buttons for accounting with companies */}
             <div className="menu-navigation">
               <button 
                 className="nav-button main-menu" 
@@ -663,7 +602,6 @@ const ClinicalAccounting = () => {
           </div>
           
           
-          {/* Enhanced user profile - exact replica */}
           <div className="support-user-profile" ref={userMenuRef}>
             <div 
               className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -683,7 +621,6 @@ const ClinicalAccounting = () => {
               <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
             </div>
             
-            {/* Enhanced dropdown menu - exact replica */}
             {showUserMenu && !isLoggingOut && (
               <div className="support-user-menu">
                 <div className="support-menu-header">
@@ -739,7 +676,6 @@ const ClinicalAccounting = () => {
         </div>
       </header>
 
-      {/* Header con empresa seleccionada */}
       <motion.header className="clinical-header" variants={itemVariants}>
         <div className="header-content">
           <div className="clinical-title">
@@ -773,10 +709,8 @@ const ClinicalAccounting = () => {
         </div>
       </motion.header>
 
-      {/* Contenido Principal */}
       <div className="clinical-content">
         
-        {/* Métricas Principales */}
         <motion.div variants={itemVariants}>
           <ClinicalMetrics 
             metrics={metrics}
@@ -784,7 +718,6 @@ const ClinicalAccounting = () => {
           />
         </motion.div>
 
-        {/* Breakdown Mensual */}
         <motion.div variants={itemVariants}>
           <MonthlyBreakdown 
             visits={visits}
@@ -793,7 +726,6 @@ const ClinicalAccounting = () => {
           />
         </motion.div>
 
-        {/* Selector de Disciplinas */}
         <motion.div variants={itemVariants}>
           <DisciplineSelector 
             staff={staff}
@@ -808,7 +740,6 @@ const ClinicalAccounting = () => {
 
       </div>
 
-      {/* Modal de Terapeuta */}
       <AnimatePresence>
         {showTherapistModal && selectedTherapist && (
           <TherapistModal 
@@ -824,7 +755,6 @@ const ClinicalAccounting = () => {
         )}
       </AnimatePresence>
 
-      {/* Modal de Agencia */}
       <AnimatePresence>
         {showAgencyModal && selectedAgency && (
           <AgencyModal 
@@ -841,7 +771,6 @@ const ClinicalAccounting = () => {
         )}
       </AnimatePresence>
 
-      {/* Logout Animation */}
       {isLoggingOut && <LogoutAnimation />}
 
     </motion.div>

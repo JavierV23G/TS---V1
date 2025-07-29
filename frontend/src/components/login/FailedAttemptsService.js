@@ -2,29 +2,26 @@ class FailedAttemptsService {
     constructor() {
         this.MAX_ATTEMPTS = 5;
         this.LOCKOUT_DURATIONS = [
-            60000,      // 1 minute
-            300000,     // 5 minutes  
-            900000,     // 15 minutes
-            3600000,    // 1 hour
-            86400000    // 24 hours (permanent lockout until admin reset)
+            60000,
+            300000,  
+            900000,
+            3600000,
+            86400000
         ];
         
         this.onLockout = null;
         this.onAttemptFailed = null;
         this.onAccountUnlocked = null;
         
-        // Check expired lockouts on initialization
         this.checkExpiredLockouts();
     }
 
-    // Configure callbacks
     setCallbacks(callbacks = {}) {
         this.onLockout = callbacks.onLockout || (() => {});
         this.onAttemptFailed = callbacks.onAttemptFailed || (() => {});
         this.onAccountUnlocked = callbacks.onAccountUnlocked || (() => {});
     }
 
-    // Get failed attempt data for a user
     getAttemptData(username) {
         const key = `failed_attempts_${username.toLowerCase()}`;
         const data = localStorage.getItem(key);
@@ -41,13 +38,11 @@ class FailedAttemptsService {
         return JSON.parse(data);
     }
 
-    // Save failed attempt data
     saveAttemptData(username, data) {
         const key = `failed_attempts_${username.toLowerCase()}`;
         localStorage.setItem(key, JSON.stringify(data));
     }
 
-    // Check if an account is locked
     isAccountLocked(username) {
         const data = this.getAttemptData(username);
         
@@ -58,7 +53,6 @@ class FailedAttemptsService {
         const now = Date.now();
         
         if (now >= data.lockoutUntil) {
-            // Lockout expired, clear data
             this.clearAttempts(username);
             this.onAccountUnlocked(username);
             return { isLocked: false };
@@ -73,7 +67,6 @@ class FailedAttemptsService {
         };
     }
 
-    // Record failed attempt
     recordFailedAttempt(username) {
         const data = this.getAttemptData(username);
         const now = Date.now();

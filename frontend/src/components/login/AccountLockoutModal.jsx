@@ -25,7 +25,6 @@ const AccountLockoutModal = ({
                     setFormattedTime(formatTime(remaining));
                 } else {
                     setFormattedTime('');
-                    // Auto close modal when expired
                     if (onTryAgainLater) {
                         setTimeout(() => onTryAgainLater(), 1000);
                     }

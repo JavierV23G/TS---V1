@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import '../../../../styles/developer/Patients/Staffing/StaffEditComponent.scss';
 
 const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
-  // Estados principales
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Initializing Staff Management...');
   const [staffList, setStaffList] = useState([]);
@@ -18,7 +17,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
   const [editedStaff, setEditedStaff] = useState(null);
   const [passwordResetMode, setPasswordResetMode] = useState(false);
   
-  // Estados para la sección de seguridad
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,13 +26,11 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
   const [lastActivity, setLastActivity] = useState(new Date().toLocaleString());
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   
-  // Estados para modal de confirmación
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState('');
-  const [confirmType, setConfirmType] = useState('danger'); // 'danger' o 'success'
+  const [confirmType, setConfirmType] = useState('danger');
 
-  // Definición de roles con colores y funcionalidades
   const roles = [
     { 
       value: 'pt', 
@@ -110,7 +106,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   ];
 
-  // Datos simulados para funcionalidades específicas
   const mockStaffStats = {
     pt: { activePatients: 15, completedEvaluations: 8 },
     pta: { assignedPatients: 12, completedSessions: 42 },
@@ -123,7 +118,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     agency: { totalPatients: 156, activeBranches: 2 }
   };
 
-  // Datos simulados para sedes de agencia
   const agencyBranches = {
     'Supportive Home Health': [
       {
@@ -147,7 +141,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     ]
   };
 
-  // Formatear número de teléfono
   const formatPhoneNumber = (value) => {
     if (!value) return '';
     const phoneNumber = value.replace(/[^\d]/g, '');
@@ -159,7 +152,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     return phoneNumber.length > 0 ? `(${phoneNumber}` : '';
   };
 
-  // Carga con el mismo patrón del proyecto
   useEffect(() => {
     setIsLoading(true);
     setLoadingMessage('Initializing...');
@@ -194,7 +186,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     };
   }, []);
 
-  // Obtener datos del personal desde la API
   const fetchStaffData = async () => {
     try {
       const response = await fetch('http://localhost:8000/staff/', {
@@ -229,7 +220,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
           role: actualRole,
           roleInfo: roleInfo,
           status: staff.is_active ? 'active' : 'inactive',
-          // Datos simulados para funcionalidades premium
           stats: mockStaffStats[actualRole] || {},
           lastLogin: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
           performanceScore: Math.floor(Math.random() * 20) + 80,
@@ -248,7 +238,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   };
 
-  // Filtrar personal
   useEffect(() => {
     let filtered = [...staffList];
     
@@ -277,34 +266,29 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setFilteredStaff(filtered);
   }, [staffList, searchTerm, filterRole, showInactive, viewMode]);
 
-  // Abrir perfil de staff
   const handleOpenProfile = (member) => {
     setSelectedStaff(member);
     setShowProfileModal(true);
     setActiveTab('overview');
   };
 
-  // Cerrar perfil
   const handleCloseProfile = () => {
     setShowProfileModal(false);
     setSelectedStaff(null);
     setActiveTab('overview');
     setIsEditing(false);
     setEditedStaff(null);
-    // Limpiar estados de seguridad
     setShowPasswordChange(false);
     setNewPassword('');
     setConfirmPassword('');
     setPasswordError('');
     setPasswordStrength(0);
-    // Limpiar estados del modal de confirmación
     setShowConfirmModal(false);
     setConfirmAction(null);
     setConfirmMessage('');
     setConfirmType('danger');
   };
 
-  // Renderizar pestañas según el rol
   const renderRoleTabs = () => {
     if (!selectedStaff) return null;
     
@@ -314,7 +298,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
       { id: 'security', label: 'Security', icon: 'fa-shield-alt' }
     ];
 
-    // Pestañas específicas por rol
     const roleSpecificTabs = {
       pt: [{ id: 'patients', label: 'My Patients', icon: 'fa-user-injured' }],
       pta: [{ id: 'assignments', label: 'Assignments', icon: 'fa-tasks' }],
@@ -335,7 +318,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     return tabs;
   };
 
-  // Renderizar contenido de pestañas
   const renderTabContent = () => {
     if (!selectedStaff) return null;
 
@@ -363,7 +345,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   };
 
-  // Pestaña Overview simplificada
   const renderOverviewTab = () => {
     if (selectedStaff.role === 'agency') {
       return (
@@ -419,14 +400,11 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     );
   };
 
-  // Actualizar datos del staff
   const handleUpdateStaff = async () => {
     try {
-      // Crear URL con query parameters según la API
       const baseUrl = `http://localhost:8000/staff/${selectedStaff.id}`;
       const params = new URLSearchParams();
       
-      // Solo enviar campos que han cambiado - usando nombres exactos de la API
       if (editedStaff.fullName !== selectedStaff.fullName) {
         params.append('name', editedStaff.fullName);
       }
@@ -452,11 +430,8 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         params.append('role', editedStaff.role);
       }
 
-      // La URL final con query parameters
       const finalUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
       
-      console.log('Enviando actualización a:', finalUrl);
-      console.log('Datos a actualizar:', Object.fromEntries(params));
 
       const response = await fetch(finalUrl, {
         method: 'PUT',
@@ -468,9 +443,7 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Staff actualizado exitosamente:', result);
         
-        // Actualizar el estado local inmediatamente
         const updatedStaff = { 
           ...selectedStaff, 
           fullName: editedStaff.fullName,
@@ -488,7 +461,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         setIsEditing(false);
         setEditedStaff(null);
         
-        // Recargar la lista completa para sincronizar
         fetchStaffData();
         
         alert('✅ Información del staff actualizada exitosamente');
@@ -503,7 +475,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   };
 
-  // Pestaña Profile con edición
   const renderProfileTab = () => {
     const currentData = isEditing ? editedStaff : selectedStaff;
     
@@ -679,7 +650,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     );
   };
 
-  // Pestaña Developer System
   const renderDeveloperSystemTab = () => (
     <div className="system-content clinical">
       <div className="system-overview">
@@ -698,7 +668,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     </div>
   );
 
-  // Pestaña Agency Operations
   const renderAgencyOperationsTab = () => {
     const branches = agencyBranches[selectedStaff.fullName] || agencyBranches['Supportive Home Health'] || [];
     
@@ -752,7 +721,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     );
   };
 
-  // Pestaña específica por rol para pacientes
   const renderRoleSpecificTab = () => {
     const tabLabels = {
       patients: 'My Patients',
@@ -793,7 +761,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
   };
 
 
-  // Validar fortaleza de contraseña
   const checkPasswordStrength = (password) => {
     let strength = 0;
     if (password.length >= 8) strength++;
@@ -803,7 +770,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setPasswordStrength(strength);
   };
   
-  // Actualizar contraseña en backend
   const handlePasswordUpdate = async () => {
     if (newPassword !== confirmPassword) {
       setPasswordError('Las contraseñas no coinciden');
@@ -847,7 +813,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   };
 
-  // Mostrar modal de confirmación para cambio de estado
   const handleToggleUserStatus = () => {
     const newStatus = !selectedStaff.status;
     const action = newStatus ? 'activar' : 'desactivar';
@@ -859,7 +824,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setShowConfirmModal(true);
   };
   
-  // Ejecutar el cambio de estado del usuario
   const executeToggleUserStatus = async (newStatus, action) => {
     try {
       const baseUrl = `http://localhost:8000/staff/${selectedStaff.id}`;
@@ -875,18 +839,15 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
       });
       
       if (response.ok) {
-        // Actualizar el estado local del staff
         const updatedStaff = { ...selectedStaff, status: newStatus };
         setSelectedStaff(updatedStaff);
         
-        // Actualizar también en la lista principal
         const updatedStaffList = staffList.map(staff => 
           staff.id === selectedStaff.id ? { ...staff, status: newStatus } : staff
         );
         setStaffList(updatedStaffList);
         setFilteredStaff(updatedStaffList);
         
-        // Mostrar mensaje de éxito
         showSuccessMessage(`Cuenta ${action}da exitosamente`);
       } else {
         showErrorMessage(`Error al ${action} la cuenta`);
@@ -899,23 +860,18 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setShowConfirmModal(false);
   };
   
-  // Funciones para mostrar mensajes
   const showSuccessMessage = (message) => {
-    // Aquí puedes implementar un toast o notification más elegante
     alert(message);
   };
   
   const showErrorMessage = (message) => {
-    // Aquí puedes implementar un toast o notification más elegante  
     alert(message);
   };
 
-  // Pestaña Security completamente rediseñada
   const renderSecurityTab = () => {
     return (
       <div className="premium-security-section">
         <div className="security-container">
-          {/* Encabezado de seguridad */}
           <div className="security-header-premium">
             <div className="header-icon">
               <i className="fas fa-shield-alt"></i>
@@ -926,9 +882,7 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
             </div>
           </div>
           
-          {/* Tarjetas de información de seguridad */}
           <div className="security-cards-grid">
-            {/* Tarjeta de credenciales */}
             <div className="security-card credentials-card">
               <div className="card-header">
                 <i className="fas fa-user-lock"></i>
@@ -949,7 +903,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
                       className="action-btn copy"
                       onClick={() => {
                         navigator.clipboard.writeText(selectedStaff.userName);
-                        // Mostrar notificación temporal
                       }}
                       title="Copiar usuario"
                     >
@@ -978,7 +931,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
                   </div>
                 </div>
                 
-                {/* Formulario de cambio de contraseña */}
                 {showPasswordChange && (
                   <div className="password-change-form">
                     <div className="form-group">
@@ -1006,7 +958,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
                       />
                     </div>
                     
-                    {/* Indicador de fortaleza */}
                     <div className="password-strength">
                       <label>Fortaleza de contraseña:</label>
                       <div className="strength-bars">
@@ -1057,7 +1008,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
               </div>
             </div>
             
-            {/* Tarjeta de estado de seguridad */}
             <div className="security-card status-card">
               <div className="card-header">
                 <i className="fas fa-shield-check"></i>
@@ -1111,7 +1061,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
             
           </div>
           
-          {/* Acciones de seguridad */}
           <div className="security-actions">
             <button 
               className={`action-button ${selectedStaff.status ? 'danger' : 'success'}`}
@@ -1126,7 +1075,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     );
   };
 
-  // Pantalla de carga profesional como en el resto del proyecto
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -1163,7 +1111,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
 
   return (
     <div className="premium-staff-management">
-      {/* Header Clínico */}
       <div className="clinical-header">
         <div className="header-navigation">
           <button className="back-button" onClick={onBackToOptions}>
@@ -1183,7 +1130,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         </div>
       </div>
 
-      {/* Filtros Premium */}
       <div className="premium-filters">
         <div className="view-selector">
           <button 
@@ -1253,7 +1199,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         </div>
       </div>
 
-      {/* Grid de Staff Premium */}
       <div className="premium-staff-grid">
         {filteredStaff.length > 0 ? (
           filteredStaff.map(member => (
@@ -1356,11 +1301,9 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         )}
       </div>
 
-      {/* Modal Premium Mejorado */}
       {showProfileModal && selectedStaff && (
         <div className="premium-modal-overlay" onClick={handleCloseProfile}>
           <div className="premium-modal enhanced" onClick={(e) => e.stopPropagation()}>
-            {/* Header Compacto y Elegante */}
             <div className="modal-header-enhanced">
               <div className="staff-profile-header">
                 <div 
@@ -1399,7 +1342,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
               </button>
             </div>
 
-            {/* Navegación de Pestañas Mejorada */}
             <div className="modal-navigation-enhanced">
               {renderRoleTabs().map(tab => (
                 <button 
@@ -1418,7 +1360,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
               ))}
             </div>
 
-            {/* Contenido del Modal Optimizado */}
             <div className="modal-content-enhanced">
               {renderTabContent()}
             </div>
@@ -1426,7 +1367,6 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         </div>
       )}
       
-      {/* Modal de Confirmación Premium */}
       {showConfirmModal && (
         <div className="confirm-modal-overlay" onClick={() => setShowConfirmModal(false)}>
           <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>

@@ -2,7 +2,6 @@ import React from 'react';
 
 const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, isLoading }) => {
   
-  // Formatear tiempo relativo
   const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -25,7 +24,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
     }
   };
 
-  // Obtener color de prioridad
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'critical': return '#EF4444';
@@ -36,7 +34,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
     }
   };
 
-  // Obtener color de estado
   const getStatusColor = (status) => {
     switch (status) {
       case 'new': return '#8B5CF6';
@@ -49,7 +46,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
     }
   };
 
-  // Obtener icono de categoría
   const getCategoryIcon = (categoryId) => {
     switch (categoryId) {
       case 'technical': return 'cogs';
@@ -61,7 +57,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
     }
   };
 
-  // Obtener icono de prioridad
   const getPriorityIcon = (priority) => {
     switch (priority) {
       case 'critical': return 'exclamation-triangle';
@@ -72,12 +67,10 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
     }
   };
 
-  // Cambiar estado rápido
   const handleQuickStatusChange = (ticket, newStatus) => {
     onTicketUpdate(ticket.id, { status: newStatus });
   };
 
-  // Asignar ticket
   const handleAssignTicket = (ticket) => {
     const assignedTo = {
       id: 1,
@@ -131,7 +124,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
             className={`ticket-card ${selectedTicket?.id === ticket.id ? 'selected' : ''}`}
             onClick={() => onTicketSelect(ticket)}
           >
-            {/* Header del ticket */}
             <div className="ticket-header">
               <div className="ticket-meta">
                 <span className="ticket-id">{ticket.id}</span>
@@ -142,7 +134,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
               </div>
               
               <div className="ticket-actions">
-                {/* Botón de estado rápido */}
                 {ticket.status === 'new' && (
                   <button
                     className="quick-action assign"
@@ -184,7 +175,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
               </div>
             </div>
 
-            {/* Información principal */}
             <div className="ticket-content">
               <h4 className="ticket-subject">{ticket.subject}</h4>
               <p className="ticket-description">{ticket.description}</p>
@@ -200,16 +190,13 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
               </div>
             </div>
 
-            {/* Footer con badges */}
             <div className="ticket-footer">
               <div className="ticket-badges">
-                {/* Badge de categoría */}
                 <div className="badge category">
                   <i className={`fas fa-${getCategoryIcon(ticket.category)}`}></i>
                   <span>{ticket.categoryInfo.name}</span>
                 </div>
                 
-                {/* Badge de prioridad */}
                 <div 
                   className="badge priority"
                   style={{ 
@@ -222,7 +209,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
                   <span>{ticket.priority}</span>
                 </div>
                 
-                {/* Badge de estado */}
                 <div 
                   className="badge status"
                   style={{ 
@@ -235,7 +221,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
                 </div>
               </div>
 
-              {/* Información de asignación */}
               {ticket.assignedTo && (
                 <div className="assigned-to">
                   <div className="assigned-avatar">
@@ -246,7 +231,6 @@ const TicketList = ({ tickets, selectedTicket, onTicketSelect, onTicketUpdate, i
               )}
             </div>
 
-            {/* Indicador de respuestas */}
             {ticket.responses.length > 1 && (
               <div className="response-indicator">
                 <i className="fas fa-comments"></i>

@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-/**
- * CLINICAL METRICS COMPONENT
- * Muestra las 4 métricas principales del sistema financiero:
- * - Total Facturado (suma de visitas completadas) 
- * - Pagos Pendientes (dinero que debemos a terapeutas)
- * - Pagos Completados (dinero ya pagado a terapeutas)
- * - Ganancias (diferencia entre lo que cobran agencias y lo que pagamos)
- */
 const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistView = false }) => {
   const [animatedValues, setAnimatedValues] = useState({
     totalBilled: 0,
@@ -17,7 +9,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     profits: 0
   });
 
-  // Animar números cuando cambien las métricas
   useEffect(() => {
     if (metrics && !isLoading) {
       const duration = 1500;
@@ -29,7 +20,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
         step++;
         const progress = step / steps;
         
-        // Función de easing suave
         const easedProgress = 1 - Math.pow(1 - progress, 3);
 
         setAnimatedValues({
@@ -48,7 +38,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     }
   }, [metrics, isLoading]);
 
-  // Formatear currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -58,9 +47,7 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     }).format(value || 0);
   };
 
-  // Calcular tendencias (simulado por ahora)
   const calculateTrend = (current, type) => {
-    // Simulamos tendencias basadas en el tipo de métrica
     const trends = {
       totalBilled: { value: 8.5, direction: 'positive' },
       pendingPayments: { value: -2.3, direction: 'negative' },
@@ -71,7 +58,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     return trends[type] || { value: 0, direction: 'neutral' };
   };
 
-  // Obtener icono por tipo de métrica
   const getMetricIcon = (type) => {
     const icons = {
       totalBilled: 'fas fa-file-invoice-dollar',
@@ -82,7 +68,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     return icons[type];
   };
 
-  // Payment metrics data
   const metricsData = [
     {
       key: 'totalBilled',
@@ -114,7 +99,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
     }] : [])
   ];
 
-  // Variants para animaciones
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -213,7 +197,6 @@ const ClinicalMetrics = ({ metrics, isLoading, showProfits = true, isTherapistVi
               </div>
             </div>
 
-            {/* Additional metric-specific information */}
             {metric.key === 'totalBilled' && metrics.completedVisitsCount && (
               <div className="metric-extra">
                 <i className="fas fa-calendar-check"></i>
