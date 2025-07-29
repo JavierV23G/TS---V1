@@ -299,7 +299,10 @@ def preview_document(doc_id: int, db: Session = Depends(get_db)):
         path=doc.file_path,
         media_type="application/pdf",
         filename=doc.file_name,
-        headers={"Content-Disposition": f'inline; filename="{doc.file_name}"'}
+        headers={
+            "Content-Disposition": f'inline; filename="{doc.file_name}"',
+            "X-Frame-Options": "SAMEORIGIN"
+        }
     )
 
 #====================== CERTIFICATION PERIODS ======================#

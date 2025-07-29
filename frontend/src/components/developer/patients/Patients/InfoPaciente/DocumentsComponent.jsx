@@ -628,8 +628,8 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // ============================================================================
   const handleViewDocument = useCallback((document) => {
     try {
-      const fileUrl = `${API_BASE_URL}${document.file_path}`;
-      window.open(fileUrl, '_blank');
+      const printableUrl = `${API_BASE_URL}/documents/${document.id}/preview`;
+      window.open(printableUrl, '_blank');
     } catch (error) {
       console.error('Error opening document:', error);
       setError('Failed to open document');
@@ -882,41 +882,33 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
 
         <div className="document-actions">
           <div className="action-buttons-row">
-            <button 
-              className="action-btn view-btn" 
-              onClick={() => handleViewDocument(document)}
-              title="View Document"
-            >
-              <FontAwesomeIcon icon={faEye} />
-              <span className="action-label">View</span>
-              <div className="btn-shine"></div>
-            </button>
+            <div className="action-buttons-left">
+              <button 
+                className="action-btn view-btn" 
+                onClick={() => handleViewDocument(document)}
+                title="View Document"
+              >
+                <FontAwesomeIcon icon={faEye} />
+                <span className="action-label">View</span>
+                <div className="btn-shine"></div>
+              </button>
+              
+              <button 
+                className="action-btn delete-btn" 
+                onClick={() => handleDeleteClick(document)}
+                title="Delete Document"
+              >
+                <FontAwesomeIcon icon={faTrashAlt} />
+                <span className="action-label">Delete</span>
+                <div className="btn-shine"></div>
+              </button>
+            </div>
             
-            <button 
-              className="action-btn download-btn" 
-              onClick={() => handleDownload(document)}
-              title="Download Document"
-            >
-              <FontAwesomeIcon icon={faDownload} />
-              <span className="action-label">Download</span>
-              <div className="btn-shine"></div>
-            </button>
-            
-            <button 
-              className="action-btn delete-btn" 
-              onClick={() => handleDeleteClick(document)}
-              title="Delete Document"
-            >
-              <FontAwesomeIcon icon={faTrashAlt} />
-              <span className="action-label">Delete</span>
-              <div className="btn-shine"></div>
-            </button>
-          </div>
-          
-          <div className="document-status-indicators">
-            <span className="status-indicator recent" title="Recently Modified">
-              <FontAwesomeIcon icon={faClock} />
-            </span>
+            <div className="document-status-indicators">
+              <span className="status-indicator recent" title="Recently Modified">
+                <FontAwesomeIcon icon={faClock} />
+              </span>
+            </div>
           </div>
         </div>
 
