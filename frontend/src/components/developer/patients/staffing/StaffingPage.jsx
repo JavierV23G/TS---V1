@@ -8,14 +8,10 @@ import PremiumTabs from '../Patients/PremiunTabs.jsx';
 import AddStaffForm from './AddStaffForm';
 import StaffList from './StaffListComponent';
 import LogoutAnimation from '../../../../components/LogOut/LogOut';
-import CompanyRegistrationForm from './CompanyRegistrationForm';
-import CompanyListComponent from './CompanyListComponent';
 
 const DevStaffingPage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [showCompanyList, setShowCompanyList] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [showMenuSwitch, setShowMenuSwitch] = useState(false);
@@ -197,36 +193,6 @@ const DevStaffingPage = () => {
     };
   }, []);
 
-  const handleRegisterCompanyClick = (e) => {
-    if (isLoggingOut) return;
-    if (e) e.stopPropagation();
-  
-    setSelectedOption('companies');
-    setShowCompanyForm(true);
-    setShowCompanyList(false);
-    setShowAddStaffForm(false);
-    setShowStaffList(false);
-  };
-  
-  const handleCompanyFormCancel = (action) => {
-    if (isLoggingOut) return;
-    
-    setShowCompanyForm(false);
-    
-    if (action === 'viewCompanies') {
-      setShowCompanyList(true);
-    } else {
-      setSelectedOption('companies');
-    }
-  };
-  
-  const handleCompanySave = (companyData) => {
-    if (isLoggingOut) return;
-    
-    
-    
-    setShowCompanyForm(false);
-  };
 
   const handleMainMenuTransition = () => {
     if (isLoggingOut) return;
@@ -252,16 +218,6 @@ const DevStaffingPage = () => {
     }
   };
 
-  const handleViewAllCompaniesClick = (e) => {
-    if (isLoggingOut) return;
-    if (e) e.stopPropagation();
-
-    setSelectedOption('companies');
-    setShowCompanyList(true);
-    setShowCompanyForm(false);
-    setShowAddStaffForm(false);
-    setShowStaffList(false);
-  };
 
   const handleOptionSelect = (option) => {
     if (isLoggingOut) return;
@@ -269,8 +225,6 @@ const DevStaffingPage = () => {
     setSelectedOption(option);
     setShowAddStaffForm(false);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
   };
 
   const handleAddStaffClick = (e) => {
@@ -280,8 +234,6 @@ const DevStaffingPage = () => {
     setSelectedOption('therapists');
     setShowAddStaffForm(true);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
   };
 
   const handleLogout = () => {
@@ -304,8 +256,6 @@ const DevStaffingPage = () => {
     setSelectedOption('therapists');
     setShowStaffList(true);
     setShowAddStaffForm(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
   };
 
   const handleCancelForm = () => {
@@ -313,8 +263,6 @@ const DevStaffingPage = () => {
 
     setShowAddStaffForm(false);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
     fetchStaffData();
   };
 
@@ -323,8 +271,6 @@ const DevStaffingPage = () => {
 
     setShowStaffList(false);
     setShowAddStaffForm(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
     fetchStaffData();
   };
 
@@ -529,38 +475,6 @@ const DevStaffingPage = () => {
               </div>
             </div>
             
-            <div 
-              className={`staffing-option-card ${selectedOption === 'companies' ? 'selected' : ''}`}
-              onClick={() => handleOptionSelect('companies')}
-            >
-              <div className="option-icon">
-                <i className="fas fa-building"></i>
-              </div>
-              <div className="option-content">
-                <h3>Companies</h3>
-                <p>Add or manage healthcare companies and home care agencies</p>
-                <div className="option-actions">
-                  <button 
-                    className="option-btn view" 
-                    onClick={(e) => handleViewAllCompaniesClick(e)}
-                    disabled={isLoggingOut}
-                  >
-                    <i className="fas fa-list"></i> View All Companies
-                  </button>
-                  <button 
-                    className="option-btn add" 
-                    onClick={(e) => handleRegisterCompanyClick(e)}
-                    disabled={isLoggingOut}
-                  >
-                    <i className="fas fa-plus"></i> Add New Company
-                  </button>
-                </div>
-              </div>
-              <div className="option-glow"></div>
-              <div className="option-bg-icon">
-                <i className="fas fa-building"></i>
-              </div>
-            </div>
           </div>
           
           <div className="stats-container">
@@ -699,10 +613,6 @@ const DevStaffingPage = () => {
               onBackToOptions={handleBackToOptions}
               onAddNewStaff={handleAddStaffClick}  
             />
-          ) : selectedOption === 'companies' && showCompanyForm ? (
-            <CompanyRegistrationForm onCancel={handleCompanyFormCancel} onSave={handleCompanySave} />
-          ) : selectedOption === 'companies' && showCompanyList ? (
-            <CompanyListComponent onBackToOptions={handleBackToOptions} />
           ) : (
             <div className="selected-content-area">
               {selectedOption && (
@@ -710,14 +620,11 @@ const DevStaffingPage = () => {
                   <div className="content-header">
                     <h2>
                       {selectedOption === 'therapists' ? 'Therapists & Office Staff' : 
-                      selectedOption === 'companies' ? 'Companies & Agencies' : 
                       'Scheduling & Assignments'}
                     </h2>
                     <p>
                       {selectedOption === 'therapists' 
                         ? 'View and manage your therapy and office staff team members.' 
-                        : selectedOption === 'companies'
-                        ? 'Manage healthcare companies and home care agencies in the system.'
                         : 'Manage scheduling and patient assignments for your therapy team.'}
                     </p>
                   </div>
@@ -726,11 +633,9 @@ const DevStaffingPage = () => {
                     <div className="placeholder-content">
                       <i className={`fas fa-${
                         selectedOption === 'therapists' ? 'users' : 
-                        selectedOption === 'companies' ? 'building' : 
                         'calendar-alt'}`}></i>
                       <p>Select an action to continue with {
                         selectedOption === 'therapists' ? 'staff management' : 
-                        selectedOption === 'companies' ? 'company management' : 
                         'scheduling'}</p>
                       
                       {selectedOption === 'therapists' && (
@@ -752,24 +657,6 @@ const DevStaffingPage = () => {
                         </div>
                       )}
                       
-                      {selectedOption === 'companies' && (
-                        <div className="action-buttons">
-                          <button 
-                            className="action-btn add" 
-                            onClick={(e) => handleRegisterCompanyClick(e)}
-                            disabled={isLoggingOut}
-                          >
-                            <i className="fas fa-building"></i> Register New Company
-                          </button>
-                          <button 
-                            className="action-btn view" 
-                            onClick={(e) => handleViewAllCompaniesClick(e)}
-                            disabled={isLoggingOut}
-                          >
-                            <i className="fas fa-list"></i> View All Companies
-                          </button>
-                        </div>
-                      )}
                       
                       {selectedOption === 'scheduling' && (
                         <div className="action-buttons">
