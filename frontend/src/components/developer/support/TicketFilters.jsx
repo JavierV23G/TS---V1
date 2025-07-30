@@ -48,7 +48,6 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
 
   return (
     <div className="ticket-filters">
-      {/* Búsqueda principal */}
       <div className="search-section">
         <div className="search-box">
           <div className="search-icon">
@@ -74,10 +73,8 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
         </div>
       </div>
 
-      {/* Filtros principales */}
       <div className="filter-sections">
         
-        {/* Filtro de Estado */}
         <div className="filter-group">
           <label className="filter-label">
             <i className="fas fa-tasks"></i>
@@ -97,7 +94,6 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
           </select>
         </div>
 
-        {/* Filtro de Prioridad */}
         <div className="filter-group">
           <label className="filter-label">
             <i className="fas fa-flag"></i>
@@ -117,7 +113,6 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
           </select>
         </div>
 
-        {/* Filtro de Categoría */}
         <div className="filter-group">
           <label className="filter-label">
             <i className="fas fa-tags"></i>
@@ -137,7 +132,6 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
           </select>
         </div>
 
-        {/* Botón limpiar filtros */}
         <div className="filter-actions">
           <button
             className="clear-filters-btn"
@@ -150,7 +144,6 @@ const TicketFilters = ({ filters, onFilterChange, isLoading }) => {
         </div>
       </div>
 
-      {/* Indicadores de filtros activos */}
       <div className="active-filters">
         {filters.search && (
           <div className="filter-chip">

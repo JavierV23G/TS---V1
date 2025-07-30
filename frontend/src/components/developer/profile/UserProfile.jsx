@@ -7,12 +7,10 @@ const DevUserProfile = () => {
   const { currentUser, updateUser } = useAuth();
   const navigate = useNavigate();
   
-  // Estados de animación de carga clínica
   const [isLoading, setIsLoading] = useState(true);
   const [loadingPhase, setLoadingPhase] = useState(0);
   const [showContent, setShowContent] = useState(false);
   
-  // Estados del perfil
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -21,7 +19,6 @@ const DevUserProfile = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
   
-  // Estados de datos
   const [locationInfo, setLocationInfo] = useState(null);
   const [hostAgency, setHostAgency] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -29,7 +26,6 @@ const DevUserProfile = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   
-  // Datos del formulario para edición
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -47,10 +43,8 @@ const DevUserProfile = () => {
     currentPassword: ''
   });
   
-  // Errores de validación del formulario
   const [errors, setErrors] = useState({});
   
-  // Función para obtener el rol base y generar la ruta correcta
   const getRoleRoute = () => {
     if (!currentUser?.role) return 'developer';
     const role = currentUser.role.toLowerCase();
@@ -70,14 +64,12 @@ const DevUserProfile = () => {
     return roleMapping[role] || 'developer';
   };
 
-  // Función para construir parámetros de consulta para API
   const buildQueryParams = (params) =>
     Object.entries(params)
       .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&');
 
-  // Función para convertir el rol del backend al frontend
   const convertRoleFromBackend = (role) => {
     const roleMapping = {
       'Developer': 'developer',
@@ -94,7 +86,6 @@ const DevUserProfile = () => {
     return roleMapping[role] || role.toLowerCase();
   };
 
-  // Función para convertir el rol del frontend al backend
   const convertRoleToBackend = (role) => {
     const roleMapping = {
       'developer': 'Developer',
@@ -111,7 +102,6 @@ const DevUserProfile = () => {
     return roleMapping[role] || role;
   };
 
-  // Función para formatear fecha sin problemas de timezone
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     
@@ -127,7 +117,6 @@ const DevUserProfile = () => {
     }
   };
 
-  // Función para formatear fecha para mostrar
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return 'Not specified';
     
@@ -144,7 +133,6 @@ const DevUserProfile = () => {
     }
   };
 
-  // Función para formatear número de teléfono
   const formatPhoneNumber = (value) => {
     if (!value) return '';
     const phoneNumber = value.replace(/[^\d]/g, '');
@@ -156,39 +144,31 @@ const DevUserProfile = () => {
     return phoneNumber.length > 0 ? `(${phoneNumber}` : '';
   };
 
-  // Función para navegar hacia atrás
   const handleGoBack = () => {
     const roleRoute = getRoleRoute();
     navigate(`/${roleRoute}/homePage`);
   };
 
-  // Animación de carga clínica elegante
   useEffect(() => {
     const loadingSequence = async () => {
-      // Fase 1: Inicialización del sistema
       await new Promise(resolve => setTimeout(resolve, 400));
       setLoadingPhase(1);
       
-      // Fase 2: Cargando información médica
       await new Promise(resolve => setTimeout(resolve, 600));
       setLoadingPhase(2);
       
-      // Fase 3: Preparando interfaz clínica
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoadingPhase(3);
       
-      // Fase 4: Completado
       await new Promise(resolve => setTimeout(resolve, 300));
       setIsLoading(false);
       
-      // Mostrar contenido con animación
       setTimeout(() => setShowContent(true), 100);
     };
     
     loadingSequence();
   }, []);
 
-  // Función para obtener el perfil del usuario desde la API
   const fetchUserProfile = async (userId) => {
     try {
       const response = await fetch(`http://localhost:8000/staff/`, {
@@ -270,7 +250,6 @@ const DevUserProfile = () => {
     }
   };
 
-  // Inicializar datos del perfil
   useEffect(() => {
     const initializeProfile = async () => {
       if (!currentUser || isLoading) return;
@@ -282,28 +261,24 @@ const DevUserProfile = () => {
 
         const promises = [];
         
-        // Obtener ubicación si existe código postal
         if (profileData.postal_code) {
           promises.push(fetchLocationFromZip(profileData.postal_code));
         } else {
           promises.push(Promise.resolve(null));
         }
         
-        // Obtener agencia host para terapeutas
         if (profileData.agency_id && ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA', 'Administrator'].includes(profileData.role)) {
           promises.push(fetchHostAgency(profileData.agency_id));
         } else {
           promises.push(Promise.resolve(null));
         }
         
-        // Obtener documentos para desarrolladores/administradores
         if (['Developer', 'Administrator'].includes(profileData.role)) {
           promises.push(fetchUserDocuments(profileData.id));
         } else {
           promises.push(Promise.resolve([]));
         }
 
-        // Obtener estadísticas de actividad
         promises.push(fetchActivityStats(profileData.id));
 
         const [locationResult, agencyResult, documentsResult, statsResult] = await Promise.all(promises);
@@ -322,7 +297,6 @@ const DevUserProfile = () => {
     initializeProfile();
   }, [currentUser, isLoading]);
 
-  // API Function - Zippopotam.us
   const fetchLocationFromZip = async (zipCode) => {
     if (!zipCode) return null;
     
@@ -440,12 +414,10 @@ const DevUserProfile = () => {
     };
   };
 
-  // Manejar cambios en los campos del formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
     
-    // Formatear teléfono automáticamente
     if (name === 'phone' || name === 'alt_phone') {
       formattedValue = formatPhoneNumber(value);
     }
@@ -455,7 +427,6 @@ const DevUserProfile = () => {
       [name]: formattedValue
     }));
     
-    // Limpiar error cuando se edita el campo
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -465,7 +436,6 @@ const DevUserProfile = () => {
     }
   };
 
-  // Validar datos del formulario
   const validateForm = () => {
     const newErrors = {};
     
@@ -487,7 +457,6 @@ const DevUserProfile = () => {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
-    // Validación de contraseña
     if (showPasswordChange) {
       if (!formData.currentPassword) {
         newErrors.currentPassword = 'Current password is required';
@@ -508,7 +477,6 @@ const DevUserProfile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Manejar guardado de cambios
   const handleSave = async () => {
     if (!validateForm()) return;
     
@@ -582,7 +550,6 @@ const DevUserProfile = () => {
         setShowSuccessMessage(false);
       }, 4000);
       
-      // Actualizar información de ubicación si cambió el código postal
       if (formData.postal_code !== userProfile.postal_code) {
         const newLocationInfo = await fetchLocationFromZip(formData.postal_code);
         setLocationInfo(newLocationInfo);
@@ -596,7 +563,6 @@ const DevUserProfile = () => {
     }
   };
 
-  // Manejar cancelación de edición
   const handleCancel = () => {
     if (!userProfile) return;
     
@@ -621,7 +587,6 @@ const DevUserProfile = () => {
     setShowPasswordChange(false);
   };
 
-  // Acciones rápidas
   const handleChangePassword = () => {
     setShowPasswordChange(true);
     setIsEditing(true);
@@ -643,7 +608,6 @@ const DevUserProfile = () => {
     navigate(`/${roleRoute}/add-therapist`);
   };
 
-  // Gestión de sucursales
   const addBranch = () => {
     setFormData(prev => ({
       ...prev,
@@ -667,17 +631,14 @@ const DevUserProfile = () => {
     }));
   };
 
-  // Manejador de carga de foto de perfil
   const handleProfileImageUpload = async (file) => {
     if (!file) return;
     
-    // Validar que sea una imagen
     if (!file.type.startsWith('image/')) {
       showNotification('Please select a valid image file.', 'error');
       return;
     }
     
-    // Validar tamaño (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showNotification('Image size must be less than 5MB.', 'error');
       return;
@@ -686,15 +647,12 @@ const DevUserProfile = () => {
     setIsImageUploading(true);
     
     try {
-      // Crear preview local
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfileImage(e.target.result);
       };
       reader.readAsDataURL(file);
       
-      // Aquí iría la lógica para subir al servidor
-      // Por ahora solo mostramos el preview local
       
       showNotification('Profile image updated successfully!', 'success');
     } catch (error) {
@@ -705,20 +663,17 @@ const DevUserProfile = () => {
     }
   };
   
-  // Manejador de carga de documentos
   const handleDocumentUpload = async (file) => {
     if (!file) {
       showNotification('Please select a file to upload.', 'error');
       return;
     }
 
-    // Validar tamaño del archivo (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       showNotification('File size must be less than 10MB.', 'error');
       return;
     }
 
-    // Validar tipo de archivo
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -753,7 +708,6 @@ const DevUserProfile = () => {
 
       const result = await response.json();
 
-      // Crear objeto de documento para el estado local
       const newDocument = {
         id: result.id || Date.now(),
         name: file.name,
@@ -764,7 +718,6 @@ const DevUserProfile = () => {
         url: result.url || '#'
       };
 
-      // Actualizar estado local
       setDocuments(prev => [...prev, newDocument]);
       showNotification('Document uploaded successfully!', 'success');
 
@@ -776,21 +729,19 @@ const DevUserProfile = () => {
     }
   };
 
-  // Funciones para animación de tabs
   const getTabPosition = () => {
     const sections = ['personal', 'account'];
     if (userProfile?.role === 'Agency') sections.push('branches');
     if (['Developer', 'Administrator'].includes(userProfile?.role)) sections.push('documents');
     
     const index = sections.indexOf(activeSection);
-    return index * 200; // 200px por tab
+    return index * 200;
   };
   
   const getTabWidth = () => {
-    return 180; // Ancho fijo de cada tab
+    return 180;
   };
   
-  // Funciones de utilidad
   const showNotification = (message, type = 'success') => {
     const notification = document.createElement('div');
     notification.className = `clinical-notification ${type}`;
@@ -856,7 +807,6 @@ const DevUserProfile = () => {
     return 'Not specified';
   };
 
-  // Mostrar mensaje si no hay usuario conectado
   if (!currentUser) {
     return (
       <div className="clinical-profile-page">
@@ -869,7 +819,6 @@ const DevUserProfile = () => {
     );
   }
 
-  // Renderizar pantalla de carga clínica elegante
   if (isLoading) {
     return (
       <div className="clinical-loading-screen">
@@ -934,13 +883,11 @@ const DevUserProfile = () => {
 
   return (
     <div className={`clinical-profile-page ${showContent ? 'show' : ''}`}>
-      {/* Fondo clínico con efectos sutiles */}
       <div className="clinical-background">
         <div className="gradient-mesh"></div>
         <div className="geometric-pattern"></div>
       </div>
 
-      {/* Mensaje de éxito */}
       {showSuccessMessage && (
         <div className="clinical-notification success show">
           <div className="notification-content">
@@ -950,7 +897,6 @@ const DevUserProfile = () => {
         </div>
       )}
 
-      {/* Header Clínico Elegante */}
       <header className="clinical-header">
         <div className="header-glass">
           <div className="header-content">
@@ -1027,9 +973,7 @@ const DevUserProfile = () => {
         </div>
       </header>
 
-      {/* Contenedor principal con diseño de 3 columnas */}
       <div className="profile-container">
-        {/* Columna izquierda - Sidebar con avatar y stats */}
         <aside className="profile-sidebar">
           <div className="sidebar-card avatar-card">
             <div className="avatar-section">
@@ -1101,7 +1045,6 @@ const DevUserProfile = () => {
               </div>
             </div>
 
-            {/* Stats rápidos */}
             <div className="quick-stats">
               <div className="stat-item">
                 <div className="stat-icon" style={{ background: `${roleInfo.color}15` }}>
@@ -1162,7 +1105,6 @@ const DevUserProfile = () => {
               )}
             </div>
 
-            {/* Acciones rápidas */}
             {!isEditing && (
               <div className="quick-actions">
                 <h3>Quick Actions</h3>
@@ -1197,9 +1139,7 @@ const DevUserProfile = () => {
           </div>
         </aside>
 
-        {/* Columna central - Información principal */}
         <main className="profile-main">
-          {/* Navegación premium con tabs modernas */}
           <nav className="premium-section-nav">
             <div className="nav-background"></div>
             <div className="tabs-container">
@@ -1294,9 +1234,7 @@ const DevUserProfile = () => {
             </div>
           </nav>
 
-          {/* Contenido de las secciones */}
           <div className="section-content">
-            {/* Sección de Información Personal */}
             {activeSection === 'personal' && (
               <div className="info-section animate-in">
                 <div className="section-header">
@@ -1515,7 +1453,6 @@ const DevUserProfile = () => {
                     </>
                   ) : (
                     <>
-                      {/* Campos específicos para Agencia */}
                       <div className="form-group">
                         <label>Agency Name</label>
                         {isEditing ? (
@@ -1634,7 +1571,6 @@ const DevUserProfile = () => {
               </div>
             )}
 
-            {/* Sección de Cuenta y Seguridad */}
             {activeSection === 'account' && (
               <div className="info-section animate-in">
                 <div className="section-header">
@@ -1706,7 +1642,6 @@ const DevUserProfile = () => {
                     </div>
                   </div>
 
-                  {/* Sección de cambio de contraseña */}
                   {isEditing && (
                     <div className="form-group full-width password-section">
                       <div className="password-header">
@@ -1791,7 +1726,6 @@ const DevUserProfile = () => {
               </div>
             )}
 
-            {/* Sección de Sucursales (Solo para Agencias) */}
             {activeSection === 'branches' && userProfile?.role === 'Agency' && (
               <div className="info-section animate-in">
                 <div className="section-header">
@@ -1896,7 +1830,6 @@ const DevUserProfile = () => {
               </div>
             )}
 
-            {/* Sección de Documentos (Solo para Developer/Administrator) */}
             {activeSection === 'documents' && ['Developer', 'Administrator'].includes(userProfile?.role) && (
               <div className="info-section animate-in">
                 <div className="section-header">
@@ -1961,7 +1894,6 @@ const DevUserProfile = () => {
                   )}
                 </div>
 
-                {/* Document upload area */}
                 <div className="document-upload-area">
                   <input
                     type="file"
@@ -2001,7 +1933,6 @@ const DevUserProfile = () => {
           </div>
         </main>
 
-        {/* Columna derecha - Información adicional */}
         <aside className="profile-additional">
           <div className="info-card security-card">
             <div className="card-header">

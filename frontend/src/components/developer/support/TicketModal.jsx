@@ -9,7 +9,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
 
   if (!isOpen || !ticket) return null;
 
-  // Formatear fecha completa
   const formatFullDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
       weekday: 'long',
@@ -21,7 +20,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
     });
   };
 
-  // Obtener color de prioridad
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'critical': return '#EF4444';
@@ -32,7 +30,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
     }
   };
 
-  // Obtener color de estado
   const getStatusColor = (status) => {
     switch (status) {
       case 'new': return '#8B5CF6';
@@ -45,7 +42,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
     }
   };
 
-  // Manejar envío de respuesta al usuario
   const handleUserReplySubmit = async (e) => {
     e.preventDefault();
     if (!userReplyText.trim()) return;
@@ -72,13 +68,11 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
       
       setUserReplyText('');
     } catch (error) {
-      console.error('Error sending reply:', error);
     } finally {
       setIsReplying(false);
     }
   };
 
-  // Manejar envío de mensaje interno del staff
   const handleStaffChatSubmit = async (e) => {
     e.preventDefault();
     if (!staffChatText.trim()) return;
@@ -103,18 +97,15 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
       
       setStaffChatText('');
     } catch (error) {
-      console.error('Error sending staff message:', error);
     } finally {
       setIsSendingStaffMessage(false);
     }
   };
 
-  // Cambiar estado del ticket
   const handleStatusChange = (newStatus) => {
     onTicketUpdate(ticket.id, { status: newStatus });
   };
 
-  // Cambiar prioridad del ticket
   const handlePriorityChange = (newPriority) => {
     onTicketUpdate(ticket.id, { priority: newPriority });
   };
@@ -123,7 +114,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
     <div className="ticket-modal-overlay" onClick={onClose}>
       <div className="ticket-modal" onClick={(e) => e.stopPropagation()}>
         
-        {/* Header del Modal */}
         <div className="modal-header">
           <div className="modal-title-section">
             <h2>{ticket.subject}</h2>
@@ -158,7 +148,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
           </button>
         </div>
 
-        {/* Información del Usuario */}
         <div className="modal-user-info">
           <div className="user-card">
             <div className="user-avatar">
@@ -187,7 +176,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
           </div>
         </div>
 
-        {/* Tabs de Navegación */}
         <div className="modal-tabs">
           <button
             className={`tab ${activeTab === 'user-chat' ? 'active' : ''}`}
@@ -218,10 +206,8 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
           </button>
         </div>
 
-        {/* Contenido de Tabs */}
         <div className="modal-content">
           
-          {/* Tab: Conversación con Usuario */}
           {activeTab === 'user-chat' && (
             <div className="user-chat-tab">
               <div className="chat-container">
@@ -291,7 +277,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
             </div>
           )}
 
-          {/* Tab: Chat Interno del Staff */}
           {activeTab === 'staff-chat' && (
             <div className="staff-chat-tab">
               <div className="chat-container">
@@ -374,11 +359,9 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
             </div>
           )}
 
-          {/* Tab: Acciones */}
           {activeTab === 'actions' && (
             <div className="actions-tab">
               
-              {/* Cambio de estado */}
               <div className="action-section">
                 <h4>
                   <i className="fas fa-tasks"></i>
@@ -403,7 +386,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
                 </div>
               </div>
 
-              {/* Cambio de prioridad */}
               <div className="action-section">
                 <h4>
                   <i className="fas fa-flag"></i>
@@ -428,7 +410,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
                 </div>
               </div>
 
-              {/* Asignación */}
               <div className="action-section">
                 <h4>
                   <i className="fas fa-user-plus"></i>
@@ -467,7 +448,6 @@ const TicketModal = ({ ticket, isOpen, onClose, onTicketUpdate }) => {
                 </div>
               </div>
 
-              {/* Tags */}
               <div className="action-section">
                 <h4>
                   <i className="fas fa-tags"></i>

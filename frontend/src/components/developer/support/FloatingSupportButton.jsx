@@ -1,4 +1,3 @@
-// components/developer/support/FloatingSupportButton.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../../styles/developer/support/FloatingSupportButtonDev.scss';
@@ -8,7 +7,6 @@ const FloatingSupportButton = () => {
   const [unreadCount, setUnreadCount] = useState(3);
   const [isAnimating, setIsAnimating] = useState(false);
   
-  // Animate the button periodically to draw attention
   useEffect(() => {
     if (unreadCount > 0) {
       const interval = setInterval(() => {
@@ -20,10 +18,8 @@ const FloatingSupportButton = () => {
     }
   }, [unreadCount]);
   
-  // Navigate to support dashboard
   const handleNavigateToSupport = () => {
     navigate('/support');
-    // Reset unread count when navigating
     setUnreadCount(0);
   };
   

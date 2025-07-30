@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
+import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
 import TemplateRenderer from './TemplateRenderer';
 import useTemplateConfig from './hooks/useTemplateConfig';
 import useSectionData from './hooks/useSectionData';
@@ -16,13 +16,24 @@ const NoteTemplateModal = ({
   const [currentStep, setCurrentStep] = useState('template');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load template configuration
+  // Load template configuration - hooks must be called unconditionally
   const { 
     templateConfig, 
     loading: configLoading, 
     error: configError,
     refreshConfig 
-  } = useTemplateConfig(disciplina, tipoNota);
+  } = useTemplateConfig(disciplina, tipoNota, isOpen);
+
+  // Debug log for initial data (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔷 NoteTemplateModal - Modal opened with data:', {
+      initialData,
+      patientData,
+      disciplina,
+      tipoNota,
+      templateConfig
+    });
+  }
 
   // Manage section data with autosave
   const {
@@ -40,6 +51,9 @@ const NoteTemplateModal = ({
     interval: templateConfig?.navigation?.autoSaveInterval || 30000,
     onSave: onSave
   });
+
+  // Early return if modal is not open - after hooks
+  if (!isOpen) return null;
 
   // Handle modal close
   const handleClose = () => {
@@ -145,8 +159,6 @@ const NoteTemplateModal = ({
       </div>
     );
   }
-
-  if (!isOpen) return null;
 
   const completionStats = getCompletionStats();
 

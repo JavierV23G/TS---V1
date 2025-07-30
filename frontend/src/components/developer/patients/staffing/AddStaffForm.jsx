@@ -47,22 +47,17 @@ const PasswordField = ({
 );
 
 const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
-  // Estados para control de carga y guardado
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedStaffName, setSavedStaffName] = useState('');
-  const [currentStep, setCurrentStep] = useState('role'); // 'role', 'details'
+  const [currentStep, setCurrentStep] = useState('role');
   
-  // ✅ Estado para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Función para formatear número de teléfono
   const formatPhoneNumber = (value) => {
-    // Remover todos los caracteres que no sean números
     const phoneNumber = value.replace(/[^\d]/g, '');
     
-    // Aplicar formato (XXX) XXX-XXXX
     if (phoneNumber.length >= 6) {
       return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
     } else if (phoneNumber.length >= 3) {
@@ -74,7 +69,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     return '';
   };
 
-  // ✅ Función para manejar cambios en campos de teléfono
   const handlePhoneChange = (e, fieldName, isAgencyField = false) => {
     const formattedValue = formatPhoneNumber(e.target.value);
     
@@ -94,7 +88,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     }
   };
 
-  // ✅ Función para manejar cambios en teléfonos de sucursales
   const handleBranchPhoneChange = (index, value) => {
     const formattedValue = formatPhoneNumber(value);
     const updatedBranches = [...formData.agencyFields.branches];
@@ -112,7 +105,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Estado principal del formulario
   const [formData, setFormData] = useState({
     role: '',
     firstName: '',
@@ -127,7 +119,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     password: '',
     agency: 'motive-home-care',
     
-    // Campos específicos para agencias
     agencyFields: {
       fullName: '',
       contactNumber: '',
@@ -137,7 +128,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     },
   });
 
-  // Lista de agencies disponibles
   const agencies = [
     {
       id: 'motive-home-care',
@@ -159,7 +149,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     }
   ];
 
-  // Estado para los documentos requeridos
   const [documents, setDocuments] = useState({
     covidVaccine: { status: 'pending', file: null },
     tbTest: { status: 'pending', file: null },
@@ -169,15 +158,12 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     autoInsurance: { status: 'pending', file: null },
     cprCertification: { status: 'pending', file: null },
     businessLicense: { status: 'pending', file: null },
-    // Documento específico para agencias
     contractDocument: { status: 'pending', file: null },
   });
 
-  // Mensajes de carga dinámicos
   const [loadingMessage, setLoadingMessage] = useState('Initializing staff module...');
   const [savingMessage, setSavingMessage] = useState('Processing staff data...');
   
-  // Simulación de carga inicial
   useEffect(() => {
     const loadingMessages = [
       { message: 'Connecting to system...', time: 800 },
@@ -201,7 +187,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     };
   }, []);
 
-  // Función para convertir el rol al formato del backend
   const convertRoleForBackend = (role) => {
     const roleMapping = {
       'developer': 'Developer',
@@ -218,7 +203,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     return roleMapping[role] || role;
   };
 
-  // ✅ Función para generar contraseña segura
   const generateSecurePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let newPassword = '';
@@ -231,12 +215,10 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // ✅ Función para toggle de visibilidad de contraseña
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // Handle para cambios en inputs del formulario principal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -245,7 +227,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Handle para campos específicos de agencia
   const handleAgencyFieldChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -257,7 +238,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Manejar cambios en sucursales de agencia
   const handleBranchChange = (index, field, value) => {
     const updatedBranches = [...formData.agencyFields.branches];
     updatedBranches[index] = {
@@ -274,7 +254,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Añadir nueva sucursal
   const addNewBranch = () => {
     setFormData({
       ...formData,
@@ -288,7 +267,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Eliminar sucursal
   const removeBranch = (index) => {
     const updatedBranches = [...formData.agencyFields.branches];
     updatedBranches.splice(index, 1);
@@ -302,18 +280,15 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // ✅ Handle mejorado para carga de archivos (documentos)
   const handleFileChange = (documentName, e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar tamaño del archivo (máximo 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         alert('El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
         return;
       }
 
-      // Validar tipo de archivo
       const allowedTypes = [
         'application/pdf',
         'image/jpeg',
@@ -328,11 +303,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
         return;
       }
 
-      console.log(`📎 File selected for ${documentName}:`, {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
 
       setDocuments(prevDocs => ({
         ...prevDocs,
@@ -346,7 +316,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     }
   };
 
-  // ✅ Función para remover archivo subido
   const removeFile = (documentName) => {
     setDocuments(prevDocs => ({
       ...prevDocs,
@@ -359,7 +328,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     }));
   };
 
-  // Toggle de estado de documentos
   const toggleDocumentStatus = (documentName) => {
     setDocuments({
       ...documents,
@@ -370,7 +338,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // ✅ Función para formatear tamaño de archivo
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -379,7 +346,6 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Resetear formulario
   const resetForm = () => {
     setFormData({
       role: '',
@@ -423,7 +389,6 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     
-    // Determinar el nombre a mostrar en el modal de éxito
     const displayName = formData.role === 'agency' 
       ? formData.agencyFields.fullName 
       : `${formData.firstName} ${formData.lastName}`;
@@ -431,7 +396,6 @@ const handleSubmit = async (e) => {
     setSavedStaffName(displayName);
   
     try {
-      // Preparar el objeto base para enviar a la API
       let staffBody = {
         username: formData.userName,
         password: formData.password,
@@ -439,7 +403,6 @@ const handleSubmit = async (e) => {
         is_active: true
       };
 
-      // Configuración específica para agencias
       if (formData.role === 'agency') {
         staffBody = {
           ...staffBody,
@@ -453,7 +416,6 @@ const handleSubmit = async (e) => {
           branches: JSON.stringify(formData.agencyFields.branches || [])
         };
         
-        // Si hay dirección, intentar extraer código postal
         if (formData.agencyFields.address) {
           const zipMatch = formData.agencyFields.address.match(/\b\d{5}(-\d{4})?\b/);
           if (zipMatch) {
@@ -461,7 +423,6 @@ const handleSubmit = async (e) => {
           }
         }
       } else {
-        // Configuración para staff regular (no agencias)
         staffBody = {
           ...staffBody,
           name: `${formData.firstName} ${formData.lastName}`,
@@ -472,7 +433,6 @@ const handleSubmit = async (e) => {
           address: '',
         };
 
-        // Agregar campos opcionales solo si existen
         if (formData.dob) {
           staffBody.birthday = formData.dob;
         }
@@ -481,13 +441,11 @@ const handleSubmit = async (e) => {
           staffBody.gender = formData.gender;
         }
 
-        // Si es un rol que requiere agencia, agregar la información de agencia
         if (isTherapistOrAdmin() && formData.agency) {
           staffBody.agency_id = formData.agency;
         }
       }
   
-      console.log("📤 Sending staff data:", staffBody);
       
       const res = await fetch('http://localhost:8000/staff/', {
         method: 'POST',
@@ -508,9 +466,7 @@ const handleSubmit = async (e) => {
       const staffData = await res.json();
       const newStaffId = staffData.id;
       
-      console.log("✅ Staff created successfully:", staffData);
   
-      // ✅ Subir documentos mejorado
       for (const key in documents) {
         const doc = documents[key];
         if (doc.file) {
@@ -520,7 +476,6 @@ const handleSubmit = async (e) => {
             uploadFormData.append("staff_id", newStaffId);
             uploadFormData.append("document_type", key);
   
-            console.log(`📤 Uploading document: ${key} - ${doc.file.name}`);
             
             const uploadRes = await fetch("http://localhost:8000/documents/upload", {
               method: "POST",
@@ -530,14 +485,11 @@ const handleSubmit = async (e) => {
             if (!uploadRes.ok) {
               const uploadError = await uploadRes.json();
               console.warn(`⚠️ Document '${key}' failed to upload:`, uploadError);
-              // No detener el proceso por un error de documento
             } else {
               const uploadResult = await uploadRes.json();
-              console.log(`✅ Document '${key}' uploaded successfully:`, uploadResult);
             }
           } catch (uploadErr) {
             console.error(`❌ Error uploading document '${key}':`, uploadErr);
-            // Continuar con otros documentos aunque uno falle
           }
         }
       }
@@ -551,7 +503,6 @@ const handleSubmit = async (e) => {
     }
   };
 
-  // Seleccionar rol y avanzar al siguiente paso
   const handleRoleSelect = (role) => {
     setFormData({
       ...formData,
@@ -560,12 +511,10 @@ const handleSubmit = async (e) => {
     setCurrentStep('details');
   };
 
-  // Volver a la selección de rol
   const handleBackToRoleSelection = () => {
     setCurrentStep('role');
   };
 
-  // Acciones para el modal de éxito
   const handleCreateAnother = () => {
     setShowSuccessModal(false);
     resetForm();
@@ -579,7 +528,6 @@ const handleSubmit = async (e) => {
     }
   };
 
-  // Lista de roles disponibles con iconos mejorados
   const roles = [
     { value: 'developer', label: 'Developer', icon: 'fa-laptop-code', description: 'System development and technical support' },
     { value: 'administrator', label: 'Administrator', icon: 'fa-user-shield', description: 'System administration and user management' },
@@ -592,7 +540,6 @@ const handleSubmit = async (e) => {
     { value: 'sta', label: 'Speech Therapy Assistant (STA)', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
   ];
 
-  // Lista de documentos requeridos para terapeutas con descripciones mejoradas
   const therapistDocuments = [
     { id: 'covidVaccine', name: 'Proof of COVID Vaccine', icon: 'fa-syringe', description: 'Vaccination record or certificate' },
     { id: 'tbTest', name: 'TB Test proof (PPD/X-Ray)', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)', icon: 'fa-lungs' },
@@ -604,14 +551,12 @@ const handleSubmit = async (e) => {
     { id: 'businessLicense', name: 'Copy of Business License or EIN', icon: 'fa-certificate', description: 'Business license or Employer Identification Number document' },
   ];
 
-  // Documentos para agencias
   const agencyDocuments = [
     { id: 'businessLicense', name: 'Business License', icon: 'fa-building', description: 'Valid business operation license' },
     { id: 'contractDocument', name: 'Contract with TherapySync', icon: 'fa-file-contract', description: 'Signed service agreement' },
     { id: 'liabilityInsurance', name: 'Liability Insurance', icon: 'fa-shield-alt', description: 'Organization liability coverage documentation' },
   ];
 
-  // Determinar qué documentos mostrar según el rol
   const getDocumentsForRole = () => {
     switch(formData.role) {
       case 'agency':
@@ -628,17 +573,14 @@ const handleSubmit = async (e) => {
     }
   };
 
-// Verificar si es terapeuta o administrador (para mostrar agencia)
 const isTherapistOrAdmin = () => {
   return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(formData.role);
 };
 
-  // Verificar si debe mostrar documentos
   const shouldShowDocuments = () => {
     return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(formData.role);
   };
 
-  // Pantalla de selección de rol
   const renderRoleSelection = () => (
     <div className="role-selection-container">
       <div className="role-selection-header">
@@ -664,7 +606,6 @@ const isTherapistOrAdmin = () => {
     </div>
   );
 
-  // Pantalla de carga
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -692,7 +633,6 @@ const isTherapistOrAdmin = () => {
     );
   }
 
-  // Pantalla de guardado
   if (isSaving) {
     return (
       <div className="loading-screen saving-screen">
@@ -722,7 +662,6 @@ const isTherapistOrAdmin = () => {
 
   return (
     <div className="add-staff-container">
-      {/* Modal de éxito */}
       {showSuccessModal && (
         <div className="success-modal-overlay">
           <div className="success-modal">
@@ -752,7 +691,6 @@ const isTherapistOrAdmin = () => {
         </div>
       )}
       
-      {/* Contenedor principal del formulario */}
       <div className="staff-form-container">
         {currentStep === 'role' ? (
           renderRoleSelection()
@@ -783,10 +721,8 @@ const isTherapistOrAdmin = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="staff-form">
-              {/* Formulario específico para agencias */}
               {formData.role === 'agency' ? (
                 <>
-                  {/* Información de la agencia */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-hospital-alt"></i>
@@ -859,7 +795,6 @@ const isTherapistOrAdmin = () => {
                     </div>
                   </div>
 
-                  {/* Sucursales de la agencia */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-code-branch"></i>
@@ -937,7 +872,6 @@ const isTherapistOrAdmin = () => {
                       </div>
                   </div>
 
-                  {/* Información de usuario para la agencia */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-lock"></i>
@@ -974,7 +908,6 @@ const isTherapistOrAdmin = () => {
                 </>
               ) : (
                 <>
-                  {/* Información personal para roles no-agencia */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-user-circle"></i>
@@ -1050,7 +983,6 @@ const isTherapistOrAdmin = () => {
                     </div>
                   </div>
                   
-                  {/* Información de contacto */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-address-card"></i>
@@ -1097,7 +1029,6 @@ const isTherapistOrAdmin = () => {
                     </div>
                   </div>
                   
-                  {/* Información de usuario para STAFF REGULAR */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-lock"></i>
@@ -1134,7 +1065,6 @@ const isTherapistOrAdmin = () => {
                 </>
               )}
               
-              {/* Afiliación de agencia */}
               {(isTherapistOrAdmin() || formData.role === 'agency') && (
                 <div className="form-section">
                   <div className="section-header">
@@ -1217,7 +1147,6 @@ const isTherapistOrAdmin = () => {
                 </div>
               )}
               
-              {/* ✅ Documentos requeridos MEJORADOS - solo para terapeutas y agencias */}
               {shouldShowDocuments() && (
                 <div className="form-section documents-section">
                   <div className="section-header">
@@ -1253,7 +1182,6 @@ const isTherapistOrAdmin = () => {
                         )}
                         
                         <div className="document-actions">
-                          {/* ✅ Área de upload mejorada */}
                           {!documents[doc.id]?.file ? (
                             <div className="upload-zone">
                               <div className="upload-area">
@@ -1280,7 +1208,6 @@ const isTherapistOrAdmin = () => {
                               </div>
                             </div>
                           ) : (
-                            /* ✅ Vista previa del archivo subido */
                             <div className="file-preview">
                               <div className="file-info-card">
                                 <div className="file-icon">
@@ -1302,7 +1229,6 @@ const isTherapistOrAdmin = () => {
                                 </div>
                               </div>
                               
-                              {/* Botón para cambiar archivo */}
                               <div className="change-file">
                                 <input
                                   type="file"

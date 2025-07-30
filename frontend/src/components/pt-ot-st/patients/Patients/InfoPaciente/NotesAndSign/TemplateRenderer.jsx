@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import '../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/TemplateRenderer.scss';
+import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/TemplateRenderer.scss';
 
 // Import all sections
 import * as Sections from './sections';
@@ -27,6 +27,17 @@ const TemplateRenderer = ({
     return sectionMap[sectionName] || null;
   };
 
+  // Get icon for section
+  const getIconForSection = (sectionName) => {
+    const iconMap = {
+      'VITALS': 'fas fa-heartbeat',
+      'Transfers / Functional Independence': 'fas fa-walking',
+      'PAIN': 'fas fa-exclamation-triangle'
+    };
+    
+    return iconMap[sectionName] || 'fas fa-file-alt';
+  };
+
   // Load sections based on template configuration
   useEffect(() => {
     if (!templateConfig?.sections) return;
@@ -46,11 +57,14 @@ const TemplateRenderer = ({
             config: {
               ...sectionConfig,
               component: componentName,
-              name: sectionConfig.section_name
+              name: sectionConfig.section_name,
+              icon: getIconForSection(sectionConfig.section_name),
+              required: sectionConfig.is_required || false
             }
           };
+          console.log(`✅ Loaded section: ${sectionConfig.section_name} -> ${componentName}`);
         } else {
-          console.warn(`Section component for "${sectionConfig.section_name}" not found (mapped to: ${componentName})`);
+          console.warn(`❌ Section component for "${sectionConfig.section_name}" not found (mapped to: ${componentName})`);
         }
       });
 
@@ -82,9 +96,9 @@ const TemplateRenderer = ({
     
     return templateConfig.sections.map(section => ({
       id: section.id,
-      name: section.name || section.component.replace('Section', ''),
-      icon: section.icon || 'fas fa-file-alt',
-      required: section.required || false,
+      name: section.section_name || section.name || 'Section',
+      icon: getIconForSection(section.section_name) || section.icon || 'fas fa-file-alt',
+      required: section.is_required || section.required || false,
       completed: isDataComplete(data[section.id] || {})
     }));
   };

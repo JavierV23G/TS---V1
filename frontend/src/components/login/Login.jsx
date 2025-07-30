@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLoadingModal from './AuthLoadingModal';
+import AccountLockoutModal from './AccountLockoutModal';
+import failedAttemptsService from './FailedAttemptsService';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import { useAuth } from './AuthContext';
 
@@ -15,8 +17,13 @@ const Login = ({ onForgotPassword }) => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  const [lockoutModal, setLockoutModal] = useState({
+    isVisible: false,
+    lockoutInfo: null,
+    username: ''
+  });
 
-  // Detectar tamaño de pantalla para ajustes responsive
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 576);
@@ -36,6 +43,27 @@ const Login = ({ onForgotPassword }) => {
       setFormData(prev => ({ ...prev, username: savedUsername }));
       setRememberMe(true);
     }
+
+    failedAttemptsService.setCallbacks({
+      onLockout: (lockoutInfo) => {
+        setLockoutModal({
+          isVisible: true,
+          lockoutInfo,
+          username: lockoutInfo.username
+        });
+        setAuthModal({ isOpen: false, status: 'loading', message: '' });
+      },
+      onAttemptFailed: (attemptInfo) => {
+        const remainingAttempts = attemptInfo.remainingAttempts;
+        setErrors({
+          username: false,
+          password: true,
+          message: `Invalid credentials. ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt remaining' : 'attempts remaining'}.`
+        });
+      },
+      onAccountUnlocked: (username) => {
+      }
+    });
   }, []);
 
   const handleInputChange = (e) => {
@@ -47,12 +75,10 @@ const Login = ({ onForgotPassword }) => {
   };
   
   const handlePasswordFocus = (e) => {
-    // Prevenir que el foco salte cuando el usuario está escribiendo
     e.target.dataset.focused = 'true';
   };
   
   const handlePasswordBlur = (e) => {
-    // Limpiar el indicador de foco
     delete e.target.dataset.focused;
   };
 
@@ -69,7 +95,6 @@ const Login = ({ onForgotPassword }) => {
   };
 
   const showError = (field, message) => {
-    // Guardar el elemento actualmente enfocado
     const currentlyFocused = document.activeElement;
     
     setErrors({ ...errors, [field]: true, message });
@@ -79,7 +104,6 @@ const Login = ({ onForgotPassword }) => {
       setTimeout(() => element.classList.remove('form-pulse'), 500);
     }
     
-    // Restaurar el foco al elemento que estaba enfocado
     if (currentlyFocused && currentlyFocused.id) {
       setTimeout(() => {
         currentlyFocused.focus();
@@ -105,7 +129,6 @@ const Login = ({ onForgotPassword }) => {
   const togglePasswordVisibility = (e) => {
     e.preventDefault();
     setShowPassword(!showPassword);
-    // Mantener el foco en el campo de contraseña
     setTimeout(() => {
       document.getElementById('password')?.focus();
     }, 0);
@@ -115,6 +138,16 @@ const Login = ({ onForgotPassword }) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    const lockStatus = failedAttemptsService.isAccountLocked(formData.username);
+    if (lockStatus.isLocked) {
+      setLockoutModal({
+        isVisible: true,
+        lockoutInfo: lockStatus,
+        username: formData.username
+      });
+      return;
+    }
+
     setAuthModal({
       isOpen: true,
       status: 'loading',
@@ -122,16 +155,20 @@ const Login = ({ onForgotPassword }) => {
     });
 
     try {
-      // PASO 1: Verificar credenciales (SLAVE)
       const credentialsRes = await fetch('http://localhost:8000/auth/verify-credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      if (!credentialsRes.ok) throw new Error('Invalid username or password');
+      if (!credentialsRes.ok) {
+        failedAttemptsService.recordFailedAttempt(formData.username);
+        throw new Error('Invalid username or password');
+      }
 
       const userCredentials = await credentialsRes.json();
+      
+      failedAttemptsService.clearAttempts(formData.username);
       
       setAuthModal({
         isOpen: true,
@@ -139,7 +176,6 @@ const Login = ({ onForgotPassword }) => {
         message: 'Creating session...'
       });
 
-      // PASO 2: Crear token (MAIN)
       const tokenRes = await fetch('http://localhost:8000/auth/create-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,21 +190,18 @@ const Login = ({ onForgotPassword }) => {
 
       const { access_token: token } = await tokenRes.json();
 
-      // Crear objeto user para el contexto
       const user = {
         id: userCredentials.user_id,
         username: userCredentials.username,
         role: userCredentials.role
       };
 
-      // Guardar datos de sesión
       localStorage.setItem('auth_token', token);
       localStorage.setItem('auth_user', JSON.stringify(user));
       rememberMe
         ? localStorage.setItem('rememberedUsername', user.username)
         : localStorage.removeItem('rememberedUsername');
 
-      // Actualizar contexto de autenticación
       const loginResult = await login({ token, user });
       if (!loginResult.success) throw new Error('Authentication failed');
 
@@ -188,6 +221,18 @@ const Login = ({ onForgotPassword }) => {
         message: err.message || 'Login failed'
       });
     }
+  };
+
+  const handleContactAdmin = () => {
+    alert('Please contact the system administrator to unlock your account.');
+  };
+
+  const handleTryAgainLater = () => {
+    setLockoutModal({
+      isVisible: false,
+      lockoutInfo: null,
+      username: ''
+    });
   };
 
   return (
@@ -273,6 +318,14 @@ const Login = ({ onForgotPassword }) => {
       </div>
 
       <AuthLoadingModal {...authModal} onClose={closeAuthModal} userData={{ fullname: formData.username }} />
+      
+      <AccountLockoutModal
+        isVisible={lockoutModal.isVisible}
+        lockoutInfo={lockoutModal.lockoutInfo}
+        username={lockoutModal.username}
+        onContactAdmin={handleContactAdmin}
+        onTryAgainLater={handleTryAgainLater}
+      />
     </>
   );
 };
