@@ -51,8 +51,13 @@ const Header = ({ onLogout }) => {
   }
   
   function getFilteredMenuOptions() {
+    // Opción de Patients/Clients basada en el rol
+    const patientsOption = roleType === 'developer' 
+      ? { id: 1, name: "Clients", icon: "fa-users", route: `/${baseRole}/patients`, color: "#36D1DC" }
+      : { id: 1, name: "Patients", icon: "fa-user-injured", route: `/${baseRole}/patients`, color: "#36D1DC" };
+    
     const allMenuOptions = [
-      { id: 1, name: "Patients", icon: "fa-user-injured", route: `/${baseRole}/patients`, color: "#36D1DC" },
+      patientsOption,
       { id: 2, name: "Referrals", icon: "fa-file-medical", route: `/${baseRole}/referrals`, color: "#FF9966" },
       { id: 3, name: "Accounting", icon: "fa-chart-pie", route: `/${baseRole}/accounting`, color: "#4CAF50" }
     ];
