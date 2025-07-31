@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/SubjectiveSection.scss';
+import '../../../../../../../styles/admin/Patients/InfoPaciente/NotesAndSign/sections/SubjectiveSection.scss';
 
 const SubjectiveSection = ({ data, onChange, sectionId, config }) => {
   const handleChange = (field, value) => {

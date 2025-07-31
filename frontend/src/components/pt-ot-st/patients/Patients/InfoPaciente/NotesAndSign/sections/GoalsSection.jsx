@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/GoalsSection.scss';
+import '../../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/sections/GoalsSection.scss';
 
 const GoalsSection = ({ data, onChange, sectionId, config }) => {
   const [expandedSection, setExpandedSection] = useState('gait');

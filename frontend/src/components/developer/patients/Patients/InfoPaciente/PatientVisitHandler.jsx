@@ -21,10 +21,48 @@ const PatientVisitHandler = ({ patient }) => {
     const loadVisits = async () => {
       setIsLoading(true);
       try {
-        const fetchedVisits = await fetchVisits(patient.id);
-        setVisits(fetchedVisits);
+        // First get the active certification period for the patient
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const certResponse = await fetch(`${API_BASE_URL}/patient/${patient.id}/cert-periods`);
+        
+        if (!certResponse.ok) {
+          throw new Error('Failed to fetch certification periods');
+        }
+        
+        const certPeriods = await certResponse.json();
+        const activeCertPeriod = certPeriods.find(period => period.is_active) || certPeriods[0];
+        
+        if (activeCertPeriod) {
+          // Fetch visits for the active certification period
+          const visitsResponse = await fetch(`${API_BASE_URL}/visits/certperiod/${activeCertPeriod.id}`);
+          
+          if (!visitsResponse.ok) {
+            throw new Error('Failed to fetch visits');
+          }
+          
+          const fetchedVisits = await visitsResponse.json();
+          
+          // Convert backend format to frontend format
+          const formattedVisits = fetchedVisits.map(visit => ({
+            id: visit.id,
+            visitType: visit.visit_type,
+            therapist: visit.staff_id,
+            date: visit.visit_date,
+            time: visit.scheduled_time || '',
+            notes: visit.notes || '',
+            status: visit.status || 'SCHEDULED',
+            documents: [],
+            noteId: visit.note_id,
+            hasNote: !!visit.note_id
+          }));
+          
+          setVisits(formattedVisits);
+        } else {
+          setVisits([]);
+        }
       } catch (err) {
         console.error('Failed to fetch visits:', err);
+        setVisits([]);
       } finally {
         setIsLoading(false);
       }
@@ -35,161 +73,6 @@ const PatientVisitHandler = ({ patient }) => {
     }
   }, [patient?.id]);
 
-  // Simulated API for fetching visits
-  const fetchVisits = async (patientId) => {
-    // Replace with actual API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock visits data - replace with API response
-        const mockVisits = [
-          {
-            id: 1,
-            visitType: 'INITIAL',
-            therapist: 'pt1',
-            date: '2025-02-11',
-            time: '14:15',
-            notes: 'Initial evaluation for physical therapy',
-            status: 'COMPLETED',
-            documents: ['evaluation_form.pdf'],
-          },
-          {
-            id: 2,
-            visitType: 'REGULAR',
-            therapist: 'pt1',
-            date: '2025-02-13',
-            time: '15:45',
-            notes: 'Follow-up session for gait training',
-            status: 'MISSED',
-            missedReason: 'Patient was not available',
-          },
-          {
-            id: 3,
-            visitType: 'RECERT',
-            therapist: 'pt1',
-            date: '2025-02-18',
-            time: '',
-            notes: 'Recertification evaluation for continued therapy',
-            status: 'SCHEDULED',
-            documents: [],
-          },
-          {
-            id: 4,
-            visitType: 'REGULAR',
-            therapist: 'pt1',
-            date: '2025-02-24',
-            time: '15:30',
-            notes: 'Regular therapy session',
-            status: 'COMPLETED',
-            documents: ['progress_note.pdf'],
-          },
-          {
-            id: 5,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-02-26',
-            time: '14:45',
-            notes: 'PTA follow-up session',
-            status: 'COMPLETED',
-            documents: ['progress_note.pdf'],
-          },
-          {
-            id: 6,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-03-04',
-            time: '13:45',
-            notes: 'PTA follow-up session',
-            status: 'COMPLETED',
-            documents: ['progress_note.pdf'],
-          },
-          {
-            id: 7,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-03-06',
-            time: '15:30',
-            notes: 'PTA follow-up session',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 8,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-03-10',
-            time: '13:45',
-            notes: 'PTA follow-up session',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 9,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-03-13',
-            time: '13:45',
-            notes: 'PTA follow-up session',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 10,
-            visitType: 'REASSESSMENT',
-            therapist: 'pt1',
-            date: '2025-03-18',
-            time: '',
-            notes: 'Reassessment for progress evaluation',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 11,
-            visitType: 'REGULAR',
-            therapist: 'pta1',
-            date: '2025-03-25',
-            time: '',
-            notes: 'Regular PTA session',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 12,
-            visitType: 'REGULAR',
-            therapist: 'ot1',
-            date: '2025-03-27',
-            time: '',
-            notes: 'Occupational therapy session',
-            status: 'SCHEDULED',
-          },
-          {
-            id: 13,
-            visitType: 'REGULAR',
-            therapist: 'cota1',
-            date: '2025-04-01',
-            time: '13:15',
-            notes: 'COTA session',
-            status: 'PENDING',
-            pendingReason: 'Pending cosignature',
-          },
-          {
-            id: 14,
-            visitType: 'REGULAR',
-            therapist: 'st1',
-            date: '2025-04-03',
-            time: '14:45',
-            notes: 'Speech therapy session',
-            status: 'PENDING',
-            pendingReason: 'Pending cosignature',
-          },
-          {
-            id: 15,
-            visitType: 'INITIAL',
-            therapist: 'pta1',
-            date: '2025-04-28',
-            time: '10:30',
-            notes: 'Initial evaluation with Maria Gonzalez',
-            status: 'SCHEDULED',
-          },
-        ];
-        resolve(mockVisits);
-      }, 1000);
-    });
-  };
 
   // Simulated API for adding/updating visits
   const saveVisit = async (visitData) => {
@@ -445,6 +328,17 @@ const PatientVisitHandler = ({ patient }) => {
                     >
                       <div className="visit-type">
                         {getVisitTypeLabel(visit.visitType)}
+                        {visit.hasNote && (
+                          <i 
+                            className="fas fa-file-medical-alt" 
+                            style={{ 
+                              marginLeft: '8px', 
+                              color: '#10b981',
+                              fontSize: '14px'
+                            }}
+                            title="Has Note"
+                          ></i>
+                        )}
                       </div>
                       <div 
                         className="visit-status"

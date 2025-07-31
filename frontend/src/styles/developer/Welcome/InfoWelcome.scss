@@ -234,9 +234,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 1rem;
+  padding: 2rem 1rem;
   position: relative;
   
   @media (max-width: 992px) {
@@ -298,8 +298,8 @@
   // Enhanced dashboard cards grid for responsive layouts
   .dashboard-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2.5rem;
     perspective: 1000px;
     
     @media (max-width: 992px) {
@@ -325,11 +325,11 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-radius: 20px;
-      padding: 1.5rem;
+      padding: 2rem;
       transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      // height: 650px;
-      overflow: visible;
+      height: 400px;
+      overflow: hidden;
       animation: fadeInUp 0.7s ease-out forwards;
       animation-delay: calc(var(--i, 0) * 0.15s);
       opacity: 0;
@@ -341,13 +341,13 @@
       
       @media (max-width: 768px) {
         height: auto;
-        min-height: 380px;
+        min-height: 320px;
         padding: 1.5rem;
       }
       
       @media (max-width: 576px) {
         padding: 1.2rem;
-        min-height: 350px;
+        min-height: 300px;
       }
       
       &:nth-child(1) {
@@ -579,14 +579,14 @@
       .card-header {
         display: flex;
         align-items: center;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.8rem;
         
         @media (max-width: 768px) {
-          margin-bottom: 1rem;
+          margin-bottom: 1.4rem;
         }
         
         @media (max-width: 576px) {
-          margin-bottom: 0.8rem;
+          margin-bottom: 1.2rem;
         }
         
         h3 {
@@ -674,12 +674,12 @@
           }
           
           // Color variants for each icon
-          &.patients-icon, &.clients-icon {
-            background: linear-gradient(135deg, #4CAF50, #81C784);
-            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+          &.patients-icon {
+            background: linear-gradient(135deg, #36D1DC, #5B86E5);
+            box-shadow: 0 10px 20px rgba(91, 134, 229, 0.3);
             
             .icon-background {
-              background: radial-gradient(circle, #4CAF50 0%, transparent 70%);
+              background: radial-gradient(circle, #36D1DC 0%, transparent 70%);
             }
           }
           
@@ -692,12 +692,12 @@
             }
           }
           
-          &.learning-icon, &.control-icon {
-            background: linear-gradient(135deg, #FF9966, #FF5E62);
-            box-shadow: 0 10px 20px rgba(255, 94, 98, 0.3);
+          &.learning-icon {
+            background: linear-gradient(135deg, #56CCF2, #2F80ED);
+            box-shadow: 0 10px 20px rgba(47, 128, 237, 0.3);
             
             .icon-background {
-              background: radial-gradient(circle, #FF9966 0%, transparent 70%);
+              background: radial-gradient(circle, #56CCF2 0%, transparent 70%);
             }
           }
           
@@ -725,18 +725,18 @@
       .card-value {
         display: flex;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         
         @media (max-width: 768px) {
-          margin-bottom: 0.8rem;
+          margin-bottom: 1.2rem;
         }
         
         @media (max-width: 576px) {
-          margin-bottom: 0.6rem;
+          margin-bottom: 1rem;
         }
         
         .counter {
-          font-size: 2.8rem;
+          font-size: 3.8rem;
           font-weight: 700;
           color: white;
           line-height: 1;
@@ -748,11 +748,11 @@
           letter-spacing: -1px;
           
           @media (max-width: 768px) {
-            font-size: 2.4rem;
+            font-size: 3.2rem;
           }
           
           @media (max-width: 576px) {
-            font-size: 2rem;
+            font-size: 2.8rem;
           }
         }
         
@@ -763,28 +763,6 @@
           margin-right: 5px;
           margin-top: 8px;
           opacity: 0.9;
-        }
-        
-        .counter-unit {
-          font-size: 1.2rem;
-          font-weight: 500;
-          color: rgba(255, 255, 255, 0.8);
-          margin-left: 8px;
-          line-height: 1;
-          font-family: 'Montserrat', sans-serif;
-          letter-spacing: 0.5px;
-          align-self: flex-end;
-          margin-bottom: 6px;
-          
-          @media (max-width: 768px) {
-            font-size: 1rem;
-            margin-bottom: 4px;
-          }
-          
-          @media (max-width: 576px) {
-            font-size: 0.9rem;
-            margin-bottom: 3px;
-          }
         }
         
         // Increase badge
@@ -815,14 +793,14 @@
       // Additional stats
       .card-stats {
         display: flex;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         
         @media (max-width: 768px) {
-          margin-bottom: 0.8rem;
+          margin-bottom: 1.2rem;
         }
         
         @media (max-width: 576px) {
-          margin-bottom: 0.6rem;
+          margin-bottom: 1rem;
           flex-direction: column;
         }
         
@@ -863,38 +841,38 @@
       
       // Finance metrics
       .finance-metrics {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         
         @media (max-width: 768px) {
-          margin-bottom: 0.8rem;
+          margin-bottom: 1.2rem;
         }
         
         @media (max-width: 576px) {
-          margin-bottom: 0.6rem;
+          margin-bottom: 1rem;
         }
         
         .metric-item {
           display: flex;
           align-items: center;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
           
           &:last-child {
             margin-bottom: 0;
           }
           
           .metric-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 10px;
+            margin-right: 12px;
             
             i {
               color: #a8e063;
-              font-size: 12px;
+              font-size: 16px;
             }
           }
           
@@ -903,13 +881,13 @@
             
             .metric-label {
               color: rgba(255, 255, 255, 0.6);
-              font-size: 0.75rem;
-              margin-bottom: 1px;
+              font-size: 0.8rem;
+              margin-bottom: 2px;
             }
             
             .metric-value {
               color: white;
-              font-size: 0.9rem;
+              font-size: 1.1rem;
               font-weight: 600;
             }
           }
@@ -968,7 +946,7 @@
       
       // Card description
       .card-description {
-        
+        flex: 1;
         
         p {
           color: rgba(255, 255, 255, 0.9);
@@ -1102,7 +1080,7 @@
       
       // Card footer
       .card-footer {
-        margin-top: 10px;
+        margin-top: auto;
         display: flex;
         
         // Premium action button
@@ -1310,608 +1288,8 @@
         }
         
         &.active, &.focus {
-          transform: translateY(-8px) scale(1.01);
+          transform: translateY(-10px) scale(1.02);
         }
-      }
-    }
-  }
-}
-
-// ===============================================
-// PLATFORM CONTROL CARD STYLES
-// ===============================================
-
-// System status in platform control card
-.system-status {
-  margin: 1rem 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 1rem;
-  
-  .status-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.8rem;
-    
-    span {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-    
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      
-      &.online {
-        color: #4CAF50;
-        font-size: 0.8rem;
-        font-weight: 600;
-        
-        i {
-          font-size: 0.6rem;
-          animation: statusPulse 2s infinite;
-        }
-      }
-    }
-  }
-  
-  .status-metrics {
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.4rem;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
-      
-      .metric-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.8rem;
-      }
-      
-      .metric-value {
-        color: white;
-        font-size: 0.8rem;
-        font-weight: 600;
-      }
-    }
-  }
-}
-
-// Platform tools stats
-.platform-tools {
-  display: flex;
-  justify-content: space-between;
-  margin: 1rem 0;
-  
-  .tool-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    
-    .stat-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.5rem;
-      
-      i {
-        color: #FF9966;
-        font-size: 14px;
-      }
-    }
-    
-    .stat-details {
-      text-align: center;
-      
-      .stat-value {
-        color: white;
-        font-size: 1.1rem;
-        font-weight: 600;
-        line-height: 1;
-        margin-bottom: 2px;
-      }
-      
-      .stat-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.75rem;
-        line-height: 1;
-      }
-    }
-  }
-}
-
-// Platform actions footer
-.platform-actions {
-  display: flex;
-  gap: 0.8rem;
-  
-  .platform-button {
-    position: relative;
-    flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    padding: 0.8rem 0.5rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
-    .button-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      flex-direction: column;
-      gap: 0.3rem;
-      
-      i {
-        font-size: 1.1rem;
-        transition: transform 0.3s ease;
-      }
-      
-      span {
-        font-weight: 500;
-        font-size: 0.8rem;
-        white-space: nowrap;
-        transition: all 0.3s ease;
-        text-align: center;
-      }
-    }
-    
-    .button-hover-effect {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.5) 100%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1;
-    }
-    
-    &:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      
-      .button-content {
-        i {
-          transform: scale(1.1);
-        }
-      }
-      
-      .button-hover-effect {
-        opacity: 0.05;
-      }
-    }
-    
-    &:active {
-      transform: translateY(2px);
-    }
-  }
-}
-
-// Client agencies list in the first card
-.client-agencies-list {
-  margin: 0.6rem 0;
-  
-  .agencies-header {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.8rem;
-    margin-bottom: 0.6rem;
-    font-weight: 500;
-  }
-  
-  .agency-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.5rem 0.7rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    margin-bottom: 0.3rem;
-    transition: all 0.3s ease;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-    
-    &.active {
-      background: rgba(76, 175, 80, 0.1);
-      border: 1px solid rgba(76, 175, 80, 0.3);
-      
-      .agency-status {
-        background: #4CAF50;
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
-      }
-    }
-    
-    &.pipeline {
-      background: rgba(255, 193, 7, 0.1);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      
-      .agency-status {
-        background: #FFC107;
-        box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
-      }
-    }
-    
-    .agency-status {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      margin-right: 0.6rem;
-      animation: statusPulse 2s infinite;
-      flex-shrink: 0;
-    }
-    
-    .agency-info {
-      flex: 1;
-      min-width: 0;
-      
-      .agency-name {
-        color: white;
-        font-size: 0.8rem;
-        font-weight: 600;
-        display: block;
-        margin-bottom: 1px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      .agency-status-text {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.7rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-    }
-    
-    .agency-revenue {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.75rem;
-      font-weight: 600;
-      flex-shrink: 0;
-      margin-left: 0.5rem;
-    }
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.08);
-      transform: translateY(-1px);
-    }
-  }
-}
-
-// SaaS revenue breakdown in finance card (ACTUALIZADO)
-.saas-revenue-breakdown {
-  margin: 0.6rem 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 0.6rem;
-  
-  .revenue-header {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.75rem;
-    margin-bottom: 0.6rem;
-    text-align: center;
-    font-weight: 500;
-  }
-  
-  .revenue-calculation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    
-    .calc-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 60px;
-      
-      &.result {
-        background: rgba(76, 175, 80, 0.1);
-        border-radius: 6px;
-        padding: 0.3rem 0.5rem;
-        border: 1px solid rgba(76, 175, 80, 0.3);
-      }
-      
-      .calc-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.65rem;
-        margin-bottom: 2px;
-        text-align: center;
-        line-height: 1;
-      }
-      
-      .calc-value {
-        color: white;
-        font-size: 0.8rem;
-        font-weight: 600;
-        line-height: 1;
-      }
-    }
-    
-    .calc-operator {
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 1rem;
-      font-weight: bold;
-    }
-  }
-}
-
-// System status in platform control card (ACTUALIZADO)
-.system-status {
-  margin: 0.6rem 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  padding: 0.6rem;
-  
-  .status-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.6rem;
-    
-    span {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-    
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      
-      &.online {
-        color: #4CAF50;
-        font-size: 0.7rem;
-        font-weight: 600;
-        
-        i {
-          font-size: 0.5rem;
-          animation: statusPulse 2s infinite;
-        }
-      }
-    }
-  }
-  
-  .status-metrics {
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.3rem;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
-      
-      .metric-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.7rem;
-      }
-      
-      .metric-value {
-        color: white;
-        font-size: 0.7rem;
-        font-weight: 600;
-      }
-    }
-  }
-}
-
-// Platform tools stats (ACTUALIZADO)
-.platform-tools {
-  display: flex;
-  justify-content: space-between;
-  margin: 0.6rem 0;
-  
-  .tool-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    
-    .stat-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.3rem;
-      
-      i {
-        color: #FF9966;
-        font-size: 10px;
-      }
-    }
-    
-    .stat-details {
-      text-align: center;
-      
-      .stat-value {
-        color: white;
-        font-size: 0.8rem;
-        font-weight: 600;
-        line-height: 1;
-        margin-bottom: 1px;
-      }
-      
-      .stat-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.6rem;
-        line-height: 1;
-      }
-    }
-  }
-}
-
-// Platform actions footer (ACTUALIZADO)
-.platform-actions {
-  display: flex;
-  gap: 0.5rem;
-  
-  .platform-button {
-    position: relative;
-    flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
-    color: white;
-    padding: 0.5rem 0.3rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
-    .button-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      flex-direction: column;
-      gap: 0.15rem;
-      
-      i {
-        font-size: 0.8rem;
-        transition: transform 0.3s ease;
-      }
-      
-      span {
-        font-weight: 500;
-        font-size: 0.65rem;
-        white-space: nowrap;
-        transition: all 0.3s ease;
-        text-align: center;
-        line-height: 1;
-      }
-    }
-    
-    .button-hover-effect {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.5) 100%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1;
-    }
-    
-    &:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-      
-      .button-content {
-        i {
-          transform: scale(1.1);
-        }
-      }
-      
-      .button-hover-effect {
-        opacity: 0.05;
-      }
-    }
-    
-    &:active {
-      transform: translateY(1px);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .platform-tools {
-    .tool-stat {
-      .stat-details {
-        .stat-value {
-          font-size: 0.8rem;
-        }
-        
-        .stat-label {
-          font-size: 0.6rem;
-        }
-      }
-    }
-  }
-  
-  .system-status {
-    .status-metrics {
-      .metric-row {
-        flex-direction: column;
-        gap: 0.2rem;
-        margin-bottom: 0.6rem;
-        
-        .metric-label {
-          font-size: 0.65rem;
-        }
-      }
-    }
-  }
-  
-  .platform-actions {
-    .platform-button {
-      .button-content {
-        span {
-          font-size: 0.65rem;
-        }
-      }
-    }
-  }
-  
-  .client-agencies-list {
-    .agency-item {
-      padding: 0.5rem 0.7rem;
-      
-      .agency-info {
-        .agency-name {
-          font-size: 0.75rem;
-        }
-        
-        .agency-status-text {
-          font-size: 0.65rem;
-        }
-      }
-      
-      .agency-revenue {
-        font-size: 0.7rem;
-      }
-    }
-  }
-  
-  .saas-revenue-breakdown {
-    .revenue-calculation {
-      flex-direction: column;
-      gap: 0.8rem;
-      
-      .calc-operator {
-        font-size: 0.9rem;
       }
     }
   }

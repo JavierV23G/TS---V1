@@ -1,14 +1,16 @@
+// components/developer/support/FloatingSupportButton.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import '../../../styles/developer/support/FloatingSupportButtonDev.scss';
+import SupportModal from '../welcome/SupportModalDev';
 
 const FloatingSupportButton = () => {
-  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
   const [isAnimating, setIsAnimating] = useState(false);
   
+  // Animate the button periodically to draw attention
   useEffect(() => {
-    if (unreadCount > 0) {
+    if (unreadCount > 0 && !isModalOpen) {
       const interval = setInterval(() => {
         setIsAnimating(true);
         setTimeout(() => setIsAnimating(false), 1000);
@@ -16,19 +18,31 @@ const FloatingSupportButton = () => {
       
       return () => clearInterval(interval);
     }
-  }, [unreadCount]);
+  }, [unreadCount, isModalOpen]);
   
-  const handleNavigateToSupport = () => {
-    navigate('/support');
-    setUnreadCount(0);
+  // Reset animation when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      setIsAnimating(false);
+    }
+  }, [isModalOpen]);
+  
+  // Toggle the support modal
+  const handleToggleModal = () => {
+    setIsModalOpen(prev => !prev);
+    
+    // Reset unread count when opening modal
+    if (!isModalOpen) {
+      setUnreadCount(0);
+    }
   };
   
   return (
     <>
       <button 
         className={`floating-support-button ${isAnimating ? 'animate' : ''}`}
-        onClick={handleNavigateToSupport}
-        aria-label="Open Support Dashboard"
+        onClick={handleToggleModal}
+        aria-label="Toggle Support"
       >
         <div className="button-icon">
           <i className="fas fa-headset"></i>
@@ -39,9 +53,11 @@ const FloatingSupportButton = () => {
         )}
         
         <div className="button-tooltip">
-          <span>Support Dashboard</span>
+          <span>Support Center</span>
         </div>
       </button>
+      
+      {isModalOpen && <SupportModal onClose={() => setIsModalOpen(false)} />}
     </>
   );
 };

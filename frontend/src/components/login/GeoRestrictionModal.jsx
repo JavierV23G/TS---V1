@@ -1,8 +1,10 @@
+// components/login/GeoRestrictionModal.jsx
 import React, { useEffect, useState } from 'react';
 
 const GeoRestrictionModal = ({ isOpen, locationData, onRetry, onClose }) => {
   const [showModal, setShowModal] = useState(false);
   
+  // Efecto para animar la entrada
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {

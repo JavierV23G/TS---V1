@@ -20,6 +20,7 @@ const DevReferralsPage = () => {
     PT: '', PTA: '', OT: '', COTA: '', ST: '', STA: ''
   });
   
+  // State for UI controls
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [parallaxPosition, setParallaxPosition] = useState({ x: 0, y: 0 });
@@ -28,15 +29,19 @@ const DevReferralsPage = () => {
   const [notificationCount, setNotificationCount] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   
+  // State for view management
   const [currentView, setCurrentView] = useState('menu');
   const [referralFormLoading, setReferralFormLoading] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   
+  // Refs for elements
   const userMenuRef = useRef(null);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   
+  // Form data state - ESTRUCTURA CORREGIDA
   const [formData, setFormData] = useState({
+    // Patient personal data
     firstName: '',
     lastName: '',
     dob: '',
@@ -46,11 +51,13 @@ const DevReferralsPage = () => {
     zipCode: '',
     contactNumbers: [{ number: '', name: '', relationship: '' }],
     
+    // Care Period
     payorType: '',
     certPeriodStart: '',
     certPeriodEnd: '',
     urgencyLevel: 'normal',
     
+    // Medical
     physician: '',
     agencyId: '',
     agencyBranch: '',
@@ -60,6 +67,7 @@ const DevReferralsPage = () => {
     priorLevelOfFunction: 'To Be Obtained at Evaluation',
     wbs: '',
     
+    // Homebound - Estructura correcta
     homebound: {
       na: false,
       needs_assistance: false,
@@ -77,11 +85,13 @@ const DevReferralsPage = () => {
       otherReason: ''
     },
     
+    // Weight y Height
     weight: '',
     weightUnit: 'lbs', 
     height: '',
     heightUnit: 'ft',
     
+    // Therapy - Estructura correcta
     reasonsForReferral: {
       strength_balance: false,
       gait: false,
@@ -107,6 +117,7 @@ const DevReferralsPage = () => {
 
   const [addingNewManager, setAddingNewManager] = useState(false);
 
+  // WBS options from the dropdown
   const wbsOptions = [
     { value: '', label: '-- Select WBS --' },
     { value: 'N/A', label: 'N/A' },
@@ -118,9 +129,11 @@ const DevReferralsPage = () => {
     { value: 'Clarify w/Patient or MD', label: 'Clarify w/Patient or MD' },
   ];
 
+  // FUNCIÓN PARA FORMATEAR FECHAS SIN PROBLEMAS DE TIMEZONE
   const formatDateForInput = (date) => {
     if (!date) return '';
     
+    // Si es una fecha válida de tipo Date
     if (date instanceof Date) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -128,6 +141,7 @@ const DevReferralsPage = () => {
       return `${year}-${month}-${day}`;
     }
     
+    // Si es un string, asumimos que ya está en formato correcto
     if (typeof date === 'string') {
       return date;
     }
@@ -135,13 +149,16 @@ const DevReferralsPage = () => {
     return '';
   };
 
+  // FUNCIÓN PARA CREAR FECHA DESDE STRING SIN PROBLEMAS DE TIMEZONE
   const createDateFromString = (dateString) => {
     if (!dateString) return null;
     
     const [year, month, day] = dateString.split('-').map(Number);
+    // Crear fecha en timezone local
     return new Date(year, month - 1, day);
   };
 
+  // Function to get initials from name
   function getInitials(name) {
     if (!name) return "U";
     const parts = name.split(' ');
@@ -151,6 +168,7 @@ const DevReferralsPage = () => {
     return name.substring(0, 2).toUpperCase();
   }
   
+  // User data from authentication context
   const userData = {
     name: currentUser?.fullname || currentUser?.username || 'User',
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'User'),
@@ -159,7 +177,9 @@ const DevReferralsPage = () => {
     status: 'online',
   };
   
+  //////////////////////////////////////EFECTOS DE LA PAGINA//////////////////////////////////////////
 
+  // Para la carga del screen principal
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsLoading(false);
@@ -167,6 +187,7 @@ const DevReferralsPage = () => {
     return () => clearTimeout(timeout); 
   }, []);
 
+  // Agencias del dropdown menu - CORREGIDO
   useEffect(() => {
     const fetchAgencies = async () => {
       try {
@@ -174,15 +195,18 @@ const DevReferralsPage = () => {
         if (!response.ok) throw new Error('Failed to fetch staff');
         const data = await response.json();
         
+        // Cambié 'Agency' por 'agency' para que coincida con el backend
         const agenciesOnly = data.filter(person => person.role.toLowerCase() === 'agency');
         setAgencies(agenciesOnly);
       } catch (error) {
+        console.error('Error loading agencies:', error);
         toast.error('Error loading agencies');
       }
     };
     fetchAgencies();
   }, []);
 
+  // Therapists del dropdown menu
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
@@ -193,12 +217,14 @@ const DevReferralsPage = () => {
         const filtered = data.filter(person => therapistRoles.includes(person.role.toLowerCase()));
         setTherapists(filtered);
       } catch (error) {
+        console.error("Error loading therapists:", error);
         toast.error("Error loading therapists");
       }
     };
     fetchTherapists();
   }, []);
 
+  // Effect for handling clicks outside user menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -211,6 +237,7 @@ const DevReferralsPage = () => {
     };
   }, []);
   
+  // Detect screen size for responsive design
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -220,17 +247,25 @@ const DevReferralsPage = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
+  // Effect to update certPeriodEnd based on certPeriodStart - CORREGIDO
   useEffect(() => {
     if (formData.certPeriodStart) {
+      console.log('Calculating end date from start date:', formData.certPeriodStart);
       
+      // Crear fecha desde el string sin problemas de timezone
       const startDate = createDateFromString(formData.certPeriodStart);
       
       if (startDate) {
+        // Agregar 60 días
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 60);
         
+        // Formatear usando nuestra función que evita problemas de timezone
         const formattedEndDate = formatDateForInput(endDate);
         
+        console.log('Start date object:', startDate);
+        console.log('End date object:', endDate);
+        console.log('Formatted end date:', formattedEndDate);
         
         setFormData(prev => ({
           ...prev,
@@ -240,7 +275,9 @@ const DevReferralsPage = () => {
     }
   }, [formData.certPeriodStart]);
   
+  /////////////////////////// HANDLE BUTTONS /////////////////////////////////////////////////////
 
+  // FUNCIÓN PARA FILTRAR SOLO LOS VALORES SELECCIONADOS
   const getSelectedOptions = (optionsObject) => {
     const selected = {};
     Object.keys(optionsObject).forEach(key => {
@@ -255,22 +292,28 @@ const DevReferralsPage = () => {
     return selected;
   };
 
+// Función para formatear número telefónico
 const formatPhoneNumber = (phoneStr) => {
   if (!phoneStr) return '';
   
+  // Limpiar el string - solo números
   const cleaned = phoneStr.replace(/\D/g, '');
   
-  if (cleaned.length < 10) return phoneStr;
+  // Validar que tiene al menos 10 dígitos
+  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
   
+  // Formatear como (123) 456-7890
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
   if (match) {
     return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
   
-  return phoneStr;
+  return phoneStr; // Devolver original si no coincide el patrón
 };
 
+  // FUNCIÓN PARA PROCESAR NÚMEROS DE TELÉFONO - NUEVA ESTRUCTURA DICCIONARIO
 const processContactNumbers = (contactNumbers) => {
+  // Filtrar contactos con números válidos
   const validContacts = contactNumbers.filter(contact => 
     contact.number && contact.number.trim() !== '' && contact.number.replace(/[^\d]/g, '').length >= 10
   );
@@ -279,13 +322,16 @@ const processContactNumbers = (contactNumbers) => {
     return null;
   }
   
+  // Crear diccionario con identificadores únicos
   const contactDict = {};
   
   validContacts.forEach((contact, index) => {
     const formattedNumber = formatPhoneNumber(contact.number);
     if (index === 0) {
+      // Primer número siempre es primary contact
       contactDict['primary#'] = formattedNumber;
     } else {
+      // Contactos adicionales con formato: nombre:numero|relationship
       const name = contact.name || '';
       const relationship = contact.relationship || '';
       contactDict[name || `Contact_${index}`] = `${formattedNumber}|${relationship}`;
@@ -295,6 +341,7 @@ const processContactNumbers = (contactNumbers) => {
   return contactDict;
 };
 
+// CORRECCIÓN EN EL HANDLESUBMIT - REEMPLAZA TU FUNCIÓN COMPLETA CON ESTA:
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (isLoggingOut) return;
@@ -302,20 +349,24 @@ const handleSubmit = async (e) => {
   try {
     setFormSubmitting(true);
 
+    // Validar que al menos una disciplina esté seleccionada
     if (formData.disciplines.length === 0) {
       toast.error('Please select at least one discipline');
       return;
     }
 
+    // Validar que cada disciplina seleccionada tenga un terapeuta asignado
     const missingTherapists = formData.disciplines.filter(discipline => !selectedTherapists[discipline]);
     if (missingTherapists.length > 0) {
       toast.error(`Please assign therapists for: ${missingTherapists.join(', ')}`);
       return;
     }
 
+    // CORRECCIÓN: Procesar homebound para enviar solo los valores seleccionados como texto
     const processHomebound = () => {
       const selectedOptions = [];
       
+      // Mapeo de los IDs a textos legibles
       const homeboundLabels = {
         na: 'N/A',
         needs_assistance: 'Needs assistance for all activities',
@@ -332,15 +383,18 @@ const handleSubmit = async (e) => {
         other: formData.homebound.otherReason || 'Other'
       };
 
+      // Recorrer las opciones seleccionadas y agregar sus etiquetas
       Object.keys(formData.homebound).forEach(key => {
         if (key !== 'otherReason' && formData.homebound[key] === true) {
           selectedOptions.push(homeboundLabels[key]);
         }
       });
 
+      // Si no hay opciones seleccionadas, retornar texto por defecto
       return selectedOptions.length > 0 ? selectedOptions.join(', ') : 'Not specified';
     };
 
+    // CORRECCIÓN: Procesar reasons for referral de la misma manera
     const processReasonsForReferral = () => {
       const selectedReasons = [];
       
@@ -359,6 +413,7 @@ const handleSubmit = async (e) => {
         }
       });
 
+      // Agregar razones adicionales si existen
       if (formData.reasonsForReferral.additional && formData.reasonsForReferral.additional.trim()) {
         selectedReasons.push(formData.reasonsForReferral.additional.trim());
       }
@@ -366,12 +421,13 @@ const handleSubmit = async (e) => {
       return selectedReasons.length > 0 ? selectedReasons.join(', ') : 'Not specified';
     };
 
+    // Paso 1: Crear paciente con datos procesados correctamente
     const patientPayload = {
       full_name: `${formData.firstName} ${formData.lastName}`,
       birthday: formData.dob,
       gender: formData.gender,
       address: `${formData.address}, ${formData.city}, ${formData.zipCode}`,
-      contact_info: processContactNumbers(formData.contactNumbers),
+      contact_info: processContactNumbers(formData.contactNumbers), // ✅ CORREGIDO
       insurance: formData.payorType,
       physician: formData.physician,
       agency_id: parseInt(formData.agencyId),
@@ -388,6 +444,9 @@ const handleSubmit = async (e) => {
       required_disciplines: JSON.stringify(formData.disciplines)
     };
 
+    console.log('Processed contact info:', processContactNumbers(formData.contactNumbers));
+    console.log('Processed homebound:', processHomebound());
+    console.log('Processed reasons for referral:', processReasonsForReferral());
 
     const createRes = await fetch('http://localhost:8000/patients/', {
       method: 'POST',
@@ -397,12 +456,14 @@ const handleSubmit = async (e) => {
 
     if (!createRes.ok) {
       const errorData = await createRes.text();
+      console.error('Error creating patient:', errorData);
       throw new Error('Failed to create patient');
     }
 
     const createdPatient = await createRes.json();
     const patientId = createdPatient.id;
 
+    // Paso 2: Asignar terapeutas
     const assignPromises = Object.entries(selectedTherapists).map(([discipline, staffId]) => {
       if (staffId && formData.disciplines.includes(discipline)) {
         return fetch(`http://localhost:8000/assign-staff?patient_id=${patientId}&staff_id=${parseInt(staffId)}`, {
@@ -415,9 +476,11 @@ const handleSubmit = async (e) => {
     const assignmentResults = await Promise.all(assignPromises.filter(Boolean));
     const failedAssignments = assignmentResults.filter(r => !r.ok);
     if (failedAssignments.length > 0) {
+      console.error('Some therapist assignments failed');
       toast.warning('Patient created but some therapist assignments may have failed');
     }
 
+    // Paso 3: Subir documentos
     for (let file of uploadedFiles) {
       const formDataDoc = new FormData();
       formDataDoc.append('file', file);
@@ -429,6 +492,7 @@ const handleSubmit = async (e) => {
       });
 
       if (!uploadRes.ok) {
+        console.error('Document upload failed:', await uploadRes.text());
         toast.warning('Patient created but document upload failed');
       }
     }
@@ -437,29 +501,34 @@ const handleSubmit = async (e) => {
     resetForm();
     setCurrentView("menu");
   } catch (error) {
+    console.error('Error in form submission:', error);
     toast.error("Error creating patient: " + error.message);
   } finally {
     setFormSubmitting(false);
   }
 };
 
+  // Handle logout with animation
   const handleLogout = () => {
     setIsLoggingOut(true);
     setShowUserMenu(false);
     document.body.classList.add('logging-out');
   };
   
+  // Callback for when the logout animation completes
   const handleLogoutAnimationComplete = () => {
     logout();
     navigate('/');
   };
   
+  // Handle navigation to main menu
   const handleMainMenuTransition = () => {
     if (isLoggingOut) return;
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
     navigate(`/${baseRole}/homePage`);
   };
 
+  // Handle starting create new referral process
   const handleStartCreateReferral = () => {
     if (isLoggingOut) return;
     setReferralFormLoading(true);
@@ -469,16 +538,19 @@ const handleSubmit = async (e) => {
     }, 1500);
   };
 
+  // Handle navigation to referral stats
   const handleReferralStats = () => {
     if (isLoggingOut) return;
     setCurrentView('stats');
   };
   
+  // Handle click on PDF upload area
   const handlePdfAreaClick = () => {
     if (isLoggingOut) return;
     fileInputRef.current.click();
   };
   
+  // Handle file upload
   const handleFileUpload = (e) => {
     if (isLoggingOut) return;
     const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
@@ -489,12 +561,15 @@ const handleSubmit = async (e) => {
     setUploadedFiles(files);
   };
   
+  // Handle form input changes - MEJORADO
   const handleInputChange = (e) => {
     if (isLoggingOut) return;
     
     const { name, value, type, checked } = e.target;
     
+    // Manejo especial para campos numéricos weight y height
     if (name === 'weight') {
+      // Validar peso: permitir decimales, rango 0-1000
       if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000)) {
         setFormData(prev => ({
           ...prev,
@@ -505,6 +580,7 @@ const handleSubmit = async (e) => {
     }
     
     if (name === 'height') {
+      // Validar altura según la unidad seleccionada
       const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
       if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue)) {
         setFormData(prev => ({
@@ -515,6 +591,7 @@ const handleSubmit = async (e) => {
       return;
     }
     
+    // Manejo para weightUnit y heightUnit
     if (name === 'weightUnit') {
       setFormData(prev => ({
         ...prev,
@@ -524,12 +601,15 @@ const handleSubmit = async (e) => {
     }
     
     if (name === 'heightUnit') {
+      // Convertir altura automáticamente cuando cambia la unidad
       let newHeight = formData.height;
       if (formData.height && !isNaN(parseFloat(formData.height))) {
         const currentValue = parseFloat(formData.height);
         if (formData.heightUnit === 'ft' && value === 'cm') {
+          // Convertir de pies a centímetros
           newHeight = (currentValue * 30.48).toFixed(1);
         } else if (formData.heightUnit === 'cm' && value === 'ft') {
+          // Convertir de centímetros a pies
           newHeight = (currentValue / 30.48).toFixed(1);
         }
       }
@@ -542,17 +622,20 @@ const handleSubmit = async (e) => {
       return;
     }
     
+    // Manejo normal para otros campos
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
 
+  // Función específica para manejar cambios en weight (para el input large)
   const handleWeightChange = (e) => {
     if (isLoggingOut) return;
     
     const value = e.target.value;
     
+    // Permitir números decimales y validar rango 0-1000
     if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 1000 && !isNaN(parseFloat(value)))) {
       setFormData(prev => ({
         ...prev,
@@ -561,11 +644,13 @@ const handleSubmit = async (e) => {
     }
   };
 
+  // Función específica para manejar cambios en height (para el input large)
   const handleHeightChange = (e) => {
     if (isLoggingOut) return;
     
     const value = e.target.value;
     
+    // Validar según la unidad seleccionada
     const maxValue = formData.heightUnit === 'ft' ? 10 : 300;
     
     if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= maxValue && !isNaN(parseFloat(value)))) {
@@ -576,6 +661,7 @@ const handleSubmit = async (e) => {
     }
   };
 
+  // Función para manejar cambios en weightUnit (para el select large)
   const handleWeightUnitChange = (e) => {
     if (isLoggingOut) return;
     
@@ -585,18 +671,22 @@ const handleSubmit = async (e) => {
     }));
   };
 
+  // Función para manejar cambios en heightUnit con conversión automática (para el select large)
   const handleHeightUnitChange = (e) => {
     if (isLoggingOut) return;
     
     const newUnit = e.target.value;
     let newHeight = formData.height;
     
+    // Convertir altura si hay un valor válido
     if (formData.height && !isNaN(parseFloat(formData.height))) {
       const currentValue = parseFloat(formData.height);
       
       if (formData.heightUnit === 'ft' && newUnit === 'cm') {
+        // Convertir de pies a centímetros (1 ft = 30.48 cm)
         newHeight = (currentValue * 30.48).toFixed(1);
       } else if (formData.heightUnit === 'cm' && newUnit === 'ft') {
+        // Convertir de centímetros a pies (1 cm = 0.0328084 ft)
         newHeight = (currentValue / 30.48).toFixed(1);
       }
     }
@@ -608,17 +698,20 @@ const handleSubmit = async (e) => {
     }));
   };
 
+  // Función de validación para números
   const validateNumericInput = (value, min = 0, max = Infinity) => {
     if (value === '') return true;
     const numValue = parseFloat(value);
     return !isNaN(numValue) && numValue >= min && numValue <= max;
   };
 
+  // Función para formatear números (opcional)
   const formatNumber = (value, decimals = 1) => {
     if (!value || isNaN(parseFloat(value))) return '';
     return parseFloat(value).toFixed(decimals);
   };
 
+  // Handle contact number changes
   const handleContactNumberChange = (index, field, value) => {
     if (isLoggingOut) return;
     const updatedContacts = [...formData.contactNumbers];
@@ -630,6 +723,7 @@ const handleSubmit = async (e) => {
     setFormData(prev => ({ ...prev, contactNumbers: updatedContacts }));
   };
   
+  // Add a new contact number
   const addContactNumber = () => {
     if (isLoggingOut) return;
     setFormData(prev => ({
@@ -638,6 +732,7 @@ const handleSubmit = async (e) => {
     }));
   };
   
+  // Remove a contact number
   const removeContactNumber = (index) => {
     if (isLoggingOut) return;
     if (formData.contactNumbers.length > 1) {
@@ -647,6 +742,7 @@ const handleSubmit = async (e) => {
     }
   };
   
+  // Handle agency selection
   const handleAgencyChange = (e) => {
     if (isLoggingOut) return;
     const agencyId = e.target.value;
@@ -660,6 +756,7 @@ const handleSubmit = async (e) => {
     setAddingNewManager(false);
   };
   
+  // Handle homebound option changes - CORREGIDO
   const handleHomeboundChange = (optionId, isChecked) => {
     if (isLoggingOut) return;
     setFormData(prev => ({
@@ -671,6 +768,7 @@ const handleSubmit = async (e) => {
     }));
   };
   
+  // Handle reasons for referral changes - CORREGIDO
   const handleReasonChange = (reasonId, isChecked) => {
     if (isLoggingOut) return;
     setFormData(prev => ({
@@ -682,6 +780,7 @@ const handleSubmit = async (e) => {
     }));
   };
 
+  // Handle discipline selection - MEJORADO
   const handleDisciplineChange = (discipline) => {
     if (isLoggingOut) return;
     
@@ -699,6 +798,7 @@ const handleSubmit = async (e) => {
       disciplines: selectedDisciplinesList
     }));
 
+    // Si se deselecciona una disciplina, limpiar su terapeuta asignado
     if (!updatedDisciplines[discipline]) {
       setSelectedTherapists(prev => ({
         ...prev,
@@ -707,6 +807,7 @@ const handleSubmit = async (e) => {
     }
   };
   
+  // Handle therapist selection
   const handleTherapistSelection = (discipline, therapistId) => {
     if (isLoggingOut) return;
     setSelectedTherapists(prev => ({
@@ -715,6 +816,7 @@ const handleSubmit = async (e) => {
     }));
   };
   
+  // Reset form to initial state - CORREGIDO
   const resetForm = () => {
     setFormData({
       firstName: '',
@@ -789,8 +891,10 @@ const handleSubmit = async (e) => {
    
    setUploadedFiles([]);
    setAddingNewManager(false);
+   console.log('Form has been reset completely');
  };
 
+ // Cancel creating referral and go back to menu
  const handleCancelCreateReferral = () => {
    if (isLoggingOut) return;
    
@@ -809,7 +913,9 @@ const handleSubmit = async (e) => {
    resetForm();
  };
 
+ ////////////////////////////////HTML DE LA PAGINA////////////////////////////////////////////////
 
+ // Homebound options - ACTUALIZADO
  const homeboundOptions = [
    { id: 'na', label: 'N/A', icon: 'fa-times-circle' },
    { id: 'needs_assistance', label: 'Needs assistance for all activities', icon: 'fa-hands-helping' },
@@ -826,6 +932,7 @@ const handleSubmit = async (e) => {
    { id: 'other', label: 'Other (Explain)', icon: 'fa-plus-circle' }
  ];
 
+ // Prior Level of Function options
  const priorLevelOptions = [
    'To Be Obtained at Evaluation',
    'I (No Assist)',
@@ -839,6 +946,7 @@ const handleSubmit = async (e) => {
    'DEP (100% Assist)'
  ];
 
+ // Reasons for Referral options - ACTUALIZADO
  const referralOptions = [
    { id: 'strength_balance', label: 'Decreased Strength / Balance' },
    { id: 'gait', label: 'Decreased Gait Ability' },
@@ -855,6 +963,7 @@ const handleSubmit = async (e) => {
                  ${currentView === 'createReferral' ? 'form-active' : ''}`}
      ref={containerRef}
    >
+     {/* Logout animation */}
      {isLoggingOut && (
        <LogoutAnimation 
          isMobile={isMobile} 
@@ -862,10 +971,12 @@ const handleSubmit = async (e) => {
        />
      )}
      
+     {/* Form submission loading screen */}
      {formSubmitting && (
        <LoadingScreen isLoading={true} onComplete={() => setFormSubmitting(false)} />
      )}
      
+     {/* Parallax background */}
      <div 
        className="parallax-background"
        style={{ 
@@ -875,13 +986,16 @@ const handleSubmit = async (e) => {
        <div className="gradient-overlay"></div>
      </div>
      
+     {/* Header with logo and profile */}
      <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
        <div className="header-container">
+         {/* Logo with neon effect */}
          <div className="logo-container">
            <div className="logo-glow"></div>
            <img src={logoImg} alt="TherapySync Logo" className="logo" />
          </div>
          
+         {/* Main navigation buttons */}
          <div className="menu-navigation">
            <button 
              className="nav-button main-menu" 
@@ -903,6 +1017,7 @@ const handleSubmit = async (e) => {
            </button>
          </div>
 
+         {/* Enhanced user profile with responsive layout */}
          <div className="support-user-profile" ref={userMenuRef}>
            <div 
              className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -922,6 +1037,7 @@ const handleSubmit = async (e) => {
              <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
            </div>
            
+           {/* User dropdown menu */}
            {showUserMenu && !isLoggingOut && (
              <div className="support-user-menu">
                <div className="support-menu-header">
@@ -944,25 +1060,60 @@ const handleSubmit = async (e) => {
                <div className="support-menu-section">
                  <div className="section-title">Account</div>
                  <div className="support-menu-items">
-                   <div 
-                     className="support-menu-item"
-                     onClick={() => {
-                       const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-                       navigate(`/${baseRole}/profile`);
-                     }}
-                   >
+                   <div className="support-menu-item">
                      <i className="fas fa-user-circle"></i>
                      <span>My Profile</span>
                    </div>
-                   <div 
-                     className="support-menu-item"
-                     onClick={() => {
-                       const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-                       navigate(`/${baseRole}/settings`);
-                     }}
-                   >
+                   <div className="support-menu-item">
                      <i className="fas fa-cog"></i>
                      <span>Settings</span>
+                   </div>
+                   <div className="support-menu-item">
+                     <i className="fas fa-calendar-alt"></i>
+                     <span>My Schedule</span>
+                   </div>
+                 </div>
+               </div>
+               
+               <div className="support-menu-section">
+                 <div className="section-title">Preferences</div>
+                 <div className="support-menu-items">
+                   <div className="support-menu-item">
+                     <i className="fas fa-bell"></i>
+                     <span>Notifications</span>
+                     <div className="support-notification-badge">{notificationCount}</div>
+                   </div>
+                   <div className="support-menu-item toggle-item">
+                     <div className="toggle-item-content">
+                       <i className="fas fa-moon"></i>
+                       <span>Dark Mode</span>
+                     </div>
+                     <div className="toggle-switch">
+                       <div className="toggle-handle active"></div>
+                     </div>
+                   </div>
+                   <div className="support-menu-item toggle-item">
+                     <div className="toggle-item-content">
+                       <i className="fas fa-volume-up"></i>
+                       <span>Sound Alerts</span>
+                     </div>
+                     <div className="toggle-switch">
+                       <div className="toggle-handle"></div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+               
+               <div className="support-menu-section">
+                 <div className="section-title">Support</div>
+                 <div className="support-menu-items">
+                   <div className="support-menu-item">
+                     <i className="fas fa-headset"></i>
+                     <span>Contact Support</span>
+                   </div>
+                   <div className="support-menu-item">
+                     <i className="fas fa-bug"></i>
+                     <span>Report Issue</span>
                    </div>
                  </div>
                </div>
@@ -973,7 +1124,7 @@ const handleSubmit = async (e) => {
                    <span>Log Out</span>
                  </div>
                  <div className="version-info">
-                   <span>TherapySync™</span>
+                   <span>TherapySync™ Support</span>
                    <span>v2.7.0</span>
                  </div>
                </div>
@@ -983,7 +1134,9 @@ const handleSubmit = async (e) => {
        </div>
      </header>
      
+     {/* Main content */}
      <main className={`main-content ${isLoggingOut ? 'fade-out' : ''}`}>
+       {/* Referral Form Loading Animation */}
        {referralFormLoading && (
          <div className="referral-form-loading">
            <div className="loading-container">
@@ -999,6 +1152,7 @@ const handleSubmit = async (e) => {
          </div>
        )}
        
+       {/* Main Referrals Menu */}
        {currentView === 'menu' && !referralFormLoading && (
          <div className="referrals-container menu-container">
            <h1 className="referrals-title">Referral Management</h1>
@@ -1067,6 +1221,7 @@ const handleSubmit = async (e) => {
          </div>
        )}
        
+       {/* Create Referral Form */}
        {currentView === 'createReferral' && !referralFormLoading && (
          <div className="create-referral-container">
            <div className="form-header">
@@ -1087,7 +1242,9 @@ const handleSubmit = async (e) => {
              </button>
            </div>
            
+           {/* Formulario para crear paciente */}
            <form className="patient-referral-form" onSubmit={handleSubmit}>
+             {/* Patient Information Section */}
              <div className="form-section">
                <div className="section-header">
                  <i className="fas fa-user-injured"></i>
@@ -1265,6 +1422,7 @@ const handleSubmit = async (e) => {
                </div>
              </div>
              
+             {/* Care Period Section */}
              <div className="form-section">
                <div className="section-header">
                  <i className="fas fa-calendar-alt"></i>
@@ -1351,6 +1509,7 @@ const handleSubmit = async (e) => {
                </div>
              </div>
              
+             {/* Medical Information Section */}
              <div className="form-section">
                <div className="section-header">
                  <i className="fas fa-stethoscope"></i>
@@ -1485,6 +1644,7 @@ const handleSubmit = async (e) => {
                    </select>
                  </div>
                  
+                 {/* Homebound Section - ESTRUCTURA CORREGIDA */}
                  <div className="form-group full-width">
                    <label>Homebound</label>
                    <div className="homebound-options">
@@ -1543,6 +1703,7 @@ const handleSubmit = async (e) => {
                    </select>
                  </div>
                  
+                 {/* Weight field con diseño large */}
                  <div className="form-group">
                    <label htmlFor="weight">Weight</label>
                    <div className="premium-measurement-container">
@@ -1589,6 +1750,7 @@ const handleSubmit = async (e) => {
                    )}
                  </div>
 
+                 {/* Height field con nuevo diseño premium */}
                  <div className="form-group">
                    <label htmlFor="height">Height</label>
                    <div className="premium-measurement-container">
@@ -1643,6 +1805,7 @@ const handleSubmit = async (e) => {
                </div>
              </div>
              
+             {/* Therapy Information Section */}
              <div className="form-section">
                <div className="section-header">
                  <i className="fas fa-heartbeat"></i>
@@ -1650,6 +1813,7 @@ const handleSubmit = async (e) => {
                </div>
                
                <div className="form-grid">
+                 {/* Reasons for Referral - ESTRUCTURA CORREGIDA */}
                  <div className="form-group full-width">
                    <label>Reasons for Referral</label>
                    <div className="reason-options">
@@ -1692,10 +1856,12 @@ const handleSubmit = async (e) => {
                    </div>
                  </div>
                  
+                 {/* Disciplines Section - MEJORADO */}
                  <div className="form-group full-width">
                    <label>Disciplines Needed</label>
                    <div className="disciplines-container">
                      <div className="disciplines-pairs">
+                       {/* PT & PTA */}
                        <div className="discipline-pair">
                          <div className="discipline-checkboxes">
                            <label className={`discipline-checkbox ${selectedDisciplines.PT ? 'selected' : ''}`}>
@@ -1718,6 +1884,7 @@ const handleSubmit = async (e) => {
                            </label>
                          </div>
 
+                         {/* PT Therapist selection */}
                          {selectedDisciplines.PT && (
                            <div className="therapist-select">
                              <label htmlFor="pt-therapist">PT Therapist</label>
@@ -1741,6 +1908,7 @@ const handleSubmit = async (e) => {
                            </div>
                          )}
 
+                         {/* PTA Therapist selection */}
                          {selectedDisciplines.PTA && (
                            <div className="therapist-select">
                              <label htmlFor="pta-therapist">PTA Therapist</label>
@@ -1765,6 +1933,7 @@ const handleSubmit = async (e) => {
                          )}
                        </div>
 
+                       {/* OT & COTA */}
                        <div className="discipline-pair">
                          <div className="discipline-checkboxes">
                            <label className={`discipline-checkbox ${selectedDisciplines.OT ? 'selected' : ''}`}>
@@ -1787,6 +1956,7 @@ const handleSubmit = async (e) => {
                            </label>
                          </div>
 
+                         {/* OT Therapist selection */}
                          {selectedDisciplines.OT && (
                            <div className="therapist-select">
                              <label htmlFor="ot-therapist">OT Therapist</label>
@@ -1810,6 +1980,7 @@ const handleSubmit = async (e) => {
                            </div>
                          )}
 
+                         {/* COTA Therapist selection */}
                          {selectedDisciplines.COTA && (
                            <div className="therapist-select">
                              <label htmlFor="cota-therapist">COTA Therapist</label>
@@ -1834,6 +2005,7 @@ const handleSubmit = async (e) => {
                          )}
                        </div>
 
+                       {/* ST & STA */}
                        <div className="discipline-pair">
                          <div className="discipline-checkboxes">
                            <label className={`discipline-checkbox ${selectedDisciplines.ST ? 'selected' : ''}`}>
@@ -1856,6 +2028,7 @@ const handleSubmit = async (e) => {
                            </label>
                          </div>
 
+                         {/* ST Therapist selection */}
                          {selectedDisciplines.ST && (
                            <div className="therapist-select">
                              <label htmlFor="st-therapist">ST Therapist</label>
@@ -1879,6 +2052,7 @@ const handleSubmit = async (e) => {
                            </div>
                          )}
 
+                         {/* STA Therapist selection */}
                          {selectedDisciplines.STA && (
                            <div className="therapist-select">
                              <label htmlFor="sta-therapist">STA Therapist</label>
@@ -1912,6 +2086,7 @@ const handleSubmit = async (e) => {
                </div>
              </div>
              
+             {/* Documents Upload Section */}
              <div className="form-section">
                <div className="section-header">
                  <i className="fas fa-file-pdf"></i>
@@ -1998,6 +2173,7 @@ const handleSubmit = async (e) => {
                </div>
              </div>
              
+             {/* Submit Section */}
              <div className="form-section submit-section">
                <div className="form-group full-width submit-group">
                  <button 
@@ -2023,6 +2199,7 @@ const handleSubmit = async (e) => {
          </div>
        )}
        
+       {/* Referral Stats */}
        {currentView === 'stats' && !referralFormLoading && (
          <div className="referrals-container stats-container">
            <div className="form-header">

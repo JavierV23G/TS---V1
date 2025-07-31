@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/MuscleBalanceSections.scss';
+import '../../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/sections/MuscleBalanceSections.scss';
 import StandardizedTest from '../StandardizedTest';
 
 export const MuscleStrengthSection = ({ data, onChange, sectionId, config, onOpenTest }) => {

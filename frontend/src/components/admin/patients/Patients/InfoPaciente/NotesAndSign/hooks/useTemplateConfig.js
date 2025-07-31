@@ -1,16 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// Map backend section names to frontend components
-const mapSectionNameToComponent = (sectionName) => {
-  const sectionMap = {
-    'VITALS': 'VitalsSection',
-    'Transfers / Functional Independence': 'TransfersFunctionalSection',
-    'PAIN': 'PainSection'
-  };
-  
-  return sectionMap[sectionName] || null;
-};
-
 // Hook para manejar configuración de templates - 100% dependiente del backend
 const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
   const [templateConfig, setTemplateConfig] = useState(null);
@@ -25,7 +14,7 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/templates/${disciplina}/${tipoNota}`);
+      const response = await fetch(`http://localhost:8000/api/templates/${disciplina}/${tipoNota}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch template: ${response.status} - ${response.statusText}`);
@@ -33,30 +22,12 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
 
       const config = await response.json();
       
-      // Transform backend response to expected frontend format
-      const transformedConfig = {
-        templateId: config.id,
-        name: `${config.discipline} ${config.note_type}`,
-        sections: config.sections.map(section => ({
-          id: section.id,
-          section_name: section.section_name,
-          component: mapSectionNameToComponent(section.section_name),
-          is_required: section.is_required,
-          description: section.description,
-          form_schema: section.form_schema
-        })),
-        discipline: config.discipline,
-        note_type: config.note_type,
-        is_active: config.is_active
-      };
-      
       // Validar que el template tenga la estructura esperada
-      if (!validateTemplateStructure(transformedConfig)) {
+      if (!validateTemplateStructure(config)) {
         throw new Error('Invalid template structure received from backend');
       }
       
-      console.log('✅ Template loaded successfully:', transformedConfig);
-      setTemplateConfig(transformedConfig);
+      setTemplateConfig(config);
     } catch (err) {
       console.error('Error fetching template config:', err);
       setError(err.message);

@@ -41,7 +41,7 @@ const TPStaffingPage = () => {
   const userData = {
     name: currentUser?.fullname || currentUser?.username || 'Usuario',
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
-    
+    email: currentUser?.email || 'usuario@ejemplo.com',
     role: currentUser?.role || 'Usuario',
     status: 'online', // online, away, busy, offline
   };

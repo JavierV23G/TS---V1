@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-import os, json
+import os, json, re
 from datetime import date
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from database.connection import get_db
@@ -26,31 +26,171 @@ from schemas import (
 
 router = APIRouter()
 
+#====================== UTILITY FUNCTIONS ======================#
+
+def format_phone_number(phone_str):
+    """Format phone number to (XXX) XXX-XXXX format"""
+    if not phone_str:
+        return ''
+    
+    # Clean string - only numbers
+    cleaned = re.sub(r'\D', '', str(phone_str))
+    
+    # Validate at least 10 digits
+    if len(cleaned) < 10:
+        return phone_str  # Return original if invalid
+    
+    # Format as (123) 456-7890
+    match = re.match(r'^(\d{3})(\d{3})(\d{4})$', cleaned)
+    if match:
+        return f"({match.group(1)}) {match.group(2)}-{match.group(3)}"
+    
+    return phone_str  # Return original if doesn't match pattern
+
+def get_primary_phone_number(contact_info):
+    """Get primary phone number from contact_info dictionary"""
+    if not contact_info:
+        return ''
+    
+    phone_number = ''
+    
+    # If it's a dictionary (new structure)
+    if isinstance(contact_info, dict):
+        phone_number = contact_info.get('primary#') or contact_info.get('primary') or contact_info.get('secondary')
+        
+        # If no primary or secondary, search other contacts
+        if not phone_number:
+            other_contacts = {k: v for k, v in contact_info.items() 
+                            if k not in ['primary#', 'primary', 'secondary']}
+            if other_contacts:
+                first_contact = next(iter(other_contacts.values()))
+                if isinstance(first_contact, str) and '|' in first_contact:
+                    phone_number = first_contact.split('|')[0]  # Get phone from phone|relation format
+                elif isinstance(first_contact, dict):
+                    phone_number = first_contact.get('phone', '')
+                else:
+                    phone_number = str(first_contact)
+    
+    elif isinstance(contact_info, str):
+        # Compatibility with old structure
+        try:
+            parsed = json.loads(contact_info)
+            if isinstance(parsed, list) and parsed:
+                phone_number = parsed[0].get('phone', '') if isinstance(parsed[0], dict) else str(parsed[0])
+            else:
+                phone_number = contact_info
+        except json.JSONDecodeError:
+            phone_number = contact_info
+    
+    # Return formatted number
+    return format_phone_number(phone_number) if phone_number else ''
+
 #====================== STAFF ======================#
 
 @router.get("/staff/", response_model=List[StaffResponse])
 def get_active_staff(db: Session = Depends(get_db)):
     staff_list = db.query(Staff).filter(Staff.is_active == True).all()
-    return [StaffResponse.model_validate(s) for s in staff_list]
+    return [StaffResponse.model_validate(staff) for staff in staff_list]
 
-@router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
-def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
-    # First check if patient exists
+@router.get("/patient/{patient_id}/assigned-staff")
+def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """Get assigned staff with frequencies from selected cert period"""
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     
-    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
+    # If no cert_period_id provided, use active one
+    if not cert_period_id:
+        cert_period = db.query(CertificationPeriod).filter(
+            CertificationPeriod.patient_id == patient_id,
+            CertificationPeriod.is_active == True
+        ).first()
+        if not cert_period:
+            raise HTTPException(status_code=404, detail="No active certification period found")
+        cert_period_id = cert_period.id
+    else:
+        cert_period = db.query(CertificationPeriod).filter(
+            CertificationPeriod.id == cert_period_id
+        ).first()
+        if not cert_period:
+            raise HTTPException(status_code=404, detail="Certification period not found")
     
-    return [
-        StaffAssignmentResponse(
-            id=a.id,
-            assigned_at=a.assigned_at,
-            assigned_role=a.assigned_role,
-            staff=StaffResponse.model_validate(a.staff)
-        )
-        for a in assignments
-    ]
+    # Get global staff assignments
+    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
+        StaffAssignment.patient_id == patient_id
+    ).all()
+    
+    # Get all active staff
+    all_staff = db.query(Staff).filter(Staff.is_active == True).all()
+    
+    # Organize by discipline with frequencies from selected cert period  
+    disciplines = {
+        'PT': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['PT', 'PTA']
+            ],
+            'assigned_pt': None,   # PT therapist
+            'assigned_pta': None,  # PTA assistant
+            'frequency': cert_period.pt_frequency,
+            'is_active': False
+        },
+        'OT': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['OT', 'COTA']
+            ],
+            'assigned_ot': None,   # OT therapist
+            'assigned_cota': None, # COTA assistant
+            'frequency': cert_period.ot_frequency,
+            'is_active': False
+        },
+        'ST': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['ST', 'STA']
+            ],
+            'assigned_st': None,   # ST therapist
+            'assigned_sta': None,  # STA assistant  
+            'frequency': cert_period.st_frequency,
+            'is_active': False
+        }
+    }
+    
+    # Fill in assigned staff
+    for assignment in assignments:
+        role = assignment.assigned_role.upper()
+        staff_data = {
+            'id': assignment.staff.id,  
+            'name': assignment.staff.name,
+            'role': assignment.staff.role
+        }
+        
+        # Assign to specific role fields within each discipline
+        if role == 'PT':
+            disciplines['PT']['assigned_pt'] = staff_data
+            disciplines['PT']['is_active'] = True
+        elif role == 'PTA':
+            disciplines['PT']['assigned_pta'] = staff_data
+            disciplines['PT']['is_active'] = True
+        elif role == 'OT':
+            disciplines['OT']['assigned_ot'] = staff_data
+            disciplines['OT']['is_active'] = True
+        elif role == 'COTA':
+            disciplines['OT']['assigned_cota'] = staff_data
+            disciplines['OT']['is_active'] = True
+        elif role == 'ST':
+            disciplines['ST']['assigned_st'] = staff_data
+            disciplines['ST']['is_active'] = True
+        elif role == 'STA':
+            disciplines['ST']['assigned_sta'] = staff_data
+            disciplines['ST']['is_active'] = True
+    
+    return {
+        'patient_id': patient_id,
+        'cert_period_id': cert_period_id,
+        'disciplines': disciplines
+    }
 
 #====================== PATIENTS ======================#
 
@@ -81,6 +221,7 @@ def get_all_patients(db: Session = Depends(get_db)):
 
         patient_data = patient.__dict__.copy()
         patient_data['agency_name'] = agency_name
+        patient_data['primary_phone'] = get_primary_phone_number(patient.contact_info)
         patient_data['cert_start_date'] = current_cert.start_date if current_cert else None
         patient_data['cert_end_date'] = current_cert.end_date if current_cert else None
         
@@ -120,6 +261,7 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
         "gender": patient.gender,
         "address": patient.address,
         "contact_info": patient.contact_info,
+        "primary_phone": get_primary_phone_number(patient.contact_info),
         "insurance": patient.insurance,
         "physician": patient.physician,
         "agency_name": agency_name,
@@ -164,10 +306,40 @@ def get_exercises_of_patient(patient_id: int, db: Session = Depends(get_db)):
 
 @router.get("/visits/certperiod/{cert_id}", response_model=List[VisitResponse])
 def get_visits_by_certification_period(cert_id: int, db: Session = Depends(get_db)):
-    return db.query(Visit).filter(
+    visits = db.query(Visit).filter(
         Visit.certification_period_id == cert_id,
         Visit.is_hidden == False
     ).all()
+    
+    visit_responses = []
+    for visit in visits:
+        note = db.query(VisitNote).filter(VisitNote.visit_id == visit.id).first()
+        
+        final_status = visit.status
+        if note and visit.status == "Scheduled":
+            # If visit has a note and is still "Scheduled", update to "Completed"
+            final_status = "Completed"
+        elif note and note.status == "Completed":
+            # If note exists and is completed, ensure visit is marked as completed
+            final_status = "Completed"
+        
+        # Create response with note information
+        visit_response = VisitResponse(
+            id=visit.id,
+            patient_id=visit.patient_id,
+            staff_id=visit.staff_id,
+            certification_period_id=visit.certification_period_id,
+            visit_date=visit.visit_date,
+            visit_type=visit.visit_type,
+            therapy_type=visit.therapy_type,
+            status=final_status,
+            scheduled_time=visit.scheduled_time,
+            note_id=note.id if note else None
+        )
+        
+        visit_responses.append(visit_response)
+    
+    return visit_responses
 
 @router.get("/visits/certperiod/{cert_id}/deleted", response_model=List[VisitResponse])
 def get_deleted_visits(cert_id: int, db: Session = Depends(get_db)):
@@ -185,35 +357,12 @@ def get_visit_note(visit_id: int, db: Session = Depends(get_db)):
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    # Get template sections for frontend context
-    template = db.query(NoteTemplate).filter_by(
-        discipline=note.discipline,
-        note_type=note.note_type,
-        is_active=True
-    ).first()
-
-    template_sections = []
-    if template:
-        links = (
-            db.query(NoteTemplateSection)
-            .filter(NoteTemplateSection.template_id == template.id)
-            .join(NoteSection)
-            .order_by(NoteTemplateSection.position.asc())
-            .all()
-        )
-        template_sections = [ts.section for ts in links]
-
     return VisitNoteResponse(
         id=note.id,
         visit_id=note.visit_id,
         status=note.status,
-        discipline=note.discipline,
-        note_type=note.note_type,
-        therapist_signature=note.therapist_signature,
-        patient_signature=note.patient_signature,
-        visit_date_signature=note.visit_date_signature,
         sections_data=note.sections_data or {},
-        template_sections=template_sections,
+        therapist_name=note.therapist_name,
     )
 
 @router.get("/templates/{discipline}/{visit_type}", response_model=NoteTemplateWithSectionsResponse)
@@ -226,7 +375,6 @@ def get_specific_template(discipline: str, visit_type: str, db: Session = Depend
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    # Get template sections with their full section details
     template_sections = (
         db.query(NoteTemplateSection, NoteSection)
         .join(NoteSection, NoteTemplateSection.section_id == NoteSection.id)
@@ -290,7 +438,10 @@ def preview_document(doc_id: int, db: Session = Depends(get_db)):
         path=doc.file_path,
         media_type="application/pdf",
         filename=doc.file_name,
-        headers={"Content-Disposition": f'inline; filename="{doc.file_name}"'}
+        headers={
+            "Content-Disposition": f'inline; filename="{doc.file_name}"',
+            "X-Frame-Options": "SAMEORIGIN"
+        }
     )
 
 #====================== CERTIFICATION PERIODS ======================#

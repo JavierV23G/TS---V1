@@ -7,202 +7,141 @@ const TransfersFunctionalSection = ({ data, onChange, sectionId, config }) => {
     onChange(updatedData);
   };
 
-  // Assistant levels for dropdown options
+  // Assistant levels based on JSON options
   const assistLevels = [
-    { value: "", label: "Select an Option" },
-    { value: "I", label: "I (No Assist)" },
-    { value: "MI", label: "MI (Uses Assistive Device)" },
-    { value: "SBA", label: "SBA (Stand By Assist)" },
-    { value: "CGA", label: "CGA (Contact Guard Assist)" },
-    { value: "MIN", label: "MIN (Requires 0-25% Assist)" },
-    { value: "MOD", label: "MOD (Requires 26-50% Assist)" },
-    { value: "MAX", label: "MAX (Requires 51-75% Assist)" },
-    { value: "TOT", label: "TOT (Requires 76-99% Assist)" },
-    { value: "DEP", label: "DEP (100% Assist)" },
-    { value: "S", label: "S (Set up/Supervision)" }
+    { value: "", label: "Select Level" },
+    { value: "Independent", label: "Independent" },
+    { value: "Modified Independent", label: "Modified Independent" },
+    { value: "Supervision", label: "Supervision" },
+    { value: "Minimal Assist", label: "Minimal Assist" },
+    { value: "Moderate Assist", label: "Moderate Assist" },
+    { value: "Maximal Assist", label: "Maximal Assist" },
+    { value: "Dependent", label: "Dependent" }
   ];
 
-  // 🔥 TRANSFERENCIAS ORGANIZADAS POR TIPO
-  const basicTransfers = [
-    { id: 'sitStand', label: 'Sit / Stand', icon: 'fas fa-chair' },
-    { id: 'rollTurn', label: 'Roll / Turn', icon: 'fas fa-redo' },
-    { id: 'sitSupine', label: 'Sit / Supine', icon: 'fas fa-bed' }
-  ];
-
-  const mobilityTransfers = [
-    { id: 'auto', label: 'Auto', icon: 'fas fa-car' },
-    { id: 'bedWheelchair', label: 'Bed / Wheelchair', icon: 'fas fa-wheelchair' },
-    { id: 'scootBridge', label: 'Scoot / Bridge', icon: 'fas fa-arrows-alt-h' }
-  ];
-
-  const functionalTransfers = [
+  // Transfer activities from JSON
+  const transferActivities = [
+    { id: 'sit_stand', label: 'Sit / Stand', icon: 'fas fa-chair' },
+    { id: 'bed_wheelchair', label: 'Bed / Wheelchair', icon: 'fas fa-wheelchair' },
     { id: 'toilet', label: 'Toilet', icon: 'fas fa-toilet' },
-    { id: 'tub', label: 'Tub', icon: 'fas fa-bath' }
+    { id: 'tub', label: 'Tub', icon: 'fas fa-bath' },
+    { id: 'auto', label: 'Auto', icon: 'fas fa-car' },
+    { id: 'roll_turn', label: 'Roll / Turn', icon: 'fas fa-redo' },
+    { id: 'sit_supine', label: 'Sit / Supine', icon: 'fas fa-bed' },
+    { id: 'scoot_bridge', label: 'Scoot / Bridge', icon: 'fas fa-arrows-alt-h' }
   ];
 
   // Assistance level colors for visual feedback
-  const assistLevelColors = {
-    'I': '#22c55e',      // Green - Independent
-    'MI': '#3b82f6',     // Blue - Minimal help
-    'SBA': '#06b6d4',    // Cyan - Stand by
-    'CGA': '#8b5cf6',    // Purple - Contact guard
-    'MIN': '#eab308',    // Yellow - Minimal assist
-    'MOD': '#f59e0b',    // Orange - Moderate assist
-    'MAX': '#f97316',    // Red-orange - Max assist
-    'TOT': '#ef4444',    // Red - Total assist
-    'DEP': '#dc2626',    // Dark red - Dependent
-    'S': '#10b981'       // Teal - Supervision
+  const getAssistLevelColor = (level) => {
+    const colorMap = {
+      'Independent': '#22c55e',
+      'Modified Independent': '#3b82f6',
+      'Supervision': '#06b6d4',
+      'Minimal Assist': '#eab308',
+      'Moderate Assist': '#f59e0b',
+      'Maximal Assist': '#f97316',
+      'Dependent': '#ef4444'
+    };
+    return colorMap[level] || '#64748b';
   };
 
   return (
     <div className="transfers-functional-section">
-      <div className="form-section">
-        <div className="section-title">
-          <h2>
-            <i className="fas fa-exchange-alt"></i>
-            Transfers / Functional Independence
-          </h2>
-        </div>
-
-        <div className="transfers-categories">
-          {/* Basic Transfers */}
-          <div className="transfer-category">
-            <h4 className="category-title">
-              <i className="fas fa-user"></i>
-              Basic Transfers
-            </h4>
-            <div className="transfers-grid">
-              {basicTransfers.map(transfer => (
-                <div className="transfer-item" key={transfer.id}>
-                  <div className="transfer-header">
-                    <i className={transfer.icon}></i>
-                    <label>{transfer.label}</label>
-                  </div>
-                  <select 
-                    value={data[transfer.id] || ''}
-                    onChange={(e) => handleChange(transfer.id, e.target.value)}
-                    className={data[transfer.id] ? `selected level-${data[transfer.id]}` : ''}
-                    style={{
-                      '--level-color': data[transfer.id] ? assistLevelColors[data[transfer.id]] || '#6b7280' : '#6b7280'
-                    }}
-                  >
-                    {assistLevels.map(level => (
-                      <option key={level.value} value={level.value}>{level.label}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobility Transfers */}
-          <div className="transfer-category">
-            <h4 className="category-title">
-              <i className="fas fa-wheelchair"></i>
-              Mobility Transfers
-            </h4>
-            <div className="transfers-grid">
-              {mobilityTransfers.map(transfer => (
-                <div className="transfer-item" key={transfer.id}>
-                  <div className="transfer-header">
-                    <i className={transfer.icon}></i>
-                    <label>{transfer.label}</label>
-                  </div>
-                  <select 
-                    value={data[transfer.id] || ''}
-                    onChange={(e) => handleChange(transfer.id, e.target.value)}
-                    className={data[transfer.id] ? `selected level-${data[transfer.id]}` : ''}
-                    style={{
-                      '--level-color': data[transfer.id] ? assistLevelColors[data[transfer.id]] || '#6b7280' : '#6b7280'
-                    }}
-                  >
-                    {assistLevels.map(level => (
-                      <option key={level.value} value={level.value}>{level.label}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Functional Transfers */}
-          <div className="transfer-category">
-            <h4 className="category-title">
-              <i className="fas fa-home"></i>
-              Functional Transfers
-            </h4>
-            <div className="transfers-grid">
-              {functionalTransfers.map(transfer => (
-                <div className="transfer-item" key={transfer.id}>
-                  <div className="transfer-header">
-                    <i className={transfer.icon}></i>
-                    <label>{transfer.label}</label>
-                  </div>
-                  <select 
-                    value={data[transfer.id] || ''}
-                    onChange={(e) => handleChange(transfer.id, e.target.value)}
-                    className={data[transfer.id] ? `selected level-${data[transfer.id]}` : ''}
-                    style={{
-                      '--level-color': data[transfer.id] ? assistLevelColors[data[transfer.id]] || '#6b7280' : '#6b7280'
-                    }}
-                  >
-                    {assistLevels.map(level => (
-                      <option key={level.value} value={level.value}>{level.label}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Assistance Level Guide */}
-        <div className="assistance-guide">
-          <div className="guide-header">
-            <i className="fas fa-info-circle"></i>
-            <h4>Assistance Level Guide</h4>
-          </div>
-          <div className="assistance-levels">
-            {Object.entries(assistLevelColors).map(([level, color]) => (
-              <div className="level-badge" key={level} style={{ '--badge-color': color }}>
-                <span className="level-code">{level}</span>
-                <span className="level-name">
-                  {assistLevels.find(l => l.value === level)?.label.split(' ')[0] || level}
-                </span>
+      <div className="section-title">
+        <h2>Transfers / Functional Independence</h2>
+      </div>
+      
+      <div className="transfers-layout">
+        {/* Transfer Activities Grid */}
+        <div className="transfers-grid">
+          {transferActivities.map(activity => (
+            <div key={activity.id} className="transfer-card">
+              <div className="transfer-header">
+                <i className={activity.icon}></i>
+                <label>{activity.label}</label>
               </div>
+              <select 
+                value={data?.[activity.id] || ''}
+                onChange={(e) => handleChange(activity.id, e.target.value)}
+                className="transfer-select"
+                style={{
+                  borderColor: data?.[activity.id] ? getAssistLevelColor(data[activity.id]) : '#ddd'
+                }}
+              >
+                {assistLevels.map(level => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+              {data?.[activity.id] && (
+                <div 
+                  className="level-indicator"
+                  style={{ backgroundColor: getAssistLevelColor(data[activity.id]) }}
+                >
+                  {data[activity.id]}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Wheelchair Usage */}
+        <div className="form-group wheelchair-section">
+          <label>
+            <i className="fas fa-wheelchair"></i>
+            Does patient have a wheelchair?
+          </label>
+          <select 
+            value={data?.wheelchair_usage || ''}
+            onChange={(e) => handleChange('wheelchair_usage', e.target.value)}
+            className="form-select"
+          >
+            <option value="">Select an option</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Occasionally">Occasionally</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+
+        {/* Additional Information */}
+        <div className="form-group">
+          <label>
+            <i className="fas fa-clipboard-list"></i>
+            Additional Information
+          </label>
+          <textarea 
+            value={data?.additional_information || ''}
+            onChange={(e) => handleChange('additional_information', e.target.value)}
+            placeholder="Enter any additional transfer or functional information..."
+            rows={4}
+            className="form-textarea"
+          />
+        </div>
+
+        {/* Summary Card */}
+        <div className="transfers-summary">
+          <div className="summary-header">
+            <h4>
+              <i className="fas fa-chart-pie"></i>
+              Functional Independence Summary
+            </h4>
+          </div>
+          <div className="summary-grid">
+            {transferActivities.map(activity => (
+              data?.[activity.id] && (
+                <div key={activity.id} className="summary-item">
+                  <span className="activity">{activity.label}:</span>
+                  <span 
+                    className="level"
+                    style={{ color: getAssistLevelColor(data[activity.id]) }}
+                  >
+                    {data[activity.id]}
+                  </span>
+                </div>
+              )
             ))}
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>
-              <i className="fas fa-wheelchair"></i>
-              Does patient have a wheelchair?
-            </label>
-            <select 
-              value={data.hasWheelchair || ''}
-              onChange={(e) => handleChange('hasWheelchair', e.target.value)}
-            >
-              <option value="">Select an option</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>
-              <i className="fas fa-info-circle"></i>
-              Additional Information
-            </label>
-            <textarea 
-              value={data.transfersAdditional || ''}
-              onChange={(e) => handleChange('transfersAdditional', e.target.value)}
-              rows={3}
-              placeholder="Additional information about transfers and functional independence..."
-            />
           </div>
         </div>
       </div>

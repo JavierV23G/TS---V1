@@ -3,30 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../components/login/AuthContext';
 import logoImg from '../../../../assets/LogoMHC.jpeg';
 import '../../../../styles/developer/Patients/Staffing/StaffingPage.scss';
-import '../../../../styles/Header/Header.scss';
 import PremiumTabs from '../Patients/PremiunTabs.jsx';
 import AddStaffForm from './AddStaffForm';
-import StaffList from './StaffListComponent';
+import StaffListComponent from './StaffListComponent';
+import StaffEditComponent from './StaffEditComponent';
 import LogoutAnimation from '../../../../components/LogOut/LogOut';
 
-const DevStaffingPage = () => {
+const AdminStaffingPage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
-  const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [showCompanyList, setShowCompanyList] = useState(false);
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [showMenuSwitch, setShowMenuSwitch] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showAddStaffForm, setShowAddStaffForm] = useState(false);
   const [showStaffList, setShowStaffList] = useState(false);
+  const [showStaffEdit, setShowStaffEdit] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
-  // Estados para los datos reales de la API
-  const [staffData, setStaffData] = useState([]);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [statsError, setStatsError] = useState(null);
 
   const userMenuRef = useRef(null);
 
@@ -42,127 +37,10 @@ const DevStaffingPage = () => {
   const userData = {
     name: currentUser?.fullname || currentUser?.username || 'Usuario',
     avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
+    email: currentUser?.email || 'usuario@ejemplo.com',
     role: currentUser?.role || 'Usuario',
     status: 'online',
   };
-
-  // Función para convertir el rol del backend al frontend
-  const convertRoleFromBackend = (role) => {
-    const roleMapping = {
-      'Administrator': 'administrator',
-      'Agency': 'agency',
-      'PT': 'pt',
-      'PTA': 'pta',
-      'OT': 'ot',
-      'COTA': 'cota',
-      'ST': 'st',
-      'STA': 'sta'
-    };
-    return roleMapping[role] || role.toLowerCase();
-  };
-
-  // Función para obtener datos del personal desde la API
-  const fetchStaffData = async () => {
-    try {
-      setIsLoadingStats(true);
-      setStatsError(null);
-
-      const response = await fetch('http://localhost:8000/staff/', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener los datos del personal');
-      }
-
-      const data = await response.json();
-
-      // Filtrar usuarios que NO sean Developer o Support antes de procesarlos
-      const filteredData = data.filter(staff => {
-        const role = staff.role?.toLowerCase();
-        return role !== 'developer' && role !== 'support';
-      });
-
-      const processedData = filteredData.map(staff => ({
-        ...staff,
-        role: convertRoleFromBackend(staff.role),
-        status: staff.is_active ? 'active' : 'inactive',
-      }));
-
-      setStaffData(processedData);
-    } catch (error) {
-      console.error('Error al obtener la lista de personal:', error);
-      setStatsError(error.message);
-    } finally {
-      setIsLoadingStats(false);
-    }
-  };
-
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    fetchStaffData();
-  }, []);
-
-  // Calcular estadísticas reales basadas en los datos de la API
-  const calculateStats = () => {
-    if (!staffData || staffData.length === 0) {
-      return {
-        therapistCounts: { PT: 0, PTA: 0, OT: 0, COTA: 0, ST: 0, STA: 0 },
-        totalTherapists: 0,
-        internalStaffCounts: { Admin: 0 },
-        totalInternalStaff: 0,
-        agencyStats: { currentMonth: 0, previousMonth: 0 }
-      };
-    }
-
-    const activeStaff = staffData.filter(staff => staff.status === 'active');
-
-    const therapistCounts = {
-      pt: activeStaff.filter(staff => staff.role === 'pt').length,
-      pta: activeStaff.filter(staff => staff.role === 'pta').length,
-      ot: activeStaff.filter(staff => staff.role === 'ot').length,
-      cota: activeStaff.filter(staff => staff.role === 'cota').length,
-      st: activeStaff.filter(staff => staff.role === 'st').length,
-      sta: activeStaff.filter(staff => staff.role === 'sta').length,
-    };
-    const totalTherapists = Object.values(therapistCounts).reduce((sum, count) => sum + count, 0);
-
-    const internalStaffCounts = {
-      Admin: activeStaff.filter(staff => staff.role === 'administrator').length,
-    };
-    const totalInternalStaff = Object.values(internalStaffCounts).reduce((sum, count) => sum + count, 0);
-
-    const currentAgencies = activeStaff.filter(staff => staff.role === 'agency').length;
-    const previousMonthAgencies = 0; // Simulación simple, se puede mejorar con datos de fecha
-
-    return {
-      therapistCounts,
-      totalTherapists,
-      internalStaffCounts,
-      totalInternalStaff,
-      agencyStats: {
-        currentMonth: currentAgencies,
-        previousMonth: previousMonthAgencies,
-      }
-    };
-  };
-
-  const stats = calculateStats();
-
-  const { agencyChange, agencyChangeDirection } = (() => {
-    const { currentMonth, previousMonth } = stats.agencyStats;
-    if (previousMonth === 0) {
-      const change = currentMonth > 0 ? 100 : 0;
-      const direction = currentMonth > 0 ? 'increase' : 'no-change';
-      return { agencyChange: change, agencyChangeDirection: direction };
-    }
-    const change = Math.round(((currentMonth - previousMonth) / previousMonth) * 100);
-    const direction = change > 0 ? 'increase' : change < 0 ? 'decrease' : 'no-change';
-    return { agencyChange: change, agencyChangeDirection: direction };
-  })();
 
   useEffect(() => {
     const handleResize = () => {
@@ -203,44 +81,6 @@ const DevStaffingPage = () => {
     };
   }, []);
 
-  const handleRegisterCompanyClick = (e) => {
-    if (isLoggingOut) return;
-    if (e) e.stopPropagation();
-  
-    setSelectedOption('companies');
-    setShowCompanyForm(true);
-    setShowCompanyList(false);
-    setShowAddStaffForm(false);
-    setShowStaffList(false);
-  };
-  
-  // Manejar la cancelación del formulario de compañía correctamente
-  const handleCompanyFormCancel = (action) => {
-    if (isLoggingOut) return;
-    
-    setShowCompanyForm(false);
-    
-    // Si viene de la pantalla de éxito y se solicita ver todas las compañías
-    if (action === 'viewCompanies') {
-      setShowCompanyList(true);
-    } else {
-      // Si simplemente se cancela, volver al estado de selección
-      setSelectedOption('companies');
-    }
-  };
-  
-  const handleCompanySave = (companyData) => {
-    if (isLoggingOut) return;
-    console.log('Saved company data:', companyData);
-    
-    // Aquí iría la lógica para enviar datos a la API
-    
-    // Mostrar notificación o mensaje de éxito
-    // Redirigir o resetear formulario según la lógica de UX deseada
-    
-    setShowCompanyForm(false);
-  };
-
   const handleMainMenuTransition = () => {
     if (isLoggingOut) return;
 
@@ -265,26 +105,13 @@ const DevStaffingPage = () => {
     }
   };
 
-  // Arreglado: Manejar correctamente ver todas las compañías
-  const handleViewAllCompaniesClick = (e) => {
-    if (isLoggingOut) return;
-    if (e) e.stopPropagation();
-
-    setSelectedOption('companies');
-    setShowCompanyList(true);
-    setShowCompanyForm(false);
-    setShowAddStaffForm(false);
-    setShowStaffList(false);
-  };
-
   const handleOptionSelect = (option) => {
     if (isLoggingOut) return;
 
     setSelectedOption(option);
     setShowAddStaffForm(false);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
+    setShowStaffEdit(false);
   };
 
   const handleAddStaffClick = (e) => {
@@ -294,8 +121,7 @@ const DevStaffingPage = () => {
     setSelectedOption('therapists');
     setShowAddStaffForm(true);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
+    setShowStaffEdit(false);
   };
 
   const handleLogout = () => {
@@ -318,8 +144,17 @@ const DevStaffingPage = () => {
     setSelectedOption('therapists');
     setShowStaffList(true);
     setShowAddStaffForm(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
+    setShowStaffEdit(false);
+  };
+
+  const handleEditStaffClick = (e) => {
+    if (isLoggingOut) return;
+    if (e) e.stopPropagation();
+
+    setSelectedOption('therapists');
+    setShowStaffEdit(true);
+    setShowAddStaffForm(false);
+    setShowStaffList(false);
   };
 
   const handleCancelForm = () => {
@@ -327,25 +162,63 @@ const DevStaffingPage = () => {
 
     setShowAddStaffForm(false);
     setShowStaffList(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
-    // Recargar datos cuando se cancela un formulario por si hubo cambios
-    fetchStaffData();
+    setShowStaffEdit(false);
   };
 
-  // Arreglado: Manejar correctamente volver a opciones
   const handleBackToOptions = () => {
     if (isLoggingOut) return;
 
     setShowStaffList(false);
     setShowAddStaffForm(false);
-    setShowCompanyForm(false);
-    setShowCompanyList(false);
-    // Recargar datos cuando se regresa a las opciones
-    fetchStaffData();
+    setShowStaffEdit(false);
   };
 
-  
+  // Datos simulados para las estadísticas (en un escenario real, vendrían de una API o del estado)
+  const staffList = [
+    { role: 'pt' },
+    { role: 'pta' },
+    { role: 'ot' },
+    { role: 'administrator' },
+    { role: 'support' },
+    // Agrega más datos simulados si es necesario
+  ];
+
+  const therapistCounts = {
+    PT: staffList.filter(staff => staff.role === 'pt').length,
+    PTA: staffList.filter(staff => staff.role === 'pta').length,
+    OT: staffList.filter(staff => staff.role === 'ot').length,
+    COTA: staffList.filter(staff => staff.role === 'cota').length,
+    ST: staffList.filter(staff => staff.role === 'st').length,
+    STA: staffList.filter(staff => staff.role === 'sta').length,
+  };
+
+  const totalTherapists = Object.values(therapistCounts).reduce((sum, count) => sum + count, 0);
+
+  const internalStaffCounts = {
+    Admin: staffList.filter(staff => staff.role === 'administrator').length,
+    Agency: staffList.filter(staff => staff.role === 'agency').length,
+    Support: staffList.filter(staff => staff.role === 'support').length,
+    Developer: staffList.filter(staff => staff.role === 'developer').length,
+  };
+
+  const totalInternalStaff = Object.values(internalStaffCounts).reduce((sum, count) => sum + count, 0);
+
+  const monthlyIncorporations = {
+    currentMonth: 0,
+    previousMonth: 100,
+  };
+
+  let incorporationChange = 0;
+  let changeDirection = '';
+  if (monthlyIncorporations.previousMonth === 0) {
+    incorporationChange = monthlyIncorporations.currentMonth > 0 ? 100 : 0;
+    changeDirection = monthlyIncorporations.currentMonth > 0 ? 'increase' : 'no-change';
+  } else {
+    incorporationChange = Math.round(
+      ((monthlyIncorporations.currentMonth - monthlyIncorporations.previousMonth) / monthlyIncorporations.previousMonth) * 100
+    );
+    changeDirection = incorporationChange > 0 ? 'increase' : incorporationChange < 0 ? 'decrease' : 'no-change';
+  }
 
   const handleNavigateToCreateReferral = () => {
     if (isLoggingOut) return;
@@ -408,6 +281,10 @@ const DevStaffingPage = () => {
             </div>
           </div>
           
+          <div className="tabs-section">
+            <PremiumTabs activeTab="Staffing" onTabChange={handleTabChange} />
+          </div>
+          
           <div className="support-user-profile" ref={userMenuRef}>
             <div 
               className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -449,29 +326,63 @@ const DevStaffingPage = () => {
                 <div className="support-menu-section">
                   <div className="section-title">Account</div>
                   <div className="support-menu-items">
-                    <div 
-                      className="support-menu-item"
-                      onClick={() => {
-                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-                        navigate(`/${baseRole}/profile`);
-                      }}
-                    >
+                    <div className="support-menu-item">
                       <i className="fas fa-user-circle"></i>
                       <span>My Profile</span>
                     </div>
-                    <div 
-                      className="support-menu-item"
-                      onClick={() => {
-                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-                        navigate(`/${baseRole}/settings`);
-                      }}
-                    >
+                    <div className="support-menu-item">
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>My Schedule</span>
                     </div>
                   </div>
                 </div>
                 
+                <div className="support-menu-section">
+                  <div className="section-title">Preferences</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-bell"></i>
+                      <span>Notifications</span>
+                      <div className="support-notification-badge">{notificationCount}</div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-moon"></i>
+                        <span>Dark Mode</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle active"></div>
+                      </div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-volume-up"></i>
+                        <span>Sound Alerts</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Support</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-headset"></i>
+                      <span>Contact Support</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-bug"></i>
+                      <span>Report Issue</span>
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="support-menu-footer">
                   <div className="support-menu-item logout" onClick={handleLogout}>
@@ -479,7 +390,7 @@ const DevStaffingPage = () => {
                     <span>Log Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™</span>
+                    <span>TherapySync™ Support</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -488,10 +399,6 @@ const DevStaffingPage = () => {
           </div>
         </div>
       </header>
-      
-      <div className="tabs-section">
-        <PremiumTabs activeTab="Staffing" onTabChange={handleTabChange} />
-      </div>
       
       <main className={`staffing-content ${isLoggingOut ? 'fade-out' : ''}`}>
         <div className="staffing-container">
@@ -529,7 +436,7 @@ const DevStaffingPage = () => {
                     onClick={(e) => handleViewAllStaffClick(e)}
                     disabled={isLoggingOut}
                   >
-                    <i className="fas fa-eye"></i> View & Edit Staff
+                    <i className="fas fa-eye"></i> View All
                   </button>
                   <button 
                     className="option-btn" 
@@ -546,173 +453,107 @@ const DevStaffingPage = () => {
               </div>
             </div>
             
-            {/* Opción para Companies */}
-         
+           
           </div>
           
-          {/* Sección de estadísticas con datos reales */}
+          {/* Nueva sección de estadísticas */}
           <div className="stats-container">
             <h2>Staffing Overview</h2>
-            {isLoadingStats ? (
-              <div className="stats-loading">
-                <div className="loading-spinner"></div>
-                <p>Loading staffing statistics...</p>
-              </div>
-            ) : statsError ? (
-              <div className="stats-error">
-                <div className="error-icon">
-                  <i className="fas fa-exclamation-triangle"></i>
+            <div className="staffing-stats">
+              {/* Total Therapists con desglose */}
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-users"></i>
                 </div>
-                <p>Error loading statistics: {statsError}</p>
-                <button onClick={fetchStaffData} className="retry-btn">
-                  <i className="fas fa-redo"></i> Retry
-                </button>
-              </div>
-            ) : (
-              <div className="staffing-stats">
-                {/* Total Therapists con desglose real */}
-                <div className="stat-card therapists-card">
-                  <div className="stat-header">
-                    <div className="stat-icon">
-                      <i className="fas fa-users"></i>
-                    </div>
-                    <div className="stat-main-info">
-                      <h3 className="stat-value">{stats.totalTherapists}</h3>
-                      <p className="stat-label">Total Therapists</p>
-                    </div>
-                  </div>
+                <div className="stat-info">
+                  <h3 className="stat-value">{totalTherapists}</h3>
+                  <p>Total Therapists</p>
                   <div className="therapist-breakdown">
-                    <div className="breakdown-grid">
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">PT</span>
-                        <span className="breakdown-value">{stats.therapistCounts.pt}</span>
-                      </div>
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">PTA</span>
-                        <span className="breakdown-value">{stats.therapistCounts.pta}</span>
-                      </div>
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">OT</span>
-                        <span className="breakdown-value">{stats.therapistCounts.ot}</span>
-                      </div>
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">COTA</span>
-                        <span className="breakdown-value">{stats.therapistCounts.cota}</span>
-                      </div>
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">ST</span>
-                        <span className="breakdown-value">{stats.therapistCounts.st}</span>
-                      </div>
-                      <div className="breakdown-item">
-                        <span className="breakdown-label">STA</span>
-                        <span className="breakdown-value">{stats.therapistCounts.sta}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Active Agencies con datos reales */}
-                <div className="stat-card agencies-card">
-                  <div className="stat-header">
-                    <div className="stat-icon">
-                      <i className="fas fa-building"></i>
-                    </div>
-                    <div className="stat-main-info">
-                      <h3 className="stat-value">{stats.agencyStats.currentMonth}</h3>
-                      <p className="stat-label">Active Agencies</p>
-                    </div>
-                  </div>
-                  <div className="stat-footer">
-                    <div className={`change-indicator ${agencyChangeDirection}`}>
-                      <i className={`fas fa-${agencyChangeDirection === 'increase' ? 'arrow-up' : agencyChangeDirection === 'decrease' ? 'arrow-down' : 'minus'}`}></i>
-                      <span>
-                        {agencyChangeDirection !== 'no-change' ? 
-                          `${Math.abs(agencyChange)}% vs last month` : 
-                          'No change'
-                        }
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Internal Staff con datos reales */}
-                <div className="stat-card internal-staff-card">
-                  <div className="stat-header">
-                    <div className="stat-icon">
-                      <i className="fas fa-user-tie"></i>
-                    </div>
-                    <div className="stat-main-info">
-                      <h3 className="stat-value">{stats.totalInternalStaff}</h3>
-                      <p className="stat-label">Internal Staff</p>
-                    </div>
-                  </div>
-                  <div className="internal-staff-breakdown">
-                    <div className="breakdown-row">
-                      <span className="breakdown-label">Admin</span>
-                      <span className="breakdown-value">{stats.internalStaffCounts.Admin}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Botón para crear un nuevo paciente */}
-                <div className="stat-card action-card" onClick={handleNavigateToCreateReferral}>
-                  <div className="stat-header">
-                    <div className="stat-icon action-icon">
-                      <i className="fas fa-user-plus"></i>
-                    </div>
-                    <div className="stat-main-info">
-                      <h3 className="stat-value">Create</h3>
-                      <p className="stat-label">New Patient Referral</p>
-                    </div>
-                  </div>
-                  <div className="action-arrow">
-                    <i className="fas fa-arrow-right"></i>
+                    <span>PT: {therapistCounts.PT}</span>
+                    <span>PTA: {therapistCounts.PTA}</span>
+                    <span>OT: {therapistCounts.OT}</span>
+                    <span>COTA: {therapistCounts.COTA}</span>
+                    <span>ST: {therapistCounts.ST}</span>
+                    <span>STA: {therapistCounts.STA}</span>
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Incorporación mensual */}
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-user-plus"></i>
+                </div>
+                <div className="stat-info">
+                  <h3 className="stat-value">{monthlyIncorporations.currentMonth}</h3>
+                  <p>Monthly Incorporations</p>
+                  <div className={`change-indicator ${changeDirection}`}>
+                    {changeDirection !== 'no-change' ? (
+                      <>
+                        {Math.abs(incorporationChange)}% {changeDirection === 'increase' ? '↑' : '↓'}
+                      </>
+                    ) : (
+                      'No Change'
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal interno */}
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-user-tie"></i>
+                </div>
+                <div className="stat-info">
+                  <h3 className="stat-value">{totalInternalStaff}</h3>
+                  <p>Internal Staff</p>
+                  <div className="internal-staff-breakdown">
+                    <span>Admin: {internalStaffCounts.Admin}</span>
+                    <span>Agency: {internalStaffCounts.Agency}</span>
+                    <span>Support: {internalStaffCounts.Support}</span>
+                    <span>Developer: {internalStaffCounts.Developer}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón para crear un nuevo paciente */}
+              <div className="stat-card action-card" onClick={handleNavigateToCreateReferral}>
+                <div className="stat-icon">
+                  <i className="fas fa-user-plus"></i>
+                </div>
+                <div className="stat-info">
+                  <h3 className="stat-value">Create Patient</h3>
+                  <p>Start a new patient referral</p>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {/* Renderizado condicional de componentes - ACTUALIZADO: Usando los nuevos componentes */}
           {selectedOption === 'therapists' && showAddStaffForm ? (
-            <AddStaffForm 
-              onCancel={handleCancelForm} 
-              onViewAllStaff={handleViewAllStaffClick} 
-            />
+            <AddStaffForm onCancel={handleCancelForm} />
           ) : selectedOption === 'therapists' && showStaffList ? (
-            <StaffList
-              onBackToOptions={handleBackToOptions}
-              onAddNewStaff={handleAddStaffClick}  
-            />
+            <StaffListComponent onBackToOptions={handleBackToOptions} />
+          ) : selectedOption === 'therapists' && showStaffEdit ? (
+            <StaffEditComponent onBackToOptions={handleBackToOptions} />
           ) : (
             <div className="selected-content-area">
               {selectedOption && (
                 <div className="selected-content-card">
                   <div className="content-header">
                     <h2>
-                      {selectedOption === 'therapists' ? 'Therapists & Office Staff' : 
-                      selectedOption === 'companies' ? 'Companies & Agencies' : 
-                      'Scheduling & Assignments'}
+                      {selectedOption === 'therapists' ? 'Therapists & Office Staff' : 'Scheduling & Assignments'}
                     </h2>
                     <p>
                       {selectedOption === 'therapists' 
                         ? 'View and manage your therapy and office staff team members.' 
-                        : selectedOption === 'companies'
-                        ? 'Manage healthcare companies and home care agencies in the system.'
                         : 'Manage scheduling and patient assignments for your therapy team.'}
                     </p>
                   </div>
                   
                   <div className="content-body">
                     <div className="placeholder-content">
-                      <i className={`fas fa-${
-                        selectedOption === 'therapists' ? 'users' : 
-                        selectedOption === 'companies' ? 'building' : 
-                        'calendar-alt'}`}></i>
-                      <p>Select an action to continue with {
-                        selectedOption === 'therapists' ? 'staff management' : 
-                        selectedOption === 'companies' ? 'company management' : 
-                        'scheduling'}</p>
+                      <i className={`fas fa-${selectedOption === 'therapists' ? 'users' : 'calendar-alt'}`}></i>
+                      <p>Select an action to continue with {selectedOption === 'therapists' ? 'staff management' : 'scheduling'}</p>
                       
                       {selectedOption === 'therapists' && (
                         <div className="action-buttons">
@@ -728,12 +569,10 @@ const DevStaffingPage = () => {
                             onClick={(e) => handleViewAllStaffClick(e)}
                             disabled={isLoggingOut}
                           >
-                            <i className="fas fa-list"></i> View & Edit Staff
+                            <i className="fas fa-list"></i> View All Staff
                           </button>
                         </div>
                       )}
-                      
-                     
                       
                       {selectedOption === 'scheduling' && (
                         <div className="action-buttons">
@@ -757,7 +596,7 @@ const DevStaffingPage = () => {
                 <div className="welcome-select-message">
                   <i className="fas fa-hand-point-up"></i>
                   <h3>Please Select an Option Above</h3>
-                  <p>Choose an option to get started with staff or company management</p>
+                  <p>Choose "Therapists & Office Staff" or "Scheduling & Assignments" to get started</p>
                 </div>
               )}
             </div>
@@ -765,8 +604,9 @@ const DevStaffingPage = () => {
         </div>
       </main>
       
+ 
     </div>
   );
 };
 
-export default DevStaffingPage;
+export default AdminStaffingPage;

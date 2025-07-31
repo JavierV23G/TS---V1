@@ -100,34 +100,55 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
   }, []);
 
   // Función para validar datos
-  const validateData = useCallback((dataToValidate = data) => {
+  const validateData = useCallback((dataToValidate = data, templateConfig = null) => {
     const errors = {};
     const warnings = {};
 
+    console.log('=== DEBUG: validateData called ===');
+    console.log('dataToValidate:', dataToValidate);
+    console.log('Type of dataToValidate:', typeof dataToValidate);
+
     // Verificar que dataToValidate existe y es un objeto
     if (!dataToValidate || typeof dataToValidate !== 'object') {
+      console.log('Data is null or not an object, returning valid');
       return { errors: {}, warnings: {}, isValid: true };
     }
 
-    // Validaciones básicas
-    Object.entries(dataToValidate).forEach(([sectionId, sectionData]) => {
-      if (!sectionData || typeof sectionData !== 'object') {
-        errors[sectionId] = 'Invalid section data';
-        return;
-      }
+    console.log('Data entries to validate:', Object.entries(dataToValidate));
 
-      // Validar campos requeridos (esto se podría hacer más específico por section)
-      const emptyFields = Object.entries(sectionData)
-        .filter(([key, value]) => {
-          if (typeof value === 'string') return value.trim() === '';
-          if (typeof value === 'number') return value === 0;
-          if (Array.isArray(value)) return value.length === 0;
-          return false;
-        })
-        .map(([key]) => key);
+    // Identificar qué campos son secciones del template vs campos de visita
+    const templateSectionNames = templateConfig?.sections?.map(section => section.section_name) || [];
+    console.log('Template section names:', templateSectionNames);
 
-      if (emptyFields.length > 0) {
-        warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
+    // Validaciones básicas solo para secciones del template
+    Object.entries(dataToValidate).forEach(([sectionKey, sectionData]) => {
+      console.log(`Validating field "${sectionKey}":`, sectionData, 'Type:', typeof sectionData);
+      
+      // Solo validar como sección si está en la lista de secciones del template
+      if (templateSectionNames.includes(sectionKey)) {
+        console.log(`"${sectionKey}" is a template section - validating as object`);
+        
+        if (!sectionData || typeof sectionData !== 'object') {
+          console.log(`Section "${sectionKey}" failed validation - not an object:`, typeof sectionData);
+          errors[sectionKey] = 'Invalid section data';
+          return;
+        }
+
+        // Validar campos requeridos (esto se podría hacer más específico por section)
+        const emptyFields = Object.entries(sectionData)
+          .filter(([key, value]) => {
+            if (typeof value === 'string') return value.trim() === '';
+            if (typeof value === 'number') return value === 0;
+            if (Array.isArray(value)) return value.length === 0;
+            return false;
+          })
+          .map(([key]) => key);
+
+        if (emptyFields.length > 0) {
+          warnings[sectionKey] = `Empty fields: ${emptyFields.join(', ')}`;
+        }
+      } else {
+        console.log(`"${sectionKey}" is not a template section - skipping validation`);
       }
     });
 
@@ -165,15 +186,24 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
   // Effect para actualizar datos cuando cambia initialData
   useEffect(() => {
+    console.log('=== DEBUG: useSectionData initialData effect ===');
+    console.log('Received initialData:', initialData);
+    
     const safeInitialData = initialData && typeof initialData === 'object' ? initialData : {};
+    console.log('Safe initial data:', safeInitialData);
+    
     setData(safeInitialData);
     setIsDirty(false);
+    
+    console.log('Data state after setting:', safeInitialData);
   }, [initialData]);
 
   // Función para obtener estadísticas de completitud
-  const getCompletionStats = useCallback(() => {
-    // Verificar que data existe y es un objeto
-    if (!data || typeof data !== 'object') {
+  const getCompletionStats = useCallback((templateConfig = null) => {
+    // Si tenemos templateConfig, usar sus secciones como referencia
+    const totalSections = templateConfig?.sections?.length || 0;
+    
+    if (totalSections === 0) {
       return {
         total: 0,
         completed: 0,
@@ -181,9 +211,18 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
       };
     }
 
-    const sections = Object.keys(data);
-    const completedSections = sections.filter(sectionId => {
-      const sectionData = data[sectionId];
+    // Verificar que data existe y es un objeto
+    if (!data || typeof data !== 'object') {
+      return {
+        total: totalSections,
+        completed: 0,
+        percentage: 0
+      };
+    }
+
+    // Contar secciones completadas basándose en templateConfig.sections
+    const completedSections = templateConfig.sections.filter(section => {
+      const sectionData = data[section.section_name];
       if (!sectionData || typeof sectionData !== 'object') return false;
       
       return Object.values(sectionData).some(value => {
@@ -196,9 +235,9 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
     });
 
     return {
-      total: sections.length,
+      total: totalSections,
       completed: completedSections.length,
-      percentage: sections.length > 0 ? Math.round((completedSections.length / sections.length) * 100) : 0
+      percentage: Math.round((completedSections.length / totalSections) * 100)
     };
   }, [data]);
 

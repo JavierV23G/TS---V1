@@ -21,20 +21,61 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
     learning: useRef(null)
   });
   
-  // API States - moved from static to dynamic API data
-  const [patients, setPatients] = useState([]);
-  const [isLoadingPatients, setIsLoadingPatients] = useState(true);
-  const [error, setError] = useState(null);
+  // Static patient database (simulating API data)
+  const [patients, setPatients] = useState([
+    {
+      id: 1,
+      name: "Vargas, Javier",
+      therapist: "Regina Araquel",
+      therapistType: "PT",
+      agency: "Supportive Health Group",
+      street: "1800 Camden Avenue",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90025",
+      phone: "(310) 808-5631",
+      certPeriod: "04-19-2023 to 04-19-2025",
+      status: "Active",
+      dob: "05/12/1965",
+      insurance: "Blue Cross Blue Shield",
+      policyNumber: "BCB-123456789",
+      emergencyContact: "Mohammed Ali",
+      emergencyPhone: "(310) 555-7890",
+      notes: "Patient recovering well. Following exercise regimen as prescribed.",
+    },
+    {
+      id: 2,
+      name: "Nava, Luis",
+      therapist: "James Lee",
+      therapistType: "OT",
+      agency: "Intra Care Home Health",
+      street: "1800 Camden Avenue",
+      city: "Los Angeles",
+      state: "CA",
+      zip: "90025",
+      phone: "(310) 808-5631",
+      certPeriod: "04-19-2023 to 04-19-2025",
+      status: "Inactive",
+      dob: "05/12/1965",
+      insurance: "Blue Cross Blue Shield",
+      policyNumber: "BCB-123456789",
+      emergencyContact: "Rick Grimes",
+      emergencyPhone: "(310) 555-7890",
+      notes: "Patient recovering well. Following exercise regimen as prescribed.",
+    }
+  ]);
   
-  // Calculate statistics dynamically from API data
+  // Calculate statistics dynamically
   const [stats, setStats] = useState({
     activePatients: 0,
+    pendingPatients: 0,
     totalPatients: 0,
+    newPatientsToday: 0,
     revenue: 0,
     completedSessions: 0
   });
   
-  // Financial data for Motive Home Care agency
+  // Financial data
   const [financialData, setFinancialData] = useState({
     totalRevenue: 58750,
     monthlyRevenue: 12450,
@@ -42,88 +83,28 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
     revenueGrowth: 18,
     completedSessions: 145
   });
-
-  // API Base URL
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  // Function to fetch patients from API (same as soporte implementation)
-  const fetchPatients = async () => {
-    try {
-      setIsLoadingPatients(true);
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/patients/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch patients: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fetched patients for Motive Home Care:', data);
-      
-      // Normalize patient data and determine status - filtering for Motive Home Care agency
-      const normalizedPatients = data.map(patient => {
-        let status;
-        if (patient.is_active === true || patient.is_active === 'true' || patient.is_active === 1) {
-          status = 'Active';
-        } else if (patient.is_active === false || patient.is_active === 'false' || patient.is_active === 0) {
-          status = 'Inactive';
-        } else {
-          status = 'Active'; // Default to active if undefined
-        }
-        
-        return {
-          ...patient,
-          status: status,
-        };
-      });
-      
-      setPatients(normalizedPatients);
-      
-    } catch (err) {
-      console.error('Error fetching patients:', err);
-      setError(err.message);
-    } finally {
-      setIsLoadingPatients(false);
-    }
-  };
-
   // Effect to calculate statistics when patients change
   useEffect(() => {
-    if (patients && Array.isArray(patients)) {
+    const calculateStats = () => {
       const totalPatients = patients.length;
       const activePatients = patients.filter(p => p.status === "Active").length;
-      
-      console.log('Calculating stats for Motive Home Care:', {
-        totalPatients,
-        activePatients
-      });
+      const pendingPatients = patients.filter(p => p.status === "Pending").length;
+      // Simulated new patients today (in a real app, this would come from actual data)
+      const newPatientsToday = 5;
       
       setStats({
         activePatients,
+        pendingPatients,
         totalPatients,
+        newPatientsToday,
         revenue: financialData.totalRevenue,
         completedSessions: financialData.completedSessions
       });
-    }
+    };
+    
+    calculateStats();
   }, [patients, financialData]);
-
-  // Fetch patients on component mount
-  useEffect(() => {
-    fetchPatients();
-    
-    // Refresh data every 5 minutes
-    const interval = setInterval(() => {
-      fetchPatients();
-    }, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
   
   // Enhanced counter animation with optimized timing for mobile
   useEffect(() => {
@@ -224,15 +205,10 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
     navigate(`/${baseRole}/patients?scrollTo=patients`);
   };
   
-  // Function to navigate to accounting reports
+  // Function to navigate to financial reports
   const handleViewFinancialReports = () => {
-    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'admin';
-    navigate(`/${baseRole}/accounting`);
-  };
-
-  // Function to refresh patient data
-  const handleRefreshData = () => {
-    fetchPatients();
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+    navigate(`/${baseRole}/finance?scrollTo=finance`);
   };
 
   // Format number with commas for thousands
@@ -242,21 +218,11 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
 
   return (
     <div className={`info-welcome-container ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`}>
-      {/* Error message */}
-      {error && (
-        <div className="error-message">
-          <i className="fas fa-exclamation-triangle"></i>
-          <span>Error loading patient data: {error}</span>
-          <button onClick={handleRefreshData} className="retry-btn">
-            <i className="fas fa-sync-alt"></i> Retry
-          </button>
-        </div>
-      )}
       {/* Premium dashboard cards with responsive layout */}
       <div className="dashboard-cards">
         {/* Patients card with enhanced responsive design */}
         <div 
-          className={`dashboard-card ${activeCard === 'patients' ? 'active' : ''} ${isLoadingPatients ? 'loading' : ''}`}
+          className={`dashboard-card ${activeCard === 'patients' ? 'active' : ''}`}
           onMouseEnter={() => handleCardMouseEnter('patients')}
           onMouseLeave={handleCardMouseLeave}
           ref={cardRefs.patients}
@@ -282,20 +248,9 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
                 <i className="fas fa-user-injured"></i>
               </div>
               <h3>Active Patients</h3>
-              {isLoadingPatients && (
-                <div className="loading-spinner">
-                  <i className="fas fa-spinner fa-spin"></i>
-                </div>
-              )}
             </div>
             <div className="card-value">
-              <span className="counter">
-                {isLoadingPatients ? (
-                  <div className="skeleton-counter"></div>
-                ) : (
-                  animatedStats.activePatients
-                )}
-              </span>
+              <span className="counter">{animatedStats.activePatients}</span>
               <div className="counter-badge">
                 <i className="fas fa-arrow-up"></i>
                 <span>12%</span>
@@ -303,24 +258,12 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
             </div>
             <div className="card-stats">
               <div className="stat-item">
-                <div className="stat-label">Total patients</div>
-                <div className="stat-value">
-                  {isLoadingPatients ? (
-                    <div className="skeleton-stat"></div>
-                  ) : (
-                    stats.totalPatients
-                  )}
-                </div>
+                <div className="stat-label">New (today)</div>
+                <div className="stat-value">+{stats.newPatientsToday}</div>
               </div>
               <div className="stat-item">
-                <div className="stat-label">Active this month</div>
-                <div className="stat-value">
-                  {isLoadingPatients ? (
-                    <div className="skeleton-stat"></div>
-                  ) : (
-                    stats.activePatients
-                  )}
-                </div>
+                <div className="stat-label">Pending appointments</div>
+                <div className="stat-value">23</div>
               </div>
             </div>
             <div className="card-footer">
@@ -330,7 +273,6 @@ const AdminInfoWelcome = ({ isMobile, isTablet }) => {
                   e.stopPropagation(); // Prevent card click event
                   handleViewPatientsList();
                 }}
-                disabled={isLoadingPatients}
               >
                 <div className="button-content">
                   <i className="fas fa-clipboard-list"></i>

@@ -1,12 +1,20 @@
+// services/GeolocationService.js
 
-const ALLOWED_COUNTRIES = ['US', 'USA', 'United States'];
-const GEO_API_URL = 'https://ipapi.co/json/';
+const ALLOWED_COUNTRIES = ['US', 'USA', 'United States']; // Códigos de país permitidos
+const GEO_API_URL = 'https://ipapi.co/json/'; // API gratuita para geolocalización por IP
 
+// Dejamos DEV_MODE en false para que verifique la restricción geográfica
 const DEV_MODE = false; 
 
+/**
+ * Verificar si la ubicación del usuario está permitida
+ * @returns {Promise<Object>} Resultado de la verificación
+ */
 export const checkGeolocation = async () => {
+  console.log('Checking geolocation...');
   
   if (DEV_MODE) {
+    console.log('Dev mode enabled, bypassing geolocation check');
     return {
       allowed: true,
       reason: 'Development mode bypass',
@@ -21,9 +29,13 @@ export const checkGeolocation = async () => {
   }
 
   try {
+    // Intentar obtener la ubicación mediante la API de geolocalización
     const locationData = await getLocationData();
+    console.log('Location data received:', locationData);
     
+    // Si no se pudo obtener la ubicación, denegar por precaución
     if (!locationData || !locationData.country_code) {
+      console.warn('Could not determine location, denying access');
       return {
         allowed: false,
         reason: 'Unable to verify location',
@@ -31,9 +43,11 @@ export const checkGeolocation = async () => {
       };
     }
     
+    // Verificar si el país está en la lista de permitidos
     const isAllowed = ALLOWED_COUNTRIES.includes(locationData.country_code) ||
                      ALLOWED_COUNTRIES.includes(locationData.country_name);
     
+    console.log('Location allowed:', isAllowed, 'Country:', locationData.country_name);
     
     return {
       allowed: isAllowed,
@@ -47,7 +61,9 @@ export const checkGeolocation = async () => {
       }
     };
   } catch (error) {
+    console.error('Error checking geolocation:', error);
     
+    // En caso de error, denegar acceso por seguridad
     return {
       allowed: false,
       reason: 'Error verifying location, access denied',
@@ -56,7 +72,12 @@ export const checkGeolocation = async () => {
   }
 };
 
+/**
+ * Obtener datos de ubicación del usuario
+ * @returns {Promise<Object>} Datos de ubicación
+ */
 const getLocationData = async () => {
+  // Para pruebas: puedes simular estar en un país no permitido
   // Descomentar esta línea para simular estar en otro país
   // return { country_code: 'MX', country_name: 'Mexico', region: 'Ciudad de Mexico', city: 'Mexico City', ip: '123.456.789.0' };
   

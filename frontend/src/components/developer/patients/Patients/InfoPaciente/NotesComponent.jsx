@@ -95,7 +95,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
         }
         
         const notesData = await response.json();
-        console.log('Received notes data:', notesData);
         
         // Extraer categorías únicas
         const uniqueCategories = [...new Set(notesData.map(note => note.category || 'Clinical'))];
@@ -183,7 +182,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
       }
       
       const newNote = await response.json();
-      console.log('Note created:', newNote);
       
       // Actualizar la lista de notas
       setNotes(prevNotes => [newNote, ...prevNotes]);
@@ -210,7 +208,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
         throw new Error(`Failed to delete note: ${response.status} ${response.statusText}`);
       }
       
-      console.log('Note deleted:', noteId);
       
       // Actualizar la lista de notas
       setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
@@ -238,7 +235,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
       }
       
       const updatedNote = await response.json();
-      console.log('Note updated:', updatedNote);
       
       // Actualizar la lista de notas
       setNotes(prevNotes => 
@@ -355,7 +351,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
         patient_id: patient.id
       };
       
-      console.log('Creating note with data:', noteData);
       
       await createNote(noteData);
       setIsAddingNote(false);

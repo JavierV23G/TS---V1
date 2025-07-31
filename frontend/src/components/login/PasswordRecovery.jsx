@@ -16,9 +16,11 @@ const PasswordRecovery = ({ onBackToLogin }) => {
   const [authModalMessage, setAuthModalMessage] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   
+  // Validación de fortaleza de contraseña
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordFeedback, setPasswordFeedback] = useState('');
   
+  // Detectar tamaño de pantalla para ajustes responsive
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 576);
@@ -32,7 +34,9 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     };
   }, []);
   
+  // Efectos para animar entre pasos
   useEffect(() => {
+    // Reiniciar foco cuando cambia el paso
     if (step === 1) {
       const input = recoveryMethod === 'email' ? 
         document.getElementById('recovery-email') : 
@@ -52,6 +56,7 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     }
   }, [step, recoveryMethod]);
   
+  // Evaluar fortaleza de la contraseña
   useEffect(() => {
     if (!newPassword) {
       setPasswordStrength(0);
@@ -62,14 +67,17 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     let strength = 0;
     let feedback = '';
     
+    // Longitud
     if (newPassword.length >= 8) strength += 1;
     if (newPassword.length >= 12) strength += 1;
     
+    // Complejidad
     if (/[A-Z]/.test(newPassword)) strength += 1;
     if (/[a-z]/.test(newPassword)) strength += 1;
     if (/[0-9]/.test(newPassword)) strength += 1;
     if (/[^A-Za-z0-9]/.test(newPassword)) strength += 1;
     
+    // Feedback basado en la puntuación
     if (strength <= 2) {
       feedback = 'Weak - Try adding numbers and special characters';
     } else if (strength <= 4) {
@@ -146,10 +154,12 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     if (validateStep1()) {
       setIsLoading(true);
       
+      // Mostrar modal de carga premium
       setShowAuthModal(true);
       setAuthModalStatus('loading');
       setAuthModalMessage(`Verifying ${recoveryMethod === 'email' ? 'email address' : 'phone number'}...`);
       
+      // Simular proceso de envío con pasos más elaborados
       setTimeout(() => {
         setAuthModalMessage(`Generating secure recovery token...`);
         
@@ -172,6 +182,7 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     if (validateStep2()) {
       setIsLoading(true);
       
+      // Mostrar modal de carga premium
       setShowAuthModal(true);
       setAuthModalStatus('loading');
       setAuthModalMessage(`Validating verification code...`);
@@ -198,6 +209,7 @@ const PasswordRecovery = ({ onBackToLogin }) => {
     if (validateStep3()) {
       setIsLoading(true);
       
+      // Mostrar modal de carga premium
       setShowAuthModal(true);
       setAuthModalStatus('loading');
       setAuthModalMessage(`Encrypting new password...`);
@@ -398,6 +410,7 @@ const PasswordRecovery = ({ onBackToLogin }) => {
         {errors.confirmPassword && <div className="login__error-message">{errors.confirmPassword}</div>}
       </div>
       
+      {/* Mostrar requisitos simplificados en móviles */}
       {isMobile ? (
         <div className="password-requirements">
           <ul>
@@ -464,6 +477,7 @@ const PasswordRecovery = ({ onBackToLogin }) => {
         </a>
       </div>
       
+      {/* Usar nuestro nuevo modal premium de loading */}
       <AuthLoadingModal 
         isOpen={showAuthModal}
         status={authModalStatus}

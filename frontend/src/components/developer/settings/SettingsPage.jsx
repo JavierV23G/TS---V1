@@ -1,3 +1,4 @@
+// components/developer/settings/SettingsPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../login/AuthContext';
@@ -8,14 +9,19 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
+  // Loading Animation States
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('Connecting to TherapySync Settings...');
   const [isLoading, setIsLoading] = useState(true);
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0);
+  
+  // Main App States
   const [activeModule, setActiveModule] = useState('overview');
   const [expandedCards, setExpandedCards] = useState({});
   const [animatingElements, setAnimatingElements] = useState([]);
 
+  
+  // Settings States
   const [settings, setSettings] = useState({
     dashboard: {
       showTotalPatients: true,
@@ -40,11 +46,12 @@ const SettingsPage = () => {
     }
   });
 
+  // Loading Animation Effect
   useEffect(() => {
     const loadingSteps = [
       { text: 'Connecting to TherapySync Settings...', duration: 600 },
       { text: 'Loading user preferences...', duration: 400 },
-      { text: 'Initializing clinical interface...', duration: 500 },
+      { text: 'Initializing premium interface...', duration: 500 },
       { text: 'Rendering advanced configurations...', duration: 500 }
     ];
 
@@ -55,6 +62,7 @@ const SettingsPage = () => {
       currentProgress += 2;
       setLoadingProgress(currentProgress);
       
+      // Change text at specific progress points
       const progressThresholds = [25, 50, 75];
       if (progressThresholds.includes(currentProgress) && stepIndex < loadingSteps.length - 1) {
         stepIndex++;
@@ -66,6 +74,7 @@ const SettingsPage = () => {
         clearInterval(progressInterval);
         setTimeout(() => {
           setIsLoading(false);
+          // Start main animations
           setTimeout(() => {
             setAnimatingElements(['header', 'modules', 'sidebar']);
           }, 100);
@@ -76,6 +85,7 @@ const SettingsPage = () => {
     return () => clearInterval(progressInterval);
   }, []);
 
+  // Load saved settings
   useEffect(() => {
     if (!isLoading) {
       const savedSettings = localStorage.getItem('therapySyncSettings');
@@ -89,16 +99,21 @@ const SettingsPage = () => {
     }
   }, [isLoading]);
 
+
+  // Save settings
   useEffect(() => {
     if (!isLoading) {
       localStorage.setItem('therapySyncSettings', JSON.stringify(settings));
     }
   }, [settings, isLoading]);
 
+
+  // Helper function to get nested property
   const getNestedProperty = (obj, path) => {
     return path.split('.').reduce((current, key) => current && current[key], obj);
   };
 
+  // Helper function to set nested property
   const setNestedProperty = (obj, path, value) => {
     const keys = path.split('.');
     const lastKey = keys.pop();
@@ -109,6 +124,7 @@ const SettingsPage = () => {
     target[lastKey] = value;
   };
 
+  // Handle toggle changes
   const handleToggleChange = (section, setting, subsection = null) => {
     setSettings(prevSettings => {
       const newSettings = { ...prevSettings };
@@ -130,6 +146,7 @@ const SettingsPage = () => {
       return newSettings;
     });
     
+    // Add toggle animation
     const toggleElement = document.querySelector(`.toggle-${section}-${subsection ? subsection + '-' : ''}${setting}`);
     if (toggleElement) {
       toggleElement.classList.add('toggle-pulse');
@@ -139,6 +156,7 @@ const SettingsPage = () => {
     }
   };
 
+  // Handle selection changes
   const handleSelectChange = (section, setting, value) => {
     setSettings(prevSettings => ({
       ...prevSettings,
@@ -149,6 +167,7 @@ const SettingsPage = () => {
     }));
   };
 
+  // Handle multi-select changes
   const handleMultiSelectChange = (section, setting, value) => {
     setSettings(prevSettings => {
       const currentValues = prevSettings[section][setting];
@@ -166,6 +185,7 @@ const SettingsPage = () => {
     });
   };
 
+  // Toggle card expansion
   const toggleCardExpansion = (cardId) => {
     setExpandedCards(prev => ({
       ...prev,
@@ -173,6 +193,7 @@ const SettingsPage = () => {
     }));
   };
 
+  // Get user display name
   const getUserDisplayName = () => {
     if (currentUser && currentUser.fullname) {
       return currentUser.fullname;
@@ -182,6 +203,7 @@ const SettingsPage = () => {
     return "TherapySync User";
   };
 
+  // Get user role
   const getUserRole = () => {
     if (currentUser && currentUser.role) {
       return currentUser.role;
@@ -189,6 +211,7 @@ const SettingsPage = () => {
     return "Healthcare Professional";
   };
 
+  // Navigation modules
   const navigationModules = [
     { 
       id: 'overview', 
@@ -234,6 +257,7 @@ const SettingsPage = () => {
     }
   ];
 
+  // Render toggle option
   const renderToggleOption = (section, setting, subsection, title, description, icon) => {
     let isActive;
     
@@ -269,11 +293,14 @@ const SettingsPage = () => {
     );
   };
 
+  // Handle back navigation
   const handleBack = () => {
     navigate(-1);
   };
 
+  // Handle save all settings
   const handleSaveAll = () => {
+    // Create floating notification
     const notification = document.createElement('div');
     notification.className = 'premium-notification success';
     notification.innerHTML = `
@@ -298,13 +325,15 @@ const SettingsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="clinical-loading-screen">
+      <div className="premium-loading-screen">
+        <div className="loading-background"></div>
+        <div className="loading-particles"></div>
+        
         <div className="loading-content">
-          <div className="medical-logo">
+          <div className="loading-logo">
             <div className="logo-circle">
               <i className="fas fa-cog"></i>
             </div>
-            <div className="pulse-ring"></div>
           </div>
           
           <div className="loading-progress-container">
@@ -376,12 +405,18 @@ const SettingsPage = () => {
 
   return (
     <div className="premium-settings-page">
-      <div className="clinical-particles">
-        {[...Array(15)].map((_, i) => (
-          <div key={i} className={`particle particle-${i + 1}`}></div>
-        ))}
+      {/* Premium Background Effects */}
+      <div className="premium-background">
+        <div className="background-image"></div>
+        <div className="background-overlay"></div>
+        <div className="floating-particles">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className={`particle particle-${i + 1}`}></div>
+          ))}
+        </div>
       </div>
 
+      {/* Premium Header */}
       <header className={`premium-header ${animatingElements.includes('header') ? 'animate-in' : ''}`}>
         <div className="header-content">
           <div className="header-left">
@@ -392,7 +427,7 @@ const SettingsPage = () => {
             <div className="header-title">
               <h1>
                 <i className="fas fa-sliders-h"></i>
-                Clinical Settings
+                Premium Settings
               </h1>
               <p>Advanced configuration center for TherapySync</p>
             </div>
@@ -412,7 +447,9 @@ const SettingsPage = () => {
         </div>
       </header>
 
+      {/* Main Content Container */}
       <div className="premium-container">
+        {/* Navigation Modules */}
         <div className={`navigation-modules ${animatingElements.includes('modules') ? 'animate-in' : ''}`}>
           {navigationModules.map((module, index) => (
             <div
@@ -439,6 +476,7 @@ const SettingsPage = () => {
           ))}
         </div>
 
+        {/* Content Area */}
         <div className="content-area">
           {activeModule === 'overview' && (
             <div className="overview-content">
@@ -1030,6 +1068,7 @@ const SettingsPage = () => {
        </div>
      </div>
 
+     {/* Premium Footer with Actions */}
      <footer className="premium-footer">
        <div className="footer-content">
          <div className="footer-left">
@@ -1072,6 +1111,7 @@ const SettingsPage = () => {
        </div>
      </footer>
 
+     {/* Floating Action Button for Quick Access */}
      <div className="floating-actions">
        <div className="fab-main">
          <i className="fas fa-magic"></i>
@@ -1089,6 +1129,22 @@ const SettingsPage = () => {
        </div>
      </div>
 
+     {/* Premium Particles Background */}
+     <div className="premium-particles-container">
+       {[...Array(50)].map((_, i) => (
+         <div 
+           key={i} 
+           className="premium-particle"
+           style={{
+             '--delay': `${Math.random() * 20}s`,
+             '--duration': `${15 + Math.random() * 10}s`,
+             '--size': `${2 + Math.random() * 4}px`,
+             '--x': `${Math.random() * 100}%`,
+             '--y': `${Math.random() * 100}%`
+           }}
+         ></div>
+       ))}
+     </div>
    </div>
  );
 };
