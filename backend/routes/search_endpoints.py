@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 import os, json
 from datetime import date
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from database.connection import get_db
@@ -168,13 +168,10 @@ def get_visits_by_certification_period(cert_id: int, db: Session = Depends(get_d
         Visit.is_hidden == False
     ).all()
     
-    # Process each visit to include note information
     visit_responses = []
     for visit in visits:
-        # Check if visit has a note
         note = db.query(VisitNote).filter(VisitNote.visit_id == visit.id).first()
         
-        # Determine status based on note existence
         final_status = visit.status
         if note and visit.status == "Scheduled":
             # If visit has a note and is still "Scheduled", update to "Completed"
@@ -235,7 +232,6 @@ def get_specific_template(discipline: str, visit_type: str, db: Session = Depend
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    # Get template sections with their full section details
     template_sections = (
         db.query(NoteTemplateSection, NoteSection)
         .join(NoteSection, NoteTemplateSection.section_id == NoteSection.id)

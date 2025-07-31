@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
 import TemplateRenderer from './TemplateRenderer';
 import useTemplateConfig from './hooks/useTemplateConfig';
@@ -14,8 +15,12 @@ const NoteTemplateModal = ({
   existingNoteId = null,
   onSave 
 }) => {
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState('template');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check if we're in printable mode
+  const isPrintableMode = new URLSearchParams(location.search).get('printable') === 'true';
 
   // Load template configuration - hooks must be called unconditionally
   const { 
@@ -247,6 +252,103 @@ const NoteTemplateModal = ({
 
   const completionStats = getCompletionStats(templateConfig);
 
+  // Render printable view
+  if (isPrintableMode) {
+    return (
+      <div className="note-printable-view">
+        {/* Print Controls - Hidden in print */}
+        <div className="print-controls no-print">
+          <div className="controls-container">
+            <div className="note-title">
+              <h2>Visit Note - {patientData?.firstName} {patientData?.lastName}</h2>
+              <p>{disciplina} • {tipoNota}</p>
+            </div>
+            
+            <div className="action-buttons">
+              <button onClick={() => window.print()} className="print-button">
+                <i className="fas fa-print"></i>
+                Print
+              </button>
+              <button onClick={() => window.print()} className="pdf-button">
+                <i className="fas fa-file-pdf"></i>
+                Save as PDF
+              </button>
+              <button onClick={() => window.close()} className="close-button">
+                <i className="fas fa-times"></i>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Patient & Visit Info Header */}
+        <div className="printable-header">
+          <div className="header-content">
+            <div className="logo-section">
+              <h1>Visit Note</h1>
+              <p>Patient Care Documentation</p>
+            </div>
+            
+            <div className="info-grid">
+              <div className="info-section">
+                <h3>Patient Information</h3>
+                <div className="info-item">
+                  <span className="label">Name:</span>
+                  <span className="value">{patientData?.firstName} {patientData?.lastName}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Date of Birth:</span>
+                  <span className="value">{patientData?.dateOfBirth}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Gender:</span>
+                  <span className="value">{patientData?.gender}</span>
+                </div>
+              </div>
+              
+              <div className="info-section">
+                <h3>Visit Information</h3>
+                <div className="info-item">
+                  <span className="label">Date:</span>
+                  <span className="value">{new Date().toLocaleDateString()}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Type:</span>
+                  <span className="value">{tipoNota}</span>
+                </div>
+                <div className="info-item">
+                  <span className="label">Therapy:</span>
+                  <span className="value">{disciplina}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Note Content using existing TemplateRenderer */}
+        <div className="printable-content">
+          <TemplateRenderer
+            templateConfig={templateConfig}
+            data={data}
+            onChange={() => {}} // Read-only mode
+            onOpenTest={() => {}} // Disabled in print mode
+            onOpenDiagnosisModal={() => {}} // Disabled in print mode
+            autoSaveMessage=""
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="printable-footer">
+          <div className="footer-content">
+            <p>Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
+            <p>This document contains confidential patient information</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal modal view
   return (
     <div className="note-template-modal open">
       <div className="modal-overlay" onClick={handleClose}>

@@ -29,16 +29,9 @@ from auth.auth_middleware import role_required, get_current_user
 router = APIRouter()
 
 def determine_note_status(sections_data, template, db):
-    """
-    Determines note status based on simple 3-state logic:
-    - "Scheduled": No data (completely empty)
-    - "Pending": Some data (partially filled)  
-    - "Completed": All template sections have some data
-    """
     if not sections_data or len(sections_data) == 0:
         return "Scheduled"
     
-    # Get template sections
     template_sections = db.query(NoteTemplateSection).filter(
         NoteTemplateSection.template_id == template.id
     ).all()
@@ -46,13 +39,11 @@ def determine_note_status(sections_data, template, db):
     total_sections = len(template_sections)
     sections_with_data = 0
     
-    # Check each template section
     for ts in template_sections:
         section = db.query(NoteSection).filter(NoteSection.id == ts.section_id).first()
         if section and section.section_name in sections_data:
             section_data = sections_data[section.section_name]
             
-            # Check if section has any meaningful data
             if section_data and isinstance(section_data, dict):
                 has_data = False
                 for key, value in section_data.items():
@@ -76,7 +67,6 @@ def determine_note_status(sections_data, template, db):
                 if has_data:
                     sections_with_data += 1
     
-    # Simple 3-state logic
     if sections_with_data == 0:
         return "Scheduled"
     elif sections_with_data == total_sections:
@@ -352,14 +342,10 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
     # Note: Frontend should always send section names, not IDs
     # If we receive IDs, they will be handled in future iterations
     
-    # Determine note status based on completeness
     note_status = determine_note_status(sections_data, template, db)
     
-    # Get therapist name from the visit's assigned staff
     staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
     therapist_name = staff.name if staff else "Unknown Therapist"
-    
-    
     
     note = VisitNote(
         visit_id=note_data.visit_id,
@@ -369,14 +355,12 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
     )
     db.add(note)
     
-    # Update visit status based on note status
     visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
     if visit:
         visit.status = note_status
     
     db.commit()
     db.refresh(note)
-    
     
     return note
 

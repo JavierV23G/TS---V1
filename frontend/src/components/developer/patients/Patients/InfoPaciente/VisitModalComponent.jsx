@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../../login/AuthContext';
 import SignaturePad from './SignaturePad';
 import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
+import { openNotePrintableView, getNormalizedUserRole } from '../../../../../utils/printableUtils';
 import '../../../../../styles/developer/Patients/InfoPaciente/VisitModalComponent.scss';
 
 /**
@@ -21,6 +23,7 @@ const VisitModalComponent = ({
   visitStatus
 }) => {
   // ===== STATES =====
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -503,6 +506,40 @@ const VisitModalComponent = ({
   };
 
   /**
+   * Handle view note - Open printable view in new window
+   */
+  const handleViewNote = () => {
+    console.log('🔍 handleViewNote called');
+    console.log('🔍 visitData:', visitData);
+    console.log('🔍 visitData.hasNoteSaved:', visitData?.hasNoteSaved);
+    console.log('🔍 visitData.status:', visitData?.status);
+    console.log('🔍 patientInfo:', patientInfo);
+    
+    if (!visitData || !patientInfo) {
+      setError('Missing visit or patient information');
+      return;
+    }
+
+    // For now, let's allow viewing regardless of note status for testing
+    // Later we can add back the validation
+    
+    try {
+      const userRole = getNormalizedUserRole(user);
+      console.log('🔍 userRole:', userRole);
+      
+      // Open printable view with visit data
+      openNotePrintableView(patientInfo.id, visitData.id, userRole, {
+        width: 1400,
+        height: 900
+      });
+      
+    } catch (err) {
+      console.error('Error opening printable view:', err);
+      setError('Failed to open printable view');
+    }
+  };
+
+  /**
    * Handle evaluation modal save - For editing existing notes, use PUT
    */
   const handleEvaluationSave = async (evaluationData) => {
@@ -888,7 +925,15 @@ const VisitModalComponent = ({
               >
                 EDIT
               </button>
-              <button className="view-button">VIEW</button>
+              <button 
+                className="view-button"
+                onClick={handleViewNote}
+                disabled={false}
+                title="View printable note"
+              >
+                <i className="fas fa-eye"></i>
+                VIEW
+              </button>
             </div>
             
             <div className="eval-details">

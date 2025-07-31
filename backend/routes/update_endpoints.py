@@ -19,11 +19,9 @@ from schemas import (
     VisitNoteResponse, VisitNoteUpdate)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
+from .create_endpoints import determine_note_status
 
 router = APIRouter()
-
-# Import helper function from create_endpoints
-from .create_endpoints import determine_note_status
 
 #====================== STAFF ======================#
 
@@ -116,7 +114,6 @@ def update_patient_info(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
-    # Verificar si la agencia existe cuando se actualiza agency_id
     if agency_id is not None:
         agency = db.query(Staff).filter(Staff.id == agency_id).first()
         if not agency:
@@ -124,7 +121,6 @@ def update_patient_info(
         if agency.role.lower() != "agency":
             raise HTTPException(status_code=400, detail="Provided ID does not belong to a valid agency.")
 
-    # Procesar contact_info si viene como JSON string
     processed_contact_info = None
     if contact_info is not None:
         try:
@@ -360,10 +356,8 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
     if data.sections_data is not None:
         note.sections_data = data.sections_data
         
-        # Get template to determine status
         visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
         if visit:
-            # Get therapist name from the visit's assigned staff
             staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
             if staff:
                 note.therapist_name = staff.name
@@ -375,7 +369,6 @@ def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends
             ).first()
             
             if template:
-                # Determine status based on completeness
                 auto_status = determine_note_status(data.sections_data, template, db)
                 note.status = auto_status
                 visit.status = auto_status
