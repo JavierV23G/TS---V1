@@ -3,7 +3,7 @@ import AddStaffForm from './AddStaffForm';
 import StaffListComponent from './StaffListComponent';
 import StaffEditComponent from './StaffEditComponent';
 
-const DevStaffingManagerContainer = () => {
+const AdminStaffingManagerContainer = () => {
   const [showAddStaffForm, setShowAddStaffForm] = useState(false);
   const [showStaffList, setShowStaffList] = useState(false);
   const [showStaffEdit, setShowStaffEdit] = useState(false);
@@ -16,11 +16,12 @@ const DevStaffingManagerContainer = () => {
     setSelectedContent('add-staff');
   };
 
-  const handleViewAllStaffClick = () => {
-    setShowStaffList(true);
+
+  const handleEditStaffClick = () => {
+    setShowStaffEdit(true);
     setShowAddStaffForm(false);
-    setShowStaffEdit(false);
-    setSelectedContent('view-staff');
+    setShowStaffList(false);
+    setSelectedContent('edit-staff');
   };
 
   const handleCancelForm = () => {
@@ -87,4 +88,4 @@ const DevStaffingManagerContainer = () => {
   );
 };
 
-export default DevStaffingManagerContainer;
+export default AdminStaffingManagerContainer;

@@ -1,6 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import '../../styles/LogOut/LogOut.scss';
 
+/**
+ * Premium logout animation component with matrix effect and console simulation
+ * This component can be imported and reused across the application
+ * 
+ * @param {Object} props - Component props
+ * @param {boolean} props.isMobile - Flag to indicate if the device is mobile
+ * @param {Function} props.onAnimationComplete - Optional callback to be executed when animation completes
+ * @returns {JSX.Element} LogoutAnimation component
+ */
 const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -9,6 +18,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
   const [matrixChars, setMatrixChars] = useState([]);
   const consoleRef = useRef(null);
   
+  // Process messages for logout - more professional
   const logoutSteps = [
     "Finalizing session...",
     "Closing secure ports...",
@@ -18,10 +28,11 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
     "Completing process..."
   ];
   
+  // Generate random characters for matrix effect
   const generateMatrixChars = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-    const columns = 60;
-    const charsPerColumn = 25;
+    const columns = 60; // Number of columns for matrix effect
+    const charsPerColumn = 25; // Characters per column
     
     const matrixGrid = [];
     
@@ -48,6 +59,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
     setMatrixChars(matrixGrid);
   };
   
+  // Generate random particles for success effect
   const generateParticles = () => {
     const particlesArray = [];
     const particleColors = ['#4CAF50', '#8BC34A', '#CDDC39', '#2196F3', '#00BCD4'];
@@ -70,8 +82,10 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
   };
   
   useEffect(() => {
+    // Generate matrix characters on start
     generateMatrixChars();
     
+    // Continuously increment progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         const newProgress = prev + (100 - prev) / 15;
@@ -79,19 +93,23 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
       });
     }, 100);
     
+    // Change step at variable intervals (faster towards the end)
     const stepInterval = setInterval(() => {
       setCurrentStep(prev => {
         const next = prev + 1;
         
+        // When reaching the penultimate step, ensure progress gets to 99%
         if (next >= logoutSteps.length - 1) {
           clearInterval(progressInterval);
           setProgress(99);
           
+          // Show success screen after a brief delay
           setTimeout(() => {
             setProgress(100);
             setShowSuccess(true);
             generateParticles();
             
+            // Trigger callback after animation is fully complete
             setTimeout(() => {
               if (onAnimationComplete) {
                 onAnimationComplete();
@@ -104,6 +122,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
       });
     }, 700); // Time between steps
     
+    // Auto-scroll for console
     if (consoleRef.current) {
       const scrollInterval = setInterval(() => {
         if (consoleRef.current) {
@@ -122,6 +141,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
   
   return (
     <div className={`logout-animation-container ${showSuccess ? 'success-mode' : ''}`}>
+      {/* Dark background with blur and matrix effect */}
       <div className="backdrop">
         <div className="matrix-effect">
           {matrixChars.map(column => (
@@ -149,6 +169,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
         </div>
       </div>
       
+      {/* Particles for success effect */}
       {showSuccess && (
         <div className="success-particles">
           {particles.map(particle => (
@@ -172,18 +193,22 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
       <div className="logout-modal">
         {!showSuccess ? (
           <>
+            {/* Top icon with scanning effect */}
             <div className="logout-icon">
               <div className="icon-ring"></div>
               <div className="icon-scanner"></div>
               <i className="fas fa-power-off"></i>
             </div>
             
+            {/* Title */}
             <h2 className="logout-title">Signing Out</h2>
             
+            {/* Status message */}
             <div className="status-message">
               {logoutSteps[currentStep]}
             </div>
             
+            {/* Advanced progress bar */}
             <div className="progress-container">
               <div className="progress-segments">
                 {[...Array(6)].map((_, i) => (
@@ -208,6 +233,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
               </div>
             </div>
             
+            {/* Minimalist console */}
             <div className="console-window">
               <div className="console-header">
                 <span className="console-title">system_logout.sh</span>
@@ -246,6 +272,7 @@ const LogoutAnimation = ({ isMobile = false, onAnimationComplete = () => {} }) =
             </div>
           </>
         ) : (
+          /* Success screen */
           <div className="logout-success">
             <div className="success-icon">
               <div className="success-ring"></div>

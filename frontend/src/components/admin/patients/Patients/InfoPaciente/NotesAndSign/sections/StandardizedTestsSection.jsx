@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/StandardizedTestsSection.scss';
+import '../../../../../../../styles/admin/Patients/InfoPaciente/NotesAndSign/sections/StandardizedTestsSection.scss';
 
 const StandardizedTestsSection = ({ data, onChange, sectionId, config, onOpenTest }) => {
   const handleChange = (field, value) => {

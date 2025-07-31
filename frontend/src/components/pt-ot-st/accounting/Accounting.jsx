@@ -1,614 +1,504 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../login/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../components/login/AuthContext'; // Importar el contexto de autenticación
+import '../../../styles/developer/accounting/Accounting.scss';
 import logoImg from '../../../assets/LogoMHC.jpeg';
-import LogoutAnimation from '../../LogOut/LogOut';
-import '../../../styles/developer/accounting/ClinicalAccounting.scss';
-import '../../../styles/Header/Header.scss';
+import { motion, AnimatePresence } from 'framer-motion';
+import AccountingDashboard from './AccountingDashboard.jsx';
+import PaymentPeriodSelector from './PaymentPeriodSelector.jsx';
+import TherapistFinancialList from './TherapistFinancialList.jsx';
+import TherapistPaymentModal from './TherapistPaymentModal.jsx';
+import LogoutAnimation from '../../../components/LogOut/LogOut'; // Importar componente de animación
 
-// Importar sub-componentes (reutilizamos los de developer)
-import ClinicalMetrics from '../../developer/accounting/ClinicalMetrics';
-import MonthlyBreakdown from '../../developer/accounting/MonthlyBreakdown';
-import TherapistModal from '../../developer/accounting/TherapistModal';
+// Componente para las partículas animadas de fondo
+const ParticlesBackground = () => {
+  const containerRef = useRef(null);
+  const [particles, setParticles] = useState([]);
 
-/**
- * THERAPIST ACCOUNTING - INDIVIDUAL VIEW
- * Vista individual para terapeutas PT-OT-ST
- * Solo muestra datos financieros del terapeuta actual
- * NO pueden ver datos de otros terapeutas
- */
-const TherapistAccounting = () => {
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const generateParticles = () => {
+      const container = containerRef.current;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      
+      const particlesCount = Math.floor((containerWidth * containerHeight) / 15000);
+      const newParticles = [];
+      
+      for (let i = 0; i < particlesCount; i++) {
+        newParticles.push({
+          id: i,
+          x: Math.random() * containerWidth,
+          y: Math.random() * containerHeight,
+          size: Math.random() * 3 + 1,
+          opacity: Math.random() * 0.5 + 0.1,
+          speedX: Math.random() * 0.5 - 0.25,
+          speedY: Math.random() * 0.5 - 0.25,
+          color: Math.random() > 0.7 
+            ? 'rgba(0, 229, 255, 0.6)' 
+            : Math.random() > 0.5 
+              ? 'rgba(41, 121, 255, 0.6)' 
+              : 'rgba(255, 255, 255, 0.6)'
+        });
+      }
+      
+      setParticles(newParticles);
+    };
+    
+    generateParticles();
+    
+    const handleResize = () => {
+      generateParticles();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Animación de las partículas
+    const animateParticles = () => {
+      setParticles(prevParticles => 
+        prevParticles.map(particle => {
+          let newX = particle.x + particle.speedX;
+          let newY = particle.y + particle.speedY;
+          
+          // Rebotar en los bordes
+          if (newX <= 0 || newX >= containerRef.current.offsetWidth) {
+            particle.speedX *= -1;
+            newX = particle.x + particle.speedX;
+          }
+          
+          if (newY <= 0 || newY >= containerRef.current.offsetHeight) {
+            particle.speedY *= -1;
+            newY = particle.y + particle.speedY;
+          }
+          
+          return {
+            ...particle,
+            x: newX,
+            y: newY
+          };
+        })
+      );
+      
+      requestAnimationFrame(animateParticles);
+    };
+    
+    const animationId = requestAnimationFrame(animateParticles);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="particles-container">
+      {particles.map(particle => (
+        <div
+          key={particle.id}
+          className="particle"
+          style={{
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            left: `${particle.x}px`,
+            top: `${particle.y}px`,
+            opacity: particle.opacity,
+            backgroundColor: particle.color
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+const TPAccounting = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuth(); // Usar el contexto de autenticación
+  
+  // Estados para gestionar la interfaz y los datos
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuTransitioning, setMenuTransitioning] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [therapists, setTherapists] = useState([]);
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
+  const [showTherapistModal, setShowTherapistModal] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({});
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
+  const [notificationCount] = useState(3);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Ref para el menú de usuario
   const userMenuRef = useRef(null);
   
-  // Estados principales
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Estados para header y navegación
-  const [menuTransitioning, setMenuTransitioning] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [showTherapistModal, setShowTherapistModal] = useState(false);
-  
-  // Estados para datos del terapeuta actual
-  const [therapistData, setTherapistData] = useState(null);
-  const [myPatients, setMyPatients] = useState([]);
-  const [myVisits, setMyVisits] = useState([]);
-  const [mySchedule, setMySchedule] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [showCompanyContacts, setShowCompanyContacts] = useState(false);
+  // Períodos de pago con datos más actualizados
+  const paymentPeriods = [
+    { id: 1, period: "Jan 1 to 15, 2025", paymentDate: "Feb 15, 2025", status: "paid", amount: 42580.50 },
+    { id: 2, period: "Jan 16 to 31, 2025", paymentDate: "Feb 28, 2025", status: "paid", amount: 39750.25 },
+    { id: 3, period: "Feb 1 to 15, 2025", paymentDate: "Mar 15, 2025", status: "paid", amount: 44850.75 },
+    { id: 4, period: "Feb 16 to 28, 2025", paymentDate: "Mar 31, 2025", status: "paid", amount: 42980.50 },
+    { id: 5, period: "Mar 1 to 15, 2025", paymentDate: "Apr 15, 2025", status: "pending", amount: 45670.25 },
+    { id: 6, period: "Mar 16 to 31, 2025", paymentDate: "Apr 30, 2025", status: "upcoming", amount: 43850.00 },
+    { id: 7, period: "Apr 1 to 15, 2025", paymentDate: "May 15, 2025", status: "upcoming", amount: 46200.00 },
+    { id: 8, period: "Apr 16 to 30, 2025", paymentDate: "May 31, 2025", status: "upcoming", amount: 44500.00 },
+  ];
 
-  // Funciones para manejar header y navegación
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(word => word[0]).join('').toUpperCase();
-  };
-
+  // Función para obtener iniciales del nombre
+  function getInitials(name) {
+    if (!name) return "U";
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+  
+  // Usar datos de usuario del contexto de autenticación
   const userData = {
-    name: currentUser?.fullname || currentUser?.username || 'Therapist',
-    avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Therapist'),
-    email: currentUser?.email || 'therapist@motivehomecare.com',
-    role: currentUser?.role || 'Therapist',
-    status: 'online'
+    name: currentUser?.fullname || currentUser?.username || 'Usuario',
+    avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
+    email: currentUser?.email || 'usuario@ejemplo.com',
+    role: currentUser?.role || 'Usuario',
+    status: 'online', // online, away, busy, offline
   };
-
-  const handleMainMenuTransition = () => {
-    setMenuTransitioning(true);
+  
+  // Detectar el tamaño de la pantalla para responsive
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
     
-    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'pt-ot-st';
+    handleResize(); // Comprobar inicialmente
+    window.addEventListener('resize', handleResize);
     
-    setTimeout(() => {
-      navigate(`/${baseRole}/homePage`);
-    }, 300);
-  };
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const handleLogout = () => {
-    setIsLoggingOut(true);
-    setShowUserMenu(false);
+  // Efecto para cargar datos iniciales con animación mejorada
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      
+      // Simular carga de datos con progreso realista
+      setTimeout(() => {
+        // Set dashboard statistics with enhanced data
+        setDashboardStats({
+          totalBilled: 127850.75,
+          pendingPayments: 42500.25,
+          completedPayments: 85350.50,
+          averagePerVisit: 65.00,
+          visitsByDiscipline: {
+            PT: 650,
+            OT: 420,
+            ST: 310,
+            PTA: 280,
+            COTA: 175,
+            STA: 120
+          },
+          revenueByMonth: [
+            { month: 'Jan', revenue: 38420.50, previousRevenue: 34210.25, growth: 12.3 },
+            { month: 'Feb', revenue: 42850.75, previousRevenue: 36580.50, growth: 17.1 },
+            { month: 'Mar', revenue: 46580.25, previousRevenue: 40120.75, growth: 16.1 },
+            { month: 'Apr', projected: true, revenue: 45200.00, previousRevenue: 41850.25, growth: 8.0 }
+          ],
+          topPerformers: [
+            { id: 1, name: 'Regina Araquel', role: 'PT', revenue: 4050.75, growth: 15.2 },
+            { id: 3, name: 'Justin Shimane', role: 'OT', revenue: 3780.00, growth: 12.8 },
+            { id: 5, name: 'Elena Martinez', role: 'ST', revenue: 3600.00, growth: 10.5 }
+          ],
+          visitTrends: {
+            weeklyGrowth: 8.5,
+            monthlyGrowth: 12.3,
+            averageDuration: 45,
+            peakHours: '10:00 AM - 2:00 PM'
+          }
+        });
+        
+        // Set therapists with enhanced mock data
+        setTherapists([
+          {
+            id: 1,
+            name: "Regina Araquel",
+            role: "PT",
+            visits: 45,
+            earnings: 4050.75,
+            status: "verified",
+            pendingVisits: 3,
+            completionRate: 97,
+            growth: 15.2,
+            avatar: null,
+            patients: [
+              { id: 101, name: "Soheila Adhami", visits: 8, revenue: 680.00, lastVisit: "2025-03-14", visitTrend: "increasing" },
+              { id: 102, name: "James Smith", visits: 12, revenue: 1020.00, lastVisit: "2025-03-15", visitTrend: "stable" },
+              { id: 103, name: "Maria Rodriguez", visits: 10, revenue: 850.00, lastVisit: "2025-03-12", visitTrend: "stable" },
+              { id: 112, name: "Anna Johnson", visits: 7, revenue: 595.00, lastVisit: "2025-03-10", visitTrend: "decreasing" },
+              { id: 118, name: "Luis Chen", visits: 8, revenue: 680.00, lastVisit: "2025-03-13", visitTrend: "increasing" }
+            ],
+            visitDetails: [
+              { id: 1001, patientId: 101, patientName: "Soheila Adhami", date: "2025-03-14", time: "09:30 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 1002, patientId: 102, patientName: "James Smith", date: "2025-03-15", time: "11:00 AM", type: "Standard", duration: 60, status: "completed", amount: 85.00 },
+              { id: 1003, patientId: 103, patientName: "Maria Rodriguez", date: "2025-03-12", time: "02:30 PM", type: "Follow-up", duration: 30, status: "completed", amount: 85.00 },
+              { id: 1004, patientId: 101, patientName: "Soheila Adhami", date: "2025-03-11", time: "10:15 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 1005, patientId: 102, patientName: "James Smith", date: "2025-03-10", time: "03:45 PM", type: "Initial Eval", duration: 60, status: "completed", amount: 85.00 },
+              { id: 1006, patientId: 112, patientName: "Anna Johnson", date: "2025-03-10", time: "01:15 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 1007, patientId: 118, patientName: "Luis Chen", date: "2025-03-13", time: "11:30 AM", type: "Standard", duration: 45, status: "pending", amount: 85.00 }
+            ]
+          },
+          {
+            id: 2,
+            name: "Jacob Staffey",
+            role: "PTA",
+            visits: 38,
+            earnings: 3230.00,
+            status: "pending",
+            pendingVisits: 5,
+            completionRate: 92,
+            growth: -2.1,
+            avatar: null,
+            patients: [
+              { id: 104, name: "Linda Johnson", visits: 10, revenue: 850.00, lastVisit: "2025-03-10", visitTrend: "stable" },
+              { id: 105, name: "Robert Garcia", visits: 9, revenue: 765.00, lastVisit: "2025-03-13", visitTrend: "decreasing" },
+              { id: 115, name: "Olivia Wilson", visits: 9, revenue: 765.00, lastVisit: "2025-03-11", visitTrend: "stable" },
+              { id: 119, name: "David Martinez", visits: 10, revenue: 850.00, lastVisit: "2025-03-14", visitTrend: "increasing" }
+            ],
+            visitDetails: [
+              { id: 2001, patientId: 104, patientName: "Linda Johnson", date: "2025-03-10", time: "10:00 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 2002, patientId: 105, patientName: "Robert Garcia", date: "2025-03-13", time: "01:30 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 2003, patientId: 115, patientName: "Olivia Wilson", date: "2025-03-11", time: "03:00 PM", type: "Follow-up", duration: 30, status: "completed", amount: 85.00 },
+              { id: 2004, patientId: 119, patientName: "David Martinez", date: "2025-03-14", time: "09:45 AM", type: "Initial Eval", duration: 60, status: "pending", amount: 85.00 },
+              { id: 2005, patientId: 104, patientName: "Linda Johnson", date: "2025-03-07", time: "11:15 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 }
+            ]
+          },
+          {
+            id: 3,
+            name: "Justin Shimane",
+            role: "OT",
+            visits: 42,
+            earnings: 3780.00,
+            status: "verified",
+            pendingVisits: 0,
+            completionRate: 100,
+            growth: 12.8,
+            avatar: null,
+            patients: [
+              { id: 106, name: "Susan Wilson", visits: 7, revenue: 595.00, lastVisit: "2025-03-14", visitTrend: "increasing" },
+              { id: 107, name: "Michael Brown", visits: 8, revenue: 680.00, lastVisit: "2025-03-15", visitTrend: "stable" },
+              { id: 113, name: "Patricia Lee", visits: 10, revenue: 850.00, lastVisit: "2025-03-11", visitTrend: "increasing" },
+              { id: 116, name: "Christopher Adams", visits: 9, revenue: 765.00, lastVisit: "2025-03-13", visitTrend: "stable" },
+              { id: 120, name: "Emily Turner", visits: 8, revenue: 680.00, lastVisit: "2025-03-15", visitTrend: "increasing" }
+            ],
+            visitDetails: [
+              { id: 3001, patientId: 106, patientName: "Susan Wilson", date: "2025-03-14", time: "10:30 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 3002, patientId: 107, patientName: "Michael Brown", date: "2025-03-15", time: "01:00 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 3003, patientId: 113, patientName: "Patricia Lee", date: "2025-03-11", time: "11:30 AM", type: "Follow-up", duration: 30, status: "completed", amount: 85.00 },
+              { id: 3004, patientId: 116, patientName: "Christopher Adams", date: "2025-03-13", time: "02:15 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 3005, patientId: 120, patientName: "Emily Turner", date: "2025-03-15", time: "03:30 PM", type: "Initial Eval", duration: 60, status: "completed", amount: 85.00 }
+            ]
+          },
+          {
+            id: 4,
+            name: "April Kim",
+            role: "COTA",
+            visits: 35,
+            earnings: 2975.00,
+            status: "pending",
+            pendingVisits: 2,
+            completionRate: 95,
+            growth: 8.7,
+            avatar: null,
+            patients: [
+              { id: 108, name: "David Anderson", visits: 6, revenue: 510.00, lastVisit: "2025-03-11", visitTrend: "stable" },
+              { id: 109, name: "Jennifer Lopez", visits: 7, revenue: 595.00, lastVisit: "2025-03-13", visitTrend: "increasing" },
+              { id: 114, name: "Daniel Wright", visits: 9, revenue: 765.00, lastVisit: "2025-03-12", visitTrend: "stable" },
+              { id: 117, name: "Michelle Taylor", visits: 8, revenue: 680.00, lastVisit: "2025-03-15", visitTrend: "decreasing" }
+            ],
+            visitDetails: [
+              { id: 4001, patientId: 108, patientName: "David Anderson", date: "2025-03-11", time: "09:00 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 4002, patientId: 109, patientName: "Jennifer Lopez", date: "2025-03-13", time: "10:45 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 4003, patientId: 114, patientName: "Daniel Wright", date: "2025-03-12", time: "01:45 PM", type: "Follow-up", duration: 30, status: "pending", amount: 85.00 },
+              { id: 4004, patientId: 117, patientName: "Michelle Taylor", date: "2025-03-15", time: "03:00 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 }
+            ]
+          },
+          {
+            id: 5,
+            name: "Elena Martinez",
+            role: "ST",
+            visits: 40,
+            earnings: 3600.00,
+            status: "verified",
+            pendingVisits: 1,
+            completionRate: 98,
+            growth: 10.5,
+            avatar: null,
+            patients: [
+              { id: 110, name: "Thomas White", visits: 9, revenue: 765.00, lastVisit: "2025-03-12", visitTrend: "stable" },
+              { id: 111, name: "Jessica Taylor", visits: 8, revenue: 680.00, lastVisit: "2025-03-15", visitTrend: "increasing" },
+              { id: 121, name: "Kevin Harris", visits: 10, revenue: 850.00, lastVisit: "2025-03-14", visitTrend: "increasing" },
+              { id: 122, name: "Rachel Thompson", visits: 7, revenue: 595.00, lastVisit: "2025-03-11", visitTrend: "stable" },
+              { id: 123, name: "Steven Clark", visits: 6, revenue: 510.00, lastVisit: "2025-03-13", visitTrend: "decreasing" }
+            ],
+            visitDetails: [
+              { id: 5001, patientId: 110, patientName: "Thomas White", date: "2025-03-12", time: "11:00 AM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 5002, patientId: 111, patientName: "Jessica Taylor", date: "2025-03-15", time: "02:00 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 5003, patientId: 121, patientName: "Kevin Harris", date: "2025-03-14", time: "10:15 AM", type: "Follow-up", duration: 30, status: "completed", amount: 85.00 },
+              { id: 5004, patientId: 122, patientName: "Rachel Thompson", date: "2025-03-11", time: "01:30 PM", type: "Standard", duration: 45, status: "completed", amount: 85.00 },
+              { id: 5005, patientId: 123, patientName: "Steven Clark", date: "2025-03-13", time: "03:15 PM", type: "Initial Eval", duration: 60, status: "pending", amount: 85.00 }
+            ]
+          }
+        ]);
+        
+        // Set default selected period
+        setSelectedPeriod(paymentPeriods[4]); // March 1-15 as default
+        
+        setIsLoading(false);
+        
+        // Trigger entrance animations after loading
+        setTimeout(() => {
+          setAnimateIn(true);
+        }, 100);
+      }, 1600);
+    };
     
-    document.body.classList.add('logging-out');
+    loadData();
     
-    // No llamar logout() directamente, dejar que LogoutAnimation maneje todo
-    setTimeout(() => {
-      logout();
-      navigate('/login');
-    }, 4000); // Tiempo para la animación completa
-  };
+    // Cleanup
+    return () => {
+      setAnimateIn(false);
+    };
+  }, []);
 
-  // Handle navigation to profile page
-  const handleNavigateToProfile = () => {
-    if (isLoggingOut) return;
-    
-    setShowUserMenu(false);
-    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'pt-ot-st';
-    navigate(`/${baseRole}/profile`);
-  };
-
-  // Handle navigation to settings page
-  const handleNavigateToSettings = () => {
-    if (isLoggingOut) return;
-    
-    setShowUserMenu(false);
-    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'pt-ot-st';
-    navigate(`/${baseRole}/settings`);
-  };
-
-  const toggleUserMenu = () => {
-    setShowUserMenu(!showUserMenu);
-  };
-
-  // Click outside handler para cerrar menú de usuario
+  // Efecto para cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
     };
-
-    if (showUserMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showUserMenu]);
-
-  // Obtener información del terapeuta actual
-  useEffect(() => {
-    loadTherapistData();
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
-  // Función para cargar datos del terapeuta actual
-  const loadTherapistData = async () => {
-    setIsLoading(true);
+  // Manejar cambio de período seleccionado
+  const handlePeriodChange = (period) => {
+    if (isLoggingOut) return; // No permitir acciones durante cierre de sesión
     
-    try {
-      // Cargar datos específicos del terapeuta logueado
-      const therapistId = getCurrentTherapistId();
-      
-      await Promise.all([
-        loadMyTherapistInfo(therapistId),
-        loadMyPatients(therapistId),
-        loadMyVisits(therapistId),
-        loadMySchedule(therapistId)
-      ]);
-      
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 800);
-      
-    } catch (error) {
-      console.error('Error loading therapist data:', error);
-      setIsLoading(false);
-    }
+    setSelectedPeriod(period);
   };
-
-  // Obtener ID del terapeuta actual
-  const getCurrentTherapistId = () => {
-    // En producción esto vendría del JWT token o contexto
-    // Por ahora simulamos basado en el email del usuario
-    const userEmail = currentUser?.email || '';
-    const userRole = currentUser?.role || '';
+  
+  // Manejar logout con efectos mejorados
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setShowUserMenu(false);
     
-    // Simular ID basado en el rol del usuario
-    if (userRole.includes('PT')) return 1;
-    if (userRole.includes('OT')) return 2; 
-    if (userRole.includes('ST')) return 3;
-    if (userRole.includes('PTA')) return 4;
-    if (userRole.includes('COTA')) return 5;
-    if (userRole.includes('STA')) return 6;
-    
-    return 1; // Por defecto
+    // Aplicar clase a document.body para efectos globales
+    document.body.classList.add('logging-out');
   };
-
-  // Cargar información del terapeuta actual
-  const loadMyTherapistInfo = async (therapistId) => {
-    try {
-      // En producción sería: /api/therapists/${therapistId}
-      const response = await fetch('http://localhost:8000/staff/');
-      if (response.ok) {
-        const allStaff = await response.json();
-        // Buscar al terapeuta actual o usar datos simulados
-        const currentTherapist = allStaff.find(s => s.id === therapistId) || 
-                                 generateMockTherapistData(therapistId);
-        setTherapistData(currentTherapist);
-      } else {
-        setTherapistData(generateMockTherapistData(therapistId));
-      }
-    } catch (error) {
-      console.error('Error loading therapist info:', error);
-      setTherapistData(generateMockTherapistData(therapistId));
-    }
+  
+  // Callback para cuando la animación de cierre de sesión termine
+  const handleLogoutAnimationComplete = () => {
+    // Ejecutar el logout del contexto de autenticación
+    logout();
+    // Navegar a la página de inicio de sesión
+    navigate('/');
   };
-
-  // Cargar pacientes asignados al terapeuta actual
-  const loadMyPatients = async (therapistId) => {
-    try {
-      // En producción sería: /api/therapists/${therapistId}/patients
-      const response = await fetch('http://localhost:8000/patients/');
-      if (response.ok) {
-        const allPatients = await response.json();
-        // Filtrar pacientes asignados al terapeuta actual
-        // En producción habría relación directa therapist_id
-        const myPatients = allPatients.filter(p => 
-          Math.random() > 0.7 // Simulamos algunos pacientes asignados
-        ).slice(0, 5); // Máximo 5 pacientes
-        
-        setMyPatients(myPatients.length ? myPatients : generateMockPatients(therapistId));
-      } else {
-        setMyPatients(generateMockPatients(therapistId));
-      }
-    } catch (error) {
-      console.error('Error loading my patients:', error);
-      setMyPatients(generateMockPatients(therapistId));
-    }
+  
+  // Manejar clic en terapeuta para mostrar modal
+  const handleTherapistClick = (therapist) => {
+    if (isLoggingOut) return; // No permitir acciones durante cierre de sesión
+    
+    setSelectedTherapist(therapist);
+    setShowTherapistModal(true);
   };
-
-  // Cargar visitas del terapeuta actual
-  const loadMyVisits = async (therapistId) => {
-    try {
-      // En producción sería: /api/therapists/${therapistId}/visits
-      setMyVisits(generateMockVisits(therapistId));
-    } catch (error) {
-      console.error('Error loading my visits:', error);
-      setMyVisits(generateMockVisits(therapistId));
-    }
+  
+  // Manejar navegación al menú principal con transición mejorada
+  const handleMainMenuTransition = () => {
+    if (isLoggingOut) return; // No permitir navegación durante cierre de sesión
+    
+    setMenuTransitioning(true);
+    
+    // Extraer el rol base para la navegación
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+    
+    setTimeout(() => {
+      navigate(`/${baseRole}/homePage`);
+    }, 400);
   };
-
-  // Cargar horario del terapeuta actual
-  const loadMySchedule = async (therapistId) => {
-    try {
-      // En producción sería: /api/therapists/${therapistId}/schedule
-      setMySchedule(generateMockSchedule(therapistId));
-    } catch (error) {
-      console.error('Error loading my schedule:', error);
-      setMySchedule(generateMockSchedule(therapistId));
-    }
-  };
-
-  // Generar datos simulados del terapeuta actual
-  const generateMockTherapistData = (therapistId) => {
-    const userRole = currentUser?.role || 'PT';
-    const userName = currentUser?.fullname || currentUser?.username || 'Therapist';
-    
-    return {
-      id: therapistId,
-      name: userName,
-      role: userRole.includes(' - ') ? userRole.split(' - ')[0] : userRole,
-      email: currentUser?.email || 'therapist@motivehomecare.com',
-      license_number: `LIC${String(therapistId).padStart(6, '0')}`,
-      hire_date: '2024-01-15',
-      is_active: true,
-      phone: '(555) 123-4567',
-      specialties: getSpecialtiesByRole(userRole),
-      total_patients: 5,
-      active_certifications: 2,
-      monthly_visits: 18,
-      completion_rate: 96
-    };
-  };
-
-  const getSpecialtiesByRole = (role) => {
-    const specialties = {
-      'PT': ['Orthopedic', 'Neurological', 'Geriatric'],
-      'PTA': ['Orthopedic', 'Post-Surgical'],
-      'OT': ['Activities of Daily Living', 'Cognitive Therapy'],
-      'COTA': ['Fine Motor Skills', 'Adaptive Equipment'],
-      'ST': ['Swallowing Disorders', 'Speech Therapy'],
-      'STA': ['Voice Therapy', 'Language Development']
-    };
-    
-    const roleKey = role.includes(' - ') ? role.split(' - ')[0] : role;
-    return specialties[roleKey] || ['General Therapy'];
-  };
-
-  const generateMockPatients = (therapistId) => {
-    // Generar muchos más pacientes para simular escenario real
-    const firstNames = ["Maria", "Robert", "Eleanor", "John", "Sarah", "Michael", "Jennifer", "David", "Lisa", "James"];
-    const lastNames = ["Rodriguez", "Johnson", "Chen", "Smith", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore"];
-    const diagnoses = [
-      "Post-stroke rehabilitation",
-      "Hip replacement recovery",
-      "Balance and mobility",
-      "Knee surgery recovery",
-      "Shoulder rehabilitation",
-      "Back pain management",
-      "Parkinson's therapy",
-      "Fall prevention",
-      "Gait training",
-      "Arthritis management"
-    ];
-    
-    const patients = [];
-    
-    // Generar 120 pacientes para simular carga real
-    for (let i = 0; i < 120; i++) {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - Math.floor(Math.random() * 60));
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 60);
-      
-      patients.push({
-        id: 100 + i,
-        first_name: firstNames[Math.floor(Math.random() * firstNames.length)],
-        last_name: lastNames[Math.floor(Math.random() * lastNames.length)],
-        date_of_birth: `19${50 + Math.floor(Math.random() * 30)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-        diagnosis: diagnoses[Math.floor(Math.random() * diagnoses.length)],
-        cert_start_date: startDate.toISOString().split('T')[0],
-        cert_end_date: endDate.toISOString().split('T')[0],
-        visits_completed: Math.floor(Math.random() * 15),
-        visits_remaining: Math.floor(Math.random() * 10) + 1,
-        status: "active"
-      });
-    }
-    
-    return patients;
-  };
-
-  const generateMockVisits = (therapistId) => {
-    const visits = [];
-    const today = new Date();
-    const visitTypes = ['Initial Evaluation', 'Follow Up', 'Re-evaluation', 'SOC OASIS', 'RA', 'DC'];
-    const patientIds = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120];
-    
-    // Generar visitas de los últimos 90 días (3 meses) con distribución realista
-    for (let i = 0; i < 45; i++) {
-      const visitDate = new Date(today);
-      visitDate.setDate(today.getDate() - Math.floor(Math.random() * 90));
-      
-      visits.push({
-        id: 1000 + i,
-        patient_id: patientIds[Math.floor(Math.random() * patientIds.length)],
-        visit_date: visitDate.toISOString().split('T')[0],
-        visit_type: visitTypes[Math.floor(Math.random() * visitTypes.length)],
-        status: i < 35 ? 'completed' : Math.random() > 0.3 ? 'scheduled' : 'pending',
-        duration_minutes: 45 + Math.floor(Math.random() * 30),
-        notes: `Treatment session ${i + 1}`,
-        therapy_type: therapistData?.role || 'PT'
-      });
-    }
-    
-    return visits.sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date));
-  };
-
-  const generateMockSchedule = (therapistId) => {
-    const schedule = [];
-    const today = new Date();
-    
-    // Generar horario para los próximos 7 días
-    for (let i = 0; i < 7; i++) {
-      const scheduleDate = new Date(today);
-      scheduleDate.setDate(today.getDate() + i);
-      
-      const daySchedule = {
-        date: scheduleDate.toISOString().split('T')[0],
-        dayOfWeek: scheduleDate.toLocaleDateString('en-US', { weekday: 'long' }),
-        appointments: []
-      };
-      
-      // Generar citas para el día (2-4 citas por día)
-      const appointmentCount = 2 + Math.floor(Math.random() * 3);
-      for (let j = 0; j < appointmentCount; j++) {
-        const hour = 9 + j * 2; // Citas cada 2 horas empezando a las 9 AM
-        daySchedule.appointments.push({
-          id: i * 10 + j,
-          time: `${hour.toString().padStart(2, '0')}:00`,
-          patient_id: 101 + (j % 3),
-          patient_name: ['Maria Rodriguez', 'Robert Johnson', 'Eleanor Chen'][j % 3],
-          type: 'Treatment Session',
-          duration: 60,
-          status: i === 0 ? 'completed' : 'scheduled'
-        });
-      }
-      
-      schedule.push(daySchedule);
-    }
-    
-    return schedule;
-  };
-
-  // Calcular métricas financieras del terapeuta (solo lo que el terapeuta necesita ver)
-  const calculateTherapistMetrics = () => {
-    if (!myVisits.length) return null;
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    const completedVisits = myVisits.filter(v => v.status === 'completed');
-    const pendingVisits = myVisits.filter(v => v.status === 'pending' || v.status === 'scheduled');
-    
-    // Filtrar visitas completadas de este mes para pagos completados
-    const completedThisMonth = completedVisits.filter(v => {
-      const visitDate = new Date(v.visit_date);
-      return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
-    });
-
-    // Tarifas por tipo de visita para terapeutas (solo lo que ellos reciben)
-    const therapistRates = {
-      'Initial Evaluation': 110,
-      'Follow Up': 85,
-      'Re-evaluation': 95,
-      'SOC OASIS': 120,
-      'RA': 100,
-      'DC': 80
-    };
-
-    // Pagos completados de este mes solamente
-    const completedEarningsThisMonth = completedThisMonth.reduce((sum, visit) => {
-      const rate = therapistRates[visit.visit_type] || therapistRates['Follow Up'];
-      return sum + rate;
-    }, 0);
-
-    // Total ganado de todas las visitas completadas (todo el tiempo)
-    const totalEarningsAllTime = completedVisits.reduce((sum, visit) => {
-      const rate = therapistRates[visit.visit_type] || therapistRates['Follow Up'];
-      return sum + rate;
-    }, 0);
-
-    const pendingEarnings = pendingVisits.reduce((sum, visit) => {
-      const rate = therapistRates[visit.visit_type] || therapistRates['Follow Up'];
-      return sum + rate;
-    }, 0);
-
-    // Métricas según lo solicitado por Doc Luis
-    return {
-      // Pagos pendientes
-      pendingPayments: pendingEarnings,
-      // Pagos completados SOLO de este mes
-      completedPayments: completedEarningsThisMonth,
-      // Total ganado (todo el tiempo) - donde antes decía "total billed"
-      totalBilled: totalEarningsAllTime,
-      completedVisitsCount: completedVisits.length,
-      pendingVisitsCount: pendingVisits.length,
-      averagePerVisit: completedVisits.length ? totalEarningsAllTime / completedVisits.length : 0,
-      totalVisits: myVisits.length
-    };
-  };
-
-  // Helper functions for month patient display
-  const getMonthPatients = (month) => {
-    if (!month || !myVisits.length) return [];
-    
-    // Get visits for the selected month
-    const monthVisits = myVisits.filter(visit => {
-      const visitDate = new Date(visit.visit_date);
-      const visitMonthKey = `${visitDate.getFullYear()}-${String(visitDate.getMonth() + 1).padStart(2, '0')}`;
-      return visitMonthKey === month.key;
-    });
-    
-    // Group visits by patient
-    const patientGroups = {};
-    
-    monthVisits.forEach(visit => {
-      if (!patientGroups[visit.patient_id]) {
-        patientGroups[visit.patient_id] = {
-          patient_id: visit.patient_id,
-          visits: [],
-          totalEarnings: 0
-        };
-      }
-      
-      patientGroups[visit.patient_id].visits.push(visit);
-      
-      // Calculate earnings only for completed visits
-      if (visit.status === 'completed') {
-        const earnings = getVisitRevenue(visit.visit_type);
-        patientGroups[visit.patient_id].totalEarnings += earnings;
-      }
-    });
-    
-    return Object.values(patientGroups).sort((a, b) => b.totalEarnings - a.totalEarnings);
-  };
-
-  const getVisitRevenue = (visitType) => {
-    const therapistRates = {
-      'Initial Evaluation': 110,
-      'Follow Up': 85,
-      'Re-evaluation': 95,
-      'SOC OASIS': 120,
-      'RA': 100,
-      'DC': 80
-    };
-    
-    return therapistRates[visitType] || therapistRates['Follow Up'];
-  };
-
-  const getPatientName = (patientId) => {
-    // First try to find in real patient data
-    const realPatient = myPatients.find(p => p.id === patientId);
-    if (realPatient) {
-      return `${realPatient.first_name} ${realPatient.last_name}`;
-    }
-    
-    // Fallback to mock names for consistency with MonthlyBreakdown
-    const patientNames = {
-      101: 'Maria Rodriguez',
-      102: 'Robert Johnson', 
-      103: 'Eleanor Chen',
-      104: 'John Smith',
-      105: 'Sarah Williams',
-      106: 'Michael Brown',
-      107: 'Jennifer Davis',
-      108: 'David Miller',
-      109: 'Lisa Wilson',
-      110: 'James Moore',
-      111: 'Patricia Garcia',
-      112: 'Christopher Martinez',
-      113: 'Nancy Anderson',
-      114: 'Matthew Taylor',
-      115: 'Karen Thomas',
-      116: 'Joshua Jackson',
-      117: 'Betty White',
-      118: 'Daniel Harris',
-      119: 'Helen Martin',
-      120: 'Mark Thompson'
-    };
-    
-    return patientNames[patientId] || `Patient ${patientId}`;
-  };
-
-  const getPatientInitials = (patientId) => {
-    const name = getPatientName(patientId);
-    return name.split(' ').map(word => word[0]).join('');
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value || 0);
-  };
-
-  // Handlers
+  
+  // Manejar redirección a página de paciente
   const handlePatientClick = (patientId) => {
-    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'pt-ot-st';
+    if (isLoggingOut) return; // No permitir navegación durante cierre de sesión
+    
+    // Extraer el rol base para la navegación
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+    
     navigate(`/${baseRole}/paciente/${patientId}`);
   };
 
-
-  // Animations
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        duration: 0.6,
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: { duration: 0.5, ease: "easeOut" }
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="clinical-accounting">
-        <div className="clinical-loading">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">Loading Your Financial Data...</div>
-        </div>
-      </div>
-    );
-  }
-
-  const metrics = calculateTherapistMetrics();
-
   return (
     <motion.div 
-      className="clinical-accounting"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
+      className={`accounting-container ${animateIn ? 'animate-in' : ''} ${menuTransitioning ? 'transitioning' : ''} ${isLoggingOut ? 'logging-out' : ''}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      {/* Header Premium - Exact replica for therapist dashboard */}
+      {/* Animación de cierre de sesión - Mostrar solo cuando se está cerrando sesión */}
+      {isLoggingOut && (
+        <LogoutAnimation 
+          isMobile={isMobile} 
+          onAnimationComplete={handleLogoutAnimationComplete} 
+        />
+      )}
+      
+      {/* Fondo mejorado con parallax y partículas */}
+      <div className="parallax-background">
+        <div className="gradient-overlay"></div>
+        <ParticlesBackground />
+      </div>
+      
+      {/* Header con logo y perfil */}
       <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
         <div className="header-container">
-          {/* Logo with effects */}
           <div className="logo-container">
-            <div className="logo-glow"></div>
-            <img 
-              src={logoImg} 
-              alt="TherapySync Logo" 
-              className="logo" 
-              onClick={() => !isLoggingOut && handleMainMenuTransition()} 
-            />
+            <div className="logo-wrapper">
+              <img src={logoImg} alt="TherapySync Logo" className="logo" />
+              <div className="logo-glow"></div>
+            </div>
             
-            {/* Navigation buttons for therapist accounting */}
+            {/* Navegación de menú con efectos mejorados */}
             <div className="menu-navigation">
-              <button 
+              <motion.button 
                 className="nav-button main-menu" 
                 onClick={handleMainMenuTransition}
                 title="Back to main menu"
+                whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
+                whileTap={{ y: 0, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
+                disabled={isLoggingOut}
               >
                 <i className="fas fa-th-large"></i>
                 <span>Main Menu</span>
-              </button>
+                <div className="button-effect"></div>
+              </motion.button>
               
-              <button 
+              <motion.button 
                 className="nav-button accounting-menu active" 
-                title="My Financial Data"
+                title="Financial Management"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isLoggingOut}
               >
                 <i className="fas fa-chart-pie"></i>
-                <span>My Accounting</span>
-              </button>
+                <span>Accounting</span>
+                <div className="button-effect"></div>
+              </motion.button>
             </div>
           </div>
           
-          {/* Enhanced user profile - exact replica */}
+          {/* Perfil de usuario mejorado */}
           <div className="support-user-profile" ref={userMenuRef}>
             <div 
               className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -628,7 +518,7 @@ const TherapistAccounting = () => {
               <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
             </div>
             
-            {/* Enhanced dropdown menu - exact replica */}
+            {/* Menú desplegable del usuario mejorado con estadísticas */}
             {showUserMenu && !isLoggingOut && (
               <div className="support-user-menu">
                 <div className="support-menu-header">
@@ -646,24 +536,71 @@ const TherapistAccounting = () => {
                       </span>
                     </div>
                   </div>
+                  
+                  {/* Stats cards */}
+                  
+                  {/* Quick action buttons */}
+       
                 </div>
                 
                 <div className="support-menu-section">
                   <div className="section-title">Account</div>
                   <div className="support-menu-items">
-                    <div 
-                      className="support-menu-item"
-                      onClick={handleNavigateToProfile}
-                    >
+                    <div className="support-menu-item">
                       <i className="fas fa-user-circle"></i>
                       <span>My Profile</span>
                     </div>
-                    <div 
-                      className="support-menu-item"
-                      onClick={handleNavigateToSettings}
-                    >
+                    <div className="support-menu-item">
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>My Schedule</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Preferences</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-bell"></i>
+                      <span>Notifications</span>
+                      <div className="support-notification-badge">{notificationCount}</div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-moon"></i>
+                        <span>Dark Mode</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle active"></div>
+                      </div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-volume-up"></i>
+                        <span>Sound Alerts</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Support</div>
+                  <div className="support-menu-items">
+      
+                    <div className="support-menu-item">
+                      <i className="fas fa-headset"></i>
+                      <span>Contact Support</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-bug"></i>
+                      <span>Report Issue</span>
                     </div>
                   </div>
                 </div>
@@ -674,7 +611,7 @@ const TherapistAccounting = () => {
                     <span>Log Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™</span>
+                    <span>TherapySync™ Support</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -683,447 +620,314 @@ const TherapistAccounting = () => {
           </div>
         </div>
       </header>
-
-      {/* Header Personal del Terapeuta */}
-      <motion.header className="clinical-header" variants={itemVariants}>
-        <div className="header-content">
-          <div className="clinical-title">
-            <h1>
-              <i className="fas fa-user-md title-icon"></i>
-              My Financial Dashboard
-            </h1>
-            <p className="subtitle">
-              Personal earnings, visit tracking, and financial metrics for {therapistData?.role}
-            </p>
-            {therapistData && (
-              <div className="therapist-info">
-                <span className="therapist-detail">
-                  <i className="fas fa-users"></i>
-                  {therapistData.total_patients} Active Patients
-                </span>
-                <span className="therapist-detail">
-                  <i className="fas fa-calendar-check"></i>
-                  {myVisits.filter(v => v.status === 'completed').length} Visits This Month
-                </span>
+      
+      {/* Contenido principal con efectos mejorados */}
+      <main className={`accounting-content ${isLoggingOut ? 'fade-out' : ''}`}>
+        {isLoading ? (
+          <div className="loading-container">
+            <div className="loading-spinner-container">
+              <div className="loading-spinner"></div>
+              <div className="loading-spinner-inner"></div>
+            </div>
+            <div className="loading-progress">
+            <div className="loading-progress-text">Loading financial data...</div>
+              <div className="loading-progress-bar">
+                <div className="loading-progress-fill"></div>
               </div>
-            )}
+            </div>
+            <div className="loading-steps">
+              <div className="loading-step active">
+                <i className="fas fa-database"></i>
+                <span>Fetching data</span>
+              </div>
+              <div className="loading-step">
+                <i className="fas fa-chart-line"></i>
+                <span>Processing metrics</span>
+              </div>
+              <div className="loading-step">
+                <i className="fas fa-check-circle"></i>
+                <span>Rendering interface</span>
+              </div>
+            </div>
           </div>
-          
-          <div className="header-actions">
-            <button className="clinical-btn" onClick={() => navigate(`/${currentUser?.role?.split(' - ')[0].toLowerCase() || 'pt'}/profile`)}>
-              <i className="fas fa-user"></i>
-              My Profile
+        ) : (
+          <>
+            <div className="accounting-header">
+              <div className="title-section">
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <i className="fas fa-chart-line"></i>
+                  Financial Management
+                  <div className="title-highlight"></div>
+                </motion.h1>
+                <motion.p 
+                  className="subtitle"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  Track earnings, manage payments, and view financial metrics across your practice
+                </motion.p>
+              </div>
+              
+              <div className="global-filters">
+                <div className="date-range-selector">
+                  <i className="fas fa-calendar-alt"></i>
+                  <span>Current Period: {selectedPeriod?.period}</span>
+                </div>
+                <div className="actions-toolbar">
+                  <button 
+                    className="toolbar-button" 
+                    title="Refresh Data"
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-sync-alt"></i>
+                  </button>
+                  <button 
+                    className="toolbar-button" 
+                    title="Export Reports"
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-file-export"></i>
+                  </button>
+                  <button 
+                    className="toolbar-button" 
+                    title="Print"
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-print"></i>
+                  </button>
+                  <button 
+                    className="toolbar-button" 
+                    title="Settings"
+                    disabled={isLoggingOut}
+                  >
+                    <i className="fas fa-cog"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="accounting-body">
+              {/* Dashboard de métricas mejorado */}
+              <AccountingDashboard 
+                stats={dashboardStats} 
+                selectedPeriod={selectedPeriod}
+              />
+              
+              {/* Selector de períodos de pago mejorado */}
+              <motion.div 
+                className="period-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
+                <h2>
+                  <i className="fas fa-calendar-check"></i>
+                  Payment Periods
+                </h2>
+                <PaymentPeriodSelector 
+                  periods={paymentPeriods}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={handlePeriodChange}
+                  isDisabled={isLoggingOut}
+                />
+              </motion.div>
+              
+              {/* Lista de terapeutas con datos financieros mejorada */}
+              <motion.div 
+                className="therapists-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                <h2>
+                  <i className="fas fa-user-md"></i>
+                  Therapist Earnings
+                </h2>
+                <TherapistFinancialList 
+                  therapists={therapists}
+                  onTherapistClick={handleTherapistClick}
+                  selectedPeriod={selectedPeriod}
+                  isDisabled={isLoggingOut}
+                />
+              </motion.div>
+              
+              {/* Estadísticas de crecimiento - Nueva sección */}
+              <motion.div 
+                className="growth-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                <h2>
+                  <i className="fas fa-rocket"></i>
+                  Growth Analytics
+                </h2>
+                <div className="growth-metrics">
+                  <div className="growth-card weekly">
+                    <div className="growth-icon">
+                      <i className="fas fa-chart-line"></i>
+                    </div>
+                    <div className="growth-content">
+                      <div className="growth-title">Weekly Growth</div>
+                      <div className="growth-value">
+                        +{dashboardStats.visitTrends?.weeklyGrowth}%
+                        <span className="growth-trend up">
+                          <i className="fas fa-arrow-up"></i>
+                        </span>
+                      </div>
+                      <div className="growth-description">
+                        Based on visits compared to last week
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="growth-card monthly">
+                    <div className="growth-icon">
+                      <i className="fas fa-calendar-alt"></i>
+                    </div>
+                    <div className="growth-content">
+                      <div className="growth-title">Monthly Growth</div>
+                      <div className="growth-value">
+                        +{dashboardStats.visitTrends?.monthlyGrowth}%
+                        <span className="growth-trend up">
+                          <i className="fas fa-arrow-up"></i>
+                        </span>
+                      </div>
+                      <div className="growth-description">
+                        Based on visits compared to last month
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="growth-card duration">
+                    <div className="growth-icon">
+                      <i className="fas fa-clock"></i>
+                    </div>
+                    <div className="growth-content">
+                      <div className="growth-title">Avg. Session Duration</div>
+                      <div className="growth-value">
+                        {dashboardStats.visitTrends?.averageDuration} min
+                      </div>
+                      <div className="growth-description">
+                        Average treatment session length
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="growth-card peak">
+                    <div className="growth-icon">
+                      <i className="fas fa-business-time"></i>
+                    </div>
+                    <div className="growth-content">
+                      <div className="growth-title">Peak Hours</div>
+                      <div className="growth-value">
+                        {dashboardStats.visitTrends?.peakHours}
+                      </div>
+                      <div className="growth-description">
+                        Highest patient traffic during the day
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              
+              {/* Top Performers - Nueva sección */}
+              <motion.div 
+                className="top-performers-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
+                <h2>
+                  <i className="fas fa-award"></i>
+                  Top Performers
+                </h2>
+                <div className="performers-cards">
+                  {dashboardStats.topPerformers?.map((performer, index) => (
+                    <div 
+                      key={performer.id} 
+                      className="performer-card"
+                      style={{ animationDelay: `${0.1 * index}s` }}
+                    >
+                      <div className="performer-rank">{index + 1}</div>
+                      <div className="performer-avatar">
+                        <div className="avatar-placeholder">
+                          {performer.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                      </div>
+                      <div className="performer-info">
+                        <div className="performer-name">{performer.name}</div>
+                        <div className="performer-role">{performer.role}</div>
+                      </div>
+                      <div className="performer-metrics">
+                        <div className="performer-revenue">
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 2
+                          }).format(performer.revenue)}
+                        </div>
+                        <div className="performer-growth">
+                          <i className="fas fa-arrow-up"></i>
+                          {performer.growth}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </main>
+      
+      {/* Modal de detalles del terapeuta mejorado */}
+      <AnimatePresence>
+        {showTherapistModal && selectedTherapist && !isLoggingOut && (
+          <TherapistPaymentModal 
+            therapist={selectedTherapist}
+            period={selectedPeriod}
+            onClose={() => setShowTherapistModal(false)}
+            onPatientClick={handlePatientClick}
+          />
+        )}
+      </AnimatePresence>
+      
+      {/* Añadir un botón de acción flotante para acciones rápidas */}
+      {!isLoggingOut && (
+        <div className="floating-action-button">
+          <button className="fab-main" disabled={isLoggingOut}>
+            <i className="fas fa-plus"></i>
+          </button>
+          <div className="fab-buttons">
+            <button className="fab-button" title="New Report" disabled={isLoggingOut}>
+              <i className="fas fa-file-alt"></i>
             </button>
-            <button className="clinical-btn primary">
-              <i className="fas fa-file-pdf"></i>
-              Export Report
+            <button className="fab-button" title="Add Payment" disabled={isLoggingOut}>
+              <i className="fas fa-money-bill-wave"></i>
+            </button>
+            <button className="fab-button" title="Export Data" disabled={isLoggingOut}>
+              <i className="fas fa-file-export"></i>
             </button>
           </div>
         </div>
-      </motion.header>
-
-      {/* Contenido Principal */}
-      <div className="clinical-content">
-        
-        {/* Métricas Personales */}
-        <motion.div variants={itemVariants}>
-          <ClinicalMetrics 
-            metrics={metrics}
-            isLoading={false}
-            showProfits={false}
-            isTherapistView={true}
-            title="My Earnings Overview"
-          />
-        </motion.div>
-
-        {/* Breakdown Mensual Personal */}
-        <motion.div variants={itemVariants} className="monthly-breakdown-expanded">
-          <MonthlyBreakdown 
-            visits={myVisits}
-            onMonthSelect={setSelectedMonth}
-            selectedMonth={selectedMonth}
-            title="My Monthly Performance"
-          />
-        </motion.div>
-
-        {/* Panel de Búsqueda Rápida de Pacientes */}
-        <motion.div variants={itemVariants} className="patient-quick-access-section">
-          <div className="section-header">
-            <h2>
-              <i className="fas fa-search"></i>
-              Quick Patient Access
-            </h2>
-            <span className="patient-count">{myPatients.length} Active Patients</span>
-          </div>
-          
-          <div className="patient-search-panel">
-            <div className="search-input-wrapper">
-              <i className="fas fa-search"></i>
-              <input
-                type="text"
-                placeholder="Search by name, diagnosis, or cert period..."
-                className="patient-search-input"
-                value={searchTerm}
-                onChange={(e) => {
-                  const term = e.target.value.toLowerCase();
-                  setSearchTerm(e.target.value);
-                  
-                  if (term === '') {
-                    setFilteredPatients([]);
-                  } else {
-                    const filtered = myPatients.filter(patient => 
-                      patient.first_name.toLowerCase().includes(term) ||
-                      patient.last_name.toLowerCase().includes(term) ||
-                      patient.diagnosis.toLowerCase().includes(term)
-                    );
-                    setFilteredPatients(filtered.slice(0, 10)); // Show max 10 results
-                  }
-                }}
-              />
-            </div>
-            
-            <div className="quick-filters">
-              <button 
-                className={`filter-btn ${activeFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('all')}
-              >
-                <i className="fas fa-users"></i>
-                All Patients
-              </button>
-              <button 
-                className={`filter-btn ${activeFilter === 'attention' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('attention')}
-              >
-                <i className="fas fa-exclamation-circle"></i>
-                Need Attention
-              </button>
-              <button 
-                className={`filter-btn ${activeFilter === 'week' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('week')}
-              >
-                <i className="fas fa-calendar-check"></i>
-                This Week
-              </button>
-              <button 
-                className={`filter-btn ${activeFilter === 'ending' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('ending')}
-              >
-                <i className="fas fa-hourglass-end"></i>
-                Ending Soon
-              </button>
-            </div>
-            
-            {searchTerm && filteredPatients.length > 0 && (
-              <div className="search-results">
-                <h3>Search Results ({filteredPatients.length})</h3>
-                <div className="results-list">
-                  {filteredPatients.map((patient) => (
-                    <div 
-                      key={patient.id} 
-                      className="recent-patient-item"
-                      onClick={() => handlePatientClick(patient.id)}
-                    >
-                      <div className="patient-quick-avatar">
-                        {patient.first_name[0]}{patient.last_name[0]}
-                      </div>
-                      <div className="patient-quick-info">
-                        <span className="patient-name">{patient.first_name} {patient.last_name}</span>
-                        <span className="patient-meta">
-                          {patient.diagnosis} • 
-                          {new Date(patient.cert_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
-                          {new Date(patient.cert_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {!searchTerm && !selectedMonth && (
-              <div className="month-selection-prompt">
-                <div className="prompt-icon">
-                  <i className="fas fa-calendar-check"></i>
-                </div>
-                <h3>Select a Month to View Patients</h3>
-                <p>Click on any month in the Monthly Performance section above to see which patients you worked with and how much you earned from each one.</p>
-                <div className="prompt-features">
-                  <div className="feature-item">
-                    <i className="fas fa-users"></i>
-                    <span>View patients by month</span>
-                  </div>
-                  <div className="feature-item">
-                    <i className="fas fa-dollar-sign"></i>
-                    <span>See earnings per patient</span>
-                  </div>
-                  <div className="feature-item">
-                    <i className="fas fa-chart-bar"></i>
-                    <span>Track visit history</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {!searchTerm && selectedMonth && (
-              <div className="selected-month-patients">
-                <h3>Patients in {selectedMonth.name}</h3>
-                <div className="month-patients-list">
-                  {getMonthPatients(selectedMonth).map((patientData) => (
-                    <div 
-                      key={patientData.patient_id} 
-                      className="month-patient-item"
-                      onClick={() => handlePatientClick(patientData.patient_id)}
-                    >
-                      <div className="patient-month-avatar">
-                        {getPatientInitials(patientData.patient_id)}
-                      </div>
-                      <div className="patient-month-info">
-                        <span className="patient-name">{getPatientName(patientData.patient_id)}</span>
-                        <span className="patient-meta">
-                          {patientData.visits.length} visit{patientData.visits.length !== 1 ? 's' : ''} • 
-                          {formatCurrency(patientData.totalEarnings)} earned
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {getMonthPatients(selectedMonth).length === 0 && (
-                    <div className="no-month-patients">
-                      <i className="fas fa-user-slash"></i>
-                      <span>No patients had visits in {selectedMonth.name}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-        
-        {/* Panel de Productividad y Objetivos */}
-        <motion.div variants={itemVariants} className="productivity-goals-section">
-          <div className="section-header">
-            <h2>
-              <i className="fas fa-chart-line"></i>
-              My Productivity & Goals
-            </h2>
-          </div>
-          
-          <div className="productivity-content">
-            <div className="productivity-card">
-              <div className="productivity-icon">
-                <i className="fas fa-calendar-week"></i>
-              </div>
-              <div className="productivity-info">
-                <h3>This Week</h3>
-                <div className="productivity-stats">
-                  <div className="stat-item">
-                    <span className="stat-value">18</span>
-                    <span className="stat-label">Visits Completed</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">95%</span>
-                    <span className="stat-label">On-Time Rate</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="productivity-card">
-              <div className="productivity-icon">
-                <i className="fas fa-trophy"></i>
-              </div>
-              <div className="productivity-info">
-                <h3>Monthly Goal</h3>
-                <div className="goal-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '75%'}}></div>
-                  </div>
-                  <span className="progress-text">75% Complete (60/80 visits)</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="productivity-card">
-              <div className="productivity-icon">
-                <i className="fas fa-clock"></i>
-              </div>
-              <div className="productivity-info">
-                <h3>Average Session Time</h3>
-                <div className="productivity-stats">
-                  <div className="stat-item">
-                    <span className="stat-value">52</span>
-                    <span className="stat-label">Minutes per Visit</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">98%</span>
-                    <span className="stat-label">Documentation Rate</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Support Contact Section - Simplified */}
-        <motion.div variants={itemVariants} className="support-contact-section">
-          <div className="section-header">
-            <h2>
-              <i className="fas fa-headset"></i>
-              Need Help?
-            </h2>
-          </div>
-          
-          <div className="support-content">
-            <div className="support-card">
-              <div className="support-icon">
-                <i className="fas fa-phone-alt"></i>
-              </div>
-              <div className="support-info">
-                <h3>Call Support</h3>
-                <p>Technical assistance and scheduling help</p>
-                <a href="tel:+1-555-THERAPY" className="support-link">
-                  +1 (555) THERAPY
-                </a>
-              </div>
-            </div>
-            
-            <div className="support-card">
-              <div className="support-icon">
-                <i className="fas fa-user-tie"></i>
-              </div>
-              <div className="support-info">
-                <h3>Contact Your CEO</h3>
-                <p>For company-specific questions or concerns</p>
-                <button className="support-ceo-btn" onClick={() => setShowCompanyContacts(true)}>
-                  <i className="fas fa-building"></i>
-                  View Company Contacts
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
+      )}
+      
+      {/* Snackbar para notificaciones - Nuevo componente */}
+      <div className="notification-snackbar">
+        <i className="fas fa-info-circle"></i>
+        <span>Financial data updated successfully</span>
+        <button className="snackbar-close" disabled={isLoggingOut}>
+          <i className="fas fa-times"></i>
+        </button>
       </div>
-
-      {/* Modal de Perfil del Terapeuta */}
-      <AnimatePresence>
-        {showTherapistModal && therapistData && (
-          <TherapistModal 
-            therapist={therapistData}
-            visits={myVisits}
-            patients={myPatients}
-            onClose={() => setShowTherapistModal(false)}
-            onPatientClick={handlePatientClick}
-            isPersonalView={true}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Company Contacts Modal */}
-      <AnimatePresence>
-        {showCompanyContacts && (
-          <motion.div
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowCompanyContacts(false)}
-          >
-            <motion.div
-              className="company-contacts-modal"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h2>
-                  <i className="fas fa-building"></i>
-                  Company Contacts
-                </h2>
-                <button className="close-btn" onClick={() => setShowCompanyContacts(false)}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              
-              <div className="modal-content">
-                <div className="company-info">
-                  <h3>Motive Home Care Administrators</h3>
-                  <p>Contact your company administrators for assistance</p>
-                </div>
-                
-                <div className="contacts-list">
-                  <div className="contact-card">
-                    <div className="contact-avatar">
-                      <i className="fas fa-user-tie"></i>
-                    </div>
-                    <div className="contact-info">
-                      <h4>John Smith</h4>
-                      <p className="contact-role">CEO</p>
-                      <div className="contact-details">
-                        <a href="tel:+1555123456" className="contact-link">
-                          <i className="fas fa-phone"></i>
-                          +1 (555) 123-4567
-                        </a>
-                        <a href="mailto:john.smith@motivehomecare.com" className="contact-link">
-                          <i className="fas fa-envelope"></i>
-                          john.smith@motivehomecare.com
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="contact-card">
-                    <div className="contact-avatar">
-                      <i className="fas fa-user-tie"></i>
-                    </div>
-                    <div className="contact-info">
-                      <h4>Sarah Johnson</h4>
-                      <p className="contact-role">COO</p>
-                      <div className="contact-details">
-                        <a href="tel:+1555123458" className="contact-link">
-                          <i className="fas fa-phone"></i>
-                          +1 (555) 123-4568
-                        </a>
-                        <a href="mailto:sarah.johnson@motivehomecare.com" className="contact-link">
-                          <i className="fas fa-envelope"></i>
-                          sarah.johnson@motivehomecare.com
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="contact-card">
-                    <div className="contact-avatar">
-                      <i className="fas fa-user-tie"></i>
-                    </div>
-                    <div className="contact-info">
-                      <h4>Michael Davis</h4>
-                      <p className="contact-role">HR Director</p>
-                      <div className="contact-details">
-                        <a href="tel:+1555123459" className="contact-link">
-                          <i className="fas fa-phone"></i>
-                          +1 (555) 123-4569
-                        </a>
-                        <a href="mailto:michael.davis@motivehomecare.com" className="contact-link">
-                          <i className="fas fa-envelope"></i>
-                          michael.davis@motivehomecare.com
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Logout Animation */}
-      {isLoggingOut && <LogoutAnimation />}
-
     </motion.div>
   );
 };
 
-export default TherapistAccounting;
+export default TPAccounting;

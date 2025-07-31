@@ -6,6 +6,7 @@ import LoadingScreen from './CreateNF/LoadingDates';
 const ReferralStats = () => {
   const navigate = useNavigate();
   
+  // State for loading and UI controls
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const [sortField, setSortField] = useState('name');
@@ -15,6 +16,7 @@ const ReferralStats = () => {
   const [viewingChanges, setViewingChanges] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
 
+  // Mock patient data
   const [patients, setPatients] = useState([
     {
       id: 1,
@@ -130,6 +132,7 @@ const ReferralStats = () => {
 
   const modalRef = useRef(null);
 
+  // Handle outside click for modal
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -146,6 +149,7 @@ const ReferralStats = () => {
     };
   }, [viewingChanges]);
 
+  // Simulate loading
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -154,6 +158,7 @@ const ReferralStats = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Sort patients
   const sortedPatients = [...patients].sort((a, b) => {
     let aValue, bValue;
     
@@ -186,6 +191,7 @@ const ReferralStats = () => {
     }
   });
 
+  // Filter patients
   const filteredPatients = sortedPatients.filter(patient => {
     return (
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,12 +202,14 @@ const ReferralStats = () => {
     );
   });
 
+  // Paginate patients
   const patientsPerPage = 10;
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
   const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
 
+  // Handle sort
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -211,21 +219,25 @@ const ReferralStats = () => {
     }
   };
 
+  // Handle view changes
   const handleViewChanges = (patient) => {
     setSelectedPatient(patient);
     setViewingChanges(true);
   };
 
+  // Handle edit patient (would navigate to edit page)
   const handleEditPatient = (id) => {
     navigate(`/developer/editReferral/${id}`);
   };
 
+  // Pagination controls
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
+  // Status badge component
   const StatusBadge = ({ status }) => {
     let className = "status-badge";
     
@@ -330,6 +342,7 @@ const ReferralStats = () => {
             </div>
           </div>
           
+          {/* Patient List */}
           <div className={`patients-container ${viewMode}-view`}>
             {viewMode === 'grid' ? (
               <div className="patients-grid">
@@ -481,6 +494,7 @@ const ReferralStats = () => {
               </div>
             )}
             
+            {/* Pagination controls */}
             <div className="pagination-controls">
               <div className="pagination-info">
                 Showing {indexOfFirstPatient + 1}-{Math.min(indexOfLastPatient, filteredPatients.length)} of {filteredPatients.length} patients
@@ -546,6 +560,7 @@ const ReferralStats = () => {
             </div>
           </div>
           
+          {/* Modal for viewing changes */}
           {viewingChanges && selectedPatient && (
             <div className="changes-modal-overlay">
               <div className="changes-modal" ref={modalRef}>

@@ -99,7 +99,6 @@ const VisitStatusModal = ({
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Patient data received:', data);
           setPatientData({
             first_name: data.full_name ? data.full_name.split(' ')[0] : 'Unknown',
             last_name: data.full_name ? data.full_name.split(' ').slice(1).join(' ') : 'Patient',
@@ -130,7 +129,6 @@ const VisitStatusModal = ({
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Assigned therapist data received:', data);
           setAssignedTherapist(data);
         } else {
           console.error('Failed to fetch assigned therapist:', response.status, response.statusText);
@@ -154,7 +152,6 @@ const VisitStatusModal = ({
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Available therapists received:', data);
         // Filter only therapy roles (PT, OT, ST, PTA, COTA, STA)
         const therapyRoles = ['PT', 'OT', 'ST', 'PTA', 'COTA', 'STA'];
         const therapists = data.filter(staff => therapyRoles.includes(staff.role) && staff.is_active);
@@ -195,7 +192,6 @@ const VisitStatusModal = ({
     try {
       // Special handling for "Completed" status - open note modal instead of changing status
       if (selectedStatus === 'Completed') {
-        console.log('Opening note modal for visit completion');
         
         // Prepare visit data for note modal with other field updates but keep original status
         const visitDataForNote = {
@@ -277,7 +273,6 @@ const VisitStatusModal = ({
           staff_id: selectedTherapist
         };
 
-        console.log('Updating visit data:', updatedVisitData);
 
         // Notify parent component about the update for immediate UI refresh
         if (typeof onVisitUpdate === 'function') {

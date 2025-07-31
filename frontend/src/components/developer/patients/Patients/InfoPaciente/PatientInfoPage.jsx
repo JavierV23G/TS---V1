@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../../login/AuthContext';
 import logoImg from '../../../../../assets/LogoMHC.jpeg';
 import EmergencyContactsComponent from './EmergencyContactsComponent';
@@ -10,6 +10,7 @@ import ScheduleComponent from './ScheduleComponent';
 import ExercisesComponent from './ExercisesComponent';
 import DocumentsComponent from './DocumentsComponent';
 import NotesComponent from './NotesComponent';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import LogoutAnimation from '../../../../../components/LogOut/LogOut';
 import '../../../../../styles/developer/Patients/InfoPaciente/PatientInfoPage.scss';
 
@@ -84,8 +85,8 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Personal Information Card Component - EDIT FUNCTIONALITY FIXED
-const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
+// Personal Information Card Component - OPTIMIZED
+const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -99,10 +100,14 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
-  const getPrimaryContactPhoneDisplay = (contactInfo) => {
-    const primaryPhone = getPrimaryPhoneNumber(contactInfo);
-    if (!primaryPhone) return 'Not available';
-    return formatPhoneNumber(primaryPhone);
+  // Simple phone formatter for display during editing
+  const formatPhoneForDisplay = (phone) => {
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
+    }
+    return phone;
   };
 
   useEffect(() => {
@@ -114,7 +119,9 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
         address: patient.address || '',
       });
       
-      setPrimaryContactPhone(getPrimaryPhoneNumber(patient.contact_info));
+      // Use the formatted phone from backend, extract raw number for editing
+      const rawPhone = patient.primary_phone ? patient.primary_phone.replace(/\D/g, '') : '';
+      setPrimaryContactPhone(rawPhone);
     }
   }, [patient]);
 
@@ -137,21 +144,22 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
       setIsSaving(true);
       setError(null);
 
-      // Crear estructura de diccionario para contact_info
+      // Create contact_info structure
       let contactDict = {};
       
-      // Si existe contact_info previo, preservarlo
+      // Preserve existing contact_info
       if (patient.contact_info && typeof patient.contact_info === 'object') {
         contactDict = { ...patient.contact_info };
       }
       
-      // Actualizar el número principal (formateado)
-      contactDict['primary#'] = formatPhoneNumber(primaryContactPhone);
+      // Update primary phone (let backend handle formatting)
+      if (primaryContactPhone) {
+        contactDict['primary#'] = primaryContactPhone;
+      }
 
-      // Crear parámetros de URL solo para campos que han cambiado
+      // Create URL params only for changed fields
       const params = new URLSearchParams();
       
-      // Solo agregar campos que son diferentes a los originales
       if (formData.full_name !== patient.full_name) {
         params.append('full_name', formData.full_name);
       }
@@ -165,9 +173,9 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
         params.append('address', formData.address);
       }
       
-      // Solo actualizar contact_info si el teléfono principal cambió
-      const currentPrimaryPhone = getPrimaryPhoneNumber(patient.contact_info);
-      if (formatPhoneNumber(primaryContactPhone) !== currentPrimaryPhone) {
+      // Update contact_info if phone changed
+      const currentRawPhone = patient.primary_phone ? patient.primary_phone.replace(/\D/g, '') : '';
+      if (primaryContactPhone !== currentRawPhone) {
         params.append('contact_info', JSON.stringify(contactDict));
       }
 
@@ -178,19 +186,9 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
 
       if (!response.ok) throw new Error('Update failed');
       
-      const updatedPatientData = await response.json();
-      const updatedPatient = { ...patient, ...updatedPatientData };
-      onUpdatePatient(updatedPatient);
+      // Use onUpdatePatient to trigger refresh from parent, no double fetching
+      onUpdatePatient(null); // Signal parent to refetch
       setIsEditing(false);
-      
-      // Update local state with new data
-      setFormData({
-        full_name: updatedPatientData.full_name || '',
-        birthday: updatedPatientData.birthday || '',
-        gender: updatedPatientData.gender || '',
-        address: updatedPatientData.address || '',
-      });
-      setPrimaryContactPhone(getPrimaryPhoneNumber(updatedPatientData.contact_info));
 
     } catch (err) {
       setError(err.message);
@@ -210,8 +208,8 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
             gender: patient.gender || '',
             address: patient.address || '',
         });
-        const phone = getPrimaryPhoneNumber(patient.contact_info);
-        setPrimaryContactPhone(phone);
+        const rawPhone = patient.primary_phone ? patient.primary_phone.replace(/\D/g, '') : '';
+        setPrimaryContactPhone(rawPhone);
     }
   };
 
@@ -251,7 +249,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
             </div>
             <div className="form-group">
               <label>Primary Contact Phone</label>
-              <input type="tel" value={formatPhoneNumber(primaryContactPhone)} onChange={handlePhoneInputChange} disabled={isSaving} placeholder="(XXX) XXX-XXXX" />
+              <input type="tel" value={formatPhoneForDisplay(primaryContactPhone)} onChange={handlePhoneInputChange} disabled={isSaving} placeholder="(XXX) XXX-XXXX" />
             </div>
             <div className="form-actions">
               <button className="cancel-btn" onClick={handleCancel} disabled={isSaving}>Cancel</button>
@@ -280,7 +278,7 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
             </div>
             <div className="info-row">
               <div className="info-label">Primary Contact</div>
-              <div className="info-value">{getPrimaryContactPhoneDisplay(patient.contact_info)}</div>
+              <div className="info-value">{patient.primary_phone || 'Not available'}</div>
             </div>
           </div>
         )}
@@ -290,10 +288,9 @@ const PersonalInfoCard = ({ patient, onUpdatePatient, setPatient }) => {
 };
 
 // General Information Section Component
-const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setPatient, setCurrentCertPeriod }) => {
+const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatient, setCurrentCertPeriod }) => {
   // Handler for certification period updates
   const handleUpdateCertPeriod = (updatedCertData) => {
-    console.log('Certification period updated:', updatedCertData);
     if (updatedCertData.startDate && updatedCertData.endDate) {
       setCertPeriodDates({ 
         startDate: updatedCertData.startDate, 
@@ -319,12 +316,11 @@ const GeneralInformationSection = ({ patient, setCertPeriodDates, onUpdatePatien
 
   // Handler for emergency contacts updates
   const handleUpdateContacts = (updatedContacts) => {
-    console.log('Emergency contacts updated:', updatedContacts);
   };
   
   return (
     <div className="general-info-section">
-      <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} setPatient={setPatient} />
+      <PersonalInfoCard patient={patient} onUpdatePatient={onUpdatePatient} />
       <CertificationPeriodComponent 
         patient={patient} 
         onUpdateCertPeriod={handleUpdateCertPeriod}
@@ -346,7 +342,6 @@ const MedicalInformationSection = ({
   onSyncVisitsData 
 }) => {
   const handleUpdateMedicalInfo = (updatedMedicalData) => {
-    console.log('Medical information updated:', updatedMedicalData);
     if (onUpdatePatient) {
       onUpdatePatient({ ...patient, ...updatedMedicalData });
     }
@@ -374,7 +369,6 @@ const DisciplinesSection = ({
   onSyncDisciplinesData 
 }) => {
   const handleUpdateDisciplines = (updatedDisciplines) => {
-    console.log('Disciplines updated:', updatedDisciplines);
     if (onUpdatePatient) {
       onUpdatePatient({ ...patient, required_disciplines: updatedDisciplines });
     }
@@ -403,7 +397,6 @@ const ScheduleSection = ({
   onSyncScheduleData 
 }) => {
   const handleUpdateSchedule = (updatedSchedule) => {
-    console.log('Schedule updated:', updatedSchedule);
   };
   
   return (
@@ -424,7 +417,6 @@ const ScheduleSection = ({
 // Exercises Section Component
 const ExercisesSection = ({ patient }) => {
   const handleUpdateExercises = (updatedExercises) => {
-    console.log('Exercises updated:', updatedExercises);
   };
   
   return (
@@ -437,7 +429,6 @@ const ExercisesSection = ({ patient }) => {
 // Documents Section Component
 const DocumentsSection = ({ patient }) => {
   const handleUpdateDocuments = (updatedDocuments) => {
-    console.log('Documents updated:', updatedDocuments);
   };
   
   return (
@@ -450,7 +441,6 @@ const DocumentsSection = ({ patient }) => {
 // Notes Section Component
 const NotesSection = ({ patient }) => {
   const handleUpdateNotes = (updatedNotes) => {
-    console.log('Notes updated:', updatedNotes);
   };
   
   return (
@@ -460,75 +450,14 @@ const NotesSection = ({ patient }) => {
   );
 };
 
-// Función para formatear número telefónico
-const formatPhoneNumber = (phoneStr) => {
-  if (!phoneStr) return '';
-  
-  // Limpiar el string - solo números
-  const cleaned = phoneStr.replace(/\D/g, '');
-  
-  // Validar que tiene al menos 10 dígitos
-  if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
-  
-  // Formatear como (123) 456-7890
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-  if (match) {
-    return `(${match[1]}) ${match[2]}-${match[3]}`;
-  }
-  
-  return phoneStr; // Devolver original si no coincide el patrón
-};
-
-// Función para obtener el número de teléfono principal del diccionario
-const getPrimaryPhoneNumber = (contactInfo) => {
-  if (!contactInfo) return '';
-  
-  let phoneNumber = '';
-  
-  // Si es diccionario (nueva estructura)
-  if (typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
-    phoneNumber = contactInfo['primary#'] || contactInfo.primary || contactInfo.secondary;
-    
-    // Si no hay primary ni secondary, buscar en otros contactos
-    if (!phoneNumber) {
-      const otherContacts = Object.entries(contactInfo).filter(([key]) => 
-        key !== 'primary#' && key !== 'primary' && key !== 'secondary'
-      );
-      if (otherContacts.length > 0) {
-        const firstContact = otherContacts[0][1];
-        if (typeof firstContact === 'string' && firstContact.includes('|')) {
-          phoneNumber = firstContact.split('|')[0]; // Obtener el teléfono del formato phone|relation
-        } else if (typeof firstContact === 'object') {
-          phoneNumber = firstContact.phone;
-        } else {
-          phoneNumber = firstContact;
-        }
-      }
-    }
-  } else if (typeof contactInfo === 'string') {
-    // Compatibilidad con estructura antigua
-    try {
-      const parsed = JSON.parse(contactInfo);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        phoneNumber = parsed[0].phone || parsed[0] || '';
-      } else {
-        phoneNumber = contactInfo;
-      }
-    } catch (e) {
-      phoneNumber = contactInfo;
-    }
-  }
-  
-  // Devolver número formateado
-  return phoneNumber ? formatPhoneNumber(phoneNumber) : '';
-};
 
 // Main Patient Information Page Component
 const PatientInfoPage = () => {
   const { patientId } = useParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('general');
   const [patient, setPatient] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { currentUser, logout } = useAuth();
@@ -542,10 +471,57 @@ const PatientInfoPage = () => {
   const [certPeriodDates, setCertPeriodDates] = useState({ startDate: '', endDate: '' });
   const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
 
+  // Check if we're in printable mode
+  const searchParams = new URLSearchParams(location.search);
+  const isPrintableMode = searchParams.get('printable') === 'true';
+  const visitId = searchParams.get('visitId');
+
+  // State for printable note data
+  const [noteData, setNoteData] = useState(null);
+  const [visitData, setVisitData] = useState(null);
+  const [loadingNote, setLoadingNote] = useState(false);
+
   // ===== ESTADO COMPARTIDO PARA SINCRONIZACIÓN =====
   const [scheduledVisits, setScheduledVisits] = useState([]);
   const [approvedVisits, setApprovedVisits] = useState(null);
   const [disciplines, setDisciplines] = useState(null);
+
+  // Load note data when in printable mode
+  useEffect(() => {
+    if (isPrintableMode && visitId && !loadingNote && !noteData) {
+      const fetchNoteData = async () => {
+        console.log('🔍 Starting to fetch note for visitId:', visitId);
+        setLoadingNote(true);
+        try {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+          const url = `${API_BASE_URL}/visit-notes/${visitId}`;
+          console.log('🔍 Fetching from URL:', url);
+          
+          // Fetch the note data for this visit
+          const noteResponse = await fetch(url);
+          console.log('🔍 Response status:', noteResponse.status);
+          
+          if (noteResponse.ok) {
+            const note = await noteResponse.json();
+            console.log('🔍 Loaded note data:', note);
+            setNoteData(note);
+          } else {
+            console.warn('No note found for visit:', visitId, 'Status:', noteResponse.status);
+            // Set empty note data to stop loading
+            setNoteData({ sections_data: {} });
+          }
+        } catch (err) {
+          console.error('Error loading note data:', err);
+          // Set empty note data to stop loading
+          setNoteData({ sections_data: {} });
+        } finally {
+          setLoadingNote(false);
+        }
+      };
+
+      fetchNoteData();
+    }
+  }, [isPrintableMode, visitId, loadingNote, noteData]);
 
   useEffect(() => {
     if (patient?.certification_periods?.length > 0) {
@@ -680,26 +656,25 @@ const PatientInfoPage = () => {
   };
 
   const handleUpdatePatient = async (updatedPatient) => {
-    if (!updatedPatient || !updatedPatient.id) {
-      console.error('Invalid updated patient data received');
+    // If null is passed, refetch from backend (used by PersonalInfoCard after save)
+    if (updatedPatient === null) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) throw new Error('Failed to fetch updated patient data');
+        const latestPatientData = await response.json();
+        setPatient(latestPatientData);
+      } catch (err) {
+        console.error('Error refreshing patient data:', err);
+      }
       return;
     }
 
-    try {
-      // Primero actualizar el estado local inmediatamente
+    // For valid updated patient objects, update immediately
+    if (updatedPatient && updatedPatient.id) {
       setPatient(updatedPatient);
-
-      // Luego refrescar los datos del backend
-      const response = await fetch(`${API_BASE_URL}/patients/${updatedPatient.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch updated patient data');
-      const latestPatientData = await response.json();
-      setPatient(latestPatientData);
-    } catch (err) {
-      console.error('Error updating patient:', err);
     }
   };
 
@@ -716,7 +691,6 @@ const PatientInfoPage = () => {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching patient from:', `${API_BASE_URL}/patients/${patientId}`);
         
         const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
           method: 'GET',  
@@ -733,7 +707,6 @@ const PatientInfoPage = () => {
         }
         
         const patientData = await response.json();
-        console.log('Received patient data:', patientData);
         
         setPatient(patientData);
         
@@ -771,6 +744,44 @@ const PatientInfoPage = () => {
     }
   };
 
+  // If in printable mode, show only the note modal in printable view
+  if (isPrintableMode && visitId && patient) {
+    console.log('🖨️ Rendering printable mode for visitId:', visitId);
+    console.log('🖨️ Note data:', noteData);
+    console.log('🖨️ Loading note:', loadingNote);
+    
+    if (loadingNote || !noteData) {
+      return (
+        <div className="note-printable-loading">
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Loading note for printing...</p>
+            <small style={{marginTop: '10px', color: '#999'}}>
+              Visit ID: {visitId}
+            </small>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <NoteTemplateModal
+        isOpen={true}
+        onClose={() => window.close()}
+        patientData={{
+          firstName: patient.full_name?.split(' ')[0] || '',
+          lastName: patient.full_name?.split(' ').slice(1).join(' ') || '',
+          dateOfBirth: patient.birthday,
+          gender: patient.gender
+        }}
+        disciplina="PT" // Default for now
+        tipoNota="Initial Evaluation" // Default for now  
+        initialData={noteData?.sections_data || {}}
+        existingNoteId={noteData?.id || null}
+        onSave={() => {}}
+      />
+    );
+  }
 
   // Render loading state
   if (loading) {
@@ -923,16 +934,50 @@ const PatientInfoPage = () => {
                       <i className="fas fa-user-circle"></i>
                       <span>My Profile</span>
                     </div>
-                    <div 
-                      className="support-menu-item"
-                      onClick={() => navigate(`/${rolePrefix}/settings`)}
-                    >
+                    <div className="support-menu-item">
                       <i className="fas fa-cog"></i>
                       <span>Settings</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>My Schedule</span>
                     </div>
                   </div>
                 </div>
                 
+                <div className="support-menu-section">
+                  <div className="section-title">Preferences</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-bell"></i>
+                      <span>Notifications</span>
+                      <div className="support-notification-badge">{notificationCount}</div>
+                    </div>
+                    <div className="support-menu-item toggle-item">
+                      <div className="toggle-item-content">
+                        <i className="fas fa-volume-up"></i>
+                        <span>Sound Alerts</span>
+                      </div>
+                      <div className="toggle-switch">
+                        <div className="toggle-handle"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Support</div>
+                  <div className="support-menu-items">
+                    <div className="support-menu-item">
+                      <i className="fas fa-headset"></i>
+                      <span>Contact Support</span>
+                    </div>
+                    <div className="support-menu-item">
+                      <i className="fas fa-bug"></i>
+                      <span>Report Issue</span>
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="support-menu-footer">
                   <div className="support-menu-item logout" onClick={handleLogout}>
@@ -940,7 +985,7 @@ const PatientInfoPage = () => {
                     <span>Log Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™</span>
+                    <span>TherapySync™ Support</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -972,7 +1017,6 @@ const PatientInfoPage = () => {
                 patient={patient} 
                 setCertPeriodDates={setCertPeriodDates}
                 onUpdatePatient={handleUpdatePatient}
-                setPatient={setPatient}
                 setCurrentCertPeriod={setCurrentCertPeriod}
               />
             )}

@@ -7,6 +7,7 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
   const [showCompletionEffects, setShowCompletionEffects] = useState(false);
   const particleTimerRef = useRef(null);
   
+  // Fases del proceso
   const phases = [
     { text: 'Inicializando conexión segura...', duration: 1200 },
     { text: 'Verificando dirección...', duration: 1000 },
@@ -16,11 +17,14 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
     { text: 'Finalizando proceso...', duration: 1000 }
   ];
   
+  // Efecto para generar partículas de datos
   useEffect(() => {
     if (isOpen && status === 'loading' && phase >= 3) {
+      // Crear partículas solo durante las últimas fases
       particleTimerRef.current = setInterval(() => {
         if (document.hidden) return; // No crear partículas si la pestaña no está visible
         
+        // Generar entre 1-3 partículas nuevas
         const newParticles = Array(Math.floor(Math.random() * 3) + 1).fill().map(() => ({
           id: Date.now() + Math.random(),
           x: Math.random() * 100,
@@ -31,6 +35,7 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
           opacity: Math.random() * 0.7 + 0.3
         }));
         
+        // Actualizar partículas existentes (eliminar las que estén fuera de rango)
         setParticles(prev => [...prev.filter(p => p.y < 110), ...newParticles].slice(-40)); // Limitar a 40 partículas
       }, 200);
       
@@ -38,21 +43,26 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
     }
   }, [isOpen, status, phase]);
   
+  // Efecto principal de animación
   useEffect(() => {
     let progressTimer;
     let phaseTimer;
     
     if (isOpen && status === 'loading') {
+      // Resetear estados
       setProgress(0);
       setPhase(0);
       setParticles([]);
       setShowCompletionEffects(false);
       
+      // Iniciar animación de progreso
       progressTimer = setInterval(() => {
         setProgress(prev => {
+          // Avance dinámico según la fase
           const phaseProgress = phase / phases.length;
           const targetProgress = Math.min(phaseProgress * 100 + 15, 95);
           
+          // Velocidad variable
           const increment = (phase < 3) 
             ? Math.random() * 2 + 0.5  // Más lento al inicio
             : Math.random() * 3 + 1;   // Más rápido al final
@@ -62,6 +72,7 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
         });
       }, 100);
       
+      // Avanzar por fases
       const advancePhase = (currentPhase = 0) => {
         if (currentPhase < phases.length) {
           phaseTimer = setTimeout(() => {
@@ -77,6 +88,7 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
       setPhase(phases.length - 1);
       setShowCompletionEffects(true);
       
+      // Limpiar partículas después de completar
       setTimeout(() => {
         setParticles([]);
       }, 500);
@@ -91,18 +103,22 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
     };
   }, [isOpen, status, phases.length]);
   
+  // Funciones de utilidad
   const getRandomColor = () => {
     const colors = ['#4285F4', '#00C2FF', '#34A853', '#FBBC05', '#EA4335', '#8E44AD', '#2E86C1'];
     return colors[Math.floor(Math.random() * colors.length)];
   };
   
+  // Renderizado condicional - no renderizar si no está abierto
   if (!isOpen) return null;
   
+  // Determinar la clase CSS para el contenedor según el estado
   const containerClass = `premium-email-overlay ${status === 'success' ? 'success-mode' : ''}`;
   
   return (
     <div className={containerClass}>
       <div className="premium-email-modal">
+        {/* Efectos de fondo */}
         <div className="background-effects">
           <div className="gradient-bg"></div>
           <div className="grid-lines"></div>
@@ -127,6 +143,7 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
           )}
         </div>
         
+        {/* Contenido principal */}
         <div className="content-container">
           {status === 'loading' ? (
             <>
@@ -253,7 +270,9 @@ const PremiumEmailAnimation = ({ isOpen, status, message, email }) => {
   );
 };
 
+// Funciones de utilidad
 const getSegmentColor = (index) => {
+  // Gradiente de azul a verde
   const colors = [
     '#00C2FF', '#00B4F0', '#00A6E0', 
     '#0098D1', '#008AC2', '#007CB3', 

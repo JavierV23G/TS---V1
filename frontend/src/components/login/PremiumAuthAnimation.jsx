@@ -9,6 +9,7 @@ const PremiumAuthAnimation = ({ isOpen, status, message, onClose, username }) =>
   const matrixRef = useRef(null);
   const containerRef = useRef(null);
   
+  // Fases del proceso de autenticación
   const phases = [
     { text: 'Verificando credenciales...', duration: 1000 },
     { text: 'Autenticando sesión...', duration: 1200 },
@@ -17,33 +18,42 @@ const PremiumAuthAnimation = ({ isOpen, status, message, onClose, username }) =>
     { text: 'Configurando acceso...', duration: 900 }
   ];
   
+  // Efecto para la matriz de datos (efecto "Matrix")
   useEffect(() => {
     if (isOpen && status === 'loading' && phase >= 1 && dataMatrixEffect && matrixRef.current) {
       const ctx = matrixRef.current.getContext('2d');
       if (!ctx) return;
       
+      // Configurar canvas
       const width = matrixRef.current.width = matrixRef.current.offsetWidth;
       const height = matrixRef.current.height = matrixRef.current.offsetHeight;
       
+      // Caracteres para la lluvia de datos
       const characters = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
       const fontSize = 14;
       const columns = Math.floor(width / fontSize);
       const drops = Array(columns).fill(1);
       
+      // Color de fondo
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.fillRect(0, 0, width, height);
       
       const matrixRain = () => {
+        // Crear efecto de transparencia
         ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
         ctx.fillRect(0, 0, width, height);
         
+        // Caracteres verdes
         ctx.fillStyle = "#0f0";
         ctx.font = `${fontSize}px monospace`;
         
+        // Ciclo por cada columna
         for (let i = 0; i < drops.length; i++) {
+          // Carácter aleatorio
           const text = characters[Math.floor(Math.random() * characters.length)];
           ctx.fillText(text, i * fontSize, drops[i] * fontSize);
           
+          // Reiniciar o mover hacia abajo
           if (drops[i] * fontSize > height && Math.random() > 0.975) {
             drops[i] = 0;
           }
@@ -51,35 +61,43 @@ const PremiumAuthAnimation = ({ isOpen, status, message, onClose, username }) =>
         }
       };
       
+      // Animar
       const matrixInterval = setInterval(matrixRain, 80);
       return () => clearInterval(matrixInterval);
     }
   }, [isOpen, status, phase, dataMatrixEffect]);
   
+  // Efecto principal de animación
   useEffect(() => {
     let progressTimer;
     let phaseTimer;
     
     if (isOpen && status === 'loading') {
+      // Resetear estados
       setProgress(0);
       setPhase(0);
       setSecurityScan(false);
       setDataMatrixEffect(false);
       setShowCompletionEffects(false);
       
+      // Activar efecto de matriz de datos después de un momento
       setTimeout(() => {
         setDataMatrixEffect(true);
       }, 1000);
       
+      // Iniciar animación de progreso
       progressTimer = setInterval(() => {
         setProgress(prev => {
+          // Avance dinámico según la fase
           const phaseProgress = phase / phases.length;
           const targetProgress = Math.min(phaseProgress * 100 + 15, 95);
           
+          // Velocidad variable
           const increment = (phase < 3) 
-            ? Math.random() * 2 + 0.5
-            : Math.random() * 3 + 1;
+            ? Math.random() * 2 + 0.5  // Más lento al inicio
+            : Math.random() * 3 + 1;   // Más rápido al final
           
+          // Activar escaneo de seguridad cerca del 50%
           if (prev < 45 && prev + increment >= 45) {
             setSecurityScan(true);
             setTimeout(() => {

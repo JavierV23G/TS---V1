@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/TransfersFunctionalSection.scss';
+import '../../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/sections/TransfersFunctionalSection.scss';
 
 const TransfersFunctionalSection = ({ data, onChange, sectionId, config }) => {
   const handleChange = (field, value) => {

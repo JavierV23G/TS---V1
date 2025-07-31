@@ -1,9 +1,12 @@
+// components/geo/GeoRestrictionProvider.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import GeolocationService from './GeolocationService';
 import GeoRestrictionModal from './GeoRestrictionModal';
 
+// Crear contexto
 const GeoRestrictionContext = createContext();
 
+// Hook personalizado para usar el contexto
 export const useGeoRestriction = () => useContext(GeoRestrictionContext);
 
 export const GeoRestrictionProvider = ({ children }) => {
@@ -14,11 +17,13 @@ export const GeoRestrictionProvider = ({ children }) => {
     error: null
   });
   
+  // Modal state
   const [modalState, setModalState] = useState({
     isOpen: false,
     locationData: null
   });
   
+  // Verificar geolocalización
   const checkGeolocation = async () => {
     try {
       setGeoState(prev => ({
@@ -27,8 +32,10 @@ export const GeoRestrictionProvider = ({ children }) => {
         error: null
       }));
       
+      // Verificar ubicación
       const geoResult = await GeolocationService.verifyLocationAccess();
       
+      // Actualizar estado
       setGeoState({
         isRestricted: !geoResult.allowed,
         isChecking: false,
@@ -36,17 +43,22 @@ export const GeoRestrictionProvider = ({ children }) => {
         error: null
       });
       
+      // Si está restringido, mostrar modal
       if (!geoResult.allowed) {
         setModalState({
           isOpen: true,
           locationData: geoResult.location
         });
         
+        // Opcional: redirigir o mostrar página específica
+        // window.location.href = '/geo-restricted';
       }
       
       return geoResult;
     } catch (error) {
+      console.error('Error checking geolocation:', error);
       
+      // Actualizar estado con error
       setGeoState({
         isRestricted: true, // Por precaución, restringir en caso de error
         isChecking: false,
@@ -54,6 +66,7 @@ export const GeoRestrictionProvider = ({ children }) => {
         error: error.message
       });
       
+      // Mostrar modal de error
       setModalState({
         isOpen: true,
         locationData: null,
@@ -68,14 +81,17 @@ export const GeoRestrictionProvider = ({ children }) => {
     }
   };
   
+  // Verificar geolocalización al cargar
   useEffect(() => {
     checkGeolocation();
   }, []);
   
+  // Manejar reintento
   const handleRetry = () => {
     checkGeolocation();
   };
   
+  // Manejar cierre
   const handleClose = () => {
     setModalState(prev => ({
       ...prev,

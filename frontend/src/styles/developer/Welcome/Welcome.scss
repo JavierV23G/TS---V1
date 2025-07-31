@@ -1343,46 +1343,43 @@
     }
   }
   
-  // Enhanced main content with better responsive layout and compact design
+  // Enhanced main content with better responsive layout
   .main-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    min-height: calc(100vh - 140px);
-    padding: 2rem 2rem 1rem 2rem;
-    padding-top: 3rem;
+    justify-content: center;
+    height: calc(100vh - 80px);
+    padding: 0 2rem;
     
     @media (max-width: 992px) {
+      height: auto;
       min-height: calc(100vh - 120px);
-      padding: 2rem 1.5rem 1rem 1.5rem;
-      padding-top: 2.5rem;
+      padding: 3rem 1.5rem;
     }
     
     @media (max-width: 768px) {
-      padding: 1.5rem 1rem 1rem 1rem;
-      padding-top: 2rem;
+      padding: 2rem 1rem;
+      margin-top: 1rem;
     }
     
     @media (max-width: 576px) {
-      padding: 1rem 0.75rem 0.5rem 0.75rem;
-      padding-top: 1.5rem;
+      padding: 1.5rem 0.75rem;
+      overflow-y: auto;
     }
     
     // Enhanced welcome container with better responsive typography
     .welcome-container {
       text-align: center;
-      max-width: 700px;
-      margin-bottom: 1.5rem;
+      max-width: 800px;
       
       @media (max-width: 768px) {
         max-width: 100%;
-        margin-bottom: 1rem;
       }
       
       .welcome-title {
-        font-size: 3.5rem;
-        margin-bottom: 1.2rem;
+        font-size: 4.5rem;
+        margin-bottom: 1.8rem;
         font-weight: 700;
         line-height: 1.1;
         letter-spacing: -0.02em;
@@ -1395,22 +1392,22 @@
         position: relative;
         
         @media (max-width: 992px) {
-          font-size: 3rem;
-          margin-bottom: 1rem;
+          font-size: 3.5rem;
+          margin-bottom: 1.5rem;
         }
         
         @media (max-width: 768px) {
-          font-size: 2.5rem;
-          margin-bottom: 0.8rem;
+          font-size: 3rem;
+          margin-bottom: 1.2rem;
         }
         
         @media (max-width: 576px) {
-          font-size: 2rem;
-          margin-bottom: 0.6rem;
+          font-size: 2.5rem;
+          margin-bottom: 1rem;
         }
         
         @media (max-width: 375px) {
-          font-size: 1.8rem;
+          font-size: 2rem;
         }
 
         .highlight {
@@ -1445,19 +1442,19 @@
       }
       
       .welcome-subtitle {
-        font-size: 1.3rem;
-        margin-bottom: 1.5rem;
+        font-size: 1.6rem;
+        margin-bottom: 2.5rem;
         animation: subtitleFadeIn 1s ease 0.5s backwards;
         position: relative;
         
         @media (max-width: 992px) {
-          font-size: 1.2rem;
-          margin-bottom: 1.2rem;
+          font-size: 1.4rem;
+          margin-bottom: 2rem;
         }
         
         @media (max-width: 768px) {
-          font-size: 1.1rem;
-          margin-bottom: 1rem;
+          font-size: 1.2rem;
+          margin-bottom: 1.8rem;
         }
         
         @media (max-width: 576px) {

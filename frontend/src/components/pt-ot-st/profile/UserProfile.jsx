@@ -1,2088 +1,1456 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../login/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../../../styles/developer/Profile/UserProfile.scss';
 
-const DevUserProfile = () => {
-  const { currentUser, updateUser } = useAuth();
-  const navigate = useNavigate();
-  
-  // Estados de animación de carga clínica
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingPhase, setLoadingPhase] = useState(0);
-  const [showContent, setShowContent] = useState(false);
-  
-  // Estados del perfil
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
+const TPUserProfile = () => {
+  // User data state
+  const [userData, setUserData] = useState({
+    name: 'Luis Nava',
+    avatar: 'LN',
+    email: 'luis.nava@therapysync.com',
+    phone: '+58 424 280 0884',
+    role: 'Developer',
+    createdAt: '2023-07-15',
+    status: 'online',
+    address: '123 Tech Avenue, San Francisco, CA',
+    specialization: 'Frontend Development',
+    languages: ['English', 'Spanish'],
+    timezone: 'UTC-5 (Eastern Time)',
+    lastActive: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString() // 13 hours ago
+  });
+
+  // States for animations and interactions
   const [activeSection, setActiveSection] = useState('personal');
-  const [profileImage, setProfileImage] = useState(null);
-  const [isImageUploading, setIsImageUploading] = useState(false);
-  
-  // Estados de datos
-  const [locationInfo, setLocationInfo] = useState(null);
-  const [hostAgency, setHostAgency] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [activityStats, setActivityStats] = useState({});
-  const [userProfile, setUserProfile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  
-  // Datos del formulario para edición
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    alt_phone: '',
-    address: '',
-    postal_code: '',
-    birthday: '',
-    gender: '',
-    username: '',
-    fax: '',
-    branches: [],
-    newPassword: '',
-    confirmPassword: '',
-    currentPassword: ''
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({...userData});
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [loadingState, setLoadingState] = useState({
+    saving: false,
+    loading: true,
+    verifyingEmail: false,
+    verifyingSms: false
   });
   
-  // Errores de validación del formulario
-  const [errors, setErrors] = useState({});
+  // State for security verification
+  const [securityState, setSecurityState] = useState({
+    emailVerified: true,
+    smsVerified: false,
+    twoFactorEnabled: true,
+    lastPasswordChange: '2025-02-10',
+    securityLevel: 'high',
+    activeSessions: 1,
+    recentActivity: [
+      { action: 'Login', device: 'Chrome on Windows', location: 'San Francisco, CA', time: '09:12 AM' },
+      { action: 'Password Change', device: 'Chrome on Windows', location: 'San Francisco, CA', time: 'Feb 10, 11:45 AM' },
+      { action: 'Login', device: 'Mobile App on iPhone', location: 'San Francisco, CA', time: 'Feb 05, 08:30 AM' }
+    ]
+  });
   
-  // Función para obtener el rol base y generar la ruta correcta
-  const getRoleRoute = () => {
-    if (!currentUser?.role) return 'developer';
-    const role = currentUser.role.toLowerCase();
-    
-    const roleMapping = {
-      'developer': 'developer',
-      'administrator': 'admin', 
-      'agency': 'agency',
-      'pt': 'pt',
-      'pta': 'pta',
-      'ot': 'ot',
-      'cota': 'cota',
-      'st': 'st',
-      'sta': 'sta'
-    };
-    
-    return roleMapping[role] || 'developer';
-  };
-
-  // Función para construir parámetros de consulta para API
-  const buildQueryParams = (params) =>
-    Object.entries(params)
-      .filter(([, value]) => value !== null && value !== undefined && value !== '')
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&');
-
-  // Función para convertir el rol del backend al frontend
-  const convertRoleFromBackend = (role) => {
-    const roleMapping = {
-      'Developer': 'developer',
-      'Administrator': 'administrator', 
-      'Agency': 'agency',
-      'PT': 'pt',
-      'PTA': 'pta',
-      'OT': 'ot',
-      'COTA': 'cota',
-      'ST': 'st',
-      'STA': 'sta'
-    };
-    
-    return roleMapping[role] || role.toLowerCase();
-  };
-
-  // Función para convertir el rol del frontend al backend
-  const convertRoleToBackend = (role) => {
-    const roleMapping = {
-      'developer': 'Developer',
-      'administrator': 'Administrator',
-      'agency': 'Agency', 
-      'pt': 'PT',
-      'pta': 'PTA',
-      'ot': 'OT',
-      'cota': 'COTA',
-      'st': 'ST',
-      'sta': 'STA'
-    };
-    
-    return roleMapping[role] || role;
-  };
-
-  // Función para formatear fecha sin problemas de timezone
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString + 'T00:00:00');
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '';
-    }
-  };
-
-  // Función para formatear fecha para mostrar
-  const formatDateForDisplay = (dateString) => {
-    if (!dateString) return 'Not specified';
-    
-    try {
-      const date = new Date(dateString + 'T00:00:00');
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      console.error('Error formatting date for display:', error);
-      return 'Not specified';
-    }
-  };
-
-  // Función para formatear número de teléfono
-  const formatPhoneNumber = (value) => {
-    if (!value) return '';
-    const phoneNumber = value.replace(/[^\d]/g, '');
-    if (phoneNumber.length >= 6) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
-    } else if (phoneNumber.length >= 3) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    return phoneNumber.length > 0 ? `(${phoneNumber}` : '';
-  };
-
-  // Función para navegar hacia atrás
-  const handleGoBack = () => {
-    const roleRoute = getRoleRoute();
-    navigate(`/${roleRoute}/homePage`);
-  };
-
-  // Animación de carga clínica elegante
+  // State for UI effects
+  const [animationState, setAnimationState] = useState({
+    avatarPulse: false,
+    cardHover: null,
+    hasInteracted: false,
+    showParticles: true,
+    notificationsBadge: 3,
+    activeGlow: true,
+    backgroundAnimating: true
+  });
+  
+  // Refs for animations
+  const profileCardRef = useRef(null);
+  const securityCardRef = useRef(null);
+  const preferencesCardRef = useRef(null);
+  const avatarRef = useRef(null);
+  const particlesRef = useRef([]);
+  const backgroundParticlesRef = useRef([]);
+  const waveformRef = useRef();
+  const containerRef = useRef();
+  
+  // Simulate loading on mount with premium animation sequence
   useEffect(() => {
-    const loadingSequence = async () => {
-      // Fase 1: Inicialización del sistema
-      await new Promise(resolve => setTimeout(resolve, 400));
-      setLoadingPhase(1);
-      
-      // Fase 2: Cargando información médica
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setLoadingPhase(2);
-      
-      // Fase 3: Preparando interfaz clínica
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLoadingPhase(3);
-      
-      // Fase 4: Completado
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setIsLoading(false);
-      
-      // Mostrar contenido con animación
-      setTimeout(() => setShowContent(true), 100);
-    };
+    // Staggered animation loading sequence
+    setTimeout(() => {
+      setLoadingState(prev => ({...prev, loading: false}));
+    }, 1200);
+
+    // Generate random particles
+    generateParticles();
+    generateBackgroundParticles();
     
-    loadingSequence();
+    // Start avatar pulse effect
+    const pulseInterval = setInterval(() => {
+      setAnimationState(prev => ({...prev, avatarPulse: !prev.avatarPulse}));
+    }, 5000);
+    
+    // Generate animated waveform effect
+    generateWaveform();
+    
+    
+    return () => clearInterval(pulseInterval);
   }, []);
-
-  // Función para obtener el perfil del usuario desde la API
-  const fetchUserProfile = async (userId) => {
-    try {
-      const response = await fetch(`http://localhost:8000/staff/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error fetching user profile');
+  
+  // Generate animated waveform effect
+  const generateWaveform = () => {
+    if (!waveformRef.current) {
+      waveformRef.current = [];
+      
+      for (let i = 0; i < 3; i++) {
+        waveformRef.current.push({
+          amplitude: 25 + Math.random() * 15,
+          frequency: 0.005 + Math.random() * 0.005,
+          speed: 0.1 + Math.random() * 0.1,
+          phase: Math.random() * Math.PI * 2,
+          opacity: 0.05 + Math.random() * 0.05
+        });
       }
-
-      const allStaff = await response.json();
-      const userData = allStaff.find(staff => staff.id === parseInt(userId));
-      
-      if (!userData) {
-        throw new Error('User not found in database');
-      }
-
-      const [firstName, ...rest] = userData.name?.split(' ') || [''];
-      const lastName = rest.join(' ');
-      
-      const branches = userData.branches ? 
-        (typeof userData.branches === 'string' ? JSON.parse(userData.branches) : userData.branches) : 
-        [];
-      
-      const documents = userData.documents ? 
-        (typeof userData.documents === 'string' ? JSON.parse(userData.documents) : userData.documents) : 
-        {};
-
-      const processedProfile = {
-        id: userData.id,
-        firstName: firstName || '',
-        lastName: lastName || '', 
-        name: userData.name || '',
-        email: userData.email || '',
-        phone: userData.phone || '',
-        alt_phone: userData.alt_phone || '',
-        address: userData.address || '',
-        postal_code: userData.postal_code || '',
-        birthday: userData.birthday || '',
-        gender: userData.gender || '',
-        username: userData.username || '',
-        role: userData.role || '',
-        fax: userData.fax || '',
-        branches: branches,
-        documents: documents,
-        is_active: userData.is_active,
-        created_at: userData.created_at,
-        agency_id: userData.agency_id || null
-      };
-
-      setUserProfile(processedProfile);
-
-      setFormData({
-        name: processedProfile.name,
-        email: processedProfile.email,
-        phone: formatPhoneNumber(processedProfile.phone),
-        alt_phone: formatPhoneNumber(processedProfile.alt_phone),
-        address: processedProfile.address,
-        postal_code: processedProfile.postal_code,
-        birthday: formatDateForInput(processedProfile.birthday),
-        gender: processedProfile.gender,
-        username: processedProfile.username,
-        fax: processedProfile.fax,
-        branches: processedProfile.branches,
-        newPassword: '',
-        confirmPassword: '',
-        currentPassword: ''
-      });
-
-      return processedProfile;
-
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      showNotification(`Error loading profile data: ${error.message}`, 'error');
-      return null;
     }
   };
-
-  // Inicializar datos del perfil
-  useEffect(() => {
-    const initializeProfile = async () => {
-      if (!currentUser || isLoading) return;
-
-      try {
-        const profileData = await fetchUserProfile(currentUser.id);
-        
-        if (!profileData) return;
-
-        const promises = [];
-        
-        // Obtener ubicación si existe código postal
-        if (profileData.postal_code) {
-          promises.push(fetchLocationFromZip(profileData.postal_code));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
-        
-        // Obtener agencia host para terapeutas
-        if (profileData.agency_id && ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA', 'Administrator'].includes(profileData.role)) {
-          promises.push(fetchHostAgency(profileData.agency_id));
-        } else {
-          promises.push(Promise.resolve(null));
-        }
-        
-        // Obtener documentos para desarrolladores/administradores
-        if (['Developer', 'Administrator'].includes(profileData.role)) {
-          promises.push(fetchUserDocuments(profileData.id));
-        } else {
-          promises.push(Promise.resolve([]));
-        }
-
-        // Obtener estadísticas de actividad
-        promises.push(fetchActivityStats(profileData.id));
-
-        const [locationResult, agencyResult, documentsResult, statsResult] = await Promise.all(promises);
-        
-        setLocationInfo(locationResult);
-        setHostAgency(agencyResult);
-        setDocuments(documentsResult);
-        setActivityStats(statsResult);
-
-      } catch (error) {
-        console.error('Error initializing profile:', error);
-        showNotification('Error loading profile data. Please try again.', 'error');
-      }
-    };
-
-    initializeProfile();
-  }, [currentUser, isLoading]);
-
-  // API Function - Zippopotam.us
-  const fetchLocationFromZip = async (zipCode) => {
-    if (!zipCode) return null;
+  
+  // Generate decorative particles
+  const generateParticles = () => {
+    if (particlesRef.current.length > 0) return;
     
-    try {
-      const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        }
+    const colors = ['#36D1DC', '#5B86E5', '#4FC3F7', '#90CAF9', '#42A5F5'];
+    
+    for (let i = 0; i < 15; i++) {
+      particlesRef.current.push({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 5 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        duration: Math.random() * 20 + 10,
+        delay: Math.random() * 5
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data && data.places && data.places.length > 0) {
-          const place = data.places[0];
-          const locationData = {
-            city: place['place name'],
-            state: place['state'],
-            stateAbbr: place['state abbreviation'],
-            fullName: `${place['place name']}, ${place['state abbreviation']}`,
-            coordinates: {
-              lat: parseFloat(place.latitude),
-              lng: parseFloat(place.longitude)
-            }
-          };
-          
-          return locationData;
-        }
-      }
-    } catch (error) {
-      console.error('Location fetch error:', error);
     }
-    
-    return null;
   };
-
-  const fetchHostAgency = async (agencyId) => {
-    if (!agencyId) return null;
+  
+  // Generate background particles
+  const generateBackgroundParticles = () => {
+    if (backgroundParticlesRef.current.length > 0) return;
     
-    try {
-      const response = await fetch(`http://localhost:8000/staff/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+    const colors = [
+      'rgba(54, 209, 220, 0.3)', 
+      'rgba(91, 134, 229, 0.3)', 
+      'rgba(79, 195, 247, 0.3)',
+      'rgba(144, 202, 249, 0.3)',
+      'rgba(66, 165, 245, 0.3)'
+    ];
+    
+    for (let i = 0; i < 50; i++) {
+      backgroundParticlesRef.current.push({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 3 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speed: Math.random() * 50 + 20,
+        delay: Math.random() * 5
       });
-      
-      if (response.ok) {
-        const allStaff = await response.json();
-        const agency = allStaff.find(staff => staff.id === parseInt(agencyId) && staff.role === 'Agency');
-        
-        if (agency) {
-          return {
-            id: agency.id,
-            name: agency.name,
-            address: agency.address,
-            phone: agency.phone
-          };
-        }
-      }
-    } catch (error) {
-      console.error('Agency fetch error:', error);
     }
-    
-    return null;
   };
-
-  const fetchUserDocuments = async (userId) => {
-    if (!['Developer', 'Administrator'].includes(userProfile?.role)) return [];
-    
-    try {
-      const response = await fetch(`http://localhost:8000/documents/user/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      if (response.ok) {
-        const docs = await response.json();
-        return docs;
-      }
-    } catch (error) {
-      console.error('Documents fetch error:', error);
-    }
-    
-    return [];
-  };
-
-  const fetchActivityStats = async (userId) => {
-    try {
-      const response = await fetch(`http://localhost:8000/users/${userId}/activity-stats`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      if (response.ok) {
-        const stats = await response.json();
-        return stats;
-      }
-    } catch (error) {
-      console.error('Activity stats fetch error:', error);
-    }
-    
-    return {
-      totalSessions: 342,
-      patientsHelped: 127,
-      codeCommits: 247,
-      issuesResolved: 43,
-      usersManaged: 156,
-      tasksCompleted: 89,
-      patientsServed: 1247,
-      therapists: 34,
-      daysActive: Math.floor((new Date() - new Date(userProfile?.created_at || new Date())) / (1000 * 60 * 60 * 24)),
-      lastLogin: 'Hoy'
-    };
-  };
-
-  // Manejar cambios en los campos del formulario
-  const handleInputChange = (e) => {
+  
+  // Handle form field change
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    let formattedValue = value;
+    setEditData(prev => ({...prev, [name]: value}));
     
-    // Formatear teléfono automáticamente
-    if (name === 'phone' || name === 'alt_phone') {
-      formattedValue = formatPhoneNumber(value);
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: formattedValue
-    }));
-    
-    // Limpiar error cuando se edita el campo
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
+    // Clear error when field is edited
+    if (formErrors[name]) {
+      setFormErrors(prev => {
+        const newErrors = {...prev};
         delete newErrors[name];
         return newErrors;
       });
     }
   };
-
-  // Validar datos del formulario
+  
+  // Validate form before saving
   const validateForm = () => {
-    const newErrors = {};
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\+?[0-9\s\(\)\-]{10,15}$/;
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
+    if (!editData.name.trim()) errors.name = "Name is required";
+    if (!emailRegex.test(editData.email)) errors.email = "Valid email is required";
+    if (!phoneRegex.test(editData.phone)) errors.phone = "Valid phone number is required";
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    }
-    
-    if (formData.phone && formData.phone.replace(/\D/g, '').length < 10) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    // Validación de contraseña
-    if (showPasswordChange) {
-      if (!formData.currentPassword) {
-        newErrors.currentPassword = 'Current password is required';
-      }
-      
-      if (!formData.newPassword) {
-        newErrors.newPassword = 'New password is required';
-      } else if (formData.newPassword.length < 8) {
-        newErrors.newPassword = 'Password must be at least 8 characters';
-      }
-      
-      if (formData.newPassword !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
-
-  // Manejar guardado de cambios
-  const handleSave = async () => {
+  
+  // Handle save changes
+  const handleSave = () => {
     if (!validateForm()) return;
     
-    setIsSaving(true);
+    setLoadingState(prev => ({...prev, saving: true}));
     
-    try {
-      const updateData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone.replace(/\D/g, ''),
-        alt_phone: formData.alt_phone.replace(/\D/g, ''),
-        address: formData.address,
-        postal_code: formData.postal_code,
-        birthday: formData.birthday,
-        gender: formData.gender,
-        username: formData.username,
-        role: convertRoleToBackend(userProfile.role),
-        is_active: userProfile.is_active,
-        fax: formData.fax
-      };
-      
-      if (showPasswordChange && formData.newPassword) {
-        updateData.password = formData.newPassword;
-      }
-      
-      if (userProfile?.role === 'Agency' && formData.branches) {
-        updateData.branches = JSON.stringify(formData.branches);
-      }
-      
-      if (userProfile?.agency_id) {
-        updateData.agency_id = userProfile.agency_id;
-      }
-      
-      const queryString = buildQueryParams(updateData);
-      
-      const response = await fetch(`http://localhost:8000/staff/${userProfile.id}?${queryString}`, {
-        method: 'PUT'
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        const readable = error?.detail || 'Error updating profile';
-        throw new Error(readable);
-      }
-      
-      const data = await response.json();
-      
-      const updatedProfile = {
-        ...userProfile,
-        ...updateData,
-        branches: formData.branches
-      };
-      setUserProfile(updatedProfile);
-      
-      if (updateUser) {
-        updateUser(updatedProfile);
-      }
-      
+    // Simulate API call
+    setTimeout(() => {
+      setUserData({...editData});
       setIsEditing(false);
-      setShowPasswordChange(false);
-      setShowSuccessMessage(true);
+      setLoadingState(prev => ({...prev, saving: false}));
       
-      setFormData(prev => ({
-        ...prev,
-        newPassword: '',
-        confirmPassword: '',
-        currentPassword: ''
-      }));
-      
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 4000);
-      
-      // Actualizar información de ubicación si cambió el código postal
-      if (formData.postal_code !== userProfile.postal_code) {
-        const newLocationInfo = await fetchLocationFromZip(formData.postal_code);
-        setLocationInfo(newLocationInfo);
-      }
-      
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      showNotification(`Error saving profile: ${error.message}`, 'error');
-    } finally {
-      setIsSaving(false);
-    }
+      // Show success indicator
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }, 1500);
   };
-
-  // Manejar cancelación de edición
+  
+  // Handle cancel edit
   const handleCancel = () => {
-    if (!userProfile) return;
-    
-    setFormData({
-      name: userProfile.name || '',
-      email: userProfile.email || '',
-      phone: formatPhoneNumber(userProfile.phone || ''),
-      alt_phone: formatPhoneNumber(userProfile.alt_phone || ''),
-      address: userProfile.address || '',
-      postal_code: userProfile.postal_code || '',
-      birthday: formatDateForInput(userProfile.birthday),
-      gender: userProfile.gender || '',
-      username: userProfile.username || '',
-      fax: userProfile.fax || '',
-      branches: userProfile.branches || [],
-      newPassword: '',
-      confirmPassword: '',
-      currentPassword: ''
-    });
-    setErrors({});
+    setEditData({...userData});
     setIsEditing(false);
-    setShowPasswordChange(false);
-  };
-
-  // Acciones rápidas
-  const handleChangePassword = () => {
-    setShowPasswordChange(true);
-    setIsEditing(true);
-    setActiveSection('account');
-  };
-
-  const handleSystemSettings = () => {
-    const roleRoute = getRoleRoute();
-    navigate(`/${roleRoute}/settings`);
-  };
-
-  const handleViewReports = () => {
-    const roleRoute = getRoleRoute();
-    navigate(`/${roleRoute}/reports`);
-  };
-
-  const handleAddTherapist = () => {
-    const roleRoute = getRoleRoute();
-    navigate(`/${roleRoute}/add-therapist`);
-  };
-
-  // Gestión de sucursales
-  const addBranch = () => {
-    setFormData(prev => ({
-      ...prev,
-      branches: [...prev.branches, { name: '', address: '', phone: '' }]
-    }));
-  };
-
-  const removeBranch = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      branches: prev.branches.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateBranch = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      branches: prev.branches.map((branch, i) => 
-        i === index ? { ...branch, [field]: value } : branch
-      )
-    }));
-  };
-
-  // Manejador de carga de foto de perfil
-  const handleProfileImageUpload = async (file) => {
-    if (!file) return;
-    
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      showNotification('Please select a valid image file.', 'error');
-      return;
-    }
-    
-    // Validar tamaño (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showNotification('Image size must be less than 5MB.', 'error');
-      return;
-    }
-    
-    setIsImageUploading(true);
-    
-    try {
-      // Crear preview local
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-      
-      // Aquí iría la lógica para subir al servidor
-      // Por ahora solo mostramos el preview local
-      
-      showNotification('Profile image updated successfully!', 'success');
-    } catch (error) {
-      console.error('Error uploading profile image:', error);
-      showNotification('Error uploading image. Please try again.', 'error');
-    } finally {
-      setIsImageUploading(false);
-    }
+    setFormErrors({});
   };
   
-  // Manejador de carga de documentos
-  const handleDocumentUpload = async (file) => {
-    if (!file) {
-      showNotification('Please select a file to upload.', 'error');
-      return;
-    }
-
-    // Validar tamaño del archivo (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      showNotification('File size must be less than 10MB.', 'error');
-      return;
-    }
-
-    // Validar tipo de archivo
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/jpg',
-      'image/png'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      showNotification('Please upload a valid file (PDF, DOC, DOCX, JPG, PNG).', 'error');
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      formDataUpload.append('user_id', userProfile.id.toString());
-      formDataUpload.append('document_type', 'profile_document');
-
-      const response = await fetch(`http://localhost:8000/documents/upload`, {
-        method: 'POST',
-        body: formDataUpload
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Upload error: ${response.status} - ${errorData}`);
-      }
-
-      const result = await response.json();
-
-      // Crear objeto de documento para el estado local
-      const newDocument = {
-        id: result.id || Date.now(),
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        upload_date: new Date().toISOString(),
-        status: 'uploaded',
-        url: result.url || '#'
-      };
-
-      // Actualizar estado local
-      setDocuments(prev => [...prev, newDocument]);
-      showNotification('Document uploaded successfully!', 'success');
-
-    } catch (error) {
-      console.error('Document upload error:', error);
-      showNotification(`Upload error: ${error.message}`, 'error');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // Funciones para animación de tabs
-  const getTabPosition = () => {
-    const sections = ['personal', 'account'];
-    if (userProfile?.role === 'Agency') sections.push('branches');
-    if (['Developer', 'Administrator'].includes(userProfile?.role)) sections.push('documents');
-    
-    const index = sections.indexOf(activeSection);
-    return index * 200; // 200px por tab
+  // Handle section change with animation
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    setAnimationState(prev => ({...prev, hasInteracted: true}));
   };
   
-  const getTabWidth = () => {
-    return 180; // Ancho fijo de cada tab
+  // Handle card hover animation
+  const handleCardHover = (card) => {
+    setAnimationState(prev => ({...prev, cardHover: card}));
   };
   
-  // Funciones de utilidad
-  const showNotification = (message, type = 'success') => {
-    const notification = document.createElement('div');
-    notification.className = `clinical-notification ${type}`;
-    notification.innerHTML = `
-      <div class="notification-content">
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(notification);
+  // Send verification email
+  const handleVerifyEmail = () => {
+    setLoadingState(prev => ({...prev, verifyingEmail: true}));
     
+    // Simulate API call
     setTimeout(() => {
-      notification.classList.add('show');
-    }, 100);
+      setLoadingState(prev => ({...prev, verifyingEmail: false}));
+      // Success notification would go here
+    }, 1500);
+  };
+  
+  // Send verification SMS
+  const handleVerifySMS = () => {
+    setLoadingState(prev => ({...prev, verifyingSms: true}));
     
+    // Simulate API call
     setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }, 4000);
+      setLoadingState(prev => ({...prev, verifyingSms: false}));
+      setSecurityState(prev => ({...prev, smsVerified: true}));
+    }, 1500);
+  };
+  
+  // Toggle two-factor authentication
+  const handleToggleTwoFactor = () => {
+    setSecurityState(prev => ({
+      ...prev, 
+      twoFactorEnabled: !prev.twoFactorEnabled
+    }));
   };
 
-  const getAvatarInitials = () => {
-    if (!userProfile) return 'TS';
+  // Format date for display
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+  
+  // Calculate time since last active
+  const getTimeAgo = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now - date) / 1000);
     
-    if (userProfile.role === 'Agency') {
-      const words = (formData.name || userProfile.name || 'Agency').split(' ');
-      return words.slice(0, 2).map(word => word[0]).join('').toUpperCase();
-    }
+    if (seconds < 60) return 'Just now';
     
-    const name = formData.name || userProfile.name || 'User Name';
-    const firstName = name.split(' ')[0] || 'User';
-    const lastName = name.split(' ')[1] || '';
-    return `${firstName[0]}${lastName[0] || firstName[1] || ''}`.toUpperCase();
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+    
+    const months = Math.floor(days / 30);
+    return `${months} month${months > 1 ? 's' : ''} ago`;
   };
 
-  const getRoleInfo = () => {
-    if (!userProfile) return { name: 'Team Member', icon: 'fa-user', color: '#1565C0' };
-    
-    const roleMap = {
-      'Developer': { name: 'Developer', icon: 'fa-laptop-code', color: '#37474F' },
-      'Administrator': { name: 'Administrator', icon: 'fa-user-shield', color: '#7C4DFF' },
-      'Agency': { name: 'Health Agency', icon: 'fa-hospital-alt', color: '#FFC107' },
-      'PT': { name: 'Physical Therapist', icon: 'fa-user-md', color: '#00C851' },
-      'PTA': { name: 'Physical Therapist Assistant', icon: 'fa-user-nurse', color: '#00C851' },
-      'OT': { name: 'Occupational Therapist', icon: 'fa-hand-holding-medical', color: '#FF9500' },
-      'COTA': { name: 'Occupational Therapy Assistant', icon: 'fa-hand-holding', color: '#FF9500' },
-      'ST': { name: 'Speech Therapist', icon: 'fa-comment-medical', color: '#2979FF' },
-      'STA': { name: 'Speech Therapy Assistant', icon: 'fa-comment-dots', color: '#2979FF' }
-    };
-    
-    return roleMap[userProfile?.role] || { name: 'Team Member', icon: 'fa-user', color: '#1565C0' };
+  // Toggle particles effect
+  const toggleParticles = () => {
+    setAnimationState(prev => ({
+      ...prev,
+      showParticles: !prev.showParticles,
+      backgroundAnimating: !prev.backgroundAnimating
+    }));
   };
 
-  const getFormattedAddress = () => {
-    if (isEditing && formData.address) return formData.address;
-    if (userProfile?.address) return userProfile.address;
-    if (locationInfo) return locationInfo.fullName;
-    if (userProfile?.postal_code) return `Area ${userProfile.postal_code}`;
-    return 'Not specified';
-  };
-
-  // Mostrar mensaje si no hay usuario conectado
-  if (!currentUser) {
-    return (
-      <div className="clinical-profile-page">
-        <div className="no-user-message">
-          <i className="fas fa-user-lock"></i>
-          <h2>Please log in to view your profile</h2>
-          <p>You need to be authenticated to access this page</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Renderizar pantalla de carga clínica elegante
-  if (isLoading) {
-    return (
-      <div className="clinical-loading-screen">
-        <div className="loading-backdrop">
-          <div className="medical-cross-pattern"></div>
+  return (
+    <div className="user-profile-container" ref={containerRef}>
+      {/* Premium animated background */}
+      <div className="profile-background">
+        <div className="background-gradient"></div>
+        <div className="background-noise"></div>
+        
+        {/* Animated waveforms */}
+        <div className="background-waveforms">
+          {waveformRef.current && waveformRef.current.map((wave, index) => (
+            <div 
+              key={`wave-${index}`}
+              className="waveform"
+              style={{
+                '--wave-amplitude': `${wave.amplitude}px`,
+                '--wave-frequency': wave.frequency,
+                '--wave-speed': wave.speed,
+                '--wave-phase': wave.phase,
+                '--wave-opacity': wave.opacity,
+                animationPlayState: animationState.backgroundAnimating ? 'running' : 'paused'
+              }}
+            ></div>
+          ))}
         </div>
         
-        <div className="loading-container">
-          <div className="medical-logo">
-            <div className="pulse-ring"></div>
-            <div className="pulse-ring delay-1"></div>
-            <div className="pulse-ring delay-2"></div>
-            <i className="fas fa-user-md"></i>
-          </div>
-          
-          <div className="loading-content">
-            <h1 className="system-title">TherapySync</h1>
-            <p className="system-subtitle">Professional Healthcare Management</p>
-            
-            <div className="progress-container">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${(loadingPhase / 3) * 100}%` }}
-                ></div>
-              </div>
-              
-              <div className="loading-status">
-                {loadingPhase === 0 && (
-                  <span>
-                    <i className="fas fa-shield-alt"></i>
-                    Initializing secure connection...
-                  </span>
-                )}
-                {loadingPhase === 1 && (
-                  <span>
-                    <i className="fas fa-database"></i>
-                    Retrieving medical records...
-                  </span>
-                )}
-                {loadingPhase === 2 && (
-                  <span>
-                    <i className="fas fa-user-check"></i>
-                    Verifying credentials...
-                  </span>
-                )}
-                {loadingPhase === 3 && (
-                  <span>
-                    <i className="fas fa-check-circle"></i>
-                    Loading complete
-                  </span>
-                )}
+        {/* Background particles */}
+        <div className="background-particles">
+          {animationState.showParticles && backgroundParticlesRef.current.map(particle => (
+            <div 
+              key={`bg-particle-${particle.id}`}
+              className="background-particle"
+              style={{
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                width: `${particle.size}px`,
+                height: `${particle.size}px`,
+                backgroundColor: particle.color,
+                animationDuration: `${particle.speed}s`,
+                animationDelay: `${particle.delay}s`,
+                animationPlayState: animationState.backgroundAnimating ? 'running' : 'paused'
+              }}
+            ></div>
+          ))}
+        </div>
+        
+        <div className="background-overlay"></div>
+      </div>
+      
+      {/* Premium decorative foreground particles */}
+      <div className="profile-particles">
+        {animationState.showParticles && particlesRef.current.map(particle => (
+          <div 
+            key={`particle-${particle.id}`}
+            className="profile-particle"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              backgroundColor: particle.color,
+              animation: `floatParticle ${particle.duration}s infinite ${particle.delay}s`,
+              animationPlayState: animationState.backgroundAnimating ? 'running' : 'paused'
+            }}
+          />
+        ))}
+      </div>
+      
+      {loadingState.loading ? (
+        // Premium loading animation
+        <div className="profile-loading">
+          <div className="loading-container">
+            <div className="loading-ring-container">
+              <div className="loading-ring"></div>
+              <div className="loading-ring"></div>
+              <div className="loading-ring"></div>
+            </div>
+            <div className="loading-text">
+              <div className="loading-title">Loading Profile</div>
+              <div className="loading-dots">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  const roleInfo = getRoleInfo();
-
-  return (
-    <div className={`clinical-profile-page ${showContent ? 'show' : ''}`}>
-      {/* Fondo clínico con efectos sutiles */}
-      <div className="clinical-background">
-        <div className="gradient-mesh"></div>
-        <div className="geometric-pattern"></div>
-      </div>
-
-      {/* Mensaje de éxito */}
-      {showSuccessMessage && (
-        <div className="clinical-notification success show">
-          <div className="notification-content">
-            <i className="fas fa-check-circle"></i>
-            <span>Profile updated successfully!</span>
-          </div>
-        </div>
-      )}
-
-      {/* Header Clínico Elegante */}
-      <header className="clinical-header">
-        <div className="header-glass">
-          <div className="header-content">
-            <div className="header-left">
-              <button 
-                className="back-button" 
-                onClick={handleGoBack}
-                title="Back to main page"
-              >
-                <i className="fas fa-arrow-left"></i>
-                <span>Back</span>
-              </button>
-              
-              <div className="header-info">
-                <h1>Professional Profile</h1>
-                <p>Healthcare Information Management System</p>
-              </div>
+      ) : (
+        <>
+          {/* Page header with title and actions */}
+          <div className="profile-header">
+            <div className="header-title">
+              <h1>My Profile</h1>
+              <div className="title-decoration"></div>
             </div>
             
             <div className="header-actions">
-              <div className="user-preview">
-                <div className="preview-avatar">
-                  {profileImage ? (
-                    <img src={profileImage} alt="Profile" />
-                  ) : (
-                    <span>{getAvatarInitials()}</span>
-                  )}
-                </div>
-                <div className="preview-info">
-                  <span className="preview-name">{formData.name || userProfile?.name || 'User Name'}</span>
-                  <span className="preview-role">{getRoleInfo().name}</span>
-                </div>
-              </div>
-              
-              {!isEditing ? (
+              {isEditing ? (
+                <>
+                  <button 
+                    className={`action-button save ${formErrors && Object.keys(formErrors).length > 0 ? 'disabled' : ''}`}
+                    onClick={handleSave}
+                    disabled={loadingState.saving || (formErrors && Object.keys(formErrors).length > 0)}
+                  >
+                    <div className="button-background"></div>
+                    <div className="button-content">
+                      {loadingState.saving ? (
+                        <>
+                          <div className="button-spinner"></div>
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save"></i>
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                  
+                  <button 
+                    className="action-button cancel"
+                    onClick={handleCancel}
+                    disabled={loadingState.saving}
+                  >
+                    <div className="button-content">
+                      <i className="fas fa-times"></i>
+                      <span>Cancel</span>
+                    </div>
+                  </button>
+                </>
+              ) : (
                 <button 
-                  className="edit-profile-btn"
+                  className="action-button edit"
                   onClick={() => setIsEditing(true)}
                 >
-                  <i className="fas fa-edit"></i>
-                  <span>Edit Profile</span>
+                  <div className="button-background"></div>
+                  <div className="button-content">
+                    <i className="fas fa-pencil-alt"></i>
+                    <span>Edit Profile</span>
+                  </div>
                 </button>
-              ) : (
-                <div className="edit-actions">
-                  <button 
-                    className="save-btn"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <i className="fas fa-spinner fa-spin"></i>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-save"></i>
-                        <span>Save Changes</span>
-                      </>
-                    )}
-                  </button>
-                  <button 
-                    className="cancel-btn"
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                  >
-                    <i className="fas fa-times"></i>
-                    <span>Cancel</span>
-                  </button>
-                </div>
               )}
             </div>
           </div>
-        </div>
-      </header>
-
-      {/* Contenedor principal con diseño de 3 columnas */}
-      <div className="profile-container">
-        {/* Columna izquierda - Sidebar con avatar y stats */}
-        <aside className="profile-sidebar">
-          <div className="sidebar-card avatar-card">
-            <div className="avatar-section">
-              <div className="avatar-wrapper">
-                <div className="avatar-glow" style={{ background: `radial-gradient(circle, ${roleInfo.color}20, transparent)` }}></div>
+          
+          {/* Main content grid */}
+          <div className="profile-content">
+            {/* Sidebar with user info and navigation */}
+            <div className="profile-sidebar">
+              {/* User avatar and status */}
+              <div 
+                className={`profile-avatar-container ${animationState.avatarPulse ? 'pulse' : ''}`}
+                ref={avatarRef}
+              >
+                <div className="card-glow"></div>
+                <div className="card-background"></div>
                 
-                <div className="avatar-container">
-                  {profileImage ? (
-                    <img 
-                      src={profileImage} 
-                      alt="Profile" 
-                      className="avatar-image"
-                    />
-                  ) : (
-                    <div className="avatar-main" style={{ background: `linear-gradient(135deg, ${roleInfo.color}CC, ${roleInfo.color})` }}>
-                      <span className="avatar-text">{getAvatarInitials()}</span>
-                    </div>
-                  )}
-                  
-                  <input
-                    type="file"
-                    id="profile-image-upload"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      if (e.target.files[0]) {
-                        handleProfileImageUpload(e.target.files[0]);
-                        e.target.value = '';
-                      }
-                    }}
-                    disabled={isImageUploading}
-                  />
-                  
-                  <button 
-                    className="avatar-upload-btn"
-                    onClick={() => document.getElementById('profile-image-upload').click()}
-                    disabled={isImageUploading}
-                    title="Change profile photo"
-                  >
-                    {isImageUploading ? (
-                      <i className="fas fa-spinner fa-spin"></i>
-                    ) : (
-                      <i className="fas fa-camera"></i>
-                    )}
-                  </button>
-                  
-                  <div className="avatar-status">
-                    <span className="status-dot"></span>
+                <div className="profile-avatar-wrapper">
+                  <div className="avatar-outer-ring"></div>
+                  <div className="avatar-ring"></div>
+                  <div className="profile-avatar">
+                    <span>{userData.avatar}</span>
+                    <div className="avatar-highlight"></div>
+                  </div>
+                  <div className={`avatar-status ${userData.status}`}>
+                    <div className="status-pulse"></div>
                   </div>
                 </div>
                 
-                <div className="role-badge" style={{ background: roleInfo.color }}>
-                  <i className={`fas ${roleInfo.icon}`}></i>
-                </div>
-              </div>
-              
-              <div className="user-basic-info">
-                <h2>{formData.name || userProfile?.name || 'User Name'}</h2>
-                <p className="user-role" style={{ color: roleInfo.color }}>
-                  <i className={`fas ${roleInfo.icon}`}></i>
-                  {roleInfo.name}
-                </p>
-                {hostAgency && (
-                  <div className="host-agency-badge">
-                    <i className="fas fa-building"></i>
-                    <span>{hostAgency.name}</span>
+                <div className="profile-name-container">
+                  <h2 className="profile-name">{userData.name}</h2>
+                  <div className="profile-role">
+                    <span className="role-badge">{userData.role}</span>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Stats rápidos */}
-            <div className="quick-stats">
-              <div className="stat-item">
-                <div className="stat-icon" style={{ background: `${roleInfo.color}15` }}>
-                  <i className="fas fa-calendar-check" style={{ color: roleInfo.color }}></i>
-                </div>
-                <div className="stat-info">
-                  <span className="stat-value">{activityStats.daysActive || 0}</span>
-                  <span className="stat-label">Days Active</span>
-                </div>
-              </div>
-              
-              {userProfile?.role === 'Developer' && (
-                <div className="stat-item">
-                  <div className="stat-icon developer">
-                    <i className="fas fa-code"></i>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-value">{activityStats.codeCommits || 0}</span>
-                    <span className="stat-label">Commits</span>
-                  </div>
-                </div>
-              )}
-              
-              {['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA'].includes(userProfile?.role) && (
-                <div className="stat-item">
-                  <div className="stat-icon therapist">
-                    <i className="fas fa-users"></i>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-value">{activityStats.patientsHelped || 0}</span>
-                    <span className="stat-label">Patients</span>
-                  </div>
-                </div>
-              )}
-              
-              {userProfile?.role === 'Administrator' && (
-                <div className="stat-item">
-                  <div className="stat-icon admin">
-                    <i className="fas fa-users-cog"></i>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-value">{activityStats.usersManaged || 0}</span>
-                    <span className="stat-label">Users</span>
-                  </div>
-                </div>
-              )}
-              
-              {userProfile?.role === 'Agency' && (
-                <div className="stat-item">
-                  <div className="stat-icon agency">
-                    <i className="fas fa-hospital"></i>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-value">{activityStats.patientsServed || 0}</span>
-                    <span className="stat-label">Served</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Acciones rápidas */}
-            {!isEditing && (
-              <div className="quick-actions">
-                <h3>Quick Actions</h3>
-                <div className="actions-list">
-                  <button className="action-item" onClick={handleChangePassword}>
-                    <i className="fas fa-key"></i>
-                    <span>Change Password</span>
-                  </button>
                   
-                  {['Developer', 'Administrator'].includes(userProfile?.role) && (
-                    <button className="action-item" onClick={handleSystemSettings}>
-                      <i className="fas fa-cog"></i>
-                      <span>Settings</span>
-                    </button>
-                  )}
+                  <div className="profile-meta">
+                    <div className="meta-item">
+                      <i className="fas fa-envelope"></i>
+                      <span>{userData.email}</span>
+                    </div>
+                    <div className="meta-item">
+                      <i className="fas fa-phone"></i>
+                      <span>{userData.phone}</span>
+                    </div>
+                    <div className="meta-item">
+                      <i className="fas fa-clock"></i>
+                      <span>Member since {formatDate(userData.createdAt)}</span>
+                    </div>
+                    <div className="meta-item">
+                      <div className={`status-indicator ${userData.status}`}></div>
+                      <span>Last active: {getTimeAgo(userData.lastActive)}</span>
+                    </div>
+                  </div>
                   
-                  {userProfile?.role === 'Agency' && (
-                    <>
-                      <button className="action-item" onClick={handleViewReports}>
-                        <i className="fas fa-chart-bar"></i>
-                        <span>View Reports</span>
-                      </button>
-                      <button className="action-item" onClick={handleAddTherapist}>
-                        <i className="fas fa-user-plus"></i>
-                        <span>Add Therapist</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Columna central - Información principal */}
-        <main className="profile-main">
-          {/* Navegación premium con tabs modernas */}
-          <nav className="premium-section-nav">
-            <div className="nav-background"></div>
-            <div className="tabs-container">
-              <div className="active-tab-indicator" style={{
-                transform: `translateX(${getTabPosition()}px)`,
-                width: `${getTabWidth()}px`
-              }}></div>
-              
-              <button 
-                className={`premium-tab ${activeSection === 'personal' ? 'active' : ''}`}
-                onClick={() => setActiveSection('personal')}
-                data-section="personal"
-              >
-                <div className="tab-icon-wrapper">
-                  <div className="tab-icon">
-                    <i className="fas fa-user-circle"></i>
-                  </div>
-                  <div className="tab-glow"></div>
-                </div>
-                <div className="tab-text">
-                  <span className="tab-title">Personal</span>
-                  <span className="tab-subtitle">Profile details</span>
-                </div>
-                <div className="tab-decoration">
-                  <div className="decoration-line"></div>
-                </div>
-              </button>
-              
-              <button 
-                className={`premium-tab ${activeSection === 'account' ? 'active' : ''}`}
-                onClick={() => setActiveSection('account')}
-                data-section="account"
-              >
-                <div className="tab-icon-wrapper">
-                  <div className="tab-icon">
-                    <i className="fas fa-shield-alt"></i>
-                  </div>
-                  <div className="tab-glow"></div>
-                </div>
-                <div className="tab-text">
-                  <span className="tab-title">Security</span>
-                  <span className="tab-subtitle">Account safety</span>
-                </div>
-                <div className="tab-decoration">
-                  <div className="decoration-line"></div>
-                </div>
-              </button>
-              
-              {userProfile?.role === 'Agency' && (
-                <button 
-                  className={`premium-tab ${activeSection === 'branches' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('branches')}
-                  data-section="branches"
-                >
-                  <div className="tab-icon-wrapper">
-                    <div className="tab-icon">
-                      <i className="fas fa-building"></i>
-                    </div>
-                    <div className="tab-glow"></div>
-                  </div>
-                  <div className="tab-text">
-                    <span className="tab-title">Branches</span>
-                    <span className="tab-subtitle">Locations</span>
-                  </div>
-                  <div className="tab-decoration">
-                    <div className="decoration-line"></div>
-                  </div>
-                </button>
-              )}
-              
-              {['Developer', 'Administrator'].includes(userProfile?.role) && (
-                <button 
-                  className={`premium-tab ${activeSection === 'documents' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('documents')}
-                  data-section="documents"
-                >
-                  <div className="tab-icon-wrapper">
-                    <div className="tab-icon">
-                      <i className="fas fa-file-medical"></i>
-                    </div>
-                    <div className="tab-glow"></div>
-                  </div>
-                  <div className="tab-text">
-                    <span className="tab-title">Documents</span>
-                    <span className="tab-subtitle">Files & certs</span>
-                  </div>
-                  <div className="tab-decoration">
-                    <div className="decoration-line"></div>
-                  </div>
-                </button>
-              )}
-            </div>
-          </nav>
-
-          {/* Contenido de las secciones */}
-          <div className="section-content">
-            {/* Sección de Información Personal */}
-            {activeSection === 'personal' && (
-              <div className="info-section animate-in">
-                <div className="section-header">
-                  <div className="header-content">
-                    <div className="header-icon">
-                      <i className="fas fa-user-circle"></i>
-                    </div>
-                    <div className="header-text">
-                      <h2>Personal Information</h2>
-                      <p>Manage your basic information and contact details</p>
-                    </div>
-                  </div>
-                  <div className="header-actions">
-                    <div className="completion-badge">
+                  {savedSuccess && (
+                    <div className="save-success-message">
                       <i className="fas fa-check-circle"></i>
-                      <span>Profile Complete</span>
+                      <span>Profile updated successfully!</span>
                     </div>
-                  </div>
+                  )}
                 </div>
-
-                <div className="info-grid">
-                  {userProfile?.role !== 'Agency' ? (
-                    <>
-                      <div className="form-group">
+              </div>
+              
+              {/* Navigation menu */}
+              <div className="profile-nav">
+                <div 
+                  className={`nav-item ${activeSection === 'personal' ? 'active' : ''}`} 
+                  onClick={() => handleSectionChange('personal')}
+                >
+                  <div className="nav-item-background"></div>
+                  <i className="fas fa-user"></i>
+                  <span>Personal Information</span>
+                  {activeSection === 'personal' && <div className="active-indicator"></div>}
+                </div>
+                
+                <div 
+                  className={`nav-item ${activeSection === 'security' ? 'active' : ''}`} 
+                  onClick={() => handleSectionChange('security')}
+                >
+                  <div className="nav-item-background"></div>
+                  <i className="fas fa-shield-alt"></i>
+                  <span>Security & Login</span>
+                  {activeSection === 'security' && <div className="active-indicator"></div>}
+                </div>
+                
+                <div 
+                  className={`nav-item ${activeSection === 'preferences' ? 'active' : ''}`} 
+                  onClick={() => handleSectionChange('preferences')}
+                >
+                  <div className="nav-item-background"></div>
+                  <i className="fas fa-sliders-h"></i>
+                  <span>Preferences</span>
+                  {activeSection === 'preferences' && <div className="active-indicator"></div>}
+                  
+                  {animationState.notificationsBadge > 0 && (
+                    <div className="notification-badge">
+                      {animationState.notificationsBadge}
+                      <div className="badge-pulse"></div>
+                    </div>
+                  )}
+                </div>
+                
+                <div 
+                  className={`nav-item ${activeSection === 'activity' ? 'active' : ''}`} 
+                  onClick={() => handleSectionChange('activity')}
+                >
+                  <div className="nav-item-background"></div>
+                  <i className="fas fa-chart-line"></i>
+                  <span>Activity Log</span>
+                  {activeSection === 'activity' && <div className="active-indicator"></div>}
+                </div>
+                
+                <div className="nav-footer">
+                  <button 
+                    className={`toggle-effects ${!animationState.showParticles ? 'disabled' : ''}`}
+                    onClick={toggleParticles}
+                    title="Toggle visual effects"
+                  >
+                    <i className={`fas ${animationState.showParticles ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+                    <span>Visual Effects</span>
+                  </button>
+                  
+                  <Link to="/homepage" className="back-home">
+                    <i className="fas fa-home"></i>
+                    <span>Back to Home</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+            
+            {/* Main content area */}
+            <div className="profile-main-content">
+              {/* Personal information section */}
+              {activeSection === 'personal' && (
+                <div 
+                  className={`profile-card ${animationState.cardHover === 'personal' ? 'hover' : ''}`}
+                  ref={profileCardRef}
+                  onMouseEnter={() => handleCardHover('personal')}
+                  onMouseLeave={() => handleCardHover(null)}
+                >
+                  <div className="card-glow"></div>
+                  <div className="card-background"></div>
+                  
+                  <div className="card-header">
+                    <div className="card-icon">
+                      <div className="icon-background"></div>
+                      <i className="fas fa-user"></i>
+                    </div>
+                    <h3>Personal Information</h3>
+                  </div>
+                  
+                  <div className="card-content">
+                    <div className="input-grid">
+                      <div className="input-group">
                         <label>Full Name</label>
                         {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-user"></i>
-                            <input
-                              type="text"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              className={errors.name ? 'error' : ''}
-                              placeholder="Enter your full name"
+                          <>
+                            <input 
+                              type="text" 
+                              name="name" 
+                              value={editData.name} 
+                              onChange={handleChange}
+                              className={formErrors.name ? 'error' : ''}
                             />
-                            {errors.name && <span className="error-message">{errors.name}</span>}
-                          </div>
+                            {formErrors.name && <div className="error-message">{formErrors.name}</div>}
+                          </>
                         ) : (
-                          <div className="field-value">
-                            <i className="fas fa-user"></i>
-                            <span>{userProfile?.name || 'Not specified'}</span>
-                          </div>
+                          <div className="input-value">{userData.name}</div>
                         )}
                       </div>
-
-                      <div className="form-group">
+                      
+                      <div className="input-group">
                         <label>Email Address</label>
                         {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-envelope"></i>
-                            <input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              className={errors.email ? 'error' : ''}
-                              placeholder="email@example.com"
+                          <>
+                            <input 
+                              type="email" 
+                              name="email" 
+                              value={editData.email} 
+                              onChange={handleChange}
+                              className={formErrors.email ? 'error' : ''}
                             />
-                            {errors.email && <span className="error-message">{errors.email}</span>}
-                          </div>
+                            {formErrors.email && <div className="error-message">{formErrors.email}</div>}
+                          </>
                         ) : (
-                          <div className="field-value">
-                            <i className="fas fa-envelope"></i>
-                            <span>{userProfile?.email || 'Not specified'}</span>
-                            <span className="verified-badge">
-                              <i className="fas fa-check-circle"></i>
-                              Verified
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Primary Phone</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-phone"></i>
-                            <input
-                              type="tel"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                              className={errors.phone ? 'error' : ''}
-                              placeholder="(555) 123-4567"
-                            />
-                            {errors.phone && <span className="error-message">{errors.phone}</span>}
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-phone"></i>
-                            <span>{formatPhoneNumber(userProfile?.phone) || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Alternative Phone</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-mobile-alt"></i>
-                            <input
-                              type="tel"
-                              name="alt_phone"
-                              value={formData.alt_phone}
-                              onChange={handleInputChange}
-                              placeholder="(555) 987-6543"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-mobile-alt"></i>
-                            <span>{formatPhoneNumber(userProfile?.alt_phone) || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group full-width">
-                        <label>Address</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-map-marker-alt"></i>
-                            <input
-                              type="text"
-                              name="address"
-                              value={formData.address}
-                              onChange={handleInputChange}
-                              placeholder="Enter your complete address"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-map-marker-alt"></i>
-                            <span>{getFormattedAddress()}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Postal Code</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-mail-bulk"></i>
-                            <input
-                              type="text"
-                              name="postal_code"
-                              value={formData.postal_code}
-                              onChange={handleInputChange}
-                              placeholder="12345"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-mail-bulk"></i>
-                            <span>{userProfile?.postal_code || 'Not specified'}</span>
-                            {locationInfo && (
-                              <span className="location-info">
-                                {locationInfo.city}, {locationInfo.stateAbbr}
-                              </span>
+                          <div className="input-value">
+                            {userData.email}
+                            {securityState.emailVerified && (
+                              <div className="verified-badge">
+                                <i className="fas fa-check-circle"></i>
+                                <span>Verified</span>
+                              </div>
                             )}
                           </div>
                         )}
                       </div>
-
-                      <div className="form-group">
-                        <label>Date of Birth</label>
+                      
+                      <div className="input-group">
+                        <label>Phone Number</label>
                         {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-calendar-alt"></i>
-                            <input
-                              type="date"
-                              name="birthday"
-                              value={formData.birthday}
-                              onChange={handleInputChange}
+                          <>
+                            <input 
+                              type="tel" 
+                              name="phone" 
+                              value={editData.phone} 
+                              onChange={handleChange}
+                              className={formErrors.phone ? 'error' : ''}
                             />
-                          </div>
+                            {formErrors.phone && <div className="error-message">{formErrors.phone}</div>}
+                          </>
                         ) : (
-                          <div className="field-value">
-                            <i className="fas fa-calendar-alt"></i>
-                            <span>{formatDateForDisplay(userProfile?.birthday)}</span>
+                          <div className="input-value">
+                            {userData.phone}
+                            {securityState.smsVerified ? (
+                              <div className="verified-badge">
+                                <i className="fas fa-check-circle"></i>
+                                <span>Verified</span>
+                              </div>
+                            ) : (
+                              <button 
+                                className="verify-button"
+                                onClick={handleVerifySMS}
+                                disabled={loadingState.verifyingSms}
+                              >
+                                {loadingState.verifyingSms ? (
+                                  <>
+                                    <div className="button-spinner"></div>
+                                    <span>Verifying...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-shield-alt"></i>
+                                    <span>Verify</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                         )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Gender</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-venus-mars"></i>
-                            <select
-                              name="gender"
-                              value={formData.gender}
-                              onChange={handleInputChange}
-                              className="select-input"
-                            >
-                              <option value="">Select gender</option>
-                              <option value="male">Male</option>
-                              <option value="female">Female</option>
-                              <option value="other">Other</option>
-                              <option value="prefer_not_to_say">Prefer not to say</option>
-                            </select>
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-venus-mars"></i>
-                            <span>
-                              {userProfile?.gender ? 
-                                userProfile.gender.charAt(0).toUpperCase() + 
-                                userProfile.gender.slice(1).replace('_', ' ') : 
-                                'Not specified'
-                              }
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Campos específicos para Agencia */}
-                      <div className="form-group">
-                        <label>Agency Name</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-hospital"></i>
-                            <input
-                              type="text"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              className={errors.name ? 'error' : ''}
-                              placeholder="Agency name"
-                            />
-                            {errors.name && <span className="error-message">{errors.name}</span>}
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-hospital"></i>
-                            <span>{userProfile?.name || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Contact Email</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-envelope"></i>
-                            <input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              className={errors.email ? 'error' : ''}
-                              placeholder="contact@agency.com"
-                            />
-                            {errors.email && <span className="error-message">{errors.email}</span>}
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-envelope"></i>
-                            <span>{userProfile?.email || 'Not specified'}</span>
-                            <span className="verified-badge">
-                              <i className="fas fa-check-circle"></i>
-                              Verified
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Primary Phone</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-phone"></i>
-                            <input
-                              type="tel"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                              placeholder="(555) 123-4567"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-phone"></i>
-                            <span>{formatPhoneNumber(userProfile?.phone) || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group">
-                        <label>Fax</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-fax"></i>
-                            <input
-                              type="tel"
-                              name="fax"
-                              value={formData.fax}
-                              onChange={handleInputChange}
-                              placeholder="(555) 123-4568"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-fax"></i>
-                            <span>{userProfile?.fax || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="form-group full-width">
-                        <label>Main Address</label>
-                        {isEditing ? (
-                          <div className="input-wrapper">
-                            <i className="fas fa-building"></i>
-                            <input
-                              type="text"
-                              name="address"
-                              value={formData.address}
-                              onChange={handleInputChange}
-                              placeholder="Main office address"
-                            />
-                          </div>
-                        ) : (
-                          <div className="field-value">
-                            <i className="fas fa-building"></i>
-                            <span>{userProfile?.address || 'Not specified'}</span>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Sección de Cuenta y Seguridad */}
-            {activeSection === 'account' && (
-              <div className="info-section animate-in">
-                <div className="section-header">
-                  <h2>
-                    <i className="fas fa-shield-alt"></i>
-                    Account & Security
-                  </h2>
-                  <p>Access configuration and credentials</p>
-                </div>
-
-                <div className="info-grid">
-                  <div className="form-group">
-                    <label>Username</label>
-                    {isEditing ? (
-                      <div className="input-wrapper">
-                        <i className="fas fa-user-tag"></i>
-                        <input
-                          type="text"
-                          name="username"
-                          value={formData.username}
-                          onChange={handleInputChange}
-                          className={errors.username ? 'error' : ''}
-                          placeholder="user.name"
-                        />
-                        {errors.username && <span className="error-message">{errors.username}</span>}
-                      </div>
-                    ) : (
-                      <div className="field-value">
-                        <i className="fas fa-user-tag"></i>
-                        <span>{userProfile?.username || 'Not specified'}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>System Role</label>
-                    <div className="field-value">
-                      <div className="role-display" style={{ color: roleInfo.color }}>
-                        <i className={`fas ${roleInfo.icon}`}></i>
-                        <span>{roleInfo.name}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Account Status</label>
-                    <div className="field-value">
-                      <div className={`status-badge ${userProfile?.is_active ? 'active' : 'inactive'}`}>
-                        <span className="status-dot"></span>
-                        <span>{userProfile?.is_active ? 'Active' : 'Inactive'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Member Since</label>
-                    <div className="field-value">
-                      <i className="fas fa-calendar-check"></i>
-                      <span>
-                        {userProfile?.created_at ? 
-                          new Date(userProfile.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          }) : 
-                          'Not available'
-                        }
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Sección de cambio de contraseña */}
-                  {isEditing && (
-                    <div className="form-group full-width password-section">
-                      <div className="password-header">
-                        <label>Change Password</label>
-                        <button
-                          type="button"
-                          className={`toggle-password ${showPasswordChange ? 'active' : ''}`}
-                          onClick={() => setShowPasswordChange(!showPasswordChange)}
-                        >
-                          <i className={`fas ${showPasswordChange ? 'fa-eye-slash' : 'fa-key'}`}></i>
-                          <span>{showPasswordChange ? 'Cancel' : 'Change Password'}</span>
-                        </button>
                       </div>
                       
-                      {showPasswordChange && (
-                        <div className="password-fields">
-                          <div className="input-wrapper">
-                            <i className="fas fa-lock"></i>
-                            <input
-                              type="password"
-                              name="currentPassword"
-                              value={formData.currentPassword}
-                              onChange={handleInputChange}
-                              placeholder="Current password"
-                              className={errors.currentPassword ? 'error' : ''}
-                            />
-                            {errors.currentPassword && <span className="error-message">{errors.currentPassword}</span>}
+                      <div className="input-group">
+                        <label>Job Title</label>
+                        {isEditing ? (
+                          <input 
+                            type="text" 
+                            name="role" 
+                            value={editData.role} 
+                            onChange={handleChange}
+                          />
+                        ) : (
+                          <div className="input-value">{userData.role}</div>
+                        )}
+                      </div>
+                      
+                      <div className="input-group">
+                        <label>Address</label>
+                        {isEditing ? (
+                          <input 
+                            type="text" 
+                            name="address" 
+                            value={editData.address} 
+                            onChange={handleChange}
+                          />
+                        ) : (
+                          <div className="input-value">{userData.address}</div>
+                        )}
+                      </div>
+                      
+                      <div className="input-group">
+                        <label>Specialization</label>
+                        {isEditing ? (
+                          <input 
+                            type="text" 
+                            name="specialization" 
+                            value={editData.specialization} 
+                            onChange={handleChange}
+                          />
+                        ) : (
+                          <div className="input-value">{userData.specialization}</div>
+                        )}
+                      </div>
+                      
+                      <div className="input-group full-width">
+                        <label>Languages</label>
+                        {isEditing ? (
+                          <div className="language-selector">
+                            {['English', 'Spanish', 'French', 'German', 'Portuguese'].map(lang => (
+                              <div 
+                                key={lang}
+                                className={`language-chip ${editData.languages.includes(lang) ? 'selected' : ''}`}
+                                onClick={() => {
+                                  setEditData(prev => {
+                                    if (prev.languages.includes(lang)) {
+                                      return {...prev, languages: prev.languages.filter(l => l !== lang)};
+                                    } else {
+                                      return {...prev, languages: [...prev.languages, lang]};
+                                    }
+                                  });
+                                }}
+                              >
+                                <span>{lang}</span>
+                                {editData.languages.includes(lang) && <i className="fas fa-check"></i>}
+                              </div>
+                            ))}
                           </div>
-                          
-                          <div className="input-wrapper">
-                            <i className="fas fa-key"></i>
-                            <input
-                              type="password"
-                              name="newPassword"
-                              value={formData.newPassword}
-                              onChange={handleInputChange}
-                              placeholder="New password"
-                              className={errors.newPassword ? 'error' : ''}
-                            />
-                            {errors.newPassword && <span className="error-message">{errors.newPassword}</span>}
+                        ) : (
+                          <div className="input-value languages-list">
+                            {userData.languages.map(lang => (
+                              <div key={lang} className="language-badge">
+                                <span>{lang}</span>
+                              </div>
+                            ))}
                           </div>
-                          
-                          <div className="input-wrapper">
-                            <i className="fas fa-check-double"></i>
-                            <input
-                              type="password"
-                              name="confirmPassword"
-                              value={formData.confirmPassword}
-                              onChange={handleInputChange}
-                              placeholder="Confirm new password"
-                              className={errors.confirmPassword ? 'error' : ''}
-                            />
-                            {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                        )}
+                      </div>
+                      
+                      <div className="input-group">
+                        <label>Timezone</label>
+                        {isEditing ? (
+                          <select 
+                            name="timezone" 
+                            value={editData.timezone}
+                            onChange={handleChange}
+                          >
+                            <option value="UTC-8 (Pacific Time)">UTC-8 (Pacific Time)</option>
+                            <option value="UTC-7 (Mountain Time)">UTC-7 (Mountain Time)</option>
+                            <option value="UTC-6 (Central Time)">UTC-6 (Central Time)</option>
+                            <option value="UTC-5 (Eastern Time)">UTC-5 (Eastern Time)</option>
+                            <option value="UTC+0 (GMT)">UTC+0 (GMT)</option>
+                            <option value="UTC+1 (Central European)">UTC+1 (Central European)</option>
+                            <option value="UTC+2 (Eastern European)">UTC+2 (Eastern European)</option>
+                          </select>
+                        ) : (
+                          <div className="input-value">{userData.timezone}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="card-decoration">
+                    <div className="decoration-circle"></div>
+                    <div className="decoration-square"></div>
+                    <div className="decoration-line"></div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Security section */}
+              {activeSection === 'security' && (
+                <div 
+                className={`profile-card security-card ${animationState.cardHover === 'security' ? 'hover' : ''}`}
+                ref={securityCardRef}
+                onMouseEnter={() => handleCardHover('security')}
+                onMouseLeave={() => handleCardHover(null)}
+              >
+                <div className="card-glow security-glow"></div>
+                <div className="card-background security-background"></div>
+                
+                <div className="card-header">
+                  <div className="card-icon security-icon">
+                    <div className="icon-background"></div>
+                    <i className="fas fa-shield-alt"></i>
+                  </div>
+                  <h3>Security & Login</h3>
+                </div>
+                
+                <div className="card-content">
+                  <div className="security-status">
+                    <div className="security-level">
+                      <div className="security-shield-graphic">
+                        <i className="fas fa-shield-alt"></i>
+                        <div className="security-pulse"></div>
+                      </div>
+                      <div className="level-info">
+                        <div className="level-label">Security Level</div>
+                        <div className={`level-indicator ${securityState.securityLevel}`}>
+                          <div className="level-bar">
+                            <div className="level-sparkle"></div>
                           </div>
-                          
-                          <div className="password-requirements">
-                            <p>Password requirements:</p>
-                            <ul>
-                              <li>
-                                <i className={`fas ${formData.newPassword.length >= 8 ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                                Minimum 8 characters
-                              </li>
-                              <li>
-                                <i className={`fas ${/[A-Z]/.test(formData.newPassword) && /[a-z]/.test(formData.newPassword) ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                                Upper and lowercase letters
-                              </li>
-                              <li>
-                                <i className={`fas ${/[0-9]/.test(formData.newPassword) ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                                At least one number
-                              </li>
-                              <li>
-                                <i className={`fas ${/[^A-Za-z0-9]/.test(formData.newPassword) ? 'fa-check-circle' : 'fa-circle'}`}></i>
-                                At least one special character
-                              </li>
-                            </ul>
+                          <span className="level-text">{securityState.securityLevel.charAt(0).toUpperCase() + securityState.securityLevel.slice(1)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="active-sessions">
+                      <div className="session-icon">
+                        <i className="fas fa-desktop"></i>
+                        <div className="icon-ring"></div>
+                      </div>
+                      <div className="session-details">
+                        <div className="session-count">
+                          {securityState.activeSessions} Active {securityState.activeSessions === 1 ? 'Session' : 'Sessions'}
+                        </div>
+                        <div className="session-message">You're currently logged in on this device</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="security-sections">
+                    <div className="security-section">
+                      <h4>Login Methods</h4>
+                      
+                      <div className="security-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-key"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Password</div>
+                          <div className="item-description">
+                            Last changed {formatDate(securityState.lastPasswordChange)}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Sección de Sucursales (Solo para Agencias) */}
-            {activeSection === 'branches' && userProfile?.role === 'Agency' && (
-              <div className="info-section animate-in">
-                <div className="section-header">
-                  <h2>
-                    <i className="fas fa-building"></i>
-                    Branch Management
-                  </h2>
-                  <p>Manage your agency locations</p>
-                </div>
-
-                {isEditing ? (
-                  <div className="branches-editor">
-                    {formData.branches.map((branch, index) => (
-                      <div key={index} className="branch-card editable">
-                        <div className="branch-header">
-                          <h3>Branch #{index + 1}</h3>
-                          <button
-                            type="button"
-                            onClick={() => removeBranch(index)}
-                            className="remove-branch"
-                            title="Remove branch"
-                          >
-                            <i className="fas fa-trash"></i>
+                        <div className="item-actions">
+                          <button className="security-button">
+                            <div className="button-background"></div>
+                            <span>Change</span>
                           </button>
                         </div>
-                        
-                        <div className="branch-fields">
-                          <div className="input-wrapper">
-                            <i className="fas fa-store"></i>
-                            <input
-                              type="text"
-                              placeholder="Branch name"
-                              value={branch.name}
-                              onChange={(e) => updateBranch(index, 'name', e.target.value)}
-                            />
+                      </div>
+                      
+                      <div className="security-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-envelope"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Email Verification</div>
+                          <div className="item-description">
+                            {userData.email}
                           </div>
-                          
-                          <div className="input-wrapper">
-                            <i className="fas fa-map-marker-alt"></i>
-                            <input
-                              type="text"
-                              placeholder="Branch address"
-                              value={branch.address}
-                              onChange={(e) => updateBranch(index, 'address', e.target.value)}
-                            />
+                        </div>
+                        <div className="item-actions">
+                          {securityState.emailVerified ? (
+                            <div className="verified-status">
+                              <i className="fas fa-check-circle"></i>
+                              <span>Verified</span>
+                            </div>
+                          ) : (
+                            <button 
+                              className="security-button"
+                              onClick={handleVerifyEmail}
+                              disabled={loadingState.verifyingEmail}
+                            >
+                              <div className="button-background"></div>
+                              {loadingState.verifyingEmail ? 'Sending...' : 'Verify'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="security-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-mobile-alt"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Phone Verification</div>
+                          <div className="item-description">
+                            {userData.phone}
                           </div>
-                          
-                          <div className="input-wrapper">
-                            <i className="fas fa-phone"></i>
-                            <input
-                              type="tel"
-                              placeholder="Contact phone"
-                              value={branch.phone}
-                              onChange={(e) => updateBranch(index, 'phone', e.target.value)}
+                        </div>
+                        <div className="item-actions">
+                          {securityState.smsVerified ? (
+                            <div className="verified-status">
+                              <i className="fas fa-check-circle"></i>
+                              <span>Verified</span>
+                            </div>
+                          ) : (
+                            <button 
+                              className="security-button"
+                              onClick={handleVerifySMS}
+                              disabled={loadingState.verifyingSms}
+                            >
+                              <div className="button-background"></div>
+                              {loadingState.verifyingSms ? 'Sending...' : 'Verify'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="security-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-lock"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Two-Factor Authentication</div>
+                          <div className="item-description">
+                            Additional security for your account
+                          </div>
+                        </div>
+                        <div className="item-actions">
+                          <div className="toggle-switch">
+                            <input 
+                              type="checkbox" 
+                              id="twoFactorToggle" 
+                              checked={securityState.twoFactorEnabled} 
+                              onChange={handleToggleTwoFactor}
                             />
+                            <label htmlFor="twoFactorToggle">
+                              <div className="toggle-handle"></div>
+                            </label>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                     
-                    <button
-                      type="button"
-                      onClick={addBranch}
-                      className="add-branch-btn"
-                    >
-                      <i className="fas fa-plus-circle"></i>
-                      <span>Add New Branch</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="branches-list">
-                    {userProfile?.branches && userProfile.branches.length > 0 ? (
-                      userProfile.branches.map((branch, index) => (
-                        <div key={index} className="branch-card">
-                          <div className="branch-icon">
-                            <i className="fas fa-store"></i>
+                    <div className="security-section">
+                      <h4>Recent Activity</h4>
+                      <div className="activity-timeline">
+                        {securityState.recentActivity.map((activity, index) => (
+                          <div className="activity-item" key={index}>
+                            <div className="timeline-line"></div>
+                            <div className="activity-icon">
+                              <i className={`fas ${activity.action === 'Login' ? 'fa-sign-in-alt' : 'fa-user-shield'}`}></i>
+                            </div>
+                            <div className="activity-details">
+                              <div className="activity-action">{activity.action}</div>
+                              <div className="activity-meta">
+                                <span className="device">
+                                  <i className="fas fa-laptop"></i> {activity.device}
+                                </span>
+                                <span className="location">
+                                  <i className="fas fa-map-marker-alt"></i> {activity.location}
+                                </span>
+                                <span className="time">
+                                  <i className="fas fa-clock"></i> {activity.time}
+                                </span>
+                              </div>
+                            </div>
+                            {index === 0 && (
+                              <div className="current-session-badge">
+                                <div className="badge-glow"></div>
+                                <span>Current</span>
+                              </div>
+                            )}
                           </div>
-                          <div className="branch-info">
-                            <h3>{branch.name}</h3>
-                            <div className="branch-details">
-                              <p>
-                                <i className="fas fa-map-marker-alt"></i>
-                                {branch.address}
-                              </p>
-                              <p>
-                                <i className="fas fa-phone"></i>
-                                {branch.phone}
-                              </p>
+                        ))}
+                      </div>
+                      
+                      <div className="view-all-link">
+                        <a href="#">
+                          <span>View all activity</span>
+                          <i className="fas fa-chevron-right"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="card-decoration">
+                  <div className="decoration-circle"></div>
+                  <div className="decoration-square"></div>
+                  <div className="decoration-line"></div>
+                </div>
+              </div>
+            )}
+            
+            {/* Preferences section */}
+            {activeSection === 'preferences' && (
+              <div 
+                className={`profile-card preferences-card ${animationState.cardHover === 'preferences' ? 'hover' : ''}`}
+                ref={preferencesCardRef}
+                onMouseEnter={() => handleCardHover('preferences')}
+                onMouseLeave={() => handleCardHover(null)}
+              >
+                <div className="card-glow preferences-glow"></div>
+                <div className="card-background preferences-background"></div>
+                
+                <div className="card-header">
+                  <div className="card-icon preferences-icon">
+                    <div className="icon-background"></div>
+                    <i className="fas fa-sliders-h"></i>
+                  </div>
+                  <h3>Preferences</h3>
+                </div>
+                
+                <div className="card-content">
+                  <div className="preference-sections">
+                    <div className="preference-section">
+                      <h4>Interface Settings</h4>
+                      
+                      <div className="preference-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-moon"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Dark Mode</div>
+                          <div className="item-description">
+                            Use dark theme for better viewing experience in low-light environments
+                          </div>
+                        </div>
+                        <div className="item-actions">
+                          <div className="toggle-switch">
+                            <input type="checkbox" id="darkModeToggle" checked={true} />
+                            <label htmlFor="darkModeToggle">
+                              <div className="toggle-handle"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="preference-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-bell"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Notifications</div>
+                          <div className="item-description">
+                            Receive important alerts and updates
+                          </div>
+                        </div>
+                        <div className="item-actions">
+                          <div className="toggle-switch">
+                            <input type="checkbox" id="notificationsToggle" checked={true} />
+                            <label htmlFor="notificationsToggle">
+                              <div className="toggle-handle"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="preference-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-volume-up"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Sound Alerts</div>
+                          <div className="item-description">
+                            Play sound for important notifications
+                          </div>
+                        </div>
+                        <div className="item-actions">
+                          <div className="toggle-switch">
+                            <input type="checkbox" id="soundToggle" checked={false} />
+                            <label htmlFor="soundToggle">
+                              <div className="toggle-handle"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="preference-item">
+                        <div className="item-highlight"></div>
+                        <div className="item-icon">
+                          <i className="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div className="item-details">
+                          <div className="item-title">Animation Effects</div>
+                          <div className="item-description">
+                            Enable motion effects throughout the interface
+                          </div>
+                        </div>
+                        <div className="item-actions">
+                          <div className="toggle-switch">
+                            <input 
+                              type="checkbox" 
+                              id="animationsToggle" 
+                              checked={animationState.showParticles} 
+                              onChange={toggleParticles}
+                            />
+                            <label htmlFor="animationsToggle">
+                              <div className="toggle-handle"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="preference-section">
+                      <h4>Notification Settings</h4>
+                      
+                      <div className="notification-options">
+                        <div className="notification-option">
+                          <div className="option-header">
+                            <h5>Email Notifications</h5>
+                            <div className="badge-update">
+                              <span>New</span>
+                              <div className="badge-ripple"></div>
+                            </div>
+                          </div>
+                          <div className="option-items">
+                            <div className="option-item">
+                              <div className="item-label">System Updates</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="emailSystemToggle" checked={true} />
+                                <label htmlFor="emailSystemToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">Security Alerts</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="emailSecurityToggle" checked={true} />
+                                <label htmlFor="emailSecurityToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">Patient Reminders</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="emailPatientToggle" checked={true} />
+                                <label htmlFor="emailPatientToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">Marketing & News</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="emailMarketingToggle" checked={false} />
+                                <label htmlFor="emailMarketingToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <div className="empty-state">
-                        <i className="fas fa-building"></i>
-                        <p>No branches registered</p>
-                        <small>Click "Edit Profile" to add branches</small>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Sección de Documentos (Solo para Developer/Administrator) */}
-            {activeSection === 'documents' && ['Developer', 'Administrator'].includes(userProfile?.role) && (
-              <div className="info-section animate-in">
-                <div className="section-header">
-                  <h2>
-                    <i className="fas fa-file-medical"></i>
-                    Required Documents
-                  </h2>
-                  <p>Manage your professional documents</p>
-                  <div className="docs-counter">
-                    <span>{documents.length}</span> documents uploaded
-                  </div>
-                </div>
-
-                <div className="documents-grid">
-                  {documents.length > 0 ? (
-                    documents.map((doc, index) => (
-                      <div key={index} className="document-card">
-                        <div className="doc-icon">
-                          <i className={`fas ${
-                            doc.type.includes('pdf') ? 'fa-file-pdf' : 
-                            doc.type.includes('image') ? 'fa-file-image' : 
-                            'fa-file-alt'
-                          }`}></i>
-                        </div>
-                        <div className="doc-info">
-                          <h4>{doc.name}</h4>
-                          <p className="doc-meta">
-                            <span>{new Date(doc.upload_date).toLocaleDateString()}</span>
-                            <span className="doc-size">
-                              {(doc.size / 1024 / 1024).toFixed(2)} MB
-                            </span>
-                          </p>
-                          <div className="doc-status verified">
-                            <i className="fas fa-check-circle"></i>
-                            <span>Verified</span>
+                        
+                        <div className="notification-option">
+                          <div className="option-header">
+                            <h5>In-App Notifications</h5>
+                          </div>
+                          <div className="option-items">
+                            <div className="option-item">
+                              <div className="item-label">Patient Messages</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="appMessagesToggle" checked={true} />
+                                <label htmlFor="appMessagesToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">Appointment Alerts</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="appAppointmentToggle" checked={true} />
+                                <label htmlFor="appAppointmentToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">Team Mentions</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="appTeamToggle" checked={true} />
+                                <label htmlFor="appTeamToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
+                            
+                            <div className="option-item">
+                              <div className="item-label">System Updates</div>
+                              <div className="toggle-switch small">
+                                <input type="checkbox" id="appSystemToggle" checked={false} />
+                                <label htmlFor="appSystemToggle">
+                                  <div className="toggle-handle"></div>
+                                </label>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="doc-actions">
-                          <button 
-                            className="view-btn" 
-                            onClick={() => window.open(doc.url, '_blank')}
-                            title="View document"
-                          >
-                            <i className="fas fa-eye"></i>
-                          </button>
-                          <button 
-                            className="download-btn" 
-                            onClick={() => window.open(doc.url, '_blank')}
-                            title="Download document"
-                          >
-                            <i className="fas fa-download"></i>
-                          </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="preferences-footer">
+                    <button className="restore-defaults">
+                      <div className="button-background"></div>
+                      <div className="button-content">
+                        <i className="fas fa-undo"></i>
+                        <span>Restore Default Settings</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="card-decoration">
+                  <div className="decoration-circle"></div>
+                  <div className="decoration-square"></div>
+                  <div className="decoration-line"></div>
+                </div>
+              </div>
+            )}
+            
+            {/* Activity Log section */}
+            {activeSection === 'activity' && (
+              <div 
+                className={`profile-card activity-card ${animationState.cardHover === 'activity' ? 'hover' : ''}`}
+                onMouseEnter={() => handleCardHover('activity')}
+                onMouseLeave={() => handleCardHover(null)}
+              >
+                <div className="card-glow activity-glow"></div>
+                <div className="card-background activity-background"></div>
+                
+                <div className="card-header">
+                  <div className="card-icon activity-icon">
+                    <div className="icon-background"></div>
+                    <i className="fas fa-chart-line"></i>
+                  </div>
+                  <h3>Activity Log</h3>
+                </div>
+                
+                <div className="card-content">
+                  <div className="activity-filters">
+                    <div className="filter-group">
+                      <label>Filter By</label>
+                      <div className="filter-buttons">
+                        <button className="filter-button active">
+                          <div className="button-background"></div>
+                          <span>All Activity</span>
+                        </button>
+                        <button className="filter-button">
+                          <div className="button-background"></div>
+                          <span>System</span>
+                        </button>
+                        <button className="filter-button">
+                          <div className="button-background"></div>
+                          <span>Security</span>
+                        </button>
+                        <button className="filter-button">
+                          <div className="button-background"></div>
+                          <span>Patients</span>
+                        </button>
+                        <button className="filter-button">
+                          <div className="button-background"></div>
+                          <span>Messages</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="search-activity">
+                      <div className="search-input">
+                        <i className="fas fa-search"></i>
+                        <input type="text" placeholder="Search activity..." />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="activity-log-container">
+                    <div className="date-group">
+                      <div className="date-header">Today</div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">09:15 AM</div>
+                        <div className="activity-icon login">
+                          <i className="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">System Login</div>
+                          <div className="activity-description">
+                            Successfully logged in from Chrome on Windows
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="empty-state">
-                      <i className="fas fa-folder-open"></i>
-                      <p>No documents uploaded</p>
-                      <small>Upload your professional documents here</small>
-                    </div>
-                  )}
-                </div>
-
-                {/* Document upload area */}
-                <div className="document-upload-area">
-                  <input
-                    type="file"
-                    id="doc-upload"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      if (e.target.files[0]) {
-                        handleDocumentUpload(e.target.files[0]);
-                        e.target.value = '';
-                      }
-                    }}
-                    disabled={isUploading}
-                  />
-                  <label 
-                    htmlFor="doc-upload" 
-                    className={`upload-zone ${isUploading ? 'uploading' : ''}`}
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="upload-spinner">
-                          <i className="fas fa-spinner fa-spin"></i>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">09:18 AM</div>
+                        <div className="activity-icon view">
+                          <i className="fas fa-eye"></i>
                         </div>
-                        <span>Uploading document...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-cloud-upload-alt"></i>
-                        <span>Drag files here or click to select</span>
-                        <small>PDF, DOC, DOCX, JPG, PNG (Max. 10MB)</small>
-                      </>
-                    )}
-                  </label>
+                        <div className="activity-details">
+                          <div className="activity-title">Viewed Patient List</div>
+                          <div className="activity-description">
+                            Accessed patient directory
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="date-group">
+                      <div className="date-header">Yesterday</div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">03:45 PM</div>
+                        <div className="activity-icon message">
+                          <i className="fas fa-envelope"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">Sent Message</div>
+                          <div className="activity-description">
+                            Message sent to Dr. Sarah Johnson
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">01:22 PM</div>
+                        <div className="activity-icon update">
+                          <i className="fas fa-edit"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">Updated Patient Record</div>
+                          <div className="activity-description">
+                            Modified information for patient #12458
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">09:32 AM</div>
+                        <div className="activity-icon login">
+                          <i className="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">System Login</div>
+                          <div className="activity-description">
+                            Successfully logged in from Chrome on Windows
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="date-group">
+                      <div className="date-header">March 21, 2025</div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">04:17 PM</div>
+                        <div className="activity-icon logout">
+                          <i className="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">System Logout</div>
+                          <div className="activity-description">
+                            Successfully logged out
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                      
+                      <div className="activity-log-item">
+                        <div className="activity-time">02:45 PM</div>
+                        <div className="activity-icon calendar">
+                          <i className="fas fa-calendar-alt"></i>
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">Appointment Scheduled</div>
+                          <div className="activity-description">
+                            Created new appointment for patient #23657
+                          </div>
+                        </div>
+                        <div className="activity-meta">
+                          <div className="meta-ip">192.168.1.105</div>
+                          <div className="meta-location">San Francisco, CA</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="activity-pagination">
+                    <button className="pagination-button prev disabled">
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <button className="pagination-button page active">
+                      <div className="page-highlight"></div>
+                      <span>1</span>
+                    </button>
+                    <button className="pagination-button page">
+                      <div className="page-highlight"></div>
+                      <span>2</span>
+                    </button>
+                    <button className="pagination-button page">
+                      <div className="page-highlight"></div>
+                      <span>3</span>
+                    </button>
+                    <span className="pagination-ellipsis">...</span>
+                    <button className="pagination-button page">
+                      <div className="page-highlight"></div>
+                      <span>12</span>
+                    </button>
+                    <button className="pagination-button next">
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="card-decoration">
+                  <div className="decoration-circle"></div>
+                  <div className="decoration-square"></div>
+                  <div className="decoration-line"></div>
                 </div>
               </div>
             )}
           </div>
-        </main>
-
-        {/* Columna derecha - Información adicional */}
-        <aside className="profile-additional">
-          <div className="info-card security-card">
-            <div className="card-header">
-              <h3>
-                <i className="fas fa-shield-alt"></i>
-                Account Security
-              </h3>
-            </div>
-            <div className="security-items">
-              <div className="security-item">
-                <div className="security-icon">
-                  <i className="fas fa-key"></i>
-                </div>
-                <div className="security-info">
-                  <h4>Password</h4>
-                  <p>Last changed 30 days ago</p>
-                </div>
-                <div className="security-status strong">
-                  <i className="fas fa-check-circle"></i>
-                </div>
-              </div>
-              
-              <div className="security-item">
-                <div className="security-icon">
-                  <i className="fas fa-mobile-alt"></i>
-                </div>
-                <div className="security-info">
-                  <h4>Two-Factor Auth</h4>
-                  <p>Enabled via SMS</p>
-                </div>
-                <div className="security-status active">
-                  <i className="fas fa-check-circle"></i>
-                </div>
-              </div>
-              
-              <div className="security-item">
-                <div className="security-icon">
-                  <i className="fas fa-clock"></i>
-                </div>
-                <div className="security-info">
-                  <h4>Session Timeout</h4>
-                  <p>Auto logout in 2 hours</p>
-                </div>
-                <div className="security-status moderate">
-                  <i className="fas fa-exclamation-circle"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="info-card backup-card">
-            <div className="card-header">
-              <h3>
-                <i className="fas fa-cloud"></i>
-                Data Backup
-              </h3>
-            </div>
-            <div className="backup-info">
-              <div className="backup-status">
-                <div className="status-indicator active"></div>
-                <div className="status-text">
-                  <h4>Auto Backup Enabled</h4>
-                  <p>Last backup: 15 minutes ago</p>
-                </div>
-              </div>
-              <div className="backup-details">
-                <div className="detail-item">
-                  <span className="detail-label">Storage Used:</span>
-                  <span className="detail-value">2.4 GB</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Backup Frequency:</span>
-                  <span className="detail-value">Every 30 minutes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
+        </div>
+      </>
+    )}
+  </div>
+);
 };
 
-export default DevUserProfile;
+export default TPUserProfile;

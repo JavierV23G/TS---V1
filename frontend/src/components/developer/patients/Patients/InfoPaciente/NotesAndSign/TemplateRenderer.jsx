@@ -19,9 +19,10 @@ const TemplateRenderer = ({
   // Map backend section names to frontend components
   const getSectionComponent = (sectionName) => {
     const sectionMap = {
-      'VITALS': 'VitalsSection',
+      // Usar nombres consistentes con primera letra mayúscula
+      'Vitals': 'VitalsSection',
+      'Pain': 'PainSection', 
       'Transfers / Functional Independence': 'TransfersFunctionalSection',
-      'PAIN': 'PainSection'
     };
     
     return sectionMap[sectionName] || null;
@@ -30,9 +31,9 @@ const TemplateRenderer = ({
   // Get icon for section
   const getIconForSection = (sectionName) => {
     const iconMap = {
-      'VITALS': 'fas fa-heartbeat',
+      'Vitals': 'fas fa-heartbeat',
       'Transfers / Functional Independence': 'fas fa-walking',
-      'PAIN': 'fas fa-exclamation-triangle'
+      'Pain': 'fas fa-exclamation-triangle'
     };
     
     return iconMap[sectionName] || 'fas fa-file-alt';
@@ -52,7 +53,7 @@ const TemplateRenderer = ({
         const SectionComponent = componentName ? Sections[componentName] : null;
         
         if (SectionComponent) {
-          sectionsMap[sectionConfig.id] = {
+          sectionsMap[sectionConfig.section_name] = {
             Component: SectionComponent,
             config: {
               ...sectionConfig,
@@ -62,9 +63,6 @@ const TemplateRenderer = ({
               required: sectionConfig.is_required || false
             }
           };
-          console.log(`✅ Loaded section: ${sectionConfig.section_name} -> ${componentName}`);
-        } else {
-          console.warn(`❌ Section component for "${sectionConfig.section_name}" not found (mapped to: ${componentName})`);
         }
       });
 
@@ -72,7 +70,7 @@ const TemplateRenderer = ({
       
       // Set first section as active by default
       if (templateConfig.sections.length > 0) {
-        setActiveSection(templateConfig.sections[0].id);
+        setActiveSection(templateConfig.sections[0].section_name);
       }
       
       setLoading(false);
@@ -83,6 +81,7 @@ const TemplateRenderer = ({
 
   // Handle section data changes
   const handleSectionChange = (sectionId, sectionData) => {
+    // Backend now uses consistent section names - no mapping needed
     const updatedData = {
       ...data,
       [sectionId]: sectionData
@@ -95,11 +94,11 @@ const TemplateRenderer = ({
     if (!templateConfig?.sections) return [];
     
     return templateConfig.sections.map(section => ({
-      id: section.id,
+      id: section.section_name,
       name: section.section_name || section.name || 'Section',
       icon: getIconForSection(section.section_name) || section.icon || 'fas fa-file-alt',
       required: section.is_required || section.required || false,
-      completed: isDataComplete(data[section.id] || {})
+      completed: isDataComplete(data[section.section_name] || {})
     }));
   };
 
@@ -183,7 +182,15 @@ const TemplateRenderer = ({
     }
 
     const { Component, config } = loadedSections[activeSection];
+    
+    // Backend now uses consistent section names - no mapping needed
     const sectionData = data[activeSection] || {};
+    
+    // Debug logging
+    console.log('=== TemplateRenderer renderActiveSection ===');
+    console.log('activeSection:', activeSection);
+    console.log('sectionData:', sectionData);
+    console.log('Available data keys:', Object.keys(data));
 
     return (
       <div className="active-section">

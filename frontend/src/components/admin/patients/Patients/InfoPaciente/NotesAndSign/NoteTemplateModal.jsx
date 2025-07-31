@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
+import '../../../../../../styles/admin/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
 import TemplateRenderer from './TemplateRenderer';
 import useTemplateConfig from './hooks/useTemplateConfig';
 import useSectionData from './hooks/useSectionData';
@@ -9,7 +9,7 @@ const NoteTemplateModal = ({
   onClose, 
   patientData, 
   disciplina = 'PT', 
-  tipoNota = 'Initial Evaluation',
+  tipoNota = 'evaluation',
   initialData = {},
   onSave 
 }) => {
@@ -23,17 +23,6 @@ const NoteTemplateModal = ({
     error: configError,
     refreshConfig 
   } = useTemplateConfig(disciplina, tipoNota, isOpen);
-
-  // Debug log for initial data (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔷 NoteTemplateModal - Modal opened with data:', {
-      initialData,
-      patientData,
-      disciplina,
-      tipoNota,
-      templateConfig
-    });
-  }
 
   // Manage section data with autosave
   const {
@@ -78,20 +67,14 @@ const NoteTemplateModal = ({
         return;
       }
 
-      // Save final data with completed status
-      const finalData = {
-        ...data,
-        status: "Completed"
-      };
-      
-      const result = await saveData(finalData);
+      // Save final data
+      const result = await saveData();
       
       if (onSave) {
-        await onSave(finalData, { 
+        await onSave(data, { 
           templateConfig, 
           validation,
-          completionStats: getCompletionStats(),
-          isCompleted: true
+          completionStats: getCompletionStats()
         });
       }
 
@@ -159,6 +142,8 @@ const NoteTemplateModal = ({
       </div>
     );
   }
+
+  if (!isOpen) return null;
 
   const completionStats = getCompletionStats();
 

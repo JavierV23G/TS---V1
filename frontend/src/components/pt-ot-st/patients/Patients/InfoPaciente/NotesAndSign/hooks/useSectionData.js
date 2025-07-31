@@ -2,9 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 // Hook para manejar datos de sections con autosave
 const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
-  // Asegurar que initialData siempre sea un objeto válido
-  const safeInitialData = initialData && typeof initialData === 'object' ? initialData : {};
-  const [data, setData] = useState(safeInitialData);
+  const [data, setData] = useState(initialData);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -101,21 +99,34 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
   // Función para validar datos
   const validateData = useCallback((dataToValidate = data) => {
+    console.log('=== DEBUG: validateData called ===');
+    console.log('dataToValidate:', dataToValidate);
+    console.log('Type of dataToValidate:', typeof dataToValidate);
+    
     const errors = {};
     const warnings = {};
 
-    // Verificar que dataToValidate existe y es un objeto
-    if (!dataToValidate || typeof dataToValidate !== 'object') {
-      return { errors: {}, warnings: {}, isValid: true };
-    }
-
-    // Validaciones básicas
+    // Solo validar si tenemos sections template (objetos numéricos como "1", "2", "3")
+    const templateSections = {};
+    const nonTemplateSections = {};
+    
+    console.log('Data entries to validate:', Object.entries(dataToValidate));
+    
     Object.entries(dataToValidate).forEach(([sectionId, sectionData]) => {
-      if (!sectionData || typeof sectionData !== 'object') {
-        errors[sectionId] = 'Invalid section data';
-        return;
+      console.log(`Validating section "${sectionId}":`, sectionData, 'Type:', typeof sectionData);
+      
+      // Solo validar sections que son strings numéricos ("1", "2", "3") - estas son las sections template
+      if (/^\d+$/.test(sectionId) && sectionData && typeof sectionData === 'object') {
+        templateSections[sectionId] = sectionData;
+        console.log(`Section "${sectionId}" is a template section`);
+      } else {
+        nonTemplateSections[sectionId] = sectionData;
+        console.log(`Section "${sectionId}" failed validation - not an object:`, typeof sectionData);
       }
+    });
 
+    // Solo validar las sections template
+    Object.entries(templateSections).forEach(([sectionId, sectionData]) => {
       // Validar campos requeridos (esto se podría hacer más específico por section)
       const emptyFields = Object.entries(sectionData)
         .filter(([key, value]) => {
@@ -130,6 +141,12 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
         warnings[sectionId] = `Empty fields: ${emptyFields.join(', ')}`;
       }
     });
+
+    console.log('=== DEBUG: Validation complete ===');
+    console.log('Template sections found:', Object.keys(templateSections));
+    console.log('Non-template sections (ignored):', Object.keys(nonTemplateSections));
+    console.log('Errors:', errors);
+    console.log('Warnings:', warnings);
 
     return { errors, warnings, isValid: Object.keys(errors).length === 0 };
   }, [data]);
@@ -163,24 +180,8 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
     };
   }, [enabled, isDirty, data, onSave]);
 
-  // Effect para actualizar datos cuando cambia initialData
-  useEffect(() => {
-    const safeInitialData = initialData && typeof initialData === 'object' ? initialData : {};
-    setData(safeInitialData);
-    setIsDirty(false);
-  }, [initialData]);
-
   // Función para obtener estadísticas de completitud
   const getCompletionStats = useCallback(() => {
-    // Verificar que data existe y es un objeto
-    if (!data || typeof data !== 'object') {
-      return {
-        total: 0,
-        completed: 0,
-        percentage: 0
-      };
-    }
-
     const sections = Object.keys(data);
     const completedSections = sections.filter(sectionId => {
       const sectionData = data[sectionId];

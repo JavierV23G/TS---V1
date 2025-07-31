@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/GaitMobilitySection.scss';
+import '../../../../../../../styles/admin/Patients/InfoPaciente/NotesAndSign/sections/GaitMobilitySection.scss';
 import StandardizedTest from '../StandardizedTest';
 
 const GaitMobilitySection = ({ data, onChange, sectionId, config, onOpenTest }) => {

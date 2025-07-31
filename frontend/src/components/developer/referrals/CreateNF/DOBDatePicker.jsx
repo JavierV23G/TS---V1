@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Crear fecha desde string sin problemas de timezone
 const createDateFromString = (dateString) => {
   if (!dateString) return null;
   
   const [year, month, day] = dateString.split('-').map(Number);
+  // Crear fecha en timezone local
   return new Date(year, month - 1, day);
 };
 
+// FUNCIÓN HELPER FUERA DEL COMPONENTE - Formatear fecha para input sin problemas de timezone
 const formatInputDate = (date) => {
   if (!date) return '';
   
@@ -16,6 +19,7 @@ const formatInputDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+// Componente de DatePicker específico para fecha de nacimiento
 const DevDOBDatePicker = ({ 
   selectedDate, 
   onChange, 
@@ -28,10 +32,11 @@ const DevDOBDatePicker = ({
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentDecade, setCurrentDecade] = useState(Math.floor(new Date().getFullYear() / 10) * 10);
   const [localDate, setLocalDate] = useState(selectedDate ? createDateFromString(selectedDate) : null);
-  const [viewMode, setViewMode] = useState('days');
+  const [viewMode, setViewMode] = useState('days'); // 'days', 'months', 'years', 'decades'
   const [animation, setAnimation] = useState('');
   const calendarRef = useRef(null);
 
+  // Formatear la fecha para mostrar en el input (DD/MM/YYYY)
   const formatDisplayDate = (date) => {
     if (!date) return '';
     const day = date.getDate().toString().padStart(2, '0');
@@ -40,7 +45,9 @@ const DevDOBDatePicker = ({
     return `${day}/${month}/${year}`;
   };
 
+  // Resto del código igual...
   
+  // Formatear la fecha para el valor del formulario (YYYY-MM-DD)
   const formatInputDate = (date) => {
     if (!date) return '';
     const year = date.getFullYear();
@@ -49,6 +56,7 @@ const DevDOBDatePicker = ({
     return `${year}-${month}-${day}`;
   };
   
+  // Obtener el nombre del mes y año actual para el encabezado
   const getHeaderText = () => {
     if (viewMode === 'days') {
       const months = [
@@ -66,25 +74,32 @@ const DevDOBDatePicker = ({
     }
   };
   
+  // Generar los días para mostrar en el calendario
   const generateDays = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
+    // Primer día del mes actual
     const firstDayOfMonth = new Date(year, month, 1);
-    const firstDayOfWeek = firstDayOfMonth.getDay();
+    const firstDayOfWeek = firstDayOfMonth.getDay(); // 0 = domingo, 1 = lunes, etc.
     
+    // Último día del mes
     const lastDayOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastDayOfMonth.getDate();
     
+    // Días del mes anterior para completar la primera semana
     const daysFromPrevMonth = firstDayOfWeek;
     const prevMonth = new Date(year, month, 0);
     const daysInPrevMonth = prevMonth.getDate();
     
+    // Días del mes siguiente para completar la última semana
     const lastDayOfWeek = lastDayOfMonth.getDay();
     const daysFromNextMonth = 6 - lastDayOfWeek;
     
+    // Generar array de todos los días
     const days = [];
     
+    // Días del mes anterior
     for (let i = daysInPrevMonth - daysFromPrevMonth + 1; i <= daysInPrevMonth; i++) {
       days.push({
         day: i,
@@ -95,6 +110,7 @@ const DevDOBDatePicker = ({
       });
     }
     
+    // Días del mes actual
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         day: i,
@@ -105,6 +121,7 @@ const DevDOBDatePicker = ({
       });
     }
     
+    // Días del mes siguiente
     for (let i = 1; i <= daysFromNextMonth; i++) {
       days.push({
         day: i,
@@ -118,6 +135,7 @@ const DevDOBDatePicker = ({
     return days;
   };
   
+  // Generar meses para la vista de meses
   const generateMonths = () => {
     const months = [];
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -133,6 +151,7 @@ const DevDOBDatePicker = ({
     return months;
   };
   
+  // Generar años para la vista de años
   const generateYears = () => {
     const years = [];
     const startYear = currentDecade;
@@ -148,6 +167,7 @@ const DevDOBDatePicker = ({
     return years;
   };
   
+  // Generar décadas para la vista de décadas
   const generateDecades = () => {
     const decades = [];
     const startDecade = Math.floor(currentDecade / 100) * 100;
@@ -163,6 +183,7 @@ const DevDOBDatePicker = ({
     return decades;
   };
   
+  // Navegar al mes anterior
   const goToPrevMonth = () => {
     setAnimation('slide-out-right');
     setTimeout(() => {
@@ -182,6 +203,7 @@ const DevDOBDatePicker = ({
     }, 400);
   };
   
+  // Navegar al mes siguiente
   const goToNextMonth = () => {
     setAnimation('slide-out-left');
     setTimeout(() => {
@@ -201,6 +223,7 @@ const DevDOBDatePicker = ({
     }, 400);
   };
   
+  // Cambiar el modo de vista
   const changeViewMode = (mode) => {
     setAnimation('zoom-out');
     setTimeout(() => {
@@ -212,21 +235,25 @@ const DevDOBDatePicker = ({
     }, 400);
   };
   
+  // Manejar clic en el mes
   const handleMonthClick = (month) => {
     setCurrentMonth(new Date(currentYear, month, 1));
     changeViewMode('days');
   };
   
+  // Manejar clic en el año
   const handleYearClick = (year) => {
     setCurrentYear(year);
     changeViewMode('months');
   };
   
+  // Manejar clic en la década
   const handleDecadeClick = (decade) => {
     setCurrentDecade(decade);
     changeViewMode('years');
   };
   
+  // Manejar clic en el encabezado para cambiar la vista
   const handleHeaderClick = () => {
     if (viewMode === 'days') {
       changeViewMode('months');
@@ -237,6 +264,7 @@ const DevDOBDatePicker = ({
     }
   };
   
+  // Seleccionar un día
   const selectDay = (day) => {
     if (!day.isCurrentMonth) {
       if (day.month < currentMonth.getMonth() || (day.month === 11 && currentMonth.getMonth() === 0)) {
@@ -256,12 +284,14 @@ const DevDOBDatePicker = ({
       setLocalDate(day.date);
       onChange(formatInputDate(day.date));
       
+      // Añadir una pequeña animación al calendario antes de cerrarlo
       setTimeout(() => {
         setShowCalendar(false);
       }, 300);
     }
   };
   
+  // Limpiar selección
   const clearDate = (e) => {
     e.stopPropagation();
     setLocalDate(null);
@@ -272,6 +302,7 @@ const DevDOBDatePicker = ({
     }, 300);
   };
   
+  // Establecer la fecha a hoy
   const setToday = (e) => {
     e.stopPropagation();
     const today = new Date();
@@ -288,12 +319,14 @@ const DevDOBDatePicker = ({
     }, 400);
   };
   
+  // Mostrar calendario
   const handleShowCalendar = () => {
     if (!disabled) {
       setShowCalendar(true);
     }
   };
   
+  // Cerrar calendario
   const handleCloseCalendar = (e) => {
     e.stopPropagation();
     setAnimation('bounce-out');
@@ -303,8 +336,10 @@ const DevDOBDatePicker = ({
     }, 300);
   };
   
+  // Cerrar el calendario al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Solo cuando el calendario está abierto y el clic no es dentro del calendario
       if (showCalendar && calendarRef.current && !calendarRef.current.contains(event.target)) {
         setAnimation('bounce-out');
         setTimeout(() => {
@@ -320,6 +355,7 @@ const DevDOBDatePicker = ({
     };
   }, [showCalendar]);
   
+  // Actualizar el estado local si cambia la fecha seleccionada externamente
   useEffect(() => {
     if (selectedDate) {
       const date = new Date(selectedDate);
@@ -332,6 +368,7 @@ const DevDOBDatePicker = ({
     }
   }, [selectedDate]);
   
+  // Comprobar si un día es hoy
   const isToday = (date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
@@ -339,6 +376,7 @@ const DevDOBDatePicker = ({
            date.getFullYear() === today.getFullYear();
   };
   
+  // Comprobar si un día está seleccionado
   const isSelected = (date) => {
     if (!localDate) return false;
     return date.getDate() === localDate.getDate() &&
@@ -346,16 +384,19 @@ const DevDOBDatePicker = ({
            date.getFullYear() === localDate.getFullYear();
   };
   
+  // Comprobar si un mes está seleccionado
   const isSelectedMonth = (month, year) => {
     if (!localDate) return false;
     return month === localDate.getMonth() && year === localDate.getFullYear();
   };
   
+  // Comprobar si un año está seleccionado
   const isSelectedYear = (year) => {
     if (!localDate) return false;
     return year === localDate.getFullYear();
   };
   
+  // Días de la semana
   const weekdays = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
   
   return (
@@ -382,8 +423,10 @@ const DevDOBDatePicker = ({
       
       {showCalendar && (
         <>
+          {/* Overlay que cubre toda la pantalla */}
           <div className="calendar-overlay" onClick={handleCloseCalendar}></div>
           
+          {/* Dropdown del calendario */}
           <div className={`calendar-dropdown ${animation}`}>
             <div className="calendar-header">
               <div className="month-year" onClick={handleHeaderClick}>
