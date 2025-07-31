@@ -341,16 +341,35 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                     </div>
                     {discipline} Therapist
                   </div>
-                  <button 
-                    className="edit-button glass-btn-sm" 
-                    onClick={() => {
-                      setIsEditingStaff(true);
-                      setEditingRole('main'); // Editing PT/OT/ST
-                    }}
-                  >
-                    <i className="fas fa-edit"></i>
-                    <div className="btn-glow"></div>
-                  </button>
+                  <div className="staff-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button 
+                      className="edit-button glass-btn-sm" 
+                      onClick={() => {
+                        setIsEditingStaff(true);
+                        setEditingRole('main'); // Editing PT/OT/ST
+                      }}
+                    >
+                      <i className="fas fa-edit"></i>
+                      <div className="btn-glow"></div>
+                    </button>
+                    {data[`assigned_${discipline.toLowerCase()}`] && (
+                      <button 
+                        className="unassign-btn glass-btn-sm"
+                        onClick={() => onUnassignStaff(discipline, 'main')}
+                        style={{ 
+                          background: '#fee2e2', 
+                          color: '#dc2626', 
+                          border: '1px solid #fecaca',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        <i className="fas fa-times"></i>
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="staff-details">
                   {data[`assigned_${discipline.toLowerCase()}`] ? (
@@ -371,23 +390,6 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                         <div className="info-item glass-item">
                           <i className="fas fa-calendar"></i>
                           <span>Assigned: {new Date().toLocaleDateString()}</span>
-                        </div>
-                        <div className="info-item glass-item">
-                          <button 
-                            className="unassign-btn glass-btn-sm"
-                            onClick={() => onUnassignStaff(discipline, 'main')}
-                            style={{ 
-                              background: '#fee2e2', 
-                              color: '#dc2626', 
-                              border: '1px solid #fecaca',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '12px'
-                            }}
-                          >
-                            <i className="fas fa-times"></i>
-                            Remove
-                          </button>
                         </div>
                       </div>
                     </>
@@ -413,16 +415,35 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                     </div>
                     {discipline}A Assistant
                   </div>
-                  <button 
-                    className="edit-button glass-btn-sm" 
-                    onClick={() => {
-                      setIsEditingStaff(true);
-                      setEditingRole('assistant'); // Editing PTA/COTA/STA
-                    }}
-                  >
-                    <i className="fas fa-edit"></i>
-                    <div className="btn-glow"></div>
-                  </button>
+                  <div className="staff-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button 
+                      className="edit-button glass-btn-sm" 
+                      onClick={() => {
+                        setIsEditingStaff(true);
+                        setEditingRole('assistant'); // Editing PTA/COTA/STA
+                      }}
+                    >
+                      <i className="fas fa-edit"></i>
+                      <div className="btn-glow"></div>
+                    </button>
+                    {data[`assigned_${discipline.toLowerCase()}a`] && (
+                      <button 
+                        className="unassign-btn glass-btn-sm"
+                        onClick={() => onUnassignStaff(discipline, 'assistant')}
+                        style={{ 
+                          background: '#fee2e2', 
+                          color: '#dc2626', 
+                          border: '1px solid #fecaca',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        <i className="fas fa-times"></i>
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="staff-details">
                   {data[`assigned_${discipline.toLowerCase()}a`] ? (
@@ -443,23 +464,6 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                         <div className="info-item glass-item">
                           <i className="fas fa-calendar"></i>
                           <span>Assigned: {new Date().toLocaleDateString()}</span>
-                        </div>
-                        <div className="info-item glass-item">
-                          <button 
-                            className="unassign-btn glass-btn-sm"
-                            onClick={() => onUnassignStaff(discipline, 'assistant')}
-                            style={{ 
-                              background: '#fee2e2', 
-                              color: '#dc2626', 
-                              border: '1px solid #fecaca',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '12px'
-                            }}
-                          >
-                            <i className="fas fa-times"></i>
-                            Remove
-                          </button>
                         </div>
                       </div>
                     </>
