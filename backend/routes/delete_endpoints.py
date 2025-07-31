@@ -27,6 +27,40 @@ def delete_staff(staff_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
+@router.delete("/unassign-staff")
+def unassign_staff_from_patient(patient_id: int, discipline: str, db: Session = Depends(get_db)):
+    from database.models import StaffAssignment
+    
+    # If discipline is a specific role (PT, PTA, etc), unassign only that role
+    # If discipline is a general discipline, unassign all roles in that discipline (legacy support)
+    specific_roles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA']
+    
+    if discipline.upper() in specific_roles:
+        # Unassign only the specific role
+        roles_to_remove = [discipline.upper()]
+    else:
+        # Legacy: Map discipline to all roles in that discipline  
+        discipline_roles = {
+            'PT': ['PT', 'PTA'],
+            'OT': ['OT', 'COTA'], 
+            'ST': ['ST', 'STA']
+        }
+        roles_to_remove = discipline_roles.get(discipline.upper(), [discipline.upper()])
+    
+    assignments = db.query(StaffAssignment).filter(
+        StaffAssignment.patient_id == patient_id,
+        StaffAssignment.assigned_role.in_(roles_to_remove)
+    ).all()
+    
+    if not assignments:
+        raise HTTPException(status_code=404, detail=f"No staff assignments found for role(s): {', '.join(roles_to_remove)}")
+    
+    for assignment in assignments:
+        db.delete(assignment)
+    
+    db.commit()
+    return {"message": f"Staff unassigned from {', '.join(roles_to_remove)} role(s)"}
+
 #///////////////////////// VISITS //////////////////////////#
 
 @router.delete("/visits/{id}")

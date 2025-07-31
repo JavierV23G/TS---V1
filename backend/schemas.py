@@ -52,6 +52,7 @@ class PatientCreate(BaseModel):
     contact_info: Optional[Dict[str, str]] = None  
     insurance: Optional[str] = None
     physician: Optional[str] = None
+    nurse: Optional[str] = None
     agency_id: int
     nursing_diagnosis: Optional[str] = None
     urgency_level: Optional[str] = None
@@ -75,6 +76,7 @@ class PatientUpdate(BaseModel):
     contact_info: Optional[Dict[str, str]] = None
     insurance: Optional[str] = None
     physician: Optional[str] = None
+    nurse: Optional[str] = None
     agency_id: Optional[int] = None
     nursing_diagnosis: Optional[str] = None
     urgency_level: Optional[str] = None
@@ -102,6 +104,7 @@ class PatientResponse(BaseModel):
     primary_phone: Optional[str] = None  # Formatted primary phone from backend
     insurance: Optional[str] = None
     physician: Optional[str]
+    nurse: Optional[str] = None
     agency_name: Optional[str] = None
     nursing_diagnosis: Optional[str]
     urgency_level: Optional[str]
@@ -215,6 +218,12 @@ class CertificationPeriodResponse(BaseModel):
     start_date: date
     end_date: date
     is_active: bool
+    pt_frequency: str
+    ot_frequency: str
+    st_frequency: str
+    pt_approved_visits: int
+    ot_approved_visits: int
+    st_approved_visits: int
 
     class Config:
         from_attributes = True
@@ -222,6 +231,12 @@ class CertificationPeriodResponse(BaseModel):
 class CertificationPeriodUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    pt_frequency: Optional[str] = None
+    ot_frequency: Optional[str] = None
+    st_frequency: Optional[str] = None
+    pt_approved_visits: Optional[int] = None
+    ot_approved_visits: Optional[int] = None
+    st_approved_visits: Optional[int] = None
 
     class Config:
         from_attributes = True

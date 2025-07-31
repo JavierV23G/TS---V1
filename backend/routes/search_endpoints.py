@@ -92,23 +92,105 @@ def get_active_staff(db: Session = Depends(get_db)):
     staff_list = db.query(Staff).filter(Staff.is_active == True).all()
     return [StaffResponse.model_validate(staff) for staff in staff_list]
 
-@router.get("/patient/{patient_id}/assigned-staff", response_model=List[StaffAssignmentResponse])
-def get_assigned_staff(patient_id: int, db: Session = Depends(get_db)):
+@router.get("/patient/{patient_id}/assigned-staff")
+def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """Get assigned staff with frequencies from selected cert period"""
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     
-    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(StaffAssignment.patient_id == patient_id).all()
+    # If no cert_period_id provided, use active one
+    if not cert_period_id:
+        cert_period = db.query(CertificationPeriod).filter(
+            CertificationPeriod.patient_id == patient_id,
+            CertificationPeriod.is_active == True
+        ).first()
+        if not cert_period:
+            raise HTTPException(status_code=404, detail="No active certification period found")
+        cert_period_id = cert_period.id
+    else:
+        cert_period = db.query(CertificationPeriod).filter(
+            CertificationPeriod.id == cert_period_id
+        ).first()
+        if not cert_period:
+            raise HTTPException(status_code=404, detail="Certification period not found")
     
-    return [
-        StaffAssignmentResponse(
-            id=assignment.id,
-            assigned_at=assignment.assigned_at,
-            assigned_role=assignment.assigned_role,
-            staff=StaffResponse.model_validate(assignment.staff)
-        )
-        for assignment in assignments
-    ]
+    # Get global staff assignments
+    assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
+        StaffAssignment.patient_id == patient_id
+    ).all()
+    
+    # Get all active staff
+    all_staff = db.query(Staff).filter(Staff.is_active == True).all()
+    
+    # Organize by discipline with frequencies from selected cert period  
+    disciplines = {
+        'PT': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['PT', 'PTA']
+            ],
+            'assigned_pt': None,   # PT therapist
+            'assigned_pta': None,  # PTA assistant
+            'frequency': cert_period.pt_frequency,
+            'is_active': False
+        },
+        'OT': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['OT', 'COTA']
+            ],
+            'assigned_ot': None,   # OT therapist
+            'assigned_cota': None, # COTA assistant
+            'frequency': cert_period.ot_frequency,
+            'is_active': False
+        },
+        'ST': {
+            'available_staff': [
+                {'id': s.id, 'name': s.name, 'role': s.role}
+                for s in all_staff if s.role.upper() in ['ST', 'STA']
+            ],
+            'assigned_st': None,   # ST therapist
+            'assigned_sta': None,  # STA assistant  
+            'frequency': cert_period.st_frequency,
+            'is_active': False
+        }
+    }
+    
+    # Fill in assigned staff
+    for assignment in assignments:
+        role = assignment.assigned_role.upper()
+        staff_data = {
+            'id': assignment.staff.id,  
+            'name': assignment.staff.name,
+            'role': assignment.staff.role
+        }
+        
+        # Assign to specific role fields within each discipline
+        if role == 'PT':
+            disciplines['PT']['assigned_pt'] = staff_data
+            disciplines['PT']['is_active'] = True
+        elif role == 'PTA':
+            disciplines['PT']['assigned_pta'] = staff_data
+            disciplines['PT']['is_active'] = True
+        elif role == 'OT':
+            disciplines['OT']['assigned_ot'] = staff_data
+            disciplines['OT']['is_active'] = True
+        elif role == 'COTA':
+            disciplines['OT']['assigned_cota'] = staff_data
+            disciplines['OT']['is_active'] = True
+        elif role == 'ST':
+            disciplines['ST']['assigned_st'] = staff_data
+            disciplines['ST']['is_active'] = True
+        elif role == 'STA':
+            disciplines['ST']['assigned_sta'] = staff_data
+            disciplines['ST']['is_active'] = True
+    
+    return {
+        'patient_id': patient_id,
+        'cert_period_id': cert_period_id,
+        'disciplines': disciplines
+    }
 
 #====================== PATIENTS ======================#
 

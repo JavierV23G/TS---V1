@@ -240,7 +240,7 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
           <div className="contact-details">
             <div className="contact-name"><i className="fas fa-user"></i><span>{contact.name}</span></div>
             <div className="contact-info">
-              <div className="contact-phone"><i className="fas fa-phone"></i><span>{contact.phone}</span></div>
+              <div className="contact-phone"><i className="fas fa-phone"></i><span>{formatPhoneForDisplay(contact.phone)}</span></div>
               <div className="contact-relation"><i className="fas fa-users"></i><span>{contact.relation || 'Not specified'}</span></div>
             </div>
           </div>

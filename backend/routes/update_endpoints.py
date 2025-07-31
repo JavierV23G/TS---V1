@@ -95,6 +95,7 @@ def update_patient_info(
     contact_info: Optional[str] = None,
     insurance: Optional[str] = None,
     physician: Optional[str] = None,
+    nurse: Optional[str] = None,
     agency_id: Optional[int] = None,
     nursing_diagnosis: Optional[str] = None,
     urgency_level: Optional[str] = None,
@@ -137,6 +138,7 @@ def update_patient_info(
         "contact_info": processed_contact_info,
         "insurance": insurance,
         "physician": physician,
+        "nurse": nurse,
         "agency_id": agency_id,
         "nursing_diagnosis": nursing_diagnosis,
         "urgency_level": urgency_level,
@@ -405,6 +407,26 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
         cert.end_date = update_data["end_date"]
     elif "start_date" in update_data:
         cert.end_date = cert.start_date + timedelta(days=60)
+
+    # Update frequencies if provided
+    if "pt_frequency" in update_data:
+        cert.pt_frequency = update_data["pt_frequency"]
+    
+    if "ot_frequency" in update_data:
+        cert.ot_frequency = update_data["ot_frequency"]
+    
+    if "st_frequency" in update_data:
+        cert.st_frequency = update_data["st_frequency"]
+    
+    # Update approved visits if provided
+    if "pt_approved_visits" in update_data:
+        cert.pt_approved_visits = update_data["pt_approved_visits"]
+    
+    if "ot_approved_visits" in update_data:
+        cert.ot_approved_visits = update_data["ot_approved_visits"]
+    
+    if "st_approved_visits" in update_data:
+        cert.st_approved_visits = update_data["st_approved_visits"]
 
     today = date.today()
     patient_active = cert.patient.is_active if cert.patient else False

@@ -289,6 +289,36 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     if not cert:
         raise HTTPException(status_code=404, detail="No certification period found for given date")
 
+    # Validate approved visit limits
+    therapy_type = staff.role.upper()
+    discipline_map = {
+        'PT': 'pt_approved_visits',
+        'PTA': 'pt_approved_visits',
+        'OT': 'ot_approved_visits', 
+        'COTA': 'ot_approved_visits',
+        'ST': 'st_approved_visits',
+        'STA': 'st_approved_visits'
+    }
+    
+    approved_field = discipline_map.get(therapy_type)
+    if approved_field:
+        approved_limit = getattr(cert, approved_field, 0)
+        if approved_limit > 0:
+            # Count existing visits for this discipline in the certification period
+            existing_visits = db.query(Visit).filter(
+                Visit.certification_period_id == cert.id,
+                Visit.therapy_type.in_(['PT', 'PTA'] if therapy_type in ['PT', 'PTA'] 
+                                     else ['OT', 'COTA'] if therapy_type in ['OT', 'COTA']
+                                     else ['ST', 'STA'])
+            ).count()
+            
+            if existing_visits >= approved_limit:
+                discipline_name = 'PT' if therapy_type in ['PT', 'PTA'] else 'OT' if therapy_type in ['OT', 'COTA'] else 'ST'
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Cannot schedule visit: {discipline_name} approved visits limit ({approved_limit}) reached. Current visits: {existing_visits}"
+                )
+
     visit = Visit(
         patient_id=data.patient_id,
         staff_id=data.staff_id,
