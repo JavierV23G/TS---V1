@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import GeolocationService from './GeolocationService';
 import sessionTimeoutService from './SessionTimeoutService';
 import SessionTimeoutModal from './SessionTimeoutModal';
+import JWTService from './JWTService';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -26,7 +27,31 @@ export const AuthProvider = ({ children }) => {
 
     if (token && userData) {
       try {
+        // Verificar si el token JWT es válido y no ha expirado
+        const tokenInfo = JWTService.getTokenInfo(token);
+        
+        if (!tokenInfo.isValid || tokenInfo.isExpired) {
+          console.log('Token expirado o inválido al inicializar:', {
+            isValid: tokenInfo.isValid,
+            isExpired: tokenInfo.isExpired,
+            expirationDate: tokenInfo.expirationDate
+          });
+          clearAuthData();
+          setAuthState(prev => ({
+            ...prev,
+            loading: false,
+            error: 'Session expired'
+          }));
+          return;
+        }
+
         const user = JSON.parse(userData);
+        console.log('Token válido encontrado:', {
+          user: user.username,
+          expiresAt: tokenInfo.expirationDate,
+          timeRemaining: tokenInfo.timeUntilExpiration / 1000 / 60, // minutos
+        });
+
         setAuthState({
           isAuthenticated: true,
           loading: false,
@@ -37,6 +62,7 @@ export const AuthProvider = ({ children }) => {
         
         iniciarMonitoreoSesion();
       } catch (err) {
+        console.error('Error al verificar token:', err);
         clearAuthData();
         setAuthState(prev => ({
           ...prev,
