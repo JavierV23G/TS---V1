@@ -10,22 +10,14 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  const formatPhoneNumber = (phoneStr) => {
-    if (!phoneStr) return '';
-    
-    // Limpiar el string - solo números
-    const cleaned = phoneStr.replace(/\D/g, '');
-    
-    // Validar que tiene al menos 10 dígitos
-    if (cleaned.length < 10) return phoneStr; // Devolver original si no es válido
-    
-    // Formatear como (123) 456-7890
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
+  // Simple phone formatter for display during editing only
+  const formatPhoneForDisplay = (phone) => {
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
     }
-    
-    return phoneStr; // Devolver original si no coincide el patrón
+    return phone;
   };
 
   useEffect(() => {
@@ -119,7 +111,9 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
   const handleEdit = (contact) => {
     setEditingId(contact.id);
     setIsAdding(false);
-    setFormState({ name: contact.name, phone: contact.phone, relation: contact.relation });
+    // Extract raw digits from formatted phone for editing
+    const rawPhone = contact.phone ? contact.phone.replace(/\D/g, '') : '';
+    setFormState({ name: contact.name, phone: rawPhone, relation: contact.relation });
   };
 
   const handleCancel = () => {
@@ -169,9 +163,10 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
       }
       
       // Agregar contactos de emergencia al diccionario (nuevo formato: nombre como key, phone|relation como value)
+      // Dejar que el backend maneje el formateo del teléfono
       updatedEmergencyContacts.forEach((contact, index) => {
         const contactName = contact.name || `Emergency_${index + 1}`;
-        const contactData = `${formatPhoneNumber(contact.phone)}|${contact.relation || 'Emergency'}`;
+        const contactData = `${contact.phone}|${contact.relation || 'Emergency'}`;
         contactDict[contactName] = contactData;
       });
 
@@ -212,7 +207,7 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
       </div>
       <div className="form-row">
         <label htmlFor="contact-phone">Phone</label>
-        <input id="contact-phone" type="tel" value={formatPhoneNumber(formState.phone)} onChange={handlePhoneInputChange} placeholder="(XXX) XXX-XXXX" disabled={isLoading} />
+        <input id="contact-phone" type="tel" value={formatPhoneForDisplay(formState.phone)} onChange={handlePhoneInputChange} placeholder="(XXX) XXX-XXXX" disabled={isLoading} />
       </div>
       <div className="form-row">
         <label htmlFor="contact-relation">Relation</label>
@@ -245,7 +240,7 @@ const EmergencyContactsComponent = ({ patient, onUpdateContacts }) => {
           <div className="contact-details">
             <div className="contact-name"><i className="fas fa-user"></i><span>{contact.name}</span></div>
             <div className="contact-info">
-              <div className="contact-phone"><i className="fas fa-phone"></i><span>{formatPhoneNumber(contact.phone)}</span></div>
+              <div className="contact-phone"><i className="fas fa-phone"></i><span>{contact.phone}</span></div>
               <div className="contact-relation"><i className="fas fa-users"></i><span>{contact.relation || 'Not specified'}</span></div>
             </div>
           </div>

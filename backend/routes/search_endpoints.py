@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-import os, json
+import os, json, re
 from datetime import date
 from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session, joinedload
@@ -25,6 +25,65 @@ from schemas import (
     NoteTemplateWithSectionsResponse)
 
 router = APIRouter()
+
+#====================== UTILITY FUNCTIONS ======================#
+
+def format_phone_number(phone_str):
+    """Format phone number to (XXX) XXX-XXXX format"""
+    if not phone_str:
+        return ''
+    
+    # Clean string - only numbers
+    cleaned = re.sub(r'\D', '', str(phone_str))
+    
+    # Validate at least 10 digits
+    if len(cleaned) < 10:
+        return phone_str  # Return original if invalid
+    
+    # Format as (123) 456-7890
+    match = re.match(r'^(\d{3})(\d{3})(\d{4})$', cleaned)
+    if match:
+        return f"({match.group(1)}) {match.group(2)}-{match.group(3)}"
+    
+    return phone_str  # Return original if doesn't match pattern
+
+def get_primary_phone_number(contact_info):
+    """Get primary phone number from contact_info dictionary"""
+    if not contact_info:
+        return ''
+    
+    phone_number = ''
+    
+    # If it's a dictionary (new structure)
+    if isinstance(contact_info, dict):
+        phone_number = contact_info.get('primary#') or contact_info.get('primary') or contact_info.get('secondary')
+        
+        # If no primary or secondary, search other contacts
+        if not phone_number:
+            other_contacts = {k: v for k, v in contact_info.items() 
+                            if k not in ['primary#', 'primary', 'secondary']}
+            if other_contacts:
+                first_contact = next(iter(other_contacts.values()))
+                if isinstance(first_contact, str) and '|' in first_contact:
+                    phone_number = first_contact.split('|')[0]  # Get phone from phone|relation format
+                elif isinstance(first_contact, dict):
+                    phone_number = first_contact.get('phone', '')
+                else:
+                    phone_number = str(first_contact)
+    
+    elif isinstance(contact_info, str):
+        # Compatibility with old structure
+        try:
+            parsed = json.loads(contact_info)
+            if isinstance(parsed, list) and parsed:
+                phone_number = parsed[0].get('phone', '') if isinstance(parsed[0], dict) else str(parsed[0])
+            else:
+                phone_number = contact_info
+        except json.JSONDecodeError:
+            phone_number = contact_info
+    
+    # Return formatted number
+    return format_phone_number(phone_number) if phone_number else ''
 
 #====================== STAFF ======================#
 
@@ -80,6 +139,7 @@ def get_all_patients(db: Session = Depends(get_db)):
 
         patient_data = patient.__dict__.copy()
         patient_data['agency_name'] = agency_name
+        patient_data['primary_phone'] = get_primary_phone_number(patient.contact_info)
         patient_data['cert_start_date'] = current_cert.start_date if current_cert else None
         patient_data['cert_end_date'] = current_cert.end_date if current_cert else None
         
@@ -119,6 +179,7 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db)):
         "gender": patient.gender,
         "address": patient.address,
         "contact_info": patient.contact_info,
+        "primary_phone": get_primary_phone_number(patient.contact_info),
         "insurance": patient.insurance,
         "physician": patient.physician,
         "agency_name": agency_name,
