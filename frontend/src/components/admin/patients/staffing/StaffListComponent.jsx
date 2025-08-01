@@ -1,65 +1,166 @@
 import React, { useState, useEffect } from 'react';
 import '../../../../styles/developer/Patients/Staffing/StaffEditComponent.scss';
 
-// Plantilla para un nuevo miembro del personal
-const STAFF_TEMPLATE = {
-  personalInfo: {
-    firstName: '',
-    lastName: '',
-    dob: '',
-    gender: ''
-  },
-  contactInfo: {
-    email: '',
-    phone: '',
-    alternatePhone: '',
-    zipCode: '',
-    address: ''
-  },
-  userInfo: {
-    userName: '',
-    password: ''
-  },
-  professionalInfo: {
-    role: ''
-  },
-  documents: {
-    covidVaccine: { status: 'pending', file: null },
-    tbTest: { status: 'pending', file: null },
-    physicalExam: { status: 'pending', file: null },
-    liabilityInsurance: { status: 'pending', file: null },
-    driversLicense: { status: 'pending', file: null },
-    autoInsurance: { status: 'pending', file: null },
-    cprCertification: { status: 'pending', file: null },
-    businessLicense: { status: 'pending', file: null }
-  },
-  status: 'active' // Estado por defecto para nuevos miembros
-};
-
-const AdminStaffEditComponent = ({ onBackToOptions }) => {
+const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
+  // Estados principales
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('Conectando con la base de datos...');
+  const [loadingMessage, setLoadingMessage] = useState('Initializing Staff Management...');
   const [staffList, setStaffList] = useState([]);
   const [filteredStaff, setFilteredStaff] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
-  const [isCreating, setIsCreating] = useState(false); // Nuevo estado para distinguir entre creación y edición
+  const [activeTab, setActiveTab] = useState('overview');
+  const [viewMode, setViewMode] = useState('all');
+  const [showInactive, setShowInactive] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedStaff, setEditedStaff] = useState(null);
+  const [passwordResetMode, setPasswordResetMode] = useState(false);
+  
+  // Estados para la sección de seguridad
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [lastActivity, setLastActivity] = useState(new Date().toLocaleString());
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  
+  // Estados para modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmType, setConfirmType] = useState('danger'); // 'danger' o 'success'
 
-  // Simulación de carga con mensajes dinámicos
+  // Definición de roles con colores y funcionalidades
+  const roles = [
+    { 
+      value: 'pt', 
+      label: 'Physical Therapist', 
+      icon: 'fa-user-md', 
+      color: '#2ECC71',
+      description: 'Evaluates and treats physical mobility disorders',
+      capabilities: ['Patient Evaluations', 'Treatment Plans', 'Progress Tracking', 'Exercise Prescriptions']
+    },
+    { 
+      value: 'pta', 
+      label: 'Physical Therapist Assistant', 
+      icon: 'fa-user-nurse', 
+      color: '#58D68D',
+      description: 'Assists physical therapists in treatment delivery',
+      capabilities: ['Treatment Assistance', 'Exercise Supervision', 'Progress Reports', 'Patient Communication']
+    },
+    { 
+      value: 'ot', 
+      label: 'Occupational Therapist', 
+      icon: 'fa-hand-holding-medical', 
+      color: '#F39C12',
+      description: 'Helps patients improve daily living activities',
+      capabilities: ['ADL Assessments', 'Home Modifications', 'Adaptive Equipment', 'Functional Training']
+    },
+    { 
+      value: 'cota', 
+      label: 'Occupational Therapy Assistant', 
+      icon: 'fa-hand-holding', 
+      color: '#F8C471',
+      description: 'Assists occupational therapists with treatment',
+      capabilities: ['Activity Support', 'Equipment Training', 'Progress Documentation', 'Safety Monitoring']
+    },
+    { 
+      value: 'st', 
+      label: 'Speech Therapist', 
+      icon: 'fa-comment-medical', 
+      color: '#3498DB',
+      description: 'Evaluates and treats communication disorders',
+      capabilities: ['Speech Evaluations', 'Language Therapy', 'Swallowing Assessments', 'Communication Aids']
+    },
+    { 
+      value: 'sta', 
+      label: 'Speech Therapy Assistant', 
+      icon: 'fa-comment-dots', 
+      color: '#85C1E9',
+      description: 'Assists speech therapists with therapy sessions',
+      capabilities: ['Therapy Support', 'Practice Sessions', 'Progress Monitoring', 'Resource Preparation']
+    },
+    { 
+      value: 'administrator', 
+      label: 'Administrator', 
+      icon: 'fa-user-shield', 
+      color: '#9B59B6',
+      description: 'System administration and user management',
+      capabilities: ['Staff Management', 'System Configuration', 'Reports & Analytics', 'Quality Assurance']
+    },
+    { 
+      value: 'agency', 
+      label: 'Agency', 
+      icon: 'fa-hospital-alt', 
+      color: '#D4AC0D',
+      description: 'Healthcare provider organization',
+      capabilities: ['Operations Overview', 'Staff Coordination', 'Compliance Management', 'Business Intelligence']
+    }
+  ];
+
+  // Datos simulados para funcionalidades específicas
+  const mockStaffStats = {
+    pt: { activePatients: 15, completedEvaluations: 8 },
+    pta: { assignedPatients: 12, completedSessions: 42 },
+    ot: { activePatients: 9, homeAssessments: 6 },
+    cota: { supportedPatients: 8, activitiesLed: 67 },
+    st: { activePatients: 7, speechEvaluations: 4 },
+    sta: { supportedPatients: 5, practiceHours: 89 },
+    administrator: { staffManaged: 45, reportsGenerated: 23 },
+    agency: { totalPatients: 156, activeBranches: 2 }
+  };
+
+  // Datos simulados para sedes de agencia
+  const agencyBranches = {
+    'Supportive Home Health': [
+      {
+        id: 1,
+        name: 'Supportive HH',
+        address: '123 Healthcare Ave, Miami, FL 33101',
+        phone: '(305) 555-0123',
+        manager: 'Dr. Maria Rodriguez',
+        services: ['Physical Therapy', 'Occupational Therapy', 'Speech Therapy'],
+        activePatients: 89
+      },
+      {
+        id: 2,
+        name: 'Supportive Hospice',
+        address: '456 Comfort Blvd, Miami, FL 33102',
+        phone: '(305) 555-0456',
+        manager: 'Dr. Carlos Martinez',
+        services: ['End-of-Life Care', 'Pain Management', 'Family Support'],
+        activePatients: 67
+      }
+    ]
+  };
+
+  // Formatear número de teléfono
+  const formatPhoneNumber = (value) => {
+    if (!value) return '';
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    if (phoneNumber.length >= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    } else if (phoneNumber.length >= 3) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    }
+    return phoneNumber.length > 0 ? `(${phoneNumber}` : '';
+  };
+
+  // Carga con el mismo patrón del proyecto
   useEffect(() => {
     setIsLoading(true);
-    setLoadingMessage('Conectando con la base de datos...');
+    setLoadingMessage('Initializing...');
     
     const loadingMessages = [
-      { message: 'Verificando permisos de usuario...', time: 800 },
-      { message: 'Recuperando lista de personal...', time: 800 },
-      { message: 'Cargando documentos asociados...', time: 500 },
-      { message: 'Preparando interfaz de edición...', time: 1500 },
-      { message: 'Optimizando rendimiento...', time: 1000 }
+      { message: 'Connecting to database...', time: 800 },
+      { message: 'Verifying user permissions...', time: 500 },
+      { message: 'Retrieving staff list...', time: 700 },
+      { message: 'Preparing interface...', time: 1200 },
+      { message: 'Optimizing performance...', time: 400 }
     ];
     
     const timeouts = [];
@@ -84,250 +185,938 @@ const AdminStaffEditComponent = ({ onBackToOptions }) => {
     };
   }, []);
 
+  // Obtener datos del personal desde la API
   const fetchStaffData = async () => {
     try {
       const response = await fetch('http://localhost:8000/staff/', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
-  
+
       if (!response.ok) {
         throw new Error('Error al obtener los datos del personal');
       }
-  
+
       const data = await response.json();
-  
-      const adjustedData = data.map(staff => {
+      
+      // Filtrar usuarios que NO sean Developer o Support antes de procesarlos
+      const filteredData = data.filter(staff => {
+        const role = staff.role?.toLowerCase();
+        return role !== 'developer' && role !== 'support';
+      });
+
+      const processedData = filteredData.map(staff => {
         const [firstName, ...rest] = staff.name?.split(' ') || [''];
         const lastName = rest.join(' ');
+        const actualRole = staff.role?.toLowerCase() || 'administrator';
+        const roleInfo = roles.find(r => r.value === actualRole);
+        
         return {
           id: staff.id,
-          firstName,
-          lastName,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          fullName: staff.name || '',
+          email: staff.email || '',
+          phone: formatPhoneNumber(staff.phone) || '',
+          alternatePhone: formatPhoneNumber(staff.alt_phone) || '',
+          zipCode: staff.postal_code || '',
           dob: staff.birthday || '',
           gender: staff.gender || '',
-          email: staff.email || '',
-          phone: staff.phone || '',
-          alternatePhone: staff.alt_phone || '',
-          zipCode: staff.postal_code || '',
-          address: staff.address || '',
           userName: staff.username || '',
-          password: '********',
-          role: staff.role || '',
-          roleDisplay: roles.find(r => r.value === staff.role)?.label || staff.role,
-          status: staff.is_active ? 'active' : 'inactive'
+          role: actualRole,
+          roleInfo: roleInfo,
+          status: staff.is_active ? 'active' : 'inactive',
+          // Datos simulados para funcionalidades premium
+          stats: mockStaffStats[actualRole] || {},
+          lastLogin: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+          performanceScore: Math.floor(Math.random() * 20) + 80,
+          certificationStatus: Math.random() > 0.3 ? 'current' : 'expiring',
+          nextReview: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString()
         };
       });
-  
-      setStaffList(adjustedData);
-      setFilteredStaff(adjustedData);
+
+      setStaffList(processedData);
+      setFilteredStaff(processedData);
+      
     } catch (error) {
       console.error('Error al obtener la lista de personal:', error);
-      alert('Hubo un error al cargar los datos del personal. Por favor, intenta de nuevo.');
       setStaffList([]);
       setFilteredStaff([]);
     }
   };
 
-  // Filtrar y ordenar personal
+  // Filtrar personal
   useEffect(() => {
     let filtered = [...staffList];
     
+    if (viewMode === 'staff') {
+      filtered = filtered.filter(member => member.role !== 'agency');
+    } else if (viewMode === 'agencies') {
+      filtered = filtered.filter(member => member.role === 'agency');
+    }
+    
     if (searchTerm) {
-      filtered = filtered.filter(staff => 
-        `${staff.firstName} ${staff.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        staff.phone.includes(searchTerm)
-      );
+      filtered = filtered.filter(member => {
+        return member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               member.phone.includes(searchTerm);
+      });
     }
     
     if (filterRole !== 'all') {
-      filtered = filtered.filter(staff => staff.role === filterRole);
+      filtered = filtered.filter(member => member.role === filterRole);
+    }
+    
+    if (!showInactive) {
+      filtered = filtered.filter(member => member.status === 'active');
     }
     
     setFilteredStaff(filtered);
-  }, [staffList, searchTerm, filterRole]);
+  }, [staffList, searchTerm, filterRole, showInactive, viewMode]);
 
-  // Roles disponibles
-  const roles = [
-    { value: 'agency', label: 'Agency' },
-    { value: 'support', label: 'Support' },
-    { value: 'developer', label: 'Developer' },
-    { value: 'administrator', label: 'Administrador' },
-    { value: 'pt', label: 'PT - Physical Therapist' },
-    { value: 'pta', label: 'PTA - Physical Therapist Assistant' },
-    { value: 'ot', label: 'OT - Occupational Therapist' },
-    { value: 'cota', label: 'COTA - Occupational Therapy Assistant' },
-    { value: 'st', label: 'ST - Speech Therapist' },
-    { value: 'sta', label: 'STA - Speech Therapy Assistant' },
-  ];
-
-  // Lista de documentos requeridos
-  const documentsList = [
-    { id: 'covidVaccine', name: 'Proof of COVID Vaccine' },
-    { id: 'tbTest', name: 'TB Test proof (PPD/X-Ray)', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)' },
-    { id: 'physicalExam', name: 'Annual Physical Exam Proof' },
-    { id: 'liabilityInsurance', name: 'Professional Liability Insurance' },
-    { id: 'driversLicense', name: 'Driver\'s License' },
-    { id: 'autoInsurance', name: 'Auto Insurance' },
-    { id: 'cprCertification', name: 'CPR/BLS Certification' },
-    { id: 'businessLicense', name: 'Copy of Business License or EIN' },
-  ];
-
-  // Abrir modal para editar un miembro existente
-  const handleOpenProfile = (staff) => {
-    setSelectedStaff(staff);
+  // Abrir perfil de staff
+  const handleOpenProfile = (member) => {
+    setSelectedStaff(member);
     setShowProfileModal(true);
-    setEditMode(true);
-    setIsCreating(false);
-    setActiveTab('info');
+    setActiveTab('overview');
   };
 
-  // Abrir modal para crear un nuevo miembro
-  const handleOpenCreateProfile = () => {
-    const newStaff = {
-      ...STAFF_TEMPLATE,
-      id: `temp-${Date.now()}`, // ID temporal para evitar errores de clave única
-      firstName: STAFF_TEMPLATE.personalInfo.firstName,
-      lastName: STAFF_TEMPLATE.personalInfo.lastName,
-      dob: STAFF_TEMPLATE.personalInfo.dob,
-      gender: STAFF_TEMPLATE.personalInfo.gender,
-      email: STAFF_TEMPLATE.contactInfo.email,
-      phone: STAFF_TEMPLATE.contactInfo.phone,
-      alternatePhone: STAFF_TEMPLATE.contactInfo.alternatePhone,
-      zipCode: STAFF_TEMPLATE.contactInfo.zipCode,
-      address: STAFF_TEMPLATE.contactInfo.address,
-      userName: STAFF_TEMPLATE.userInfo.userName,
-      password: STAFF_TEMPLATE.userInfo.password,
-      role: STAFF_TEMPLATE.professionalInfo.role,
-      roleDisplay: '',
-      status: STAFF_TEMPLATE.status,
-      documents: STAFF_TEMPLATE.documents
-    };
-    setSelectedStaff(newStaff);
-    setShowProfileModal(true);
-    setEditMode(true);
-    setIsCreating(true);
-    setActiveTab('info');
-  };
-
-  // Cerrar el modal
+  // Cerrar perfil
   const handleCloseProfile = () => {
     setShowProfileModal(false);
     setSelectedStaff(null);
-    setEditMode(false);
-    setIsCreating(false);
+    setActiveTab('overview');
+    setIsEditing(false);
+    setEditedStaff(null);
+    // Limpiar estados de seguridad
+    setShowPasswordChange(false);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordStrength(0);
+    // Limpiar estados del modal de confirmación
+    setShowConfirmModal(false);
+    setConfirmAction(null);
+    setConfirmMessage('');
+    setConfirmType('danger');
   };
 
-  // Guardar cambios (crear o actualizar)
-  const handleSaveProfile = async (updatedStaff) => {
+  // Renderizar pestañas según el rol
+  const renderRoleTabs = () => {
+    if (!selectedStaff) return null;
+    
+    const commonTabs = [
+      { id: 'overview', label: 'Overview', icon: 'fa-chart-line' },
+      { id: 'profile', label: 'Profile', icon: 'fa-user-circle' },
+      { id: 'security', label: 'Security', icon: 'fa-shield-alt' }
+    ];
+
+    // Pestañas específicas por rol
+    const roleSpecificTabs = {
+      pt: [{ id: 'patients', label: 'My Patients', icon: 'fa-user-injured' }],
+      pta: [{ id: 'assignments', label: 'Assignments', icon: 'fa-tasks' }],
+      ot: [{ id: 'assessments', label: 'Assessments', icon: 'fa-clipboard-check' }],
+      cota: [{ id: 'activities', label: 'Activities', icon: 'fa-puzzle-piece' }],
+      st: [{ id: 'evaluations', label: 'Evaluations', icon: 'fa-microphone' }],
+      sta: [{ id: 'sessions', label: 'Sessions', icon: 'fa-chalkboard-teacher' }],
+      administrator: [{ id: 'management', label: 'Management', icon: 'fa-users-cog' }],
+      agency: [{ id: 'operations', label: 'Operations', icon: 'fa-building' }]
+    };
+
+    const tabs = [...commonTabs];
+    if (roleSpecificTabs[selectedStaff.role]) {
+      tabs.splice(1, 0, ...roleSpecificTabs[selectedStaff.role]);
+    }
+
+    return tabs;
+  };
+
+  // Renderizar contenido de pestañas
+  const renderTabContent = () => {
+    if (!selectedStaff) return null;
+
+    switch (activeTab) {
+      case 'overview':
+        return renderOverviewTab();
+      case 'profile':
+        return renderProfileTab();
+      case 'patients':
+      case 'assignments':
+      case 'assessments':
+      case 'activities':
+      case 'evaluations':
+      case 'sessions':
+      case 'management':
+        return renderRoleSpecificTab();
+      case 'system':
+      case 'operations':
+        return renderAgencyOperationsTab();
+      case 'security':
+        return renderSecurityTab();
+      default:
+        return renderOverviewTab();
+    }
+  };
+
+  // Pestaña Overview simplificada
+  const renderOverviewTab = () => {
+    if (selectedStaff.role === 'agency') {
+      return (
+        <div className="overview-content clinical">
+          <div className="agency-summary">
+            <div className="summary-card">
+              <div className="card-icon">
+                <i className="fas fa-users" style={{ color: selectedStaff.roleInfo?.color }}></i>
+              </div>
+              <div className="card-info">
+                <h3>Total Patients</h3>
+                <div className="stat-value">{selectedStaff.stats.totalPatients || 0}</div>
+              </div>
+            </div>
+            
+            <div className="summary-card">
+              <div className="card-icon">
+                <i className="fas fa-building" style={{ color: selectedStaff.roleInfo?.color }}></i>
+              </div>
+              <div className="card-info">
+                <h3>Active Branches</h3>
+                <div className="stat-value">{selectedStaff.stats.activeBranches || 0}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="overview-content clinical">
+        <div className="role-summary">
+          <div className="summary-header">
+            <div className="role-icon" style={{ backgroundColor: selectedStaff.roleInfo?.color + '15', border: `2px solid ${selectedStaff.roleInfo?.color}` }}>
+              <i className={`fas ${selectedStaff.roleInfo?.icon}`} style={{ color: selectedStaff.roleInfo?.color }}></i>
+            </div>
+            <div className="role-info">
+              <h3>{selectedStaff.roleInfo?.label}</h3>
+              <p>{selectedStaff.roleInfo?.description}</p>
+            </div>
+          </div>
+          
+          <div className="stats-summary">
+            {Object.entries(selectedStaff.stats).map(([key, value]) => (
+              <div key={key} className="stat-item">
+                <span className="stat-label">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</span>
+                <span className="stat-value">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Actualizar datos del staff
+  const handleUpdateStaff = async () => {
     try {
-      // Aquí implementarás la lógica para crear o editar el staff
-      console.log("handleSaveProfile triggered:", updatedStaff);
-    } catch (error) {
-      console.error('Error in handleSaveProfile:', error);
-      alert('Hubo un error al procesar la información del personal.');
-    }
-  };
-
-  const handleChangeTab = (tab) => {
-    setActiveTab(tab);
-  };
-
-  const handleResetPassword = (staffId) => {
-    alert(`Contraseña restablecida para el usuario con ID ${staffId}. Un correo ha sido enviado con las instrucciones.`);
-  };
-
-  const handleDocumentStatusToggle = (staffId, documentId) => {
-    const updatedStaffList = staffList.map(staff => {
-      if (staff.id === staffId) {
-        return {
-          ...staff,
-          documents: {
-            ...staff.documents,
-            [documentId]: {
-              ...staff.documents[documentId],
-              status: staff.documents[documentId].status === 'obtained' ? 'pending' : 'obtained'
-            }
-          }
-        };
+      // Crear URL con query parameters según la API
+      const baseUrl = `http://localhost:8000/staff/${selectedStaff.id}`;
+      const params = new URLSearchParams();
+      
+      // Solo enviar campos que han cambiado - usando nombres exactos de la API
+      if (editedStaff.fullName !== selectedStaff.fullName) {
+        params.append('name', editedStaff.fullName);
       }
-      return staff;
-    });
-    
-    setStaffList(updatedStaffList);
-    
-    if (selectedStaff && selectedStaff.id === staffId) {
-      setSelectedStaff(updatedStaffList.find(staff => staff.id === staffId));
+      if (editedStaff.email !== selectedStaff.email) {
+        params.append('email', editedStaff.email);
+      }
+      if (editedStaff.phone !== selectedStaff.phone) {
+        params.append('phone', editedStaff.phone?.replace(/[^\d]/g, '') || '');
+      }
+      if (editedStaff.alternatePhone !== selectedStaff.alternatePhone) {
+        params.append('alt_phone', editedStaff.alternatePhone?.replace(/[^\d]/g, '') || '');
+      }
+      if (editedStaff.zipCode !== selectedStaff.zipCode) {
+        params.append('postal_code', editedStaff.zipCode || '');
+      }
+      if (editedStaff.gender !== selectedStaff.gender) {
+        params.append('gender', editedStaff.gender || '');
+      }
+      if (editedStaff.dob !== selectedStaff.dob) {
+        params.append('birthday', editedStaff.dob || '');
+      }
+      if (editedStaff.role !== selectedStaff.role) {
+        params.append('role', editedStaff.role);
+      }
+
+      // La URL final con query parameters
+      const finalUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+      
+      console.log('Enviando actualización a:', finalUrl);
+      console.log('Datos a actualizar:', Object.fromEntries(params));
+
+      const response = await fetch(finalUrl, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Staff actualizado exitosamente:', result);
+        
+        // Actualizar el estado local inmediatamente
+        const updatedStaff = { 
+          ...selectedStaff, 
+          fullName: editedStaff.fullName,
+          email: editedStaff.email,
+          phone: editedStaff.phone,
+          alternatePhone: editedStaff.alternatePhone,
+          zipCode: editedStaff.zipCode,
+          gender: editedStaff.gender,
+          dob: editedStaff.dob,
+          role: editedStaff.role,
+          roleInfo: roles.find(r => r.value === editedStaff.role) || selectedStaff.roleInfo
+        };
+        
+        setSelectedStaff(updatedStaff);
+        setIsEditing(false);
+        setEditedStaff(null);
+        
+        // Recargar la lista completa para sincronizar
+        fetchStaffData();
+        
+        alert('✅ Información del staff actualizada exitosamente');
+      } else {
+        const errorText = await response.text();
+        console.error('Error al actualizar staff:', response.status, errorText);
+        alert(`❌ Error al actualizar: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error updating staff:', error);
+      alert('❌ Error de conexión al actualizar la información');
     }
   };
 
-  const handleDocumentViewClick = (documentName, fileName) => {
-    alert(`Visualizando documento: ${documentName} - ${fileName}`);
+  // Pestaña Profile con edición
+  const renderProfileTab = () => {
+    const currentData = isEditing ? editedStaff : selectedStaff;
+    
+    return (
+      <div className="profile-content clinical">
+        <div className="profile-header">
+          <h3><i className="fas fa-user-circle"></i> Personal Information</h3>
+          <div className="profile-actions">
+            {!isEditing ? (
+              <button className="edit-btn" onClick={() => {
+                setIsEditing(true);
+                setEditedStaff({
+                  ...selectedStaff,
+                  fullName: selectedStaff.fullName,
+                  email: selectedStaff.email,
+                  phone: selectedStaff.phone,
+                  alternatePhone: selectedStaff.alternatePhone,
+                  zipCode: selectedStaff.zipCode,
+                  gender: selectedStaff.gender,
+                  dob: selectedStaff.dob,
+                  role: selectedStaff.role
+                });
+              }}>
+                <i className="fas fa-edit"></i> Edit Profile
+              </button>
+            ) : (
+              <div className="edit-actions">
+                <button className="save-btn" onClick={handleUpdateStaff}>
+                  <i className="fas fa-save"></i> Save
+                </button>
+                <button className="cancel-btn" onClick={() => {
+                  setIsEditing(false);
+                  setEditedStaff(null);
+                }}>
+                  <i className="fas fa-times"></i> Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="profile-sections">
+          <div className="profile-section">
+            <div className="profile-grid">
+              <div className="profile-field">
+                <label>Full Name</label>
+                {isEditing ? (
+                  <input 
+                    type="text" 
+                    value={editedStaff.fullName} 
+                    onChange={(e) => setEditedStaff({...editedStaff, fullName: e.target.value})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.fullName}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Email</label>
+                {isEditing ? (
+                  <input 
+                    type="email" 
+                    value={editedStaff.email} 
+                    onChange={(e) => setEditedStaff({...editedStaff, email: e.target.value})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.email}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Phone</label>
+                {isEditing ? (
+                  <input 
+                    type="tel" 
+                    value={editedStaff.phone} 
+                    onChange={(e) => setEditedStaff({...editedStaff, phone: formatPhoneNumber(e.target.value)})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.phone}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Alternate Phone</label>
+                {isEditing ? (
+                  <input 
+                    type="tel" 
+                    value={editedStaff.alternatePhone} 
+                    onChange={(e) => setEditedStaff({...editedStaff, alternatePhone: formatPhoneNumber(e.target.value)})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.alternatePhone || 'Not specified'}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Zip Code</label>
+                {isEditing ? (
+                  <input 
+                    type="text" 
+                    value={editedStaff.zipCode} 
+                    onChange={(e) => setEditedStaff({...editedStaff, zipCode: e.target.value})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.zipCode}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Gender</label>
+                {isEditing ? (
+                  <select 
+                    value={editedStaff.gender || ''} 
+                    onChange={(e) => setEditedStaff({...editedStaff, gender: e.target.value})}
+                    className="field-select"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                ) : (
+                  <div className="field-value">{currentData.gender || 'Not specified'}</div>
+                )}
+              </div>
+              
+              <div className="profile-field">
+                <label>Date of Birth</label>
+                {isEditing ? (
+                  <input 
+                    type="date" 
+                    value={editedStaff.dob} 
+                    onChange={(e) => setEditedStaff({...editedStaff, dob: e.target.value})}
+                    className="field-input"
+                  />
+                ) : (
+                  <div className="field-value">{currentData.dob || 'Not specified'}</div>
+                )}
+              </div>
+              
+              {selectedStaff.role !== 'agency' && (
+                <div className="profile-field">
+                  <label>Role</label>
+                  {isEditing ? (
+                    <select 
+                      value={editedStaff.role} 
+                      onChange={(e) => {
+                        const newRole = e.target.value;
+                        const roleInfo = roles.find(r => r.value === newRole);
+                        setEditedStaff({...editedStaff, role: newRole, roleInfo});
+                      }}
+                      className="field-select"
+                    >
+                      {roles.filter(role => role.value !== 'agency').map(role => (
+                        <option key={role.value} value={role.value}>{role.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="field-value">{currentData.roleInfo?.label}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
-  const handleDocumentUpload = (staffId, documentId, e) => {
-    if (e.target.files[0]) {
-      const updatedStaffList = staffList.map(staff => {
-        if (staff.id === staffId) {
-          return {
-            ...staff,
-            documents: {
-              ...staff.documents,
-              [documentId]: {
-                status: 'obtained',
-                file: e.target.files[0].name
-              }
-            }
-          };
+  
+
+  // Pestaña Agency Operations
+  const renderAgencyOperationsTab = () => {
+    const branches = agencyBranches[selectedStaff.fullName] || agencyBranches['Supportive Home Health'] || [];
+    
+    return (
+      <div className="operations-content clinical">
+        <div className="operations-header">
+          <h3><i className="fas fa-building"></i> Agency Branches</h3>
+          <p>Manage your healthcare facility locations</p>
+        </div>
+        
+        <div className="branches-grid">
+          {branches.map(branch => (
+            <div key={branch.id} className="branch-card">
+              <div className="branch-header">
+                <div className="branch-icon">
+                  <i className="fas fa-hospital-alt" style={{ color: selectedStaff.roleInfo?.color }}></i>
+                </div>
+                <div className="branch-info">
+                  <h4>{branch.name}</h4>
+                  <p className="branch-manager">Manager: {branch.manager}</p>
+                </div>
+              </div>
+              
+              <div className="branch-details">
+                <div className="detail-item">
+                  <i className="fas fa-map-marker-alt"></i>
+                  <span>{branch.address}</span>
+                </div>
+                <div className="detail-item">
+                  <i className="fas fa-phone"></i>
+                  <span>{branch.phone}</span>
+                </div>
+                <div className="detail-item">
+                  <i className="fas fa-users"></i>
+                  <span>{branch.activePatients} Active Patients</span>
+                </div>
+              </div>
+              
+              <div className="branch-services">
+                <h5>Services:</h5>
+                <div className="services-list">
+                  {branch.services.map((service, index) => (
+                    <span key={index} className="service-tag">{service}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Pestaña específica por rol para pacientes
+  const renderRoleSpecificTab = () => {
+    const tabLabels = {
+      patients: 'My Patients',
+      assignments: 'My Assignments', 
+      assessments: 'My Assessments',
+      activities: 'My Activities',
+      evaluations: 'My Evaluations',
+      sessions: 'My Sessions',
+      management: 'Staff Management'
+    };
+    
+    const currentTabLabel = tabLabels[activeTab] || 'My Patients';
+    
+    return (
+      <div className="role-specific-content clinical">
+        <div className="patients-overview">
+          <div className="patients-header">
+            <h3><i className={`fas ${selectedStaff.roleInfo?.icon}`} style={{ color: selectedStaff.roleInfo?.color }}></i> {currentTabLabel}</h3>
+            <p>Manage your assigned patients and their care plans</p>
+          </div>
+          
+          <div className="patients-placeholder">
+            <div className="placeholder-icon">
+              <i className="fas fa-user-injured" style={{ color: selectedStaff.roleInfo?.color }}></i>
+            </div>
+            <h4>Patient Management System</h4>
+            <p>This section will display all patients assigned to {selectedStaff.fullName}</p>
+            <div className="placeholder-stats">
+              <div className="stat-box">
+                <span className="stat-number">{selectedStaff.stats[Object.keys(selectedStaff.stats)[0]] || 0}</span>
+                <span className="stat-label">Active Cases</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
+  // Validar fortaleza de contraseña
+  const checkPasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    setPasswordStrength(strength);
+  };
+  
+  // Actualizar contraseña en backend
+  const handlePasswordUpdate = async () => {
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      setPasswordError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    setPasswordError('');
+    
+    try {
+      const baseUrl = `http://localhost:8000/staff/${selectedStaff.id}`;
+      const params = new URLSearchParams();
+      params.append('password', newPassword);
+      
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
-        return staff;
       });
       
-      setStaffList(updatedStaffList);
-      
-      if (selectedStaff && selectedStaff.id === staffId) {
-        setSelectedStaff(updatedStaffList.find(staff => staff.id === staffId));
+      if (response.ok) {
+        setShowPasswordChange(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        alert('Contraseña actualizada exitosamente');
+      } else {
+        setPasswordError('Error al actualizar la contraseña');
       }
+    } catch (error) {
+      console.error('Error:', error);
+      setPasswordError('Error de conexión al actualizar la contraseña');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  // Mostrar modal de confirmación para cambio de estado
+  const handleToggleUserStatus = () => {
+    const newStatus = !selectedStaff.status;
+    const action = newStatus ? 'activar' : 'desactivar';
+    const actionUpper = newStatus ? 'Activar' : 'Desactivar';
+    
+    setConfirmMessage(`¿Estás seguro de que deseas ${action} la cuenta de ${selectedStaff.fullName}?`);
+    setConfirmType(newStatus ? 'success' : 'danger');
+    setConfirmAction(() => () => executeToggleUserStatus(newStatus, action));
+    setShowConfirmModal(true);
+  };
+  
+  // Ejecutar el cambio de estado del usuario
+  const executeToggleUserStatus = async (newStatus, action) => {
+    try {
+      const baseUrl = `http://localhost:8000/staff/${selectedStaff.id}`;
+      const params = new URLSearchParams();
+      params.append('is_active', newStatus.toString());
       
-      alert(`Documento ${documentId} actualizado para ID ${staffId}`);
-    }
-  };
-
-  const handleUpdateStaffData = (field, value, nestedField = null) => {
-    if (nestedField) {
-      // Actualizar campos anidados (como personalInfo.firstName)
-      setSelectedStaff(prev => ({
-        ...prev,
-        [nestedField]: {
-          ...prev[nestedField],
-          [field]: value
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
-      }));
-    } else {
-      // Actualizar campos directos
-      setSelectedStaff(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      });
+      
+      if (response.ok) {
+        // Actualizar el estado local del staff
+        const updatedStaff = { ...selectedStaff, status: newStatus };
+        setSelectedStaff(updatedStaff);
+        
+        // Actualizar también en la lista principal
+        const updatedStaffList = staffList.map(staff => 
+          staff.id === selectedStaff.id ? { ...staff, status: newStatus } : staff
+        );
+        setStaffList(updatedStaffList);
+        setFilteredStaff(updatedStaffList);
+        
+        // Mostrar mensaje de éxito
+        showSuccessMessage(`Cuenta ${action}da exitosamente`);
+      } else {
+        showErrorMessage(`Error al ${action} la cuenta`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showErrorMessage(`Error de conexión al ${action} la cuenta`);
     }
+    
+    setShowConfirmModal(false);
+  };
+  
+  // Funciones para mostrar mensajes
+  const showSuccessMessage = (message) => {
+    // Aquí puedes implementar un toast o notification más elegante
+    alert(message);
+  };
+  
+  const showErrorMessage = (message) => {
+    // Aquí puedes implementar un toast o notification más elegante  
+    alert(message);
   };
 
-  // Calcular porcentaje de documentos completados
-  const getCompletedDocsPercentage = (documents) => {
-    const total = Object.keys(documents).length;
-    const completed = Object.values(documents).filter(doc => doc.status === 'obtained').length;
-    return Math.round((completed / total) * 100);
+  // Pestaña Security completamente rediseñada
+  const renderSecurityTab = () => {
+    return (
+      <div className="premium-security-section">
+        <div className="security-container">
+          {/* Encabezado de seguridad */}
+          <div className="security-header-premium">
+            <div className="header-icon">
+              <i className="fas fa-shield-alt"></i>
+            </div>
+            <div className="header-content">
+              <h2>Seguridad de la Cuenta</h2>
+              <p>Gestiona las credenciales y configuración de seguridad</p>
+            </div>
+          </div>
+          
+          {/* Tarjetas de información de seguridad */}
+          <div className="security-cards-grid">
+            {/* Tarjeta de credenciales */}
+            <div className="security-card credentials-card">
+              <div className="card-header">
+                <i className="fas fa-user-lock"></i>
+                <h3>Credenciales de Acceso</h3>
+              </div>
+              
+              <div className="credentials-info">
+                <div className="credential-item">
+                  <label>Nombre de Usuario</label>
+                  <div className="credential-value">
+                    <input 
+                      type="text" 
+                      value={selectedStaff.userName} 
+                      readOnly 
+                      className="credential-display"
+                    />
+                    <button 
+                      className="action-btn copy"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedStaff.userName);
+                        // Mostrar notificación temporal
+                      }}
+                      title="Copiar usuario"
+                    >
+                      <i className="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="credential-item">
+                  <label>Contraseña</label>
+                  <div className="credential-value">
+                    <input 
+                      type="password" 
+                      value="••••••••" 
+                      readOnly 
+                      className="credential-display"
+                    />
+                    <button 
+                      className="action-btn change"
+                      onClick={() => setShowPasswordChange(!showPasswordChange)}
+                      title="Cambiar contraseña"
+                    >
+                      <i className="fas fa-key"></i>
+                      {showPasswordChange ? 'Cancelar' : 'Cambiar'}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Formulario de cambio de contraseña */}
+                {showPasswordChange && (
+                  <div className="password-change-form">
+                    <div className="form-group">
+                      <label>Nueva Contraseña</label>
+                      <input 
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          checkPasswordStrength(e.target.value);
+                        }}
+                        placeholder="Ingrese nueva contraseña"
+                        className="form-input"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Confirmar Contraseña</label>
+                      <input 
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirme nueva contraseña"
+                        className="form-input"
+                      />
+                    </div>
+                    
+                    {/* Indicador de fortaleza */}
+                    <div className="password-strength">
+                      <label>Fortaleza de contraseña:</label>
+                      <div className="strength-bars">
+                        {[1, 2, 3, 4].map((level) => (
+                          <div 
+                            key={level}
+                            className={`bar ${passwordStrength >= level ? 'active' : ''} level-${level}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="strength-text">
+                        {passwordStrength === 0 && 'Muy débil'}
+                        {passwordStrength === 1 && 'Débil'}
+                        {passwordStrength === 2 && 'Regular'}
+                        {passwordStrength === 3 && 'Fuerte'}
+                        {passwordStrength === 4 && 'Muy fuerte'}
+                      </span>
+                    </div>
+                    
+                    {passwordError && (
+                      <div className="error-message">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        {passwordError}
+                      </div>
+                    )}
+                    
+                    <div className="form-actions">
+                      <button 
+                        className="btn-save-password"
+                        onClick={handlePasswordUpdate}
+                        disabled={isUpdatingPassword}
+                      >
+                        {isUpdatingPassword ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin"></i>
+                            Actualizando...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-save"></i>
+                            Guardar Contraseña
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Tarjeta de estado de seguridad */}
+            <div className="security-card status-card">
+              <div className="card-header">
+                <i className="fas fa-shield-check"></i>
+                <h3>Estado de Seguridad</h3>
+              </div>
+              
+              <div className="security-status-info">
+                <div className="status-item">
+                  <div className="status-icon secure">
+                    <i className="fas fa-check-circle"></i>
+                  </div>
+                  <div className="status-details">
+                    <h4>Nivel de Seguridad</h4>
+                    <span className="status-value high">Alto</span>
+                  </div>
+                </div>
+                
+                <div className="status-item">
+                  <div className="status-icon">
+                    <i className="fas fa-clock"></i>
+                  </div>
+                  <div className="status-details">
+                    <h4>Última Actividad</h4>
+                    <span className="status-value">{lastActivity}</span>
+                  </div>
+                </div>
+                
+                <div className="status-item">
+                  <div className="status-icon">
+                    <i className="fas fa-mobile-alt"></i>
+                  </div>
+                  <div className="status-details">
+                    <h4>Autenticación 2FA</h4>
+                    <div className="toggle-2fa">
+                      <label className="switch">
+                        <input 
+                          type="checkbox"
+                          checked={twoFactorEnabled}
+                          onChange={(e) => setTwoFactorEnabled(e.target.checked)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                      <span className="status-value">
+                        {twoFactorEnabled ? 'Activado' : 'Desactivado'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+          {/* Acciones de seguridad */}
+          <div className="security-actions">
+            <button 
+              className={`action-button ${selectedStaff.status ? 'danger' : 'success'}`}
+              onClick={handleToggleUserStatus}
+            >
+              <i className={`fas ${selectedStaff.status ? 'fa-user-slash' : 'fa-user-check'}`}></i>
+              {selectedStaff.status ? 'Desactivar Cuenta' : 'Activar Cuenta'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
-  // Renderizado de la pantalla de carga
+  // Pantalla de carga profesional como en el resto del proyecto
   if (isLoading) {
     return (
-      <div className="staff-edit-loading">
-        <div className="loading-container">
-          <div className="loading-hologram">
+      <div className="loading-screen">
+        <div className="wave-effect"></div>
+        <div className="scan-effect"></div>
+        <div className="data-lines">
+          {Array.from({ length: 20 }).map((_, index) => (
+            <div key={index} className="line"></div>
+          ))}
+        </div>
+        <div className="loader-container">
+          <div className="loader-hologram">
             <div className="hologram-ring"></div>
             <div className="hologram-circle"></div>
             <div className="hologram-bars">
@@ -338,68 +1127,75 @@ const AdminStaffEditComponent = ({ onBackToOptions }) => {
               <div className="bar"></div>
             </div>
           </div>
-          
-          <div className="loading-progress">
+          <div className="loader-progress">
             <div className="progress-bar">
               <div className="progress-fill"></div>
             </div>
           </div>
-          
-          <div className="loading-text">{loadingMessage}</div>
-          <div className="loading-status">TherapySync Pro <span className="status-dot"></span></div>
+          <div className="loader-text">{loadingMessage}</div>
+          <div className="loader-status">TherapySync Pro <span className="status-dot"></span></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="staff-edit-container">
-      {/* Cabecera mejorada */}
-      <div className="staff-edit-header">
-        <div className="header-content">
+    <div className="premium-staff-management">
+      {/* Header Clínico */}
+      <div className="clinical-header">
+        <div className="header-navigation">
           <button className="back-button" onClick={onBackToOptions}>
             <i className="fas fa-arrow-left"></i>
-            <span>Volver</span>
+            <span>Back</span>
           </button>
-          <div className="header-title-container">
-            <h2>Edición de Personal</h2>
-            <p>Gestiona y actualiza la información del personal terapéutico</p>
-          </div>
         </div>
-        
-        <div className="header-actions">
-          <button className="create-btn" onClick={handleOpenCreateProfile}>
-            <i className="fas fa-plus"></i>
-            <span>Crear Nuevo</span>
-          </button>
-          <button className="refresh-btn" onClick={() => {
-            setIsLoading(true);
-            setLoadingMessage('Actualizando datos...');
-            setTimeout(() => {
-              fetchStaffData();
-              setIsLoading(false);
-            }, 2000);
-          }}>
-            <i className="fas fa-sync-alt"></i> 
-            <span>Actualizar</span>
-          </button>
-          <button className="export-btn">
-            <i className="fas fa-file-export"></i> 
-            <span>Exportar</span>
+        <div className="header-content">
+          <div className="header-title">
+            <h1>Staff Management</h1>
+            <p>Healthcare Professional Directory</p>
+          </div>
+          <button className="add-staff-btn" onClick={onAddNewStaff}>
+            <i className="fas fa-user-plus"></i>
+            <span>Add Member</span>
           </button>
         </div>
       </div>
-      
-      {/* Barra de filtros y búsqueda mejorada */}
-      <div className="search-filter-container">
-        <div className="search-bar">
-          <div className="search-input-wrapper">
-            <i className="fas fa-search"></i>
+
+      {/* Filtros Premium */}
+      <div className="premium-filters">
+        <div className="view-selector">
+          <button 
+            className={`view-btn ${viewMode === 'all' ? 'active' : ''}`}
+            onClick={() => setViewMode('all')}
+          >
+            <i className="fas fa-th-large"></i>
+            <span>All Members</span>
+          </button>
+          <button 
+            className={`view-btn ${viewMode === 'staff' ? 'active' : ''}`}
+            onClick={() => setViewMode('staff')}
+          >
+            <i className="fas fa-user-md"></i>
+            <span>Clinical Staff</span>
+          </button>
+          <button 
+            className={`view-btn ${viewMode === 'agencies' ? 'active' : ''}`}
+            onClick={() => setViewMode('agencies')}
+          >
+            <i className="fas fa-hospital-alt"></i>
+            <span>Agencies</span>
+          </button>
+        </div>
+
+        <div className="search-filters">
+          <div className="search-container">
+            <i className="fas fa-search search-icon"></i>
             <input 
               type="text" 
-              placeholder="Buscar por nombre..." 
+              placeholder="Search team members..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="premium-search"
             />
             {searchTerm && (
               <button className="clear-search" onClick={() => setSearchTerm('')}>
@@ -407,539 +1203,250 @@ const AdminStaffEditComponent = ({ onBackToOptions }) => {
               </button>
             )}
           </div>
-          
+
           <div className="role-filter">
-            <span className="filter-label">Filtrar por rol:</span>
-            <div className="role-options">
-              <button 
-                className={`role-option ${filterRole === 'all' ? 'active' : ''}`}
-                onClick={() => setFilterRole('all')}
-              >
-                <span>Todos</span>
-              </button>
-              
+            <select 
+              value={filterRole} 
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="premium-select"
+            >
+              <option value="all">All Roles</option>
               {roles.map(role => (
-                <button 
-                  key={role.value}
-                  className={`role-option ${filterRole === role.value ? 'active' : ''}`}
-                  onClick={() => setFilterRole(role.value)}
-                >
-                  <span>{role.value.toUpperCase()}</span>
-                </button>
+                <option key={role.value} value={role.value}>{role.label}</option>
               ))}
-            </div>
+            </select>
+          </div>
+
+          <div className="status-toggle">
+            <label className="toggle-switch">
+              <input 
+                type="checkbox" 
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+              <span className="toggle-label">Show Inactive</span>
+            </label>
           </div>
         </div>
       </div>
-      
-      {/* Contenedor de tarjetas de personal rediseñadas */}
-      <div className="staff-cards-container">
+
+      {/* Grid de Staff Premium */}
+      <div className="premium-staff-grid">
         {filteredStaff.length > 0 ? (
-          filteredStaff.map(staff => (
+          filteredStaff.map(member => (
             <div 
-              key={staff.id} 
-              className={`staff-card ${staff.status}`}
-              onClick={() => handleOpenProfile(staff)}
+              key={member.id} 
+              className={`premium-staff-card ${member.status} ${member.role}`}
+              onClick={() => handleOpenProfile(member)}
             >
-              <div className="staff-card-header">
-                <div className="avatar-status">
-                  <div className={`avatar-container ${staff.role}`}>
-                    <div className="avatar-inner">
-                      {staff.firstName.charAt(0)}{staff.lastName.charAt(0)}
-                    </div>
-                    <span className={`status-indicator ${staff.status}`}></span>
+              <div className="card-glow" style={{ background: `linear-gradient(135deg, ${member.roleInfo?.color}20, transparent)` }}></div>
+              
+              <div className="card-header">
+                <div className="avatar-container">
+                  <div 
+                    className="premium-avatar"
+                    style={{ 
+                      backgroundColor: member.roleInfo?.color + '15',
+                      border: `3px solid ${member.roleInfo?.color}`
+                    }}
+                  >
+                    <span className="avatar-text" style={{ color: '#000000' }}>
+                      {member.firstName.charAt(0)}{member.lastName.charAt(0)}
+                    </span>
+                    <div className={`status-indicator ${member.status}`}></div>
                   </div>
                 </div>
                 
-                <div className="staff-identity">
-                  <h3>{staff.firstName} {staff.lastName}</h3>
-                  <span className="staff-role">{staff.roleDisplay}</span>
+                <div className="member-info">
+                  <h3 className="member-name">{member.fullName}</h3>
+                  <div className="role-badge" style={{ color: member.roleInfo?.color }}>
+                    <i className={`fas ${member.roleInfo?.icon}`}></i>
+                    <span>{member.roleInfo?.label}</span>
+                  </div>
                 </div>
-                
-                <div className="edit-action">
-                  <button className="edit-btn">
-                    <i className="fas fa-pen"></i>
-                  </button>
+
+                <div className="status-indicator-wrapper">
+                  <div className={`member-status ${member.status}`}>
+                    <i className="fas fa-circle"></i>
+                    <span>{member.status === 'active' ? 'Active' : 'Inactive'}</span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="staff-card-body">
-                <div className="contact-details">
+
+              <div className="card-body">
+                <div className="contact-info">
                   <div className="contact-item">
                     <i className="fas fa-envelope"></i>
-                    <span>{staff.email}</span>
+                    <span>{member.email}</span>
                   </div>
                   <div className="contact-item">
                     <i className="fas fa-phone-alt"></i>
-                    <span>{staff.phone}</span>
+                    <span>{member.phone}</span>
                   </div>
                   <div className="contact-item">
                     <i className="fas fa-map-marker-alt"></i>
-                    <span>{staff.address}</span>
+                    <span>Zip: {member.zipCode}</span>
                   </div>
                 </div>
-                
-                <div className="documents-progress">
-                  <div className="progress-label">
-                    <span>Documentación</span>
-                    <span className="percentage">{getCompletedDocsPercentage(staff.documents)}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill"
-                      style={{ width: `${getCompletedDocsPercentage(staff.documents)}%` }}
-                    ></div>
-                  </div>
+
+                <div className="card-stats">
+                  {Object.entries(member.stats).slice(0, 2).map(([key, value]) => (
+                    <div key={key} className="stat-item">
+                      <span className="stat-label">{key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                      <span className="stat-value">{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card-footer">
+                <div className="member-role">
+                  <i className={`fas ${member.roleInfo?.icon}`} style={{ color: member.roleInfo?.color }}></i>
+                  <span>{member.roleInfo?.label}</span>
+                </div>
+                <div className="view-profile">
+                  <i className="fas fa-arrow-right"></i>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="no-results">
+          <div className="no-results-premium">
             <div className="no-results-icon">
-              <i className="fas fa-search"></i>
+              <i className="fas fa-user-friends"></i>
             </div>
-            <h3>No se encontraron resultados</h3>
-            <p>Intenta con diferentes criterios de búsqueda o cambia los filtros</p>
+            <h3>No team members found</h3>
+            <p>Try adjusting your search criteria or filters</p>
             <button 
-              className="reset-filters-btn"
+              className="premium-btn primary"
               onClick={() => {
                 setSearchTerm('');
                 setFilterRole('all');
+                setViewMode('all');
+                setShowInactive(true);
               }}
             >
-              <i className="fas fa-redo-alt"></i>
-              <span>Restablecer filtros</span>
+              <i className="fas fa-refresh"></i>
+              Reset Filters
             </button>
           </div>
         )}
       </div>
-      
-      {/* Modal de edición/creación de perfil */}
-      {showProfileModal && selectedStaff && (
-        <div className="profile-modal-overlay">
-          <div className="profile-modal">
-            <div className="modal-header">
-              <div className="staff-profile-header">
-                <div className={`modal-avatar ${selectedStaff.role}`}>
-                  <span className="avatar-text">
-                    {selectedStaff.firstName.charAt(0)}{selectedStaff.lastName.charAt(0)}
-                  </span>
-                  <span className={`modal-status ${selectedStaff.status}`}></span>
-                </div>
-                
-                <div className="staff-details">
-                  <div className="name-inputs">
-                    <div className="input-group">
-                      <label>Nombre</label>
-                      <input 
-                        type="text" 
-                        value={selectedStaff.firstName} 
-                        onChange={(e) => handleUpdateStaffData('firstName', e.target.value, 'personalInfo')}
-                      />
-                    </div>
-                    <div className="input-group">
-                      <label>Apellido</label>
-                      <input 
-                        type="text" 
-                        value={selectedStaff.lastName} 
-                        onChange={(e) => handleUpdateStaffData('lastName', e.target.value, 'personalInfo')}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="role-status-selects">
-                    <div className="input-group">
-                      <label>Rol</label>
-                      <select 
-                        value={selectedStaff.role} 
-                        onChange={(e) => handleUpdateStaffData('role', e.target.value, 'professionalInfo')}
-                      >
-                        <option value="">Seleccionar rol</option>
-                        {roles.map(role => (
-                          <option key={role.value} value={role.value}>{role.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="input-group">
-                      <label>Estado</label>
-                      <select 
-                        value={selectedStaff.status} 
-                        onChange={(e) => handleUpdateStaffData('status', e.target.value)}
-                        className={`status-select ${selectedStaff.status}`}
-                      >
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="modal-actions">
-                <button className="close-modal-btn" onClick={handleCloseProfile}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-            
-            <div className="modal-tabs">
-              <button 
-                className={`tab-btn ${activeTab === 'info' ? 'active' : ''}`}
-                onClick={() => handleChangeTab('info')}
-              >
-                <i className="fas fa-user"></i>
-                <span>Información Personal</span>
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
-                onClick={() => handleChangeTab('documents')}
-              >
-                <i className="fas fa-file-alt"></i>
-                <span>Documentos</span>
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
-                onClick={() => handleChangeTab('security')}
-              >
-                <i className="fas fa-shield-alt"></i>
-                <span>Seguridad</span>
-              </button>
-            </div>
-            
-            <div className="modal-content">
-              {activeTab === 'info' && (
-                <div className="info-tab-content">
-                  {/* Información Personal */}
-                  <div className="info-section">
-                    <h3>Información Personal</h3>
-                    <div className="contact-form">
-                      <div className="form-row">
-                        <div className="input-group">
-                          <label>Fecha de Nacimiento</label>
-                          <input 
-                            type="date" 
-                            value={selectedStaff.dob} 
-                            onChange={(e) => handleUpdateStaffData('dob', e.target.value, 'personalInfo')}
-                          />
-                        </div>
-                        <div className="input-group">
-                          <label>Género</label>
-                          <select 
-                            value={selectedStaff.gender} 
-                            onChange={(e) => handleUpdateStaffData('gender', e.target.value, 'personalInfo')}
-                          >
-                            <option value="">Seleccionar género</option>
-                            <option value="male">Masculino</option>
-                            <option value="female">Femenino</option>
-                            <option value="other">Otro</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Información de Contacto */}
-                  <div className="info-section">
-                    <h3>Información de Contacto</h3>
-                    <div className="contact-form">
-                      <div className="form-row">
-                        <div className="input-group">
-                          <label>Email</label>
-                          <input 
-                            type="email" 
-                            value={selectedStaff.email} 
-                            onChange={(e) => handleUpdateStaffData('email', e.target.value, 'contactInfo')}
-                          />
-                        </div>
-                        <div className="input-group">
-                          <label>Teléfono</label>
-                          <input 
-                            type="tel" 
-                            value={selectedStaff.phone} 
-                            onChange={(e) => handleUpdateStaffData('phone', e.target.value, 'contactInfo')}
-                          />
-                        </div>
-                      </div>
-                      <div className="form-row">
-                        <div className="input-group">
-                          <label>Teléfono Alternativo (Opcional)</label>
-                          <input 
-                            type="tel" 
-                            value={selectedStaff.alternatePhone} 
-                            onChange={(e) => handleUpdateStaffData('alternatePhone', e.target.value, 'contactInfo')}
-                          />
-                        </div>
-                        <div className="input-group">
-                          <label>Código Postal</label>
-                          <input 
-                            type="text" 
-                            value={selectedStaff.zipCode} 
-                            onChange={(e) => handleUpdateStaffData('zipCode', e.target.value, 'contactInfo')}
-                          />
-                        </div>
-                      </div>
-                      <div className="form-row">
-                        <div className="input-group full-width">
-                          <label>Dirección</label>
-                          <input 
-                            type="text" 
-                            value={selectedStaff.address} 
-                            onChange={(e) => handleUpdateStaffData('address', e.target.value, 'contactInfo')}
-                          />
-                        </div>
-                      </div>
-                    </div>
+      {/* Modal Premium Mejorado */}
+      {showProfileModal && selectedStaff && (
+        <div className="premium-modal-overlay" onClick={handleCloseProfile}>
+          <div className="premium-modal enhanced" onClick={(e) => e.stopPropagation()}>
+            {/* Header Compacto y Elegante */}
+            <div className="modal-header-enhanced">
+              <div className="staff-profile-header">
+                <div 
+                  className="profile-avatar-enhanced"
+                  style={{ 
+                    backgroundColor: selectedStaff.roleInfo?.color + '15',
+                    border: `3px solid ${selectedStaff.roleInfo?.color}`,
+                    boxShadow: `0 0 20px ${selectedStaff.roleInfo?.color}25`
+                  }}
+                >
+                  <span style={{ color: '#000000' }}>{selectedStaff.firstName.charAt(0)}{selectedStaff.lastName.charAt(0)}</span>
+                  <div className={`status-indicator-enhanced ${selectedStaff.status}`}></div>
+                </div>
+                <div className="profile-details-enhanced">
+                  <h2 className="staff-name-enhanced">{selectedStaff.fullName}</h2>
+                  <div className="role-badge-enhanced" style={{ 
+                    backgroundColor: selectedStaff.roleInfo?.color + '20', 
+                    color: selectedStaff.roleInfo?.color,
+                    border: `1px solid ${selectedStaff.roleInfo?.color}30`
+                  }}>
+                    <i className={`fas ${selectedStaff.roleInfo?.icon}`}></i>
+                    <span>{selectedStaff.roleInfo?.label}</span>
+                  </div>
+                  <div className="quick-stats-enhanced">
+                    <span className="stat-item-mini">
+                      <i className="fas fa-envelope"></i> {selectedStaff.email}
+                    </span>
+                    <span className="stat-item-mini">
+                      <i className="fas fa-phone"></i> {selectedStaff.phone}
+                    </span>
                   </div>
                 </div>
-              )}
-              
-              {activeTab === 'documents' && (
-                <div className="documents-tab-content">
-                  <div className="documents-header">
-                    <h3>Documentos Requeridos</h3>
-                    <div className="documents-summary">
-                      <div className="completed-percentage">
-                        <div className="circular-progress" data-percentage={getCompletedDocsPercentage(selectedStaff.documents)}>
-                          <svg viewBox="0 0 36 36" className="circular-chart">
-                            <path className="circle-bg"
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                            <path className="circle"
-                              strokeDasharray={`${getCompletedDocsPercentage(selectedStaff.documents)}, 100`}
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                            <text x="18" y="20.35" className="percentage">{getCompletedDocsPercentage(selectedStaff.documents)}%</text>
-                          </svg>
-                        </div>
-                        <span className="documents-text">Documentos Completados</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="documents-grid">
-                    {documentsList.map(doc => (
-                      <div 
-                        key={doc.id} 
-                        className={`document-card ${selectedStaff.documents[doc.id].status}`}
-                      >
-                        <div className="document-card-header">
-                          <div className="document-icon">
-                            <i className="fas fa-file-alt"></i>
-                          </div>
-                          <div className="document-info">
-                            <h4>{doc.name}</h4>
-                            {doc.description && <p>{doc.description}</p>}
-                          </div>
-                          <div 
-                            className={`status-toggle ${selectedStaff.documents[doc.id].status}`}
-                            onClick={() => handleDocumentStatusToggle(selectedStaff.id, doc.id)}
-                          >
-                            <div className="toggle-slider">
-                              <div className="toggle-circle"></div>
-                            </div>
-                            <span className="toggle-text">
-                              {selectedStaff.documents[doc.id].status === 'obtained' ? 'Obtenido' : 'Pendiente'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="document-card-body">
-                          {selectedStaff.documents[doc.id].file ? (
-                            <div className="file-preview">
-                              <div className="file-info">
-                                <i className="fas fa-file-pdf"></i>
-                                <span className="file-name">{selectedStaff.documents[doc.id].file}</span>
-                              </div>
-                              <div className="file-actions">
-                                <button 
-                                  className="view-file-btn"
-                                  onClick={() => handleDocumentViewClick(doc.name, selectedStaff.documents[doc.id].file)}
-                                >
-                                  <i className="fas fa-eye"></i>
-                                  <span>Ver</span>
-                                </button>
-                                <div className="upload-new">
-                                  <label htmlFor={`file-${selectedStaff.id}-${doc.id}`}>
-                                    <i className="fas fa-sync-alt"></i>
-                                    <span>Actualizar</span>
-                                  </label>
-                                  <input
-                                    type="file"
-                                    id={`file-${selectedStaff.id}-${doc.id}`}
-                                    onChange={(e) => handleDocumentUpload(selectedStaff.id, doc.id, e)}
-                                    className="file-input"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="no-file">
-                              <div className="upload-container">
-                                <i className="fas fa-cloud-upload-alt"></i>
-                                <p>No hay archivo. Haga clic para subir documento.</p>
-                                <label htmlFor={`file-${selectedStaff.id}-${doc.id}`} className="upload-btn">
-                                  <i className="fas fa-plus"></i>
-                                  <span>Subir Archivo</span>
-                                </label>
-                                <input
-                                  type="file"
-                                  id={`file-${selectedStaff.id}-${doc.id}`}
-                                  onChange={(e) => handleDocumentUpload(selectedStaff.id, doc.id, e)}
-                                  className="file-input"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {activeTab === 'security' && (
-                <div className="security-tab-content">
-                  <div className="security-section">
-                    <h3>Información de Acceso</h3>
-                    
-                    <div className="security-form">
-                      <div className="form-row">
-                        <div className="input-group">
-                          <label>Nombre de Usuario</label>
-                          <div className="input-with-icon">
-                            <input 
-                              type="text" 
-                              value={selectedStaff.userName} 
-                              onChange={(e) => handleUpdateStaffData('userName', e.target.value, 'userInfo')}
-                            />
-                            <button className="icon-button">
-                              <i className="fas fa-copy"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="form-row">
-                        <div className="input-group">
-                          <label>Contraseña</label>
-                          <div className="input-with-action">
-                            <input 
-                              type="password" 
-                              value={selectedStaff.password} 
-                              onChange={(e) => handleUpdateStaffData('password', e.target.value, 'userInfo')}
-                            />
-                            <button 
-                              className="reset-password-btn"
-                              onClick={() => handleResetPassword(selectedStaff.id)}
-                            >
-                              <i className="fas fa-key"></i>
-                              <span>Resetear Contraseña</span>
-                            </button>
-                          </div>
-                          <p className="help-text">
-                            Al restablecer la contraseña, se enviará un correo electrónico con instrucciones de recuperación.
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="permissions-section">
-                        <h4>Permisos de Usuario</h4>
-                        <div className="permissions-grid">
-                          <div className="permission-category">
-                            <h5>Acceso a Pacientes</h5>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" defaultChecked />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Ver información de pacientes</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" defaultChecked />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Editar información de pacientes</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Crear nuevos pacientes</span>
-                            </div>
-                          </div>
-                          
-                          <div className="permission-category">
-                            <h5>Acceso a Documentos</h5>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" defaultChecked />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Ver documentos</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" defaultChecked />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Subir documentos</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Eliminar documentos</span>
-                            </div>
-                          </div>
-                          
-                          <div className="permission-category">
-                            <h5>Acceso Administrativo</h5>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Acceso al panel administrativo</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Administrar personal</span>
-                            </div>
-                            <div className="permission-option">
-                              <label className="toggle-switch">
-                                <input type="checkbox" />
-                                <span className="toggle-slider"></span>
-                              </label>
-                              <span>Ver reportes financieros</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
+              <button className="close-modal-enhanced" onClick={handleCloseProfile}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            {/* Navegación de Pestañas Mejorada */}
+            <div className="modal-navigation-enhanced">
+              {renderRoleTabs().map(tab => (
+                <button 
+                  key={tab.id}
+                  className={`nav-tab-enhanced ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={activeTab === tab.id ? { 
+                    borderBottomColor: selectedStaff.roleInfo?.color,
+                    color: selectedStaff.roleInfo?.color,
+                    backgroundColor: selectedStaff.roleInfo?.color + '10'
+                  } : {}}
+                >
+                  <i className={`fas ${tab.icon}`}></i>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Contenido del Modal Optimizado */}
+            <div className="modal-content-enhanced">
+              {renderTabContent()}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal de Confirmación Premium */}
+      {showConfirmModal && (
+        <div className="confirm-modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className={`confirm-modal-header ${confirmType}`}>
+              <div className="confirm-icon">
+                <i className={`fas ${confirmType === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}></i>
+              </div>
+              <h3>Confirmar Acción</h3>
             </div>
             
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={handleCloseProfile}>
+            <div className="confirm-modal-body">
+              <p>{confirmMessage}</p>
+              <div className="user-info">
+                <div className="user-avatar" style={{ 
+                  backgroundColor: selectedStaff?.roleInfo?.color + '15',
+                  border: `2px solid ${selectedStaff?.roleInfo?.color}`
+                }}>
+                  {selectedStaff?.firstName?.charAt(0)}{selectedStaff?.lastName?.charAt(0)}
+                </div>
+                <div className="user-details">
+                  <span className="user-name">{selectedStaff?.fullName}</span>
+                  <span className="user-role">{selectedStaff?.roleInfo?.label}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="confirm-modal-footer">
+              <button 
+                className="confirm-btn cancel"
+                onClick={() => setShowConfirmModal(false)}
+              >
                 <i className="fas fa-times"></i>
-                <span>Cancelar</span>
+                Cancelar
               </button>
-              <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
-                <i className="fas fa-save"></i>
-                <span>{isCreating ? 'Crear' : 'Guardar Cambios'}</span>
+              <button 
+                className={`confirm-btn ${confirmType}`}
+                onClick={() => {
+                  if (confirmAction) confirmAction();
+                }}
+              >
+                <i className={`fas ${confirmType === 'danger' ? 'fa-user-slash' : 'fa-user-check'}`}></i>
+                {confirmType === 'danger' ? 'Desactivar' : 'Activar'}
               </button>
             </div>
           </div>
@@ -949,4 +1456,4 @@ const AdminStaffEditComponent = ({ onBackToOptions }) => {
   );
 };
 
-export default AdminStaffEditComponent;
+export default StaffManagementSystem;

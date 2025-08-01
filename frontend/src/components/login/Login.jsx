@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLoadingModal from './AuthLoadingModal';
+import AccountLockoutModal from './AccountLockoutModal';
+import failedAttemptsService from './FailedAttemptsService';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import { useAuth } from './AuthContext';
 
@@ -15,8 +17,19 @@ const Login = ({ onForgotPassword }) => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  const [lockoutModal, setLockoutModal] = useState({
+    isVisible: false,
+    lockoutInfo: null,
+    username: ''
+  });
+  const [unblockAnimation, setUnblockAnimation] = useState({
+    isActive: false,
+    unblockedBy: '',
+    username: ''
+  });
+  const pollIntervalRef = useRef(null);
 
-  // Detectar tamaño de pantalla para ajustes responsive
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 576);
@@ -36,6 +49,27 @@ const Login = ({ onForgotPassword }) => {
       setFormData(prev => ({ ...prev, username: savedUsername }));
       setRememberMe(true);
     }
+
+    failedAttemptsService.setCallbacks({
+      onLockout: (lockoutInfo) => {
+        setLockoutModal({
+          isVisible: true,
+          lockoutInfo,
+          username: lockoutInfo.username
+        });
+        setAuthModal({ isOpen: false, status: 'loading', message: '' });
+      },
+      onAttemptFailed: (attemptInfo) => {
+        const remainingAttempts = attemptInfo.remainingAttempts;
+        setErrors({
+          username: false,
+          password: true,
+          message: `Invalid credentials. ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt remaining' : 'attempts remaining'}.`
+        });
+      },
+      onAccountUnlocked: (username) => {
+      }
+    });
   }, []);
 
   const handleInputChange = (e) => {
@@ -47,12 +81,10 @@ const Login = ({ onForgotPassword }) => {
   };
   
   const handlePasswordFocus = (e) => {
-    // Prevenir que el foco salte cuando el usuario está escribiendo
     e.target.dataset.focused = 'true';
   };
   
   const handlePasswordBlur = (e) => {
-    // Limpiar el indicador de foco
     delete e.target.dataset.focused;
   };
 
@@ -69,7 +101,6 @@ const Login = ({ onForgotPassword }) => {
   };
 
   const showError = (field, message) => {
-    // Guardar el elemento actualmente enfocado
     const currentlyFocused = document.activeElement;
     
     setErrors({ ...errors, [field]: true, message });
@@ -79,7 +110,6 @@ const Login = ({ onForgotPassword }) => {
       setTimeout(() => element.classList.remove('form-pulse'), 500);
     }
     
-    // Restaurar el foco al elemento que estaba enfocado
     if (currentlyFocused && currentlyFocused.id) {
       setTimeout(() => {
         currentlyFocused.focus();
@@ -105,7 +135,6 @@ const Login = ({ onForgotPassword }) => {
   const togglePasswordVisibility = (e) => {
     e.preventDefault();
     setShowPassword(!showPassword);
-    // Mantener el foco en el campo de contraseña
     setTimeout(() => {
       document.getElementById('password')?.focus();
     }, 0);
@@ -115,6 +144,16 @@ const Login = ({ onForgotPassword }) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    const lockStatus = failedAttemptsService.isAccountLocked(formData.username);
+    if (lockStatus.isLocked) {
+      setLockoutModal({
+        isVisible: true,
+        lockoutInfo: lockStatus,
+        username: formData.username
+      });
+      return;
+    }
+
     setAuthModal({
       isOpen: true,
       status: 'loading',
@@ -122,16 +161,46 @@ const Login = ({ onForgotPassword }) => {
     });
 
     try {
-      // PASO 1: Verificar credenciales (SLAVE)
       const credentialsRes = await fetch('http://localhost:8000/auth/verify-credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      if (!credentialsRes.ok) throw new Error('Invalid username or password');
+      // MANEJAR STATUS 429 - CUENTA BLOQUEADA POR EL BACKEND
+      if (credentialsRes.status === 429) {
+        const errorData = await credentialsRes.json();
+        console.log('[LOGIN DEBUG] Status 429 recibido del backend:', errorData);
+        
+        // Mostrar el modal de cuenta bloqueada con la información del backend
+        setLockoutModal({
+          isVisible: true,
+          lockoutInfo: {
+            username: formData.username,
+            message: errorData.message || 'Cuenta bloqueada temporalmente',
+            error: errorData.error || 'Account Temporarily Blocked',
+            retry_after: errorData.retry_after,
+            remaining_minutes: errorData.remaining_minutes,
+            block_level: errorData.block_level,
+            contact_admin: errorData.contact_admin || false
+          },
+          username: formData.username
+        });
+        
+        setAuthModal({ isOpen: false, status: 'loading', message: '' });
+        return; // Salir sin procesar más
+      }
+
+      // MANEJAR STATUS 401 - CREDENCIALES INCORRECTAS
+      if (!credentialsRes.ok) {
+        // Solo registrar intento fallido si NO es bloqueo de cuenta
+        failedAttemptsService.recordFailedAttempt(formData.username);
+        throw new Error('Invalid username or password');
+      }
 
       const userCredentials = await credentialsRes.json();
+      
+      failedAttemptsService.clearAttempts(formData.username);
       
       setAuthModal({
         isOpen: true,
@@ -139,7 +208,6 @@ const Login = ({ onForgotPassword }) => {
         message: 'Creating session...'
       });
 
-      // PASO 2: Crear token (MAIN)
       const tokenRes = await fetch('http://localhost:8000/auth/create-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,21 +222,18 @@ const Login = ({ onForgotPassword }) => {
 
       const { access_token: token } = await tokenRes.json();
 
-      // Crear objeto user para el contexto
       const user = {
         id: userCredentials.user_id,
         username: userCredentials.username,
         role: userCredentials.role
       };
 
-      // Guardar datos de sesión
       localStorage.setItem('auth_token', token);
       localStorage.setItem('auth_user', JSON.stringify(user));
       rememberMe
         ? localStorage.setItem('rememberedUsername', user.username)
         : localStorage.removeItem('rememberedUsername');
 
-      // Actualizar contexto de autenticación
       const loginResult = await login({ token, user });
       if (!loginResult.success) throw new Error('Authentication failed');
 
@@ -189,6 +254,75 @@ const Login = ({ onForgotPassword }) => {
       });
     }
   };
+
+  const handleContactAdmin = () => {
+    alert('Please contact the system administrator to unlock your account.');
+  };
+
+  const handleTryAgainLater = () => {
+    setLockoutModal({
+      isVisible: false,
+      lockoutInfo: null,
+      username: ''
+    });
+  };
+
+  // POLLING OPTIMIZADO PARA DETECTAR DESBLOQUEO POR DEVELOPER
+  useEffect(() => {
+    if (lockoutModal.isVisible && lockoutModal.username) {
+      console.log('[POLLING] Iniciando verificación RÁPIDA de desbloqueo para:', lockoutModal.username);
+      
+      // Verificar cada 500ms para respuesta INMEDIATA
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const response = await fetch('http://localhost:8000/auth/check-block-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: lockoutModal.username
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[POLLING] Estado de bloqueo:', data);
+
+            // Si blocked = false, el usuario fue desbloqueado
+            if (!data.blocked) {
+              console.log('[POLLING] 🚀 ¡Usuario desbloqueado INMEDIATAMENTE! Iniciando animación...');
+              clearInterval(pollIntervalRef.current);
+              
+              // Activar animación de desbloqueo
+              setUnblockAnimation({
+                isActive: true,
+                unblockedBy: 'Security Administrator',
+                username: lockoutModal.username
+              });
+
+              // Cerrar modal de bloqueo después de 500ms para respuesta rápida
+              setTimeout(() => {
+                setLockoutModal({ isVisible: false, lockoutInfo: null, username: '' });
+                
+                // Después de 3 segundos, cerrar animación de desbloqueo
+                setTimeout(() => {
+                  setUnblockAnimation({ isActive: false, unblockedBy: '', username: '' });
+                }, 3000);
+              }, 500);
+            }
+          }
+        } catch (error) {
+          console.error('[POLLING] Error verificando estado:', error);
+        }
+      }, 500); // ⚡ POLLING CADA 500ms PARA RESPUESTA INMEDIATA
+    }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        console.log('[POLLING] Deteniendo verificación rápida');
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [lockoutModal.isVisible, lockoutModal.username]);
 
   return (
     <>
@@ -273,6 +407,45 @@ const Login = ({ onForgotPassword }) => {
       </div>
 
       <AuthLoadingModal {...authModal} onClose={closeAuthModal} userData={{ fullname: formData.username }} />
+      
+      <AccountLockoutModal
+        isVisible={lockoutModal.isVisible}
+        lockoutInfo={lockoutModal.lockoutInfo}
+        username={lockoutModal.username}
+        onContactAdmin={handleContactAdmin}
+        onTryAgainLater={handleTryAgainLater}
+      />
+
+      {/* ANIMACIÓN DE DESBLOQUEO POR DEVELOPER */}
+      {unblockAnimation.isActive && (
+        <div className="unblock-animation-overlay">
+          <div className="unblock-animation-container">
+            <div className="unlock-icon-wrapper">
+              <i className="fas fa-lock unlock-icon locked"></i>
+              <i className="fas fa-unlock unlock-icon unlocked"></i>
+            </div>
+            
+            <h2 className="unblock-title">Account Unlocked!</h2>
+            
+            <div className="unblock-message">
+              <p className="unblock-username">{unblockAnimation.username}</p>
+              <p className="unblock-text">
+                Your account has been unlocked by
+              </p>
+              <p className="unblock-admin">{unblockAnimation.unblockedBy}</p>
+            </div>
+            
+            <div className="unblock-subtext">
+              <i className="fas fa-check-circle"></i>
+              You can now log in with your credentials
+            </div>
+            
+            <div className="unlock-progress-bar">
+              <div className="unlock-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

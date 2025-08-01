@@ -34,7 +34,6 @@ class Patient(Base):
     contact_info = Column(JSON, nullable=True)
     insurance = Column(String, nullable=True)
     physician = Column(String, nullable=True)
-    nurse = Column(String, nullable=True)
     agency_id = Column(Integer, nullable=False)
     nursing_diagnosis = Column(Text, nullable=True)
     urgency_level = Column(String, nullable=True)
@@ -88,12 +87,6 @@ class CertificationPeriod(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     is_active = Column(Boolean, default=True)
-    pt_frequency = Column(String, default="0x/week")
-    ot_frequency = Column(String, default="0x/week")
-    st_frequency = Column(String, default="0x/week")
-    pt_approved_visits = Column(Integer, default=0)
-    ot_approved_visits = Column(Integer, default=0)
-    st_approved_visits = Column(Integer, default=0)
 
     patient = relationship("Patient", back_populates="certification_periods")
     visits = relationship("Visit", back_populates="certification_period")
@@ -151,9 +144,15 @@ class VisitNote(Base):
 
     id = Column(Integer, primary_key=True)
     visit_id = Column(Integer, ForeignKey("visits.id"), nullable=False)
-    status = Column(String, default="Pending")
+    status = Column(String, default="Scheduled")
+    discipline = Column(String, nullable=False)
+    note_type = Column(String, nullable=False)
+
+    therapist_signature = Column(Text, nullable=True)
+    patient_signature = Column(Text, nullable=True)
+    visit_date_signature = Column(Date, nullable=True)
+
     sections_data = Column(JSON, nullable=True)
-    therapist_name = Column(String, nullable=False)
 
     visit = relationship("Visit", back_populates="note")
 

@@ -102,7 +102,7 @@ export const BalanceSection = ({ data, onChange, sectionId, config, onOpenTest }
         </div>
         
         <div className="scale-reference">
-          <button className="info-button" onClick={() => {}}>
+          <button className="info-button" onClick={() => console.log('Show GFP Scale')}>
             <i className="fas fa-info-circle"></i>
             <span>Show GFP Scale Reference</span>
           </button>

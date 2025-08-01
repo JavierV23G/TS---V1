@@ -3,13 +3,11 @@ import { createPortal } from 'react-dom';
 import '../../../styles/developer/Settings/NotesConfiguration.scss';
 
 const NotesModule = () => {
-  // States for sections
   const [sections, setSections] = useState([]);
   const [isCreatingSection, setIsCreatingSection] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
   const [showSectionForm, setShowSectionForm] = useState(false);
   
-  // Section form state
   const [sectionForm, setSectionForm] = useState({
     section_name: '',
     description: '',
@@ -19,28 +17,23 @@ const NotesModule = () => {
     form_schema: {}
   });
   
-  // Separate state for JSON text to allow free editing
   const [jsonText, setJsonText] = useState('{}');
 
-  // States for templates
   const [selectedDiscipline, setSelectedDiscipline] = useState('');
   const [selectedVisitType, setSelectedVisitType] = useState('');
   const [templates, setTemplates] = useState([]);
   const [selectedSections, setSelectedSections] = useState([]);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  // Constants
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const disciplines = ['PT', 'OT', 'ST'];
   const visitTypes = ['Initial Evaluation', 'Standard', 'Reassessment (RA)', 'Discharge (DC)', 'Recert-Eval'];
 
-  // Load sections and templates on mount
   useEffect(() => {
     fetchSections();
     fetchTemplates();
   }, []);
 
-  // Update selected sections when discipline/type changes
   useEffect(() => {
     if (selectedDiscipline && selectedVisitType) {
       fetchSpecificTemplate(selectedDiscipline, selectedVisitType);
@@ -49,7 +42,6 @@ const NotesModule = () => {
     }
   }, [selectedDiscipline, selectedVisitType]);
 
-  // Fetch sections
   const fetchSections = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/note-sections`);
@@ -57,11 +49,9 @@ const NotesModule = () => {
       const data = await response.json();
       setSections(data);
     } catch (error) {
-      console.error('Error fetching sections:', error);
     }
   };
 
-  // Fetch templates
   const fetchTemplates = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/note-templates/full`);
@@ -69,11 +59,9 @@ const NotesModule = () => {
       const data = await response.json();
       setTemplates(data);
     } catch (error) {
-      console.error('Error fetching templates:', error);
     }
   };
 
-  // Fetch specific template to get selected sections
   const fetchSpecificTemplate = async (discipline, visitType) => {
     try {
       const response = await fetch(`${API_BASE_URL}/templates/${discipline}/${visitType}`);
@@ -81,16 +69,13 @@ const NotesModule = () => {
         const template = await response.json();
         setSelectedSections(template.sections.map(s => s.id));
       } else {
-        // Template doesn't exist, clear selections
         setSelectedSections([]);
       }
     } catch (error) {
-      console.error('Error fetching specific template:', error);
       setSelectedSections([]);
     }
   };
 
-  // Reset section form
   const resetSectionForm = () => {
     setSectionForm({
       section_name: '',
@@ -103,52 +88,42 @@ const NotesModule = () => {
     setJsonText('{}');
     setEditingSection(null);
     setShowSectionForm(false);
-    // Re-enable body scroll
     document.body.style.overflow = 'unset';
   };
 
-  // Handle modal backdrop click
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       resetSectionForm();
     }
   };
 
-  // Effect to handle body scroll and footer when modal is open
   useEffect(() => {
     const footer = document.querySelector('.premium-footer');
     
     if (showSectionForm) {
-      // Disable body scroll and hide footer when modal is open
       document.body.style.overflow = 'hidden';
       if (footer) footer.style.display = 'none';
     } else {
-      // Re-enable body scroll and show footer when modal is closed
       document.body.style.overflow = 'unset';
       if (footer) footer.style.display = 'block';
     }
     
-    // Cleanup function to restore scroll and footer on unmount
     return () => {
       document.body.style.overflow = 'unset';
       if (footer) footer.style.display = 'block';
     };
   }, [showSectionForm]);
 
-  // Handle section form submit
   const handleSectionFormSubmit = async (e) => {
     e.preventDefault();
     if (!sectionForm.section_name.trim()) return;
 
     setIsCreatingSection(true);
     try {
-      // Parse JSON before submitting
       let parsedSchema = {};
       try {
         parsedSchema = JSON.parse(jsonText);
       } catch (error) {
-        console.error('Invalid JSON schema:', error);
-        // Use empty object if JSON is invalid
         parsedSchema = {};
       }
 
@@ -172,7 +147,6 @@ const NotesModule = () => {
       await fetchSections();
       resetSectionForm();
       
-      // Show success notification
       const notification = document.createElement('div');
       notification.className = 'success-notification';
       notification.textContent = `Section ${editingSection ? 'updated' : 'created'} successfully!`;
@@ -180,13 +154,11 @@ const NotesModule = () => {
       setTimeout(() => notification.remove(), 3000);
 
     } catch (error) {
-      console.error(`Error ${editingSection ? 'updating' : 'creating'} section:`, error);
     } finally {
       setIsCreatingSection(false);
     }
   };
 
-  // Handle edit section
   const handleEditSection = (section) => {
     setSectionForm({
       section_name: section.section_name,
@@ -201,7 +173,6 @@ const NotesModule = () => {
     setShowSectionForm(true);
   };
 
-  // Handle delete section
   const handleDeleteSection = async (section) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete the section "${section.section_name}"? This action cannot be undone.`);
     if (!confirmDelete) return;
@@ -219,9 +190,8 @@ const NotesModule = () => {
       }
       
       await fetchSections();
-      await fetchTemplates(); // Refresh templates in case the deleted section was used
+      await fetchTemplates();
       
-      // Show success notification
       const notification = document.createElement('div');
       notification.className = 'success-notification';
       notification.textContent = 'Section deleted successfully!';
@@ -229,8 +199,6 @@ const NotesModule = () => {
       setTimeout(() => notification.remove(), 3000);
 
     } catch (error) {
-      console.error('Error deleting section:', error);
-      // Show error notification
       const notification = document.createElement('div');
       notification.className = 'error-notification';
       notification.textContent = 'Error deleting section. Please try again.';
@@ -239,7 +207,6 @@ const NotesModule = () => {
     }
   };
 
-  // Handle section form change
   const handleSectionFormChange = (field, value) => {
     setSectionForm(prev => ({
       ...prev,
@@ -247,13 +214,11 @@ const NotesModule = () => {
     }));
   };
 
-  // Save template
   const handleSaveTemplate = async () => {
     if (!selectedDiscipline || !selectedVisitType) return;
 
     setIsSavingTemplate(true);
     try {
-      // Check if template exists using the specific endpoint
       let existingTemplate = null;
       try {
         const checkResponse = await fetch(`${API_BASE_URL}/templates/${selectedDiscipline}/${selectedVisitType}`);
@@ -261,19 +226,15 @@ const NotesModule = () => {
           existingTemplate = await checkResponse.json();
         }
       } catch (error) {
-        // Template doesn't exist, will create new one
-        console.log('Template does not exist, will create new one');
       }
 
       if (existingTemplate) {
-        // UPDATE existing template using query parameters
         const params = new URLSearchParams({
           discipline: selectedDiscipline,
           note_type: selectedVisitType,
           is_active: 'true'
         });
         
-        // Add replace_section_ids as individual parameters
         selectedSections.forEach(sectionId => {
           params.append('replace_section_ids', sectionId.toString());
         });
@@ -289,7 +250,6 @@ const NotesModule = () => {
           throw new Error(`Failed to update template: ${errorData.detail || response.statusText}`);
         }
       } else {
-        // CREATE new template
         const endpoint = `${API_BASE_URL}/note-templates`;
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -309,10 +269,8 @@ const NotesModule = () => {
       }
       
       await fetchTemplates();
-      // Refresh the specific template data to update the selected sections
       await fetchSpecificTemplate(selectedDiscipline, selectedVisitType);
 
-      // Show success notification
       const notification = document.createElement('div');
       notification.className = 'success-notification';
       notification.textContent = `Template ${existingTemplate ? 'updated' : 'created'} successfully!`;
@@ -320,9 +278,7 @@ const NotesModule = () => {
       setTimeout(() => notification.remove(), 3000);
 
     } catch (error) {
-      console.error('Error saving template:', error);
       
-      // Show error notification
       const notification = document.createElement('div');
       notification.className = 'error-notification';
       notification.textContent = error.message || 'Error saving template. Please try again.';
@@ -333,7 +289,6 @@ const NotesModule = () => {
     }
   };
 
-  // Toggle section in template
   const handleSectionToggle = (sectionId) => {
     setSelectedSections(prev => 
       prev.includes(sectionId)
@@ -493,30 +448,30 @@ const NotesModule = () => {
         >
           <div 
             style={{
-              backgroundColor: '#2C3E50',
-              borderRadius: '12px',
-              padding: '24px',
+              backgroundColor: 'var(--clinical-white)',
+              borderRadius: '16px',
+              padding: '32px',
               maxWidth: '600px',
               width: '90%',
               maxHeight: '90vh',
               overflowY: 'auto',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+              border: '1px solid var(--clinical-border)',
+              boxShadow: 'var(--clinical-shadow-xl)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#fff', fontSize: '1.25rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--clinical-text)', fontSize: '1.5rem', fontWeight: '600' }}>
                 {editingSection ? 'Edit Section' : 'Create Section'}
               </h3>
-              <button onClick={resetSectionForm} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '20px' }}>
+              <button onClick={resetSectionForm} style={{ background: 'none', border: 'none', color: 'var(--clinical-text-light)', cursor: 'pointer', fontSize: '24px', padding: '4px' }}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
             <form onSubmit={handleSectionFormSubmit}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Section Name *</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Section Name *</label>
                 <input
                   type="text"
                   value={sectionForm.section_name}
@@ -525,18 +480,19 @@ const NotesModule = () => {
                   required
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
-                    fontSize: '16px'
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-white)',
+                    color: 'var(--clinical-text)',
+                    fontSize: '16px',
+                    outline: 'none'
                   }}
                 />
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Description</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Description</label>
                 <textarea
                   value={sectionForm.description}
                   onChange={(e) => handleSectionFormChange('description', e.target.value)}
@@ -544,33 +500,34 @@ const NotesModule = () => {
                   rows="3"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-white)',
+                    color: 'var(--clinical-text)',
                     fontSize: '16px',
-                    resize: 'vertical'
+                    resize: 'vertical',
+                    outline: 'none'
                   }}
                 />
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={sectionForm.is_required}
                     onChange={(e) => handleSectionFormChange('is_required', e.target.checked)}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: '12px', accentColor: 'var(--clinical-primary)' }}
                   />
                   Required
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={sectionForm.has_static_image}
                     onChange={(e) => handleSectionFormChange('has_static_image', e.target.checked)}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: '12px', accentColor: 'var(--clinical-primary)' }}
                   />
                   Has Image
                 </label>
@@ -578,7 +535,7 @@ const NotesModule = () => {
 
               {sectionForm.has_static_image && (
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Image URL</label>
+                  <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Image URL</label>
                   <input
                     type="url"
                     value={sectionForm.static_image_url}
@@ -586,19 +543,20 @@ const NotesModule = () => {
                     placeholder="https://..."
                     style={{
                       width: '100%',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      color: '#fff',
-                      fontSize: '16px'
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--clinical-border)',
+                      backgroundColor: 'var(--clinical-white)',
+                      color: 'var(--clinical-text)',
+                      fontSize: '16px',
+                      outline: 'none'
                     }}
                   />
                 </div>
               )}
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', marginBottom: '6px' }}>Form Schema (JSON)</label>
+                <label style={{ display: 'block', color: 'var(--clinical-text)', fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Form Schema (JSON)</label>
                 <textarea
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
@@ -606,17 +564,18 @@ const NotesModule = () => {
                   rows="5"
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#fff',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-light-gray)',
+                    color: 'var(--clinical-text)',
                     fontSize: '14px',
                     fontFamily: 'monospace',
-                    resize: 'vertical'
+                    resize: 'vertical',
+                    outline: 'none'
                   }}
                 />
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--clinical-text-light)', marginTop: '6px', fontStyle: 'italic' }}>
                   Define the form structure for this section in JSON format
                 </div>
               </div>
@@ -627,11 +586,12 @@ const NotesModule = () => {
                   onClick={resetSectionForm}
                   style={{
                     padding: '12px 24px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'transparent',
-                    color: 'rgba(255, 255, 255, 0.8)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--clinical-border)',
+                    backgroundColor: 'var(--clinical-light-gray)',
+                    color: 'var(--clinical-text)',
                     cursor: 'pointer',
+                    fontWeight: '500',
                     transition: 'all 0.3s ease'
                   }}
                 >
@@ -642,14 +602,15 @@ const NotesModule = () => {
                   disabled={isCreatingSection || !sectionForm.section_name.trim()}
                   style={{
                     padding: '12px 24px',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     border: 'none',
-                    backgroundColor: '#4CAF50',
+                    background: 'linear-gradient(135deg, var(--clinical-primary) 0%, var(--clinical-accent) 100%)',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
+                    fontWeight: '600',
                     transition: 'all 0.3s ease',
                     opacity: (isCreatingSection || !sectionForm.section_name.trim()) ? 0.6 : 1
                   }}

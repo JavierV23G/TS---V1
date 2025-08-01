@@ -157,70 +157,60 @@
     }
   }
 
-  // Notes section within AT REST
-  .vitals-notes {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #e9ecef;
-
-    label {
-      display: block;
-      font-weight: 600;
-      color: #495057;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 70px;
-      padding: 10px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      resize: vertical;
-      font-family: inherit;
-      font-size: 14px;
-
-      &:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
-      }
-    }
-  }
-
-  // Checkbox section for vitals out of parameters
-  .vitals-checkbox-section {
+  .vitals-controls {
     margin-top: 20px;
     padding: 15px;
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
+    background: #f8f9fa;
     border-radius: 6px;
 
-    .checkbox-alert {
+    .checkbox-item {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 10px;
 
       input[type="checkbox"] {
         width: auto;
         margin: 0;
-        transform: scale(1.2);
       }
 
       label {
         margin: 0;
-        color: #b7791f;
-        font-weight: 600;
+        color: #495057;
+        font-weight: 500;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.95rem;
+      }
 
-        i {
-          color: #f39c12;
-          font-size: 1.1rem;
+      &.warning {
+        .checkbox-label {
+          color: #e74c3c;
+        }
+      }
+    }
+
+    .additional-notes {
+      margin-top: 15px;
+
+      label {
+        display: block;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        resize: vertical;
+        font-family: inherit;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
         }
       }
     }

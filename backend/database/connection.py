@@ -7,6 +7,7 @@ import time
 
 load_dotenv()
 
+# Initialize metadata and Base
 metadata = MetaData(schema='public')
 Base = declarative_base(metadata=metadata)
 
@@ -32,10 +33,12 @@ def wait_for_db(retries=5, delay=5):
             )
             
             with engine.connect() as conn:
+                # Ensure correct configuration
                 conn.execute(text("SET client_encoding TO 'UTF8'"))
                 conn.execute(text("SET search_path TO public"))
                 conn.execute(text("SET timezone TO 'UTC'"))
                 
+                # Verify connection
                 result = conn.execute(text("SELECT current_database(), current_schema, current_timestamp;"))
                 db_info = result.fetchone()
                 

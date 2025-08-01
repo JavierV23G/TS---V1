@@ -149,6 +149,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   // Función para controlar el período activo localmente
   const setActiveCertificationPeriod = async (periodId) => {
     try {
+      console.log('Setting active certification period:', periodId);
       
       // Solo actualizar el estado local - no modificar fechas en el backend
       const updatedPeriods = certPeriods.map(p => ({
@@ -170,6 +171,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   };
   const updatePatientInsurance = async (insurance) => {
     try {
+      console.log('Updating patient insurance:', insurance);
       
       const params = new URLSearchParams();
       params.append('insurance', insurance);
@@ -188,6 +190,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       }
       
       const updatedPatient = await response.json();
+      console.log('Updated patient insurance:', updatedPatient);
       return updatedPatient;
       
     } catch (err) {
@@ -197,6 +200,10 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   };
   const createCertificationPeriod = async (startDate) => {
     try {
+      console.log('Creating certification period with:', { 
+        patient_id: patient.id, 
+        start_date: startDate
+      });
       
       // CORRECCIÓN: El backend espera start_date como query parameter, no en el body
       const url = new URL(`${API_BASE_URL}/patients/${patient.id}/certification-period`);
@@ -217,6 +224,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       }
       
       const newPeriod = await response.json();
+      console.log('Created certification period:', newPeriod);
       return newPeriod;
       
     } catch (err) {
@@ -228,6 +236,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   // Actualizar período de certificación - CORREGIDO
   const updateCertificationPeriod = async (certId, startDate, endDate, insurance = '', notes = '') => {
     try {
+      console.log('Updating certification period:', { certId, startDate, endDate, insurance, notes });
       
       const response = await fetch(`${API_BASE_URL}/cert-periods/${certId}`, {
         method: 'PUT',
@@ -247,6 +256,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       }
       
       const updatedPeriod = await response.json();
+      console.log('Updated certification period:', updatedPeriod);
       return updatedPeriod;
       
     } catch (err) {
@@ -258,6 +268,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
   // Eliminar período de certificación
   const deleteCertificationPeriod = async (certId) => {
     try {
+      console.log('Deleting certification period:', certId);
       
       const response = await fetch(`${API_BASE_URL}/cert-periods/${certId}`, {
         method: 'DELETE',
@@ -272,6 +283,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         throw new Error(`Failed to delete certification period: ${response.status} - ${errorText}`);
       }
       
+      console.log('Deleted certification period successfully');
       return true;
       
     } catch (err) {
@@ -512,6 +524,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         throw new Error(`Failed to update patient details: ${errorText}`);
       }
 
+      console.log('Patient details updated successfully');
     } catch (error) {
       console.error('Error updating patient details:', error);
       setError(error.message);
@@ -551,6 +564,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
             // Solo enviamos startDate, el backend calcula automáticamente end_date (+60 días)
           );
           
+          console.log('API created period:', apiResponse);
           
           // Crear el objeto del nuevo período
           const newPeriod = {
@@ -600,6 +614,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
               editData.notes || ''
             );
             
+            console.log('API updated period:', apiResponse);
             
             // Actualizar período en el estado local
             const updatedPeriods = certPeriods.map(p => 
@@ -781,6 +796,7 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
       if (periodToDelete && periodToDelete.id !== 'current' && typeof periodToDelete.id === 'number') {
         try {
           await deleteCertificationPeriod(periodToDelete.id);
+          console.log('Period deleted from server successfully');
         } catch (apiError) {
           console.error('Failed to delete from server:', apiError);
           setError('Failed to delete from server: ' + apiError.message);

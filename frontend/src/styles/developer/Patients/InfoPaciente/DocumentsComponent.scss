@@ -1265,12 +1265,12 @@
   }
   
   .documents-list {
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-lg) var(--space-2xl);
     
     &.grid-view {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--space-md);
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: var(--space-lg);
     }
     
     &.list-view {
@@ -1287,7 +1287,7 @@
 
 .document-card {
   @include card-premium();
-  padding: var(--space-md);
+  padding: var(--space-lg);
   position: relative;
   transition: all var(--transition-normal);
   animation: slideInUp var(--transition-normal);
@@ -1571,14 +1571,9 @@
     
     .action-buttons-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      gap: var(--space-sm);
       
-      .action-buttons-left {
-        display: flex;
-        gap: var(--space-sm);
-        
-        .action-btn {
+      .action-btn {
         position: relative;
         display: flex;
         align-items: center;
@@ -1715,7 +1710,6 @@
           color: var(--color-success-600);
         }
       }
-    }
     }
   }
 }

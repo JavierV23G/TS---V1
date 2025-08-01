@@ -75,13 +75,14 @@ const TPInfoWelcome = ({ isMobile, isTablet }) => {
     completedSessions: 0
   });
   
-  // Financial data
-  const [financialData, setFinancialData] = useState({
-    totalRevenue: 58750,
-    monthlyRevenue: 12450,
-    pendingPayments: 3200,
-    revenueGrowth: 18,
-    completedSessions: 145
+  // Therapist performance data - More relevant for therapists
+  const [performanceData, setPerformanceData] = useState({
+    completedSessions: 145,
+    monthlySessionGoal: 160,
+    sessionValue: 125, // Average value per session
+    productivityGrowth: 12,
+    weeklyAverage: 36,
+    nextWeekScheduled: 42
   });
   
   // Effect to calculate statistics when patients change
@@ -98,13 +99,13 @@ const TPInfoWelcome = ({ isMobile, isTablet }) => {
         pendingPatients,
         totalPatients,
         newPatientsToday,
-        revenue: financialData.totalRevenue,
-        completedSessions: financialData.completedSessions
+        revenue: performanceData.completedSessions * performanceData.sessionValue,
+        completedSessions: performanceData.completedSessions
       });
     };
     
     calculateStats();
-  }, [patients, financialData]);
+  }, [patients, performanceData]);
   
   // Enhanced counter animation with optimized timing for mobile
   useEffect(() => {
@@ -205,10 +206,10 @@ const TPInfoWelcome = ({ isMobile, isTablet }) => {
     navigate(`/${baseRole}/patients?scrollTo=patients`);
   };
   
-  // Function to navigate to financial reports
-  const handleViewFinancialReports = () => {
+  // Function to navigate to accounting/performance reports
+  const handleViewPerformanceReports = () => {
     const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
-    navigate(`/${baseRole}/finance?scrollTo=finance`);
+    navigate(`/${baseRole}/accounting`);
   };
 
   // Format number with commas for thousands
@@ -318,35 +319,35 @@ const TPInfoWelcome = ({ isMobile, isTablet }) => {
             <div className="card-header">
               <div className="icon-container finance-icon">
                 <div className="icon-background"></div>
-                <i className="fas fa-chart-line"></i>
+                <i className="fas fa-chart-bar"></i>
               </div>
-              <h3>Financial Overview</h3>
+              <h3>My Performance</h3>
             </div>
             <div className="card-value">
-              <span className="currency">$</span>
-              <span className="counter">{formatNumber(animatedStats.revenue)}</span>
+              <span className="counter">{animatedStats.completedSessions}</span>
+              <span className="counter-unit">sessions</span>
               <div className="counter-badge">
                 <i className="fas fa-arrow-up"></i>
-                <span>{financialData.revenueGrowth}%</span>
+                <span>{performanceData.productivityGrowth}%</span>
               </div>
             </div>
             <div className="finance-metrics">
               <div className="metric-item">
                 <div className="metric-icon">
-                  <i className="fas fa-calendar-check"></i>
+                  <i className="fas fa-target"></i>
                 </div>
                 <div className="metric-details">
-                  <div className="metric-label">Monthly Revenue</div>
-                  <div className="metric-value">${formatNumber(financialData.monthlyRevenue)}</div>
+                  <div className="metric-label">Monthly Goal</div>
+                  <div className="metric-value">{performanceData.monthlySessionGoal} sessions</div>
                 </div>
               </div>
               <div className="metric-item">
                 <div className="metric-icon">
-                  <i className="fas fa-clock"></i>
+                  <i className="fas fa-calendar-week"></i>
                 </div>
                 <div className="metric-details">
-                  <div className="metric-label">Pending Payments</div>
-                  <div className="metric-value">${formatNumber(financialData.pendingPayments)}</div>
+                  <div className="metric-label">Weekly Average</div>
+                  <div className="metric-value">{performanceData.weeklyAverage} sessions</div>
                 </div>
               </div>
             </div>
@@ -355,12 +356,12 @@ const TPInfoWelcome = ({ isMobile, isTablet }) => {
                 className="action-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewFinancialReports();
+                  handleViewPerformanceReports();
                 }}
               >
                 <div className="button-content">
-                  <i className="fas fa-file-invoice-dollar"></i>
-                  <span>View reports</span>
+                  <i className="fas fa-chart-line"></i>
+                  <span>View my stats</span>
                 </div>
                 <div className="button-hover-effect"></div>
               </button>

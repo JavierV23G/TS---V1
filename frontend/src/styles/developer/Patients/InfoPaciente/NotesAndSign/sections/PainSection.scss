@@ -4,11 +4,8 @@
 .pain-section {
   @extend .section-common;
 
-  .pain-layout {
+  .form-section {
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
   }
 
   .section-title {
@@ -57,7 +54,7 @@
       }
     }
 
-    select, .form-select {
+    select {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #ced4da;
@@ -92,7 +89,7 @@
       }
     }
 
-    textarea, .form-textarea {
+    textarea {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #ced4da;
@@ -306,104 +303,6 @@
     }
   }
 
-  // Pain scale container
-  .pain-scale-container {
-    .pain-rating-input {
-      width: 80px;
-      padding: 8px 12px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 14px;
-      text-align: center;
-      margin-bottom: 15px;
-
-      &:focus {
-        outline: none;
-        border-color: #e74c3c;
-        box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.25);
-      }
-    }
-  }
-
-  // Checkbox group styles (for non-verbals)
-  .checkbox-group {
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      border-radius: 4px;
-
-      input[type="checkbox"] {
-        width: auto;
-        margin: 0;
-        cursor: pointer;
-        accent-color: #e74c3c;
-      }
-
-      label {
-        margin: 0;
-        color: #495057;
-        font-weight: 500;
-        cursor: pointer;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        i {
-          color: #e74c3c;
-          font-size: 1rem;
-        }
-      }
-    }
-  }
-
-  // Checkbox grid for non-verbals
-  .checkbox-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      border-radius: 4px;
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background: white;
-      }
-
-      input[type="checkbox"] {
-        width: auto;
-        margin: 0;
-        cursor: pointer;
-        accent-color: #e74c3c;
-
-        &:checked + label {
-          color: #e74c3c;
-          font-weight: 600;
-        }
-      }
-
-      label {
-        margin: 0;
-        color: #495057;
-        font-weight: 500;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: color 0.2s ease;
-      }
-    }
-  }
-
   // Responsive design
   @media (max-width: 768px) {
     .pain-scale {
@@ -416,9 +315,9 @@
       }
     }
 
-    .checkbox-grid {
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 8px;
+    .pain-description-options {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
     }
 
     .pain-scale-labels {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
+import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/NoteTemplateModal.scss';
 import TemplateRenderer from './TemplateRenderer';
 import useTemplateConfig from './hooks/useTemplateConfig';
 import useSectionData from './hooks/useSectionData';
@@ -16,13 +16,24 @@ const NoteTemplateModal = ({
   const [currentStep, setCurrentStep] = useState('template');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load template configuration
+  // Load template configuration - hooks must be called unconditionally
   const { 
     templateConfig, 
     loading: configLoading, 
     error: configError,
     refreshConfig 
-  } = useTemplateConfig(disciplina, tipoNota);
+  } = useTemplateConfig(disciplina, tipoNota, isOpen);
+
+  // Debug log for initial data (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔷 NoteTemplateModal - Modal opened with data:', {
+      initialData,
+      patientData,
+      disciplina,
+      tipoNota,
+      templateConfig
+    });
+  }
 
   // Manage section data with autosave
   const {
@@ -41,6 +52,9 @@ const NoteTemplateModal = ({
     onSave: onSave
   });
 
+  // Early return if modal is not open - after hooks
+  if (!isOpen) return null;
+
   // Handle modal close
   const handleClose = () => {
     if (isDirty) {
@@ -54,43 +68,21 @@ const NoteTemplateModal = ({
 
   // Handle final save/submit
   const handleSubmit = async () => {
-    console.log('=== DEBUG: handleSubmit called ===');
-    console.log('Current data state:', data);
-    console.log('Template config:', templateConfig);
-    console.log('Initial data received:', initialData);
-    
     setIsSubmitting(true);
     
     try {
       const validation = validateData();
-      console.log('Validation result:', validation);
       
       if (!validation.isValid) {
-        console.log('Validation failed with errors:', validation.errors);
         alert(`Please fix the following errors:\n${Object.values(validation.errors).join('\n')}`);
         return;
       }
 
-      console.log('=== DEBUG: Preparing final data ===');
-      // Solo preparar data de las sections template (excluyendo campos del visit)
-      const templateData = {};
-      Object.entries(data).forEach(([key, value]) => {
-        if (/^\d+$/.test(key) && value && typeof value === 'object') {
-          templateData[key] = value;
-        }
-      });
-
       // Save final data with completed status
       const finalData = {
-        ...templateData,
-        // Incluir metadatos necesarios para el backend
-        visit_id: data.id || initialData.id,
-        patient_id: data.patient_id || initialData.patient_id,
-        staff_id: data.staff_id || initialData.staff_id,
+        ...data,
         status: "Completed"
       };
-      
-      console.log('=== DEBUG: Final data to save ===', finalData);
       
       const result = await saveData(finalData);
       
@@ -167,8 +159,6 @@ const NoteTemplateModal = ({
       </div>
     );
   }
-
-  if (!isOpen) return null;
 
   const completionStats = getCompletionStats();
 

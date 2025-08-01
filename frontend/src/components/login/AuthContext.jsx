@@ -1,6 +1,8 @@
-// components/login/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import GeolocationService from './GeolocationService';
+import sessionTimeoutService from './SessionTimeoutService';
+import SessionTimeoutModal from './SessionTimeoutModal';
+import JWTService from './JWTService';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -14,13 +16,42 @@ export const AuthProvider = ({ children }) => {
     error: null
   });
 
+  const [sessionWarning, setSessionWarning] = useState({
+    showWarning: false,
+    timeRemaining: 180
+  });
+
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('auth_user');
 
     if (token && userData) {
       try {
+        // Verificar si el token JWT es válido y no ha expirado
+        const tokenInfo = JWTService.getTokenInfo(token);
+        
+        if (!tokenInfo.isValid || tokenInfo.isExpired) {
+          console.log('Token expirado o inválido al inicializar:', {
+            isValid: tokenInfo.isValid,
+            isExpired: tokenInfo.isExpired,
+            expirationDate: tokenInfo.expirationDate
+          });
+          clearAuthData();
+          setAuthState(prev => ({
+            ...prev,
+            loading: false,
+            error: 'Session expired'
+          }));
+          return;
+        }
+
         const user = JSON.parse(userData);
+        console.log('Token válido encontrado:', {
+          user: user.username,
+          expiresAt: tokenInfo.expirationDate,
+          timeRemaining: tokenInfo.timeUntilExpiration / 1000 / 60, // minutos
+        });
+
         setAuthState({
           isAuthenticated: true,
           loading: false,
@@ -28,7 +59,10 @@ export const AuthProvider = ({ children }) => {
           token,
           error: null
         });
+        
+        iniciarMonitoreoSesion();
       } catch (err) {
+        console.error('Error al verificar token:', err);
         clearAuthData();
         setAuthState(prev => ({
           ...prev,
@@ -42,6 +76,10 @@ export const AuthProvider = ({ children }) => {
         loading: false
       }));
     }
+
+    return () => {
+      sessionTimeoutService.detenerMonitoreo();
+    };
   }, []);
 
   const clearAuthData = () => {
@@ -49,15 +87,41 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('auth_user');
   };
 
+  const iniciarMonitoreoSesion = () => {
+    sessionTimeoutService.iniciarMonitoreo({
+      onTimeout: () => {
+        logout();
+      },
+      onWarning: (mostrar) => {
+        setSessionWarning(prev => ({
+          ...prev,
+          showWarning: mostrar
+        }));
+      },
+      onCountdownUpdate: (tiempoRestante) => {
+        setSessionWarning(prev => ({
+          ...prev,
+          timeRemaining: tiempoRestante
+        }));
+      }
+    });
+  };
+
+  const extenderSesion = () => {
+    sessionTimeoutService.extenderSesion();
+    setSessionWarning({
+      showWarning: false,
+      timeRemaining: 180
+    });
+  };
+
   const login = async ({ token, user }) => {
     try {
-      // ✅ Verificación de ubicación
       const geoResult = await GeolocationService.verifyLocationAccess();
       if (!geoResult.allowed) {
         return { success: false, error: 'Access denied due to geographic restriction.' };
       }
 
-      // ✅ Guardar en localStorage
       localStorage.setItem('auth_token', token);
       localStorage.setItem('auth_user', JSON.stringify(user));
 
@@ -69,9 +133,10 @@ export const AuthProvider = ({ children }) => {
         error: null
       });
 
+      iniciarMonitoreoSesion();
+
       return { success: true };
     } catch (error) {
-      console.error('Error during login context:', error);
       clearAuthData();
       setAuthState({
         isAuthenticated: false,
@@ -85,6 +150,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    sessionTimeoutService.detenerMonitoreo();
+    
     clearAuthData();
     setAuthState({
       isAuthenticated: false,
@@ -93,6 +160,12 @@ export const AuthProvider = ({ children }) => {
       token: null,
       error: null
     });
+    
+    setSessionWarning({
+      showWarning: false,
+      timeRemaining: 180
+    });
+    
     window.location.href = '/';
   };
 
@@ -109,6 +182,13 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
+      {authState.isAuthenticated && (
+        <SessionTimeoutModal
+          timeRemaining={sessionWarning.timeRemaining}
+          onExtendSession={extenderSesion}
+          isVisible={sessionWarning.showWarning}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

@@ -187,6 +187,13 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   const validateFile = useCallback((file) => {
     const errors = [];
     
+    console.log('Validating file:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      sizeFormatted: formatFileSize(file.size)
+    });
+    
     // Check file type
     if (!allowedFileTypes[file.type]) {
       errors.push(`File type "${file.type}" is not supported.\nSupported types: PDF, Images (JPG, PNG, GIF, WEBP), Documents (DOC, DOCX, XLS, XLSX, PPT, PPTX), Text files (TXT, CSV), Videos (MP4, MOV), Audio (MP3, WAV).`);
@@ -274,6 +281,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // Fetch documents from API - CORREGIDO PARA USAR QUERY PARAMETERS
   const fetchDocuments = useCallback(async () => {
     if (!patient?.id) {
+      console.log('No patient ID available, showing empty state');
       setDocuments([]);
       setIsLoading(false);
       return;
@@ -285,6 +293,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       
       // USAR QUERY PARAMETERS en lugar de endpoint sin filtros
       const url = `${API_BASE_URL}/documents/?patient_id=${patient.id}`;
+      console.log(`Fetching documents for patient ${patient.id} from: ${url}`);
       
       try {
         const response = await fetch(url, {
@@ -295,8 +304,16 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
           },
         });
         
+        console.log('Documents fetch response:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
         if (response.ok) {
           const documentsData = await response.json();
+          console.log('Raw documents data received:', documentsData);
           
           // Validar que sea un array
           if (!Array.isArray(documentsData)) {
@@ -306,12 +323,15 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
           }
           
           // Como ya filtramos por patient_id en la URL, no necesitamos filtrar aquí
+          console.log(`Found ${documentsData.length} documents for patient ${patient.id}`);
           setDocuments(documentsData);
           
         } else if (response.status === 404) {
+          console.log('Documents endpoint not found (404) - showing empty state');
           setDocuments([]);
         } else if (response.status === 400) {
           // Handle 400 Bad Request - puede ser que el endpoint no soporte query params
+          console.log('400 Bad Request - trying alternative endpoint approach');
           
           try {
             // Intentar sin query parameters y filtrar en el frontend
@@ -327,14 +347,18 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
               const allDocuments = await fallbackResponse.json();
               if (Array.isArray(allDocuments)) {
                 const patientDocuments = allDocuments.filter(doc => doc.patient_id === patient.id);
+                console.log(`Fallback: Found ${patientDocuments.length} documents for patient ${patient.id}`);
                 setDocuments(patientDocuments);
               } else {
+                console.log('Fallback also failed, showing empty state');
                 setDocuments([]);
               }
             } else {
+              console.log('Fallback endpoint also failed, showing empty state');
               setDocuments([]);
             }
           } catch (fallbackError) {
+            console.log('Fallback request failed, showing empty state:', fallbackError);
             setDocuments([]);
           }
         } else {
@@ -352,6 +376,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
         
       } catch (fetchError) {
         if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+          console.log('Network error - API might not be running, showing empty state');
           setDocuments([]);
         } else {
           throw fetchError;
@@ -361,6 +386,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     } catch (err) {
       console.error('Error in fetchDocuments:', err);
       // No mostrar error para problemas de fetch, solo mostrar empty state
+      console.log('Fetch failed, showing empty state instead of error');
       setDocuments([]);
     } finally {
       setIsLoading(false);
@@ -377,8 +403,18 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     formData.append('file', file);
     formData.append('patient_id', patient.id.toString());
 
+    console.log('Uploading document with data:', {
+      fileName: file.name,
+      fileSize: formatFileSize(file.size),
+      fileType: file.type,
+      patientId: patient.id,
+      endpoint: `${API_BASE_URL}/documents/upload`
+    });
+
     // Debug FormData content
+    console.log('FormData contents:');
     for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
     }
 
     try {
@@ -387,6 +423,12 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
         body: formData,
         // IMPORTANTE: NO establecer Content-Type para FormData
         // El browser establece automáticamente multipart/form-data con boundary
+      });
+
+      console.log('Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
       });
       
       if (!response.ok) {
@@ -417,6 +459,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       }
 
       const result = await response.json();
+      console.log('Upload successful, received:', result);
       return result;
       
     } catch (error) {
@@ -428,6 +471,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // Delete document from API - MEJORADO
   const deleteDocumentFromAPI = useCallback(async (documentId) => {
     try {
+      console.log(`Attempting to delete document ${documentId} from: ${API_BASE_URL}/documents/${documentId}`);
       
       const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
         method: 'DELETE',
@@ -435,6 +479,11 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+      });
+
+      console.log('Delete response:', {
+        status: response.status,
+        statusText: response.statusText
       });
 
       if (!response.ok) {
@@ -449,6 +498,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
         throw new Error(errorMessage);
       }
 
+      console.log('Document deleted successfully');
       return true;
     } catch (error) {
       console.error('Delete request failed:', error);
@@ -554,6 +604,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
         setUploadingFileName('');
         setUploadProgress(0);
         
+        console.log('Upload completed, refreshing documents list...');
         
         // Refresh documents list - con delay para que la DB se actualice
         setTimeout(async () => {
@@ -628,8 +679,9 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // ============================================================================
   const handleViewDocument = useCallback((document) => {
     try {
-      const printableUrl = `${API_BASE_URL}/documents/${document.id}/preview`;
-      window.open(printableUrl, '_blank');
+      const fileUrl = `${API_BASE_URL}${document.file_path}`;
+      console.log('Opening document:', fileUrl);
+      window.open(fileUrl, '_blank');
     } catch (error) {
       console.error('Error opening document:', error);
       setError('Failed to open document');
@@ -639,6 +691,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   const handleDownload = useCallback((document) => {
     try {
       const fileUrl = `${API_BASE_URL}${document.file_path}`;
+      console.log('Downloading document:', fileUrl);
       
       const link = document.createElement('a');
       link.href = fileUrl;
@@ -882,33 +935,41 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
 
         <div className="document-actions">
           <div className="action-buttons-row">
-            <div className="action-buttons-left">
-              <button 
-                className="action-btn view-btn" 
-                onClick={() => handleViewDocument(document)}
-                title="View Document"
-              >
-                <FontAwesomeIcon icon={faEye} />
-                <span className="action-label">View</span>
-                <div className="btn-shine"></div>
-              </button>
-              
-              <button 
-                className="action-btn delete-btn" 
-                onClick={() => handleDeleteClick(document)}
-                title="Delete Document"
-              >
-                <FontAwesomeIcon icon={faTrashAlt} />
-                <span className="action-label">Delete</span>
-                <div className="btn-shine"></div>
-              </button>
-            </div>
+            <button 
+              className="action-btn view-btn" 
+              onClick={() => handleViewDocument(document)}
+              title="View Document"
+            >
+              <FontAwesomeIcon icon={faEye} />
+              <span className="action-label">View</span>
+              <div className="btn-shine"></div>
+            </button>
             
-            <div className="document-status-indicators">
-              <span className="status-indicator recent" title="Recently Modified">
-                <FontAwesomeIcon icon={faClock} />
-              </span>
-            </div>
+            <button 
+              className="action-btn download-btn" 
+              onClick={() => handleDownload(document)}
+              title="Download Document"
+            >
+              <FontAwesomeIcon icon={faDownload} />
+              <span className="action-label">Download</span>
+              <div className="btn-shine"></div>
+            </button>
+            
+            <button 
+              className="action-btn delete-btn" 
+              onClick={() => handleDeleteClick(document)}
+              title="Delete Document"
+            >
+              <FontAwesomeIcon icon={faTrashAlt} />
+              <span className="action-label">Delete</span>
+              <div className="btn-shine"></div>
+            </button>
+          </div>
+          
+          <div className="document-status-indicators">
+            <span className="status-indicator recent" title="Recently Modified">
+              <FontAwesomeIcon icon={faClock} />
+            </span>
           </div>
         </div>
 

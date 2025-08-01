@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 
+// Map backend section names to frontend components
+const mapSectionNameToComponent = (sectionName) => {
+  const sectionMap = {
+    'VITALS': 'VitalsSection',
+    'Transfers / Functional Independence': 'TransfersFunctionalSection',
+    'PAIN': 'PainSection'
+  };
+  
+  return sectionMap[sectionName] || null;
+};
+
 // Hook para manejar configuración de templates - 100% dependiente del backend
-const useTemplateConfig = (disciplina, tipoNota) => {
+const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
   const [templateConfig, setTemplateConfig] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -22,12 +33,30 @@ const useTemplateConfig = (disciplina, tipoNota) => {
 
       const config = await response.json();
       
+      // Transform backend response to expected frontend format
+      const transformedConfig = {
+        templateId: config.id,
+        name: `${config.discipline} ${config.note_type}`,
+        sections: config.sections.map(section => ({
+          id: section.id,
+          section_name: section.section_name,
+          component: mapSectionNameToComponent(section.section_name),
+          is_required: section.is_required,
+          description: section.description,
+          form_schema: section.form_schema
+        })),
+        discipline: config.discipline,
+        note_type: config.note_type,
+        is_active: config.is_active
+      };
+      
       // Validar que el template tenga la estructura esperada
-      if (!validateTemplateStructure(config)) {
+      if (!validateTemplateStructure(transformedConfig)) {
         throw new Error('Invalid template structure received from backend');
       }
       
-      setTemplateConfig(config);
+      console.log('✅ Template loaded successfully:', transformedConfig);
+      setTemplateConfig(transformedConfig);
     } catch (err) {
       console.error('Error fetching template config:', err);
       setError(err.message);
@@ -104,8 +133,10 @@ const useTemplateConfig = (disciplina, tipoNota) => {
 
   // Effect para cargar configuración cuando cambian los parámetros
   useEffect(() => {
-    fetchTemplateConfig(disciplina, tipoNota);
-  }, [disciplina, tipoNota]);
+    if (isEnabled) {
+      fetchTemplateConfig(disciplina, tipoNota);
+    }
+  }, [disciplina, tipoNota, isEnabled]);
 
   // Función para refrescar configuración
   const refreshConfig = () => {
