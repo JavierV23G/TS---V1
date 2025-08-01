@@ -133,6 +133,9 @@ class DocumentResponse(BaseModel):
     staff_id: Optional[int] = None
     file_name: str
     file_path: str
+    file_size: Optional[int] = None
+    file_type: Optional[str] = None
+    category: Optional[str] = "Other"
     uploaded_at: datetime
 
     class Config:

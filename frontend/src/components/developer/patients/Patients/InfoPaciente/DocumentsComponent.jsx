@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -66,38 +66,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     { id: 'Other', name: 'Other', icon: faFile, color: '#6b7280' }
   ];
 
-  // Tipos de archivo permitidos - ACTUALIZADO SEGÚN TU API
-  const allowedFileTypes = {
-    // Imágenes
-    'image/jpeg': { ext: 'jpg', maxSize: 50 * 1024 * 1024 },
-    'image/jpg': { ext: 'jpg', maxSize: 50 * 1024 * 1024 },
-    'image/png': { ext: 'png', maxSize: 50 * 1024 * 1024 },
-    'image/gif': { ext: 'gif', maxSize: 50 * 1024 * 1024 },
-    'image/webp': { ext: 'webp', maxSize: 50 * 1024 * 1024 },
-    
-    // PDFs
-    'application/pdf': { ext: 'pdf', maxSize: 50 * 1024 * 1024 },
-    
-    // Documentos de Office
-    'application/msword': { ext: 'doc', maxSize: 50 * 1024 * 1024 },
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { ext: 'docx', maxSize: 50 * 1024 * 1024 },
-    'application/vnd.ms-excel': { ext: 'xls', maxSize: 50 * 1024 * 1024 },
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { ext: 'xlsx', maxSize: 50 * 1024 * 1024 },
-    'application/vnd.ms-powerpoint': { ext: 'ppt', maxSize: 50 * 1024 * 1024 },
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': { ext: 'pptx', maxSize: 50 * 1024 * 1024 },
-    
-    // Archivos de texto
-    'text/plain': { ext: 'txt', maxSize: 50 * 1024 * 1024 },
-    'text/csv': { ext: 'csv', maxSize: 50 * 1024 * 1024 },
-    
-    // Videos (si los soporta tu API)
-    'video/mp4': { ext: 'mp4', maxSize: 50 * 1024 * 1024 },
-    'video/quicktime': { ext: 'mov', maxSize: 50 * 1024 * 1024 },
-    
-    // Audio (si los soporta tu API)
-    'audio/mpeg': { ext: 'mp3', maxSize: 50 * 1024 * 1024 },
-    'audio/wav': { ext: 'wav', maxSize: 50 * 1024 * 1024 }
-  };
+  // OPTIMIZACIÓN: Eliminamos validaciones del frontend - ahora las maneja el backend
 
   // ============================================================================
   // UTILITY FUNCTIONS
@@ -184,64 +153,18 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     }
   }, []);
 
-  const validateFile = useCallback((file) => {
-    const errors = [];
-    
-    // Check file type
-    if (!allowedFileTypes[file.type]) {
-      errors.push(`File type "${file.type}" is not supported.\nSupported types: PDF, Images (JPG, PNG, GIF, WEBP), Documents (DOC, DOCX, XLS, XLSX, PPT, PPTX), Text files (TXT, CSV), Videos (MP4, MOV), Audio (MP3, WAV).`);
-    } else {
-      // Check file size - 50MB limit for all files
-      const maxSize = allowedFileTypes[file.type].maxSize;
-      if (file.size > maxSize) {
-        errors.push(`File size (${formatFileSize(file.size)}) exceeds the ${formatFileSize(maxSize)} limit.`);
-      }
-    }
-    
-    // Check file name
-    if (file.name.length > 255) {
-      errors.push('File name is too long (max 255 characters)');
-    }
-    
-    // Check for empty files
-    if (file.size === 0) {
-      errors.push('File is empty');
-    }
-
-    // Check for special characters in filename that might cause issues
-    const invalidChars = /[<>:"/\\|?*\x00-\x1f]/;
-    if (invalidChars.test(file.name)) {
-      errors.push('File name contains invalid characters. Please rename the file.');
-    }
-    
-    return errors;
-  }, [formatFileSize]);
+  // OPTIMIZACIÓN: validateFile eliminado - validaciones movidas al backend
 
   const getCategoryInfo = useCallback((categoryId) => {
     return categories.find(cat => cat.id === categoryId) || categories[categories.length - 1];
   }, []);
 
-  const getCategoryFromFileName = useCallback((fileName) => {
-    if (!fileName) return 'Other';
-    
-    const name = fileName.toLowerCase();
-    
-    if (name.includes('medical') || name.includes('report')) return 'Medical Reports';
-    if (name.includes('assessment')) return 'Assessments';
-    if (name.includes('progress') || name.includes('note')) return 'Progress Notes';
-    if (name.includes('insurance')) return 'Insurance';
-    if (name.includes('prescription') || name.includes('medication')) return 'Prescriptions';
-    if (name.includes('discharge')) return 'Discharge Forms';
-    if (name.includes('lab') || name.includes('test')) return 'Lab Results';
-    if (name.includes('image') || name.includes('scan') || name.includes('xray')) return 'Imaging';
-    if (name.includes('therapy') || name.includes('plan')) return 'Therapy Plans';
-    
-    return 'Other';
-  }, []);
+  // OPTIMIZACIÓN: getCategoryFromFileName eliminado - auto-categorización movida al backend
 
-  const calculateStats = useCallback((docs) => {
+  // OPTIMIZACIÓN: Memoizar estadísticas para evitar cálculos innecesarios
+  const calculatedStats = useMemo(() => {
     const stats = {
-      total: docs.length,
+      total: documents.length,
       byCategory: {},
       totalSize: 0,
       recentUploads: 0
@@ -250,13 +173,13 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    docs.forEach(doc => {
-      // Category count
-      const category = getCategoryFromFileName(doc.file_name) || 'Other';
+    documents.forEach(doc => {
+      // Category count - ahora usa la categoría del backend
+      const category = doc.category || 'Other';
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
       
-      // Total size - placeholder since API doesn't return file size
-      stats.totalSize += 1024 * 1024; // 1MB placeholder per file
+      // Total size - ahora usa el tamaño real del backend
+      stats.totalSize += doc.file_size || (1024 * 1024); // Usar tamaño real o 1MB como fallback
       
       // Recent uploads
       if (new Date(doc.uploaded_at) > oneWeekAgo) {
@@ -265,7 +188,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     });
 
     return stats;
-  }, [getCategoryFromFileName]);
+  }, [documents]);
 
   // ============================================================================
   // API FUNCTIONS - CORREGIDAS PARA MANEJAR ERRORES 400
@@ -464,10 +387,10 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     fetchDocuments();
   }, [fetchDocuments]);
 
+  // OPTIMIZACIÓN: Usar estadísticas memoizadas directamente
   useEffect(() => {
-    const stats = calculateStats(documents);
-    setDocumentStats(stats);
-  }, [documents, calculateStats]);
+    setDocumentStats(calculatedStats);
+  }, [calculatedStats]);
 
   // ============================================================================
   // SUCCESS NOTIFICATION CLEANUP
@@ -497,32 +420,10 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   }, [error]);
 
   // ============================================================================
-  // FILE UPLOAD HANDLERS
+  // FILE UPLOAD HANDLERS - REORGANIZADO PARA EVITAR ERRORES DE INICIALIZACIÓN
   // ============================================================================
-  const handleFileUploadClick = useCallback(() => {
-    if (!patient?.id) {
-      setError('Patient information is required to upload documents.');
-      return;
-    }
-    fileInputRef.current?.click();
-  }, [patient?.id]);
-
-  const handleFileSelected = useCallback((e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    
-    const file = files[0];
-    const validationErrors = validateFile(file);
-    
-    if (validationErrors.length > 0) {
-      setError(`Upload validation failed:\n${validationErrors.join('\n')}`);
-      return;
-    }
-    
-    handleDirectUpload(file);
-    e.target.value = null;
-  }, [validateFile]);
-
+  
+  // Función de upload principal definida primero
   const handleDirectUpload = useCallback(async (file) => {
     setIsUploading(true);
     setUploadProgress(0);
@@ -575,6 +476,25 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     }
   }, [uploadDocumentToAPI, fetchDocuments, onUpdateDocuments]);
 
+  // Ahora las funciones que dependen de handleDirectUpload
+  const handleFileUploadClick = useCallback(() => {
+    if (!patient?.id) {
+      setError('Patient information is required to upload documents.');
+      return;
+    }
+    fileInputRef.current?.click();
+  }, [patient?.id]);
+
+  const handleFileSelected = useCallback((e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    // OPTIMIZACIÓN: Validación movida al backend - upload directamente
+    handleDirectUpload(file);
+    e.target.value = null;
+  }, [handleDirectUpload]);
+
   // ============================================================================
   // DRAG AND DROP HANDLERS
   // ============================================================================
@@ -613,15 +533,9 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     if (files.length === 0) return;
     
     const file = files[0];
-    const validationErrors = validateFile(file);
-    
-    if (validationErrors.length > 0) {
-      setError(`Upload validation failed:\n${validationErrors.join('\n')}`);
-      return;
-    }
-    
+    // OPTIMIZACIÓN: Validación movida al backend - upload directamente
     handleDirectUpload(file);
-  }, [validateFile, handleDirectUpload, patient?.id, isUploading]);
+  }, [patient?.id, isUploading, handleDirectUpload]);
 
   // ============================================================================
   // DOCUMENT ACTIONS
@@ -695,8 +609,32 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     }
   }, [selectedDocument, deleteDocumentFromAPI, fetchDocuments, onUpdateDocuments]);
 
+
   // ============================================================================
-  // BULK ACTIONS
+  // FILTERING AND SORTING - MOVIDO ANTES DE FUNCIONES QUE LO USAN
+  // ============================================================================
+  const filteredDocuments = useMemo(() => {
+    let filteredDocs = [...documents];
+    
+    if (selectedCategory !== 'All') {
+      filteredDocs = filteredDocs.filter(doc => {
+        const category = doc.category || 'Other';
+        return category === selectedCategory;
+      });
+    }
+    
+    // Sort by upload date (newest first)
+    filteredDocs.sort((a, b) => {
+      const dateA = new Date(a.uploaded_at);
+      const dateB = new Date(b.uploaded_at);
+      return dateB - dateA;
+    });
+    
+    return filteredDocs;
+  }, [documents, selectedCategory]);
+
+  // ============================================================================
+  // BULK ACTIONS - MOVIDO DESPUÉS DE filteredDocuments
   // ============================================================================
   const handleSelectDocument = useCallback((documentId, isSelected) => {
     const newSelected = new Set(selectedDocuments);
@@ -710,18 +648,17 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   }, [selectedDocuments]);
 
   const handleSelectAll = useCallback(() => {
-    const filteredDocs = filterDocuments();
-    const allSelected = filteredDocs.every(doc => selectedDocuments.has(doc.id));
+    const allSelected = filteredDocuments.every(doc => selectedDocuments.has(doc.id));
     
     if (allSelected) {
       setSelectedDocuments(new Set());
       setShowBulkActions(false);
     } else {
-      const newSelected = new Set(filteredDocs.map(doc => doc.id));
+      const newSelected = new Set(filteredDocuments.map(doc => doc.id));
       setSelectedDocuments(newSelected);
       setShowBulkActions(true);
     }
-  }, [selectedDocuments]);
+  }, [selectedDocuments, filteredDocuments]);
 
   const handleBulkDownload = useCallback(() => {
     const selectedDocs = documents.filter(doc => selectedDocuments.has(doc.id));
@@ -764,29 +701,6 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   }, [selectedDocuments, documents, deleteDocumentFromAPI, fetchDocuments, onUpdateDocuments]);
 
   // ============================================================================
-  // FILTERING AND SORTING
-  // ============================================================================
-  const filterDocuments = useCallback(() => {
-    let filteredDocs = [...documents];
-    
-    if (selectedCategory !== 'All') {
-      filteredDocs = filteredDocs.filter(doc => {
-        const category = getCategoryFromFileName(doc.file_name);
-        return category === selectedCategory;
-      });
-    }
-    
-    // Sort by upload date (newest first)
-    filteredDocs.sort((a, b) => {
-      const dateA = new Date(a.uploaded_at);
-      const dateB = new Date(b.uploaded_at);
-      return dateB - dateA;
-    });
-    
-    return filteredDocs;
-  }, [documents, selectedCategory, getCategoryFromFileName]);
-
-  // ============================================================================
   // RENDER HELPERS
   // ============================================================================
   const renderDocumentCard = useCallback((document, index) => {
@@ -795,7 +709,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     const fileType = document.file_name ? 
       document.file_name.split('.').pop()?.toLowerCase() || 'unknown' : 
       'unknown';
-    const category = getCategoryFromFileName(document.file_name);
+    const category = document.category || 'Other';
     const uploadedBy = getCurrentUser().name; // Desde el contexto actual
     
     const fileIconInfo = getFileIcon(fileType);
@@ -918,7 +832,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   }, [
     viewMode, selectedDocuments, hoveredDocument, getFileIcon, getCategoryInfo,
     handleSelectDocument, handleViewDocument, handleDownload, handleDeleteClick,
-    formatDate, getCategoryFromFileName, getCurrentUser
+    formatDate, getCurrentUser
   ]);
 
   const renderEmptyState = useCallback(() => {
@@ -1011,7 +925,6 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   // ============================================================================
   // MAIN COMPONENT RENDER
   // ============================================================================
-  const filteredDocuments = filterDocuments();
 
   if (isLoading) {
     return (
@@ -1133,7 +1046,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
             ref={fileInputRef} 
             style={{ display: 'none' }} 
             onChange={handleFileSelected}
-            accept={Object.keys(allowedFileTypes).join(',')}
+            accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,video/mp4,video/quicktime,audio/mpeg,audio/wav"
           />
         </div>
       </div>

@@ -158,21 +158,18 @@ def update_patient_info(
         if value is not None:
             setattr(patient, key, value)
 
-    # Si se está actualizando is_active, manejar certification periods
     if is_active is not None:
         from datetime import datetime
         today = datetime.utcnow().date()
         cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
         
         if is_active:
-            # Activando paciente: activar períodos de certificación válidos para hoy
             for cert in cert_periods:
                 if cert.start_date <= today <= cert.end_date:
                     cert.is_active = True
                 else:
                     cert.is_active = False
         else:
-            # Desactivando paciente: desactivar todos los períodos de certificación activos
             for cert in cert_periods:
                 if cert.is_active:
                     cert.is_active = False
@@ -201,6 +198,58 @@ def update_visit(
     visit = db.query(Visit).filter(Visit.id == id).first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+
+    if (staff_id and staff_id != visit.staff_id) or (visit_date and visit_date != visit.visit_date) or (scheduled_time and scheduled_time != visit.scheduled_time):
+        check_staff_id = staff_id if staff_id else visit.staff_id
+        check_date = visit_date if visit_date else visit.visit_date
+        check_time = scheduled_time if scheduled_time else visit.scheduled_time
+        
+        if check_time:
+            existing_visit = db.query(Visit).filter(
+                Visit.visit_date == check_date,
+                Visit.scheduled_time == check_time,
+                Visit.staff_id == check_staff_id,
+                Visit.status.in_(['Scheduled', 'Pending', 'Completed']),
+                Visit.is_hidden == False,
+                Visit.id != id 
+            ).first()
+            
+            if existing_visit:
+                staff = db.query(Staff).filter(Staff.id == check_staff_id).first()
+                staff_name = staff.name if staff else f"Staff ID {check_staff_id}"
+                
+                formatted_time = check_time
+                if ':' in formatted_time:
+                    hour, minute = formatted_time.split(':')
+                    hour_int = int(hour)
+                    am_pm = 'AM' if hour_int < 12 else 'PM'
+                    display_hour = hour_int if hour_int <= 12 else hour_int - 12
+                    if display_hour == 0:
+                        display_hour = 12
+                    formatted_time = f"{display_hour}:{minute} {am_pm}"
+                
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Therapist {staff_name} already has a visit scheduled on {check_date} at {formatted_time}"
+                )
+    
+    if visit_date and visit_date != visit.visit_date:
+        check_patient_id = patient_id if patient_id else visit.patient_id
+        cert = db.query(CertificationPeriod).filter(
+            CertificationPeriod.patient_id == check_patient_id,
+            CertificationPeriod.start_date <= visit_date,
+            CertificationPeriod.end_date >= visit_date,
+            CertificationPeriod.is_active == True
+        ).first()
+        
+        if not cert:
+            patient = db.query(Patient).filter(Patient.id == check_patient_id).first()
+            patient_name = patient.full_name if patient else f"Patient ID {check_patient_id}"
+            
+            raise HTTPException(
+                status_code=400,
+                detail=f"Visit date {visit_date} is outside the active certification period for {patient_name}. Please verify the certification period dates."
+            )
 
     original_visit_type = visit.visit_type
 
@@ -408,7 +457,6 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
     elif "start_date" in update_data:
         cert.end_date = cert.start_date + timedelta(days=60)
 
-    # Update frequencies if provided
     if "pt_frequency" in update_data:
         cert.pt_frequency = update_data["pt_frequency"]
     
@@ -418,7 +466,6 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
     if "st_frequency" in update_data:
         cert.st_frequency = update_data["st_frequency"]
     
-    # Update approved visits if provided
     if "pt_approved_visits" in update_data:
         cert.pt_approved_visits = update_data["pt_approved_visits"]
     

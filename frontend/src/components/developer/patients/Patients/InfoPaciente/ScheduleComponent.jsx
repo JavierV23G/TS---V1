@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
 import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
 import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
@@ -1470,7 +1470,7 @@ const ScheduleComponent = ({
     }
   };
 
-  const getFilteredVisits = () => {
+  const getFilteredVisits = useMemo(() => {
     let filtered = [...visits];
     filtered = filtered.filter((visit) => isWithinCertPeriod(visit.visit_date));
     
@@ -1501,10 +1501,10 @@ const ScheduleComponent = ({
       });
     }
     return filtered;
-  };
+  }, [visits, disciplineFilter, activeFilter, searchQuery, certPeriodDates]);
 
-  const groupVisitsByMonth = () => {
-    const filtered = getFilteredVisits();
+  const groupVisitsByMonth = useMemo(() => {
+    const filtered = getFilteredVisits;
     const grouped = {};
     filtered.forEach((visit) => {
       const date = new Date(visit.visit_date);
@@ -1518,7 +1518,7 @@ const ScheduleComponent = ({
       grouped[month].sort((a, b) => new Date(a.visit_date) - new Date(b.visit_date));
     });
     return grouped;
-  };
+  }, [getFilteredVisits]);
 
   const getVisitsForDay = (date) => {
     const dateString = formatDateToLocalISOString(date);
@@ -1822,7 +1822,7 @@ const ScheduleComponent = ({
     );
   };
 
-  const renderCalendar = () => {
+  const renderCalendar = useMemo(() => {
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const firstDayOfWeek = firstDayOfMonth.getDay();
@@ -2040,7 +2040,7 @@ const ScheduleComponent = ({
         </div>
       </div>
     );
-  };
+  }, [currentDate, visits, hoveredDay]);
 
   const renderVisitCard = (visit) => {
     const therapistColors = getTherapistColors(visit.staff_id);
@@ -2149,7 +2149,7 @@ const ScheduleComponent = ({
   };
 
   const renderVisitsList = () => {
-    const groupedVisits = groupVisitsByMonth();
+    const groupedVisits = groupVisitsByMonth;
     const sortedMonths = Object.keys(groupedVisits).sort((a, b) => {
       const [monthA, yearA] = a.split(' ');
       const [monthB, yearB] = b.split(' ');
@@ -2626,7 +2626,7 @@ const ScheduleComponent = ({
                   </div>
                 </div>
                 
-                {renderCalendar()}
+                {renderCalendar}
               </div>
             )}
           </>

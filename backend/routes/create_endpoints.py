@@ -202,14 +202,61 @@ def upload_document(
     file: UploadFile = File(...),
     patient_id: int = Form(None),
     staff_id: int = Form(None),
+    category: str = Form("Other"),
     db: Session = Depends(get_db)
 ):
     if patient_id and staff_id:
         raise HTTPException(status_code=400, detail="Provide only patient_id or staff_id, not both.")
     if not patient_id and not staff_id:
         raise HTTPException(status_code=400, detail="You must specify either patient_id or staff_id.")
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
+    
+    allowed_types = {
+        'application/pdf': {'ext': 'pdf', 'max_size': 50 * 1024 * 1024},
+        'image/jpeg': {'ext': 'jpg', 'max_size': 50 * 1024 * 1024},
+        'image/jpg': {'ext': 'jpg', 'max_size': 50 * 1024 * 1024},
+        'image/png': {'ext': 'png', 'max_size': 50 * 1024 * 1024},
+        'image/gif': {'ext': 'gif', 'max_size': 50 * 1024 * 1024},
+        'image/webp': {'ext': 'webp', 'max_size': 50 * 1024 * 1024},
+        'application/msword': {'ext': 'doc', 'max_size': 50 * 1024 * 1024},
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {'ext': 'docx', 'max_size': 50 * 1024 * 1024},
+        'application/vnd.ms-excel': {'ext': 'xls', 'max_size': 50 * 1024 * 1024},
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {'ext': 'xlsx', 'max_size': 50 * 1024 * 1024},
+        'application/vnd.ms-powerpoint': {'ext': 'ppt', 'max_size': 50 * 1024 * 1024},
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': {'ext': 'pptx', 'max_size': 50 * 1024 * 1024},
+        'text/plain': {'ext': 'txt', 'max_size': 50 * 1024 * 1024},
+        'text/csv': {'ext': 'csv', 'max_size': 50 * 1024 * 1024},
+        'video/mp4': {'ext': 'mp4', 'max_size': 50 * 1024 * 1024},
+        'video/quicktime': {'ext': 'mov', 'max_size': 50 * 1024 * 1024},
+        'audio/mpeg': {'ext': 'mp3', 'max_size': 50 * 1024 * 1024},
+        'audio/wav': {'ext': 'wav', 'max_size': 50 * 1024 * 1024}
+    }
+    
+    # Validar tipo de archivo
+    if file.content_type not in allowed_types:
+        supported_types = ', '.join([f"{v['ext'].upper()}" for v in allowed_types.values()])
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File type '{file.content_type}' is not supported. Supported types: {supported_types}"
+        )
+    
+    # VALIDACIÓN 3: Tamaño de archivo (movido del frontend)
+    file_size = 0
+    file_content = file.file.read()
+    file_size = len(file_content)
+    file.file.seek(0)  # Reset file pointer
+    
+    max_size = allowed_types[file.content_type]['max_size']
+    if file_size > max_size:
+        max_size_mb = max_size / (1024 * 1024)
+        actual_size_mb = file_size / (1024 * 1024)
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size ({actual_size_mb:.2f} MB) exceeds the {max_size_mb:.0f} MB limit"
+        )
+    
+    # VALIDACIÓN 4: Nombre de archivo seguro (prevenir ataques de path traversal)
+    if not file.filename or '..' in file.filename or '/' in file.filename or '\\' in file.filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
 
     clean_name = sanitize_filename(file.filename)
     entity = "patients" if patient_id else "staff"
@@ -221,11 +268,33 @@ def upload_document(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    # Auto-categorizar basado en nombre de archivo si no se especifica
+    auto_category = category
+    if category == "Other":
+        filename_lower = clean_name.lower()
+        if any(word in filename_lower for word in ['report', 'resultado', 'lab']):
+            auto_category = "Medical Reports"
+        elif any(word in filename_lower for word in ['assessment', 'evaluation', 'eval']):
+            auto_category = "Assessments"
+        elif any(word in filename_lower for word in ['progress', 'note', 'nota']):
+            auto_category = "Progress Notes"
+        elif any(word in filename_lower for word in ['insurance', 'seguro']):
+            auto_category = "Insurance"
+        elif any(word in filename_lower for word in ['prescription', 'medicamento', 'rx']):
+            auto_category = "Prescriptions"
+        elif any(word in filename_lower for word in ['discharge', 'alta']):
+            auto_category = "Discharge Forms"
+        elif any(word in filename_lower for word in ['therapy', 'plan', 'terapia']):
+            auto_category = "Therapy Plans"
+    
     new_doc = Document(
         patient_id=patient_id,
         staff_id=staff_id,
         file_name=clean_name,
         file_path=file_path,
+        file_size=file_size,
+        file_type=file.content_type,
+        category=auto_category,
         uploaded_at=datetime.utcnow()
     )
     db.add(new_doc)
@@ -280,16 +349,48 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     staff = db.query(Staff).filter(Staff.id == data.staff_id).first()
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
+    
+    if data.scheduled_time:
+        existing_visit = db.query(Visit).filter(
+            Visit.visit_date == data.visit_date,
+            Visit.scheduled_time == data.scheduled_time,
+            Visit.staff_id == data.staff_id,
+            Visit.status.in_(['Scheduled', 'Pending', 'Completed']),
+            Visit.is_hidden == False
+        ).first()
+        
+        if existing_visit:
+            staff_name = staff.name
+            formatted_time = data.scheduled_time
+            if ':' in formatted_time:
+                hour, minute = formatted_time.split(':')
+                hour_int = int(hour)
+                am_pm = 'AM' if hour_int < 12 else 'PM'
+                display_hour = hour_int if hour_int <= 12 else hour_int - 12
+                if display_hour == 0:
+                    display_hour = 12
+                formatted_time = f"{display_hour}:{minute} {am_pm}"
+            
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Therapist {staff_name} already has a visit scheduled on {data.visit_date} at {formatted_time}"
+            )
 
     cert = db.query(CertificationPeriod).filter(
         CertificationPeriod.patient_id == data.patient_id,
         CertificationPeriod.start_date <= data.visit_date,
-        CertificationPeriod.end_date >= data.visit_date
+        CertificationPeriod.end_date >= data.visit_date,
+        CertificationPeriod.is_active == True
     ).first()
     if not cert:
-        raise HTTPException(status_code=404, detail="No certification period found for given date")
+        patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
+        patient_name = patient.full_name if patient else f"Patient ID {data.patient_id}"
+        
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Visit date {data.visit_date} is outside the active certification period for {patient_name}. Please verify the certification period dates."
+        )
 
-    # Validate approved visit limits
     therapy_type = staff.role.upper()
     discipline_map = {
         'PT': 'pt_approved_visits',
@@ -304,7 +405,6 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     if approved_field:
         approved_limit = getattr(cert, approved_field, 0)
         if approved_limit > 0:
-            # Count existing visits for this discipline in the certification period
             existing_visits = db.query(Visit).filter(
                 Visit.certification_period_id == cert.id,
                 Visit.therapy_type.in_(['PT', 'PTA'] if therapy_type in ['PT', 'PTA'] 
@@ -357,10 +457,8 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
             detail=f"No active template found for discipline '{visit.therapy_type}' and note type '{visit.visit_type}'"
         )
     
-    # Process sections_data to ensure we use section names, not IDs
     sections_data = note_data.sections_data
     if not sections_data or len(sections_data) == 0:
-        # Create empty sections with names when no data provided
         sections = db.query(NoteTemplateSection).filter(
             NoteTemplateSection.template_id == template.id
         ).order_by(NoteTemplateSection.position.asc()).all()
@@ -369,8 +467,6 @@ def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db))
             section = db.query(NoteSection).filter(NoteSection.id == s.section_id).first()
             if section:
                 sections_data[section.section_name] = {}
-    # Note: Frontend should always send section names, not IDs
-    # If we receive IDs, they will be handled in future iterations
     
     note_status = determine_note_status(sections_data, template, db)
     

@@ -231,13 +231,52 @@ const VisitModalComponent = ({
 
   // ===== EFFECTS =====
   
-  // Load therapist data when modal opens (copied from VisitStatusModal)
+  // OPTIMIZACIÓN: Usar endpoint unificado en lugar de múltiples llamadas
   useEffect(() => {
     if (isOpen && visitData) {
+      fetchAllVisitData();
+    }
+  }, [isOpen, visitData]);
+  
+  // OPTIMIZACIÓN: Función unificada que reemplaza múltiples llamadas API
+  const fetchAllVisitData = async () => {
+    try {
+      if (visitData?.id) {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}/complete-data`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Establecer terapeuta asignado
+          if (data.assigned_therapist) {
+            setAssignedTherapist(data.assigned_therapist);
+          }
+          
+          // Establecer terapeutas disponibles
+          if (data.available_therapists) {
+            setAvailableTherapists(data.available_therapists);
+          }
+          
+        } else {
+          console.error('Failed to fetch visit complete data:', response.status, response.statusText);
+          // Fallback a método anterior si falla el nuevo endpoint
+          fetchAssignedTherapist();
+          fetchAvailableTherapists();
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching visit complete data:', error);
+      // Fallback a método anterior si hay error
       fetchAssignedTherapist();
       fetchAvailableTherapists();
     }
-  }, [isOpen, visitData]);
+  };
   
   /**
    * Initialize form data when visit data changes
