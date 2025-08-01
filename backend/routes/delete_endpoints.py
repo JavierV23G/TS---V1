@@ -10,6 +10,7 @@ from database.models import (
     PatientExerciseAssignment,
     Document,
     NoteSection,
+    NoteTemplateSection,
     Visit,
     VisitNote)
 
@@ -26,6 +27,40 @@ def delete_staff(staff_id: int, db: Session = Depends(get_db)):
     db.commit()
     return
 
+@router.delete("/unassign-staff")
+def unassign_staff_from_patient(patient_id: int, discipline: str, db: Session = Depends(get_db)):
+    from database.models import StaffAssignment
+    
+    # If discipline is a specific role (PT, PTA, etc), unassign only that role
+    # If discipline is a general discipline, unassign all roles in that discipline (legacy support)
+    specific_roles = ['PT', 'PTA', 'OT', 'COTA', 'ST', 'STA']
+    
+    if discipline.upper() in specific_roles:
+        # Unassign only the specific role
+        roles_to_remove = [discipline.upper()]
+    else:
+        # Legacy: Map discipline to all roles in that discipline  
+        discipline_roles = {
+            'PT': ['PT', 'PTA'],
+            'OT': ['OT', 'COTA'], 
+            'ST': ['ST', 'STA']
+        }
+        roles_to_remove = discipline_roles.get(discipline.upper(), [discipline.upper()])
+    
+    assignments = db.query(StaffAssignment).filter(
+        StaffAssignment.patient_id == patient_id,
+        StaffAssignment.assigned_role.in_(roles_to_remove)
+    ).all()
+    
+    if not assignments:
+        raise HTTPException(status_code=404, detail=f"No staff assignments found for role(s): {', '.join(roles_to_remove)}")
+    
+    for assignment in assignments:
+        db.delete(assignment)
+    
+    db.commit()
+    return {"message": f"Staff unassigned from {', '.join(roles_to_remove)} role(s)"}
+
 #///////////////////////// VISITS //////////////////////////#
 
 @router.delete("/visits/{id}")
@@ -34,29 +69,17 @@ def delete_visit(id: int, db: Session = Depends(get_db)):
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
 
-    # Verificar si existe nota
     note = visit.note
     if note:
-        has_signatures = any([
-            note.therapist_signature,
-            note.patient_signature,
-            note.visit_date_signature
-        ])
-
-        has_sections = any(
-            s.get("content") for s in (note.sections_data or [])
-            if isinstance(s.get("content"), dict) and s["content"]
-        )
-
-        if has_signatures or has_sections:
+        has_content = bool(note.sections_data and len(note.sections_data) > 0)
+        
+        if has_content:
             visit.is_hidden = True
             db.commit()
-            return {"msg": "Visit has content and was hidden instead of deleted."}
+            return {"msg": "Visit has note content and was hidden instead of deleted."}
+        else:
+            db.delete(note)
 
-        # No hay contenido real, borrar nota primero
-        db.delete(note)
-
-    # Ahora sí, eliminar visita
     db.delete(visit)
     db.commit()
     return {"msg": "Visit deleted successfully."}
@@ -70,18 +93,9 @@ def delete_visit_note(note_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Note not found")
 
     visit = note.visit
+    has_content = bool(note.sections_data and len(note.sections_data) > 0)
 
-    has_signatures = any([
-        note.therapist_signature,
-        note.patient_signature,
-        note.visit_date_signature
-    ])
-    has_content = any(
-        section.get("content") for section in (note.sections_data or [])
-        if isinstance(section.get("content"), dict) and section["content"]
-    )
-
-    if not has_signatures and not has_content:
+    if not has_content:
         db.delete(note)
         if visit:
             db.delete(visit)
@@ -98,34 +112,22 @@ def delete_section(section_id: int, db: Session = Depends(get_db)):
     section = db.query(NoteSection).filter(NoteSection.id == section_id).first()
     if not section:
         raise HTTPException(status_code=404, detail="Section not found")
+    
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.section_id == section_id
+    ).all()
+    
+    if template_sections:
+        for template_section in template_sections:
+            db.delete(template_section)
+        
+        db.commit()
+    
     db.delete(section)
     db.commit()
     return {"detail": "Section deleted"}
 
 #///////////////////////// PATIENTS //////////////////////////#
-
-@router.put("/patients/{patient_id}/deactivate")
-def deactivate_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
-
-    patient.is_active = False
-
-    cert_periods = db.query(CertificationPeriod).filter(
-        CertificationPeriod.patient_id == patient_id,
-        CertificationPeriod.is_active == True
-    ).all()
-
-    for cert in cert_periods:
-        cert.is_active = False
-
-    db.commit()
-
-    return {
-        "message": "Patient and their active certification periods deactivated.",
-        "patient_id": patient.id
-    }
 
 #///////////////////////// CERT PERIODS //////////////////////////#
 
@@ -192,14 +194,6 @@ def delete_assigned_exercise(assignment_id: int, db: Session = Depends(get_db)):
     assignment = db.query(PatientExerciseAssignment).filter(
         PatientExerciseAssignment.id == assignment_id
     ).first()
-
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Exercise assignment not found.")
-
-    db.delete(assignment)
-    db.commit()
-    return {"detail": "Exercise assignment deleted successfully."}
-    assignment = db.query(PatientExerciseAssignment).filter(PatientExerciseAssignment.id == assignment_id).first()
 
     if not assignment:
         raise HTTPException(status_code=404, detail="Exercise assignment not found.")

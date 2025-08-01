@@ -45,6 +45,16 @@ const Login = ({ onForgotPassword }) => {
       setErrors({ ...errors, [name]: false });
     }
   };
+  
+  const handlePasswordFocus = (e) => {
+    // Prevenir que el foco salte cuando el usuario está escribiendo
+    e.target.dataset.focused = 'true';
+  };
+  
+  const handlePasswordBlur = (e) => {
+    // Limpiar el indicador de foco
+    delete e.target.dataset.focused;
+  };
 
   const handleRememberMeChange = (e) => {
     setRememberMe(e.target.checked);
@@ -59,11 +69,21 @@ const Login = ({ onForgotPassword }) => {
   };
 
   const showError = (field, message) => {
+    // Guardar el elemento actualmente enfocado
+    const currentlyFocused = document.activeElement;
+    
     setErrors({ ...errors, [field]: true, message });
     const element = document.getElementById(`${field}Group`);
     if (element) {
       element.classList.add('form-pulse');
       setTimeout(() => element.classList.remove('form-pulse'), 500);
+    }
+    
+    // Restaurar el foco al elemento que estaba enfocado
+    if (currentlyFocused && currentlyFocused.id) {
+      setTimeout(() => {
+        currentlyFocused.focus();
+      }, 0);
     }
   };
 
@@ -82,68 +102,93 @@ const Login = ({ onForgotPassword }) => {
 
   const closeAuthModal = () => setAuthModal(prev => ({ ...prev, isOpen: false }));
   
-  const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = (e) => {
+    e.preventDefault();
     setShowPassword(!showPassword);
+    // Mantener el foco en el campo de contraseña
+    setTimeout(() => {
+      document.getElementById('password')?.focus();
+    }, 0);
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-
-  setAuthModal({
-    isOpen: true,
-    status: 'loading',
-    message: 'Verifying credentials...'
-  });
-
-  try {
-    const loginRes = await fetch('http://localhost:8000/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-
-    if (!loginRes.ok) throw new Error('Invalid username or password');
-
-    const { access_token: token } = await loginRes.json();
-    const { sub: username } = JSON.parse(atob(token.split('.')[1]));
-
-    const staffRes = await fetch('http://localhost:8000/staff/', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!staffRes.ok) throw new Error('Unable to retrieve staff data');
-
-    const allStaff = await staffRes.json();
-    const user = allStaff.find(u => u.username === username);
-    if (!user) throw new Error('User not found');
-
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('auth_user', JSON.stringify(user));
-    rememberMe
-      ? localStorage.setItem('rememberedUsername', username)
-      : localStorage.removeItem('rememberedUsername');
-
-    const loginResult = await login({ success: true, token, user });
-    if (!loginResult.success) throw new Error('Authentication failed');
+    e.preventDefault();
+    if (!validateForm()) return;
 
     setAuthModal({
       isOpen: true,
-      status: 'success',
-      message: 'Login successful. Redirecting...'
+      status: 'loading',
+      message: 'Verifying credentials...'
     });
 
-    const baseRole = user.role.split(' - ')[0].toLowerCase();
-    navigate(`/${baseRole}/homePage`);
+    try {
+      // PASO 1: Verificar credenciales (SLAVE)
+      const credentialsRes = await fetch('http://localhost:8000/auth/verify-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-  } catch (err) {
-    setAuthModal({
-      isOpen: true,
-      status: 'error',
-      message: err.message || 'Login failed'
-    });
-  }
-};
+      if (!credentialsRes.ok) throw new Error('Invalid username or password');
+
+      const userCredentials = await credentialsRes.json();
+      
+      setAuthModal({
+        isOpen: true,
+        status: 'loading',
+        message: 'Creating session...'
+      });
+
+      // PASO 2: Crear token (MAIN)
+      const tokenRes = await fetch('http://localhost:8000/auth/create-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userCredentials.user_id,
+          username: userCredentials.username,
+          role: userCredentials.role
+        })
+      });
+
+      if (!tokenRes.ok) throw new Error('Failed to create session');
+
+      const { access_token: token } = await tokenRes.json();
+
+      // Crear objeto user para el contexto
+      const user = {
+        id: userCredentials.user_id,
+        username: userCredentials.username,
+        role: userCredentials.role
+      };
+
+      // Guardar datos de sesión
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('auth_user', JSON.stringify(user));
+      rememberMe
+        ? localStorage.setItem('rememberedUsername', user.username)
+        : localStorage.removeItem('rememberedUsername');
+
+      // Actualizar contexto de autenticación
+      const loginResult = await login({ token, user });
+      if (!loginResult.success) throw new Error('Authentication failed');
+
+      setAuthModal({
+        isOpen: true,
+        status: 'success',
+        message: 'Login successful. Redirecting...'
+      });
+
+      const baseRole = user.role.split(' - ')[0].toLowerCase();
+      navigate(`/${baseRole}/homePage`);
+
+    } catch (err) {
+      setAuthModal({
+        isOpen: true,
+        status: 'error',
+        message: err.message || 'Login failed'
+      });
+    }
+  };
 
   return (
     <>
@@ -151,7 +196,7 @@ const Login = ({ onForgotPassword }) => {
         <img src={logoImg} alt="Motive Homecare Logo" className="login__logo-img" />
       </div>
 
-      <h2 className="login__title">Welcome{!isMobile ? " Back" : ""}</h2>
+      <h2 className="login__title">Welcome{!isMobile ? " " : ""}</h2>
 
       <form className="login__form" onSubmit={handleSubmit}>
         <div className={`login__form-group ${errors.username ? 'error' : ''}`} id="usernameGroup">
@@ -186,6 +231,8 @@ const Login = ({ onForgotPassword }) => {
               value={formData.password}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onFocus={handlePasswordFocus}
+              onBlur={handlePasswordBlur}
               required
               autoComplete="current-password"
             />
@@ -193,6 +240,7 @@ const Login = ({ onForgotPassword }) => {
               type="button" 
               className="password-toggle-btn" 
               onClick={togglePasswordVisibility}
+              onMouseDown={(e) => e.preventDefault()}
               tabIndex="-1"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >

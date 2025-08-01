@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useAuth } from '../../../../login/AuthContext';
 
-// Note types with icons and colors
+// Note types con iconos y colores
 const NOTE_TYPES = [
   { value: 'text', label: 'Text Note', icon: 'fa-file-alt', color: '#3b82f6' },
   { value: 'communication-report', label: 'Communication Report', icon: 'fa-comment-dots', color: '#8b5cf6' },
@@ -19,7 +17,7 @@ const NOTE_TYPES = [
   { value: 'file', label: 'File Upload', icon: 'fa-file-upload', color: '#9333ea' },
 ];
 
-// Categories with colors
+// Categorías con colores
 const CATEGORIES = [
   { value: 'Clinical', color: 'rgb(44, 123, 229)' },
   { value: 'Follow-up', color: 'rgb(76, 175, 80)' },
@@ -30,7 +28,7 @@ const CATEGORIES = [
   { value: 'Media', color: 'rgb(244, 67, 54)' },
 ];
 
-// Role colors
+// Colores por rol
 const ROLE_COLORS = {
   PT: '#3b82f6',
   OT: '#8b5cf6',
@@ -46,7 +44,6 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [newNoteType, setNewNoteType] = useState('text');
-  const [newNoteCategory, setNewNoteCategory] = useState('Clinical');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [sortBy, setSortBy] = useState('date-desc');
@@ -55,6 +52,8 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+  const [error, setError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { currentUser } = useAuth();
   
@@ -64,124 +63,59 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   const signatureCanvasCtx = useRef(null);
   const isDrawing = useRef(false);
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        when: "beforeChildren",
-        staggerChildren: 0.08
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: { type: 'spring', stiffness: 300, damping: 24 }
-    },
-    exit: { 
-      y: -20, 
-      opacity: 0,
-      transition: { duration: 0.2 }
-    }
-  };
+  // API Configuration
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  const modalVariants = {
-    hidden: { 
-      opacity: 0,
-      scale: 0.8,
-      y: 30
-    },
-    visible: { 
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: { 
-        type: 'spring',
-        stiffness: 500,
-        damping: 30
-      }
-    },
-    exit: { 
-      opacity: 0,
-      scale: 0.8,
-      y: 30,
-      transition: { duration: 0.2 }
-    }
-  };
-  
-  const confirmModalVariants = {
-    hidden: { 
-      opacity: 0,
-      scale: 0.9
-    },
-    visible: { 
-      opacity: 1,
-      scale: 1,
-      transition: { 
-        type: 'spring',
-        stiffness: 400,
-        damping: 25
-      }
-    },
-    exit: { 
-      opacity: 0,
-      scale: 0.9,
-      transition: { duration: 0.15 }
-    }
-  };
-
-  // Initialize canvas for signature
-  useEffect(() => {
-    if (isAddingNote && newNoteType === 'signature' && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      signatureCanvasCtx.current = ctx;
-      
-      // Set up the canvas
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = 'black';
-      
-      // Clear the canvas 
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-  }, [isAddingNote, newNoteType]);
-
-  // Fetch notes data
+  // Fetch notes from API
   useEffect(() => {
     const fetchNotes = async () => {
-      setIsLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (patient?.id) {
-        // Generate dummy notes based on patient ID to simulate personalized data
-        const dummyNotes = generateDummyNotes(patient);
-        
-        // Extract unique categories
-        const uniqueCategories = [...new Set(dummyNotes.map(note => note.category))];
-        setCategories(['all', ...uniqueCategories]);
-        
-        setNotes(dummyNotes);
-        setFilteredNotes(dummyNotes);
-      } else {
+      if (!patient?.id) {
         setNotes([]);
         setFilteredNotes([]);
         setCategories(['all']);
+        setIsLoading(false);
+        return;
       }
-      
-      setIsLoading(false);
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Agregar headers de autorización si es necesario
+            // 'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch notes: ${response.status} ${response.statusText}`);
+        }
+        
+        const notesData = await response.json();
+        
+        // Extraer categorías únicas
+        const uniqueCategories = [...new Set(notesData.map(note => note.category || 'Clinical'))];
+        setCategories(['all', ...uniqueCategories]);
+        
+        setNotes(notesData);
+        setFilteredNotes(notesData);
+        
+      } catch (err) {
+        console.error('Error fetching notes:', err);
+        setError(err.message);
+        setNotes([]);
+        setFilteredNotes([]);
+        setCategories(['all']);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     fetchNotes();
-  }, [patient]);
+  }, [patient?.id, API_BASE_URL]);
 
   // Filter and sort notes
   useEffect(() => {
@@ -191,10 +125,10 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        note => note.title.toLowerCase().includes(query) || 
-                note.content.toLowerCase().includes(query) ||
-                note.author.toLowerCase().includes(query) ||
-                note.noteType.toLowerCase().includes(query)
+        note => note.title?.toLowerCase().includes(query) || 
+                note.content?.toLowerCase().includes(query) ||
+                note.author?.toLowerCase().includes(query) ||
+                note.note_type?.toLowerCase().includes(query)
       );
     }
     
@@ -215,137 +149,116 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
     
     switch (sortCriteria) {
       case 'date-desc':
-        return sortedNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return sortedNotes.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
       case 'date-asc':
-        return sortedNotes.sort((a, b) => new Date(a.date) - new Date(b.date));
+        return sortedNotes.sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
       case 'title-asc':
-        return sortedNotes.sort((a, b) => a.title.localeCompare(b.title));
+        return sortedNotes.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       case 'title-desc':
-        return sortedNotes.sort((a, b) => b.title.localeCompare(a.title));
+        return sortedNotes.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
       case 'author':
-        return sortedNotes.sort((a, b) => a.author.localeCompare(b.author));
+        return sortedNotes.sort((a, b) => (a.author || '').localeCompare(b.author || ''));
       case 'category':
-        return sortedNotes.sort((a, b) => a.category.localeCompare(b.category));
+        return sortedNotes.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
       default:
         return sortedNotes;
     }
   };
 
-  // Generate dummy notes for demo
-  const generateDummyNotes = (patient) => {
-    const therapists = patient.disciplines.PT.isActive ? [patient.disciplines.PT.therapist?.name] : [];
-    if (patient.disciplines.OT.isActive && patient.disciplines.OT.therapist) {
-      therapists.push(patient.disciplines.OT.therapist.name);
-    }
-    if (patient.disciplines.ST.isActive && patient.disciplines.ST.therapist) {
-      therapists.push(patient.disciplines.ST.therapist.name);
-    }
-    
-    const assistants = patient.disciplines.PT.isActive ? [patient.disciplines.PT.assistant?.name] : [];
-    if (patient.disciplines.OT.isActive && patient.disciplines.OT.assistant) {
-      assistants.push(patient.disciplines.OT.assistant.name);
-    }
-    if (patient.disciplines.ST.isActive && patient.disciplines.ST.assistant) {
-      assistants.push(patient.disciplines.ST.assistant.name);
-    }
-    
-    // Filter out any undefined or null values
-    const availableTherapists = therapists.filter(Boolean);
-    const availableAssistants = assistants.filter(Boolean);
-    
-    // Create some initial notes with varied note types
-    return [
-      {
-        id: 1,
-        title: 'Initial Evaluation Notes',
-        content: `Patient ${patient.name} presented with right-sided weakness following left CVA in 03/2023. Patient demonstrates significant difficulty with all functional mobility tasks requiring assistance for transfers and ambulation. Will benefit from PT intervention to improve strength, balance, and functional mobility.`,
-        type: 'text',
-        noteType: 'text', 
-        category: 'Clinical',
-        author: availableTherapists.length ? availableTherapists[0] : 'System',
-        userRole: 'PT',
-        date: '2025-04-11T14:30:00',
-        isPinned: true,
-        isEditable: true,
-        tags: ['Initial Eval', 'PT', 'Mobility']
-      },
-      {
-        id: 2,
-        title: 'Follow-up: Gait Training',
-        content: 'Patient showing improvement in gait pattern with assistive device. Decreased shuffling noted. Continue with current exercise plan and progress as tolerated.',
-        type: 'text',
-        noteType: 'follow-up',
-        category: 'Follow-up',
-        author: availableAssistants.length ? availableAssistants[0] : 'System',
-        userRole: 'PTA',
-        date: '2025-04-15T10:45:00',
-        isPinned: false,
-        isEditable: true,
-        tags: ['Gait Training', 'Progress']
-      },
-      {
-        id: 3,
-        title: 'ADL Training Session',
-        content: 'Worked on upper extremity dressing tasks. Patient able to don shirt with minimal assistance. Continuing to work on button manipulation and fine motor skills.',
-        type: 'text',
-        noteType: 'therapy-session',
-        category: 'Therapy Session',
-        author: availableTherapists.length > 1 ? availableTherapists[1] : (availableTherapists.length ? availableTherapists[0] : 'System'),
-        userRole: 'OT',
-        date: '2025-04-20T13:15:00',
-        isPinned: false,
-        isEditable: true,
-        tags: ['OT', 'ADL', 'Dressing']
-      },
-      {
-        id: 4,
-        title: 'Caregiver Education',
-        content: 'Met with patient\'s son to educate on safe transfer techniques and home exercise program supervision. Caregiver demonstrated understanding and proper technique.',
-        type: 'text',
-        noteType: 'communication-report',
-        category: 'Education',
-        author: 'Admin Staff',
-        userRole: 'Admin',
-        date: '2025-04-25T09:30:00',
-        isPinned: true,
-        isEditable: true,
-        tags: ['Caregiver', 'Education', 'HEP']
-      },
-      {
-        id: 5,
-        title: 'Balance Assessment',
-        content: 'Completed Berg Balance Assessment. Score: 32/56 indicating moderate fall risk. Will implement balance training program focusing on static and dynamic balance activities.',
-        type: 'text',
-        noteType: 'assessment', 
-        category: 'Assessment',
-        author: availableTherapists.length ? availableTherapists[0] : 'System',
-        userRole: 'PT',
-        date: '2025-05-02T11:00:00',
-        isPinned: false,
-        isEditable: true,
-        tags: ['Balance', 'Assessment', 'Fall Risk']
+  // Create new note via API
+  const createNote = async (noteData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Agregar headers de autorización si es necesario
+        },
+        body: JSON.stringify(noteData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create note: ${response.status} ${response.statusText}`);
       }
-    ];
+      
+      const newNote = await response.json();
+      
+      // Actualizar la lista de notas
+      setNotes(prevNotes => [newNote, ...prevNotes]);
+      
+      return newNote;
+    } catch (err) {
+      console.error('Error creating note:', err);
+      throw err;
+    }
   };
 
-  // Handle note drag and drop for reordering
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(filteredNotes);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setFilteredNotes(items);
+  // Delete note via API
+  const deleteNote = async (noteId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/${noteId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          // Agregar headers de autorización si es necesario
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete note: ${response.status} ${response.statusText}`);
+      }
+      
+      
+      // Actualizar la lista de notas
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      
+    } catch (err) {
+      console.error('Error deleting note:', err);
+      throw err;
+    }
+  };
+
+  // Update note via API
+  const updateNote = async (noteId, updateData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/${noteId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          // Agregar headers de autorización si es necesario
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update note: ${response.status} ${response.statusText}`);
+      }
+      
+      const updatedNote = await response.json();
+      
+      // Actualizar la lista de notas
+      setNotes(prevNotes => 
+        prevNotes.map(note => note.id === noteId ? updatedNote : note)
+      );
+      
+      return updatedNote;
+    } catch (err) {
+      console.error('Error updating note:', err);
+      throw err;
+    }
   };
 
   // Toggle note pinned status
-  const togglePinNote = (noteId) => {
-    const updatedNotes = notes.map(note => 
-      note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
-    );
-    
-    setNotes(updatedNotes);
+  const togglePinNote = async (noteId) => {
+    try {
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      
+      await updateNote(noteId, { is_pinned: !note.is_pinned });
+    } catch (err) {
+      console.error('Error toggling pin status:', err);
+      setError('Failed to update note pin status');
+    }
   };
 
   // Handle deleting a note
@@ -355,17 +268,20 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   };
 
   // Confirm note deletion
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!noteToDelete) return;
     
-    const updatedNotes = notes.filter(note => note.id !== noteToDelete.id);
-    setNotes(updatedNotes);
-    
-    setShowDeleteConfirm(false);
-    setNoteToDelete(null);
-    
-    if (activeNoteId === noteToDelete.id) {
-      setActiveNoteId(null);
+    try {
+      await deleteNote(noteToDelete.id);
+      setShowDeleteConfirm(false);
+      setNoteToDelete(null);
+      
+      if (activeNoteId === noteToDelete.id) {
+        setActiveNoteId(null);
+      }
+    } catch (err) {
+      console.error('Error deleting note:', err);
+      setError('Failed to delete note');
     }
   };
 
@@ -379,6 +295,7 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   const handleAddNote = (type = 'text') => {
     setNewNoteType(type);
     setIsAddingNote(true);
+    setError(null);
   };
 
   // Show note details
@@ -386,97 +303,106 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
     setActiveNoteId(noteId);
   };
 
-  // Handle saving a new note
-  const handleSaveNote = (e) => {
-    e.preventDefault();
+  // Handle saving a new note - CORREGIDO
+  const handleSaveNote = async (event) => {
+    // IMPORTANTE: Prevenir el comportamiento por defecto
+    event.preventDefault();
     
-    const form = e.target;
-    const title = form.title.value.trim();
-    const category = form.category.value;
-    const tags = form.tags.value.split(',').map(tag => tag.trim()).filter(Boolean);
-    const noteType = form.noteType.value;
+    if (isSaving) return; // Prevenir múltiples envíos
     
-    let content = '';
-    let type = noteType;
-    
-    if (noteType === 'signature') {
-      if (canvasRef.current) {
-        content = canvasRef.current.toDataURL();
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      // Obtener los datos del formulario
+      const formData = new FormData(event.target);
+      const title = formData.get('title')?.trim();
+      const category = formData.get('category') || 'Clinical';
+      const tags = formData.get('tags')?.split(',').map(tag => tag.trim()).filter(Boolean) || [];
+      const noteType = formData.get('noteType') || 'text';
+      
+      let content = '';
+      
+      if (noteType === 'signature') {
+        if (canvasRef.current) {
+          content = canvasRef.current.toDataURL();
+        }
+      } else {
+        content = formData.get('content')?.trim();
       }
-    } else {
-      content = form.content.value.trim();
-      type = 'text'; // For all text-based note types, the type remains 'text'
+      
+      if (!title || !content) {
+        setError('Please provide both a title and content for the note.');
+        return;
+      }
+      
+      const authorName = currentUser?.fullname || currentUser?.username || 'Current User';
+      const userRole = currentUser?.role || 'Staff';
+      
+      const noteData = {
+        title,
+        content,
+        note_type: noteType,
+        category,
+        author: authorName,
+        user_role: userRole,
+        tags: tags.join(','), // O enviar como array dependiendo de tu API
+        is_pinned: false,
+        patient_id: patient.id
+      };
+      
+      
+      await createNote(noteData);
+      setIsAddingNote(false);
+      
+      // Limpiar el formulario
+      event.target.reset();
+      
+    } catch (err) {
+      console.error('Error saving note:', err);
+      setError('Failed to save note: ' + err.message);
+    } finally {
+      setIsSaving(false);
     }
-    
-    if (!title || !content) {
-      alert('Please provide both a title and content for the note.');
-      return;
-    }
-    
-    const authorName = currentUser?.fullname || 'Current User';
-    const userRole = currentUser?.role || 'Staff';
-    
-    const newNote = {
-      id: Date.now(),
-      title,
-      content,
-      type,
-      noteType,
-      category,
-      author: authorName,
-      userRole: userRole,
-      date: new Date().toISOString(),
-      isPinned: false,
-      isEditable: true,
-      tags
-    };
-    
-    const updatedNotes = [newNote, ...notes];
-    setNotes(updatedNotes);
-    
-    setIsAddingNote(false);
   };
 
   // Handle file upload
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = e.target.files;
     if (files.length === 0) return;
     
     const file = files[0];
     const fileType = file.type.split('/')[0];
-    let noteType = 'file';
     
-    if (fileType === 'image') {
-      noteType = 'image';
-    } else if (fileType === 'video') {
-      noteType = 'video';
-    } else if (fileType === 'audio') {
-      noteType = 'audio';
-    }
+    // Aquí deberías subir el archivo a tu servidor y obtener la URL
+    // Por ahora, usaremos URL.createObjectURL como placeholder
+    const fileUrl = URL.createObjectURL(file);
     
-    const authorName = currentUser?.fullname || 'Current User';
+    const authorName = currentUser?.fullname || currentUser?.username || 'Current User';
     const userRole = currentUser?.role || 'Staff';
     
-    const newNote = {
-      id: Date.now(),
+    const noteData = {
       title: file.name,
-      content: URL.createObjectURL(file),
-      type: noteType,
-      noteType: 'file',
+      content: fileUrl, // En producción, esta debería ser la URL del archivo subido
+      note_type: 'file',
       category: 'Media',
       author: authorName,
-      userRole: userRole,
-      date: new Date().toISOString(),
-      isPinned: false,
-      isEditable: true,
-      tags: [fileType, 'uploaded']
+      user_role: userRole,
+      tags: fileType + ',uploaded',
+      is_pinned: false,
+      patient_id: patient.id,
+      file_type: fileType
     };
     
-    const updatedNotes = [newNote, ...notes];
-    setNotes(updatedNotes);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    try {
+      await createNote(noteData);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError('Failed to upload file');
     }
   };
 
@@ -522,6 +448,23 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
+
+  // Initialize canvas for signature
+  useEffect(() => {
+    if (isAddingNote && newNoteType === 'signature' && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      signatureCanvasCtx.current = ctx;
+      
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'black';
+      
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }, [isAddingNote, newNoteType]);
 
   // Format date helper function
   const formatDate = (dateString) => {
@@ -572,171 +515,145 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
   const NoteCard = ({ note, index }) => {
     const [isHovered, setIsHovered] = useState(false);
     
-    const dateFormatted = formatShortDate(note.date);
-    const noteTypeInfo = getNoteTypeInfo(note.noteType);
+    const dateFormatted = formatShortDate(note.created_at || note.date || new Date().toISOString());
+    const noteTypeInfo = getNoteTypeInfo(note.note_type || note.noteType);
     
     return (
-      <Draggable draggableId={note.id.toString()} index={index}>
-        {(provided) => (
-          <div
-            className={`note-card ${note.isPinned ? 'pinned' : ''}`}
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
-            <div className="note-header" {...provided.dragHandleProps}>
-              <div className="note-category">
-                <span 
-                  className="category-indicator" 
-                  style={{ backgroundColor: getCategoryColor(note.category) }}
-                ></span>
-                <span className="category-name">{note.category}</span>
+      <div
+        className={`note-card ${note.is_pinned || note.isPinned ? 'pinned' : ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="note-header">
+          <div className="note-category">
+            <span 
+              className="category-indicator" 
+              style={{ backgroundColor: getCategoryColor(note.category) }}
+            ></span>
+            <span className="category-name">{note.category || 'Clinical'}</span>
+          </div>
+          <div className="note-actions">
+            {isHovered && (
+              <div className="action-buttons">
+                <button 
+                  className="action-btn view-btn" 
+                  onClick={() => handleViewNote(note.id)}
+                  title="View Note"
+                >
+                  <i className="fas fa-eye"></i>
+                </button>
+                <button 
+                  className="action-btn pin-btn" 
+                  onClick={() => togglePinNote(note.id)}
+                  title={(note.is_pinned || note.isPinned) ? "Unpin Note" : "Pin Note"}
+                >
+                  <i className="fas fa-thumbtack"></i>
+                </button>
+                <button 
+                  className="action-btn delete-btn" 
+                  onClick={() => handleDeleteClick(note)}
+                  title="Delete Note"
+                >
+                  <i className="fas fa-trash-alt"></i>
+                </button>
               </div>
-              <div className="note-actions">
-                {isHovered && (
-                  <motion.div 
-                    className="action-buttons"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <button 
-                      className="action-btn view-btn" 
-                      onClick={() => handleViewNote(note.id)}
-                      title="View Note"
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button 
-                      className="action-btn pin-btn" 
-                      onClick={() => togglePinNote(note.id)}
-                      title={note.isPinned ? "Unpin Note" : "Pin Note"}
-                    >
-                      <i className={`fas ${note.isPinned ? 'fa-thumbtack' : 'fa-thumbtack'}`}></i>
-                    </button>
-                    {note.isEditable && (
-                      <button 
-                        className="action-btn delete-btn" 
-                        onClick={() => handleDeleteClick(note)}
-                        title="Delete Note"
-                      >
-                        <i className="fas fa-trash-alt"></i>
-                      </button>
-                    )}
-                  </motion.div>
-                )}
-              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="note-content" onClick={() => handleViewNote(note.id)}>
+          <h3 className="note-title">
+            {(note.is_pinned || note.isPinned) && <i className="fas fa-thumbtack pin-icon"></i>}
+            {note.title}
+          </h3>
+          <div className="note-type-label">
+            <span className="note-type-badge" style={{backgroundColor: `${noteTypeInfo.color}20`, color: noteTypeInfo.color}}>
+              <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
+            </span>
+          </div>
+          
+          <div className="note-text">
+            <p>{note.content && note.content.length > 120 ? `${note.content.substring(0, 120)}...` : note.content}</p>
+          </div>
+        </div>
+        
+        <div className="note-footer">
+          <div className="note-date-block">
+            <div className="date-box">
+              <span className="date-day">{dateFormatted.day}</span>
+              <span className="date-month">{dateFormatted.month}</span>
             </div>
-            
-            <div className="note-content" onClick={() => handleViewNote(note.id)}>
-              <h3 className="note-title">
-                {note.isPinned && <i className="fas fa-thumbtack pin-icon"></i>}
-                {note.title}
-              </h3>
-              <div className="note-type-label">
-                <span className="note-type-badge" style={{backgroundColor: `${noteTypeInfo.color}20`, color: noteTypeInfo.color}}>
-                  <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
-                </span>
-              </div>
-              
-              {note.type === 'text' && (
-                <div className="note-text">
-                  <p>{note.content.length > 120 ? `${note.content.substring(0, 120)}...` : note.content}</p>
-                </div>
-              )}
-              
-              {note.type === 'image' && (
-                <div className="note-image">
-                  <img src={note.content} alt={note.title} />
-                </div>
-              )}
-              
-              {note.type === 'signature' && (
-                <div className="note-signature">
-                  <img src={note.content} alt="Signature" />
-                </div>
-              )}
-              
-              {(note.type === 'file' || note.type === 'audio' || note.type === 'video') && (
-                <div className="note-file">
-                  <i className={`fas ${note.type === 'audio' ? 'fa-file-audio' : 
-                                      note.type === 'video' ? 'fa-file-video' : 
-                                      'fa-file'}`}></i>
-                  <span>{note.title}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="note-footer">
-              <div className="note-date-block">
-                <div className="date-box">
-                  <span className="date-day">{dateFormatted.day}</span>
-                  <span className="date-month">{dateFormatted.month}</span>
-                </div>
-                <div className="date-year-time">
-                  <span className="date-year">{dateFormatted.year}</span>
-                  <span className="date-time">{dateFormatted.time}</span>
-                </div>
-              </div>
-              
-              <div className="note-meta">
-                <div className="note-author">
-                  <div 
-                    className="author-icon" 
-                    style={{
-                      backgroundColor: getRoleColor(note.userRole)
-                    }}
-                  >
-                    {note.author.charAt(0)}
-                  </div>
-                  <div className="author-info">
-                    <span className="author-name">{note.author}</span>
-                    <span className="author-role">{note.userRole}</span>
-                  </div>
-                </div>
-                
-                {note.tags && note.tags.length > 0 && (
-                  <div className="note-tags">
-                    {note.tags.slice(0, 3).map((tag, idx) => (
-                      <span key={idx} className="tag">
-                        {tag}
-                      </span>
-                    ))}
-                    {note.tags.length > 3 && (
-                      <span className="tag more-tag">+{note.tags.length - 3}</span>
-                    )}
-                  </div>
-                )}
-              </div>
+            <div className="date-year-time">
+              <span className="date-year">{dateFormatted.year}</span>
+              <span className="date-time">{dateFormatted.time}</span>
             </div>
           </div>
-        )}
-      </Draggable>
+          
+          <div className="note-meta">
+            <div className="note-author">
+              <div 
+                className="author-icon" 
+                style={{
+                  backgroundColor: getRoleColor(note.user_role || note.userRole)
+                }}
+              >
+                {note.author ? note.author.charAt(0) : 'U'}
+              </div>
+              <div className="author-info">
+                <span className="author-name">{note.author || 'Unknown'}</span>
+                <span className="author-role">{note.user_role || note.userRole || 'Staff'}</span>
+              </div>
+            </div>
+            
+            {note.tags && (
+              <div className="note-tags">
+                {(typeof note.tags === 'string' ? note.tags.split(',') : note.tags)
+                  .slice(0, 3)
+                  .map((tag, idx) => (
+                    <span key={idx} className="tag">
+                      {tag.trim()}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     );
-  };
-
-  // Parse markdown helper function
-  const parseMarkdown = (text) => {
-    if (!text) return '';
-    
-    text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-    text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
-    text = text.replace(/(<li>.+<\/li>(\n|$))+/g, '<ul>$&</ul>');
-    text = text.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-    text = text.replace(/(<li>.+<\/li>(\n|$))+/g, '<ol>$&</ol>');
-    text = text.replace(/^(?!<[uo]l|<li|<h).+$/gm, '<p>$&</p>');
-    text = text.replace(/<\/p>\n<p>/g, '</p><p>');
-    
-    return text;
   };
 
   return (
     <div className="notes-component">
+      {/* Error display */}
+      {error && (
+        <div className="error-banner" style={{
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          margin: '16px 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <i className="fas fa-exclamation-triangle"></i>
+          <span>{error}</span>
+          <button 
+            onClick={() => setError(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#dc2626',
+              cursor: 'pointer',
+              marginLeft: 'auto'
+            }}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      )}
+
       <div className="notes-header">
         <div className="header-left">
           <div className="icon-wrapper">
@@ -763,7 +680,7 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
                 aria-label="Clear search"
               >
                 <i className="fas fa-times"></i>
-                </button>
+              </button>
             )}
           </div>
           
@@ -810,13 +727,7 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
               </button>
               
               {showQuickActions && (
-                <motion.div 
-                  className="quick-actions"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <div className="quick-actions">
                   {NOTE_TYPES.map((type) => (
                     <button 
                       key={type.value}
@@ -833,7 +744,7 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
                       <span>{type.label}</span>
                     </button>
                   ))}
-                </motion.div>
+                </div>
               )}
               
               <input 
@@ -881,452 +792,418 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
               </div>
             </div>
           ) : (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="notes-list">
-                {(provided) => (
-                  <motion.div 
-                    className="notes-grid"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                  >
-                    {filteredNotes.map((note, index) => (
-                      <motion.div 
-                        key={note.id}
-                        variants={itemVariants}
-                        className="note-wrapper"
-                      >
-                        <NoteCard note={note} index={index} />
-                      </motion.div>
-                    ))}
-                    {provided.placeholder}
-                  </motion.div>
-                )}
-              </Droppable>
-            </DragDropContext>
+            <div className="notes-grid">
+              {filteredNotes.map((note, index) => (
+                <div key={note.id} className="note-wrapper">
+                  <NoteCard note={note} index={index} />
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
       
-      {/* Add/Edit Note Modal */}
-      <AnimatePresence>
-        {isAddingNote && (
-          <div className="modal-overlay" onClick={() => setIsAddingNote(false)}>
-            <motion.div 
-              className="note-modal add-note-modal"
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header">
-                <h3>
-                  {(() => {
-                    const typeInfo = getNoteTypeInfo(newNoteType);
-                    return (
-                      <>
-                        <i className={`fas ${typeInfo.icon}`} style={{color: typeInfo.color, marginRight: '8px'}}></i>
-                        Add {typeInfo.label}
-                      </>
-                    );
-                  })()}
-                </h3>
-                <button className="close-modal" onClick={() => setIsAddingNote(false)}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              
-              <form onSubmit={handleSaveNote}>
-                <div className="modal-body">
+      {/* Add Note Modal - FORMULARIO CORREGIDO */}
+      {isAddingNote && (
+        <div className="modal-overlay" onClick={() => setIsAddingNote(false)}>
+          <div className="note-modal add-note-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                {(() => {
+                  const typeInfo = getNoteTypeInfo(newNoteType);
+                  return (
+                    <>
+                      <i className={`fas ${typeInfo.icon}`} style={{color: typeInfo.color, marginRight: '8px'}}></i>
+                      Add {typeInfo.label}
+                    </>
+                  );
+                })()}
+              </h3>
+              <button className="close-modal" onClick={() => setIsAddingNote(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            {/* FORMULARIO CORREGIDO - onSubmit en lugar de button onClick */}
+            <form onSubmit={handleSaveNote}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="noteType">Note Type</label>
+                  <select 
+                    id="noteType" 
+                    name="noteType" 
+                    value={newNoteType}
+                    onChange={(e) => setNewNoteType(e.target.value)}
+                    className="note-type-select"
+                  >
+                    {NOTE_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="title">Title</label>
+                  <input 
+                    type="text" 
+                    id="title" 
+                    name="title" 
+                    placeholder="Enter note title"
+                    required
+                  />
+                </div>
+                
+                {newNoteType !== 'signature' ? (
                   <div className="form-group">
-                    <label htmlFor="noteType">Note Type</label>
-                    <select 
-                      id="noteType" 
-                      name="noteType" 
-                      value={newNoteType}
-                      onChange={(e) => setNewNoteType(e.target.value)}
-                      className="note-type-select"
-                    >
-                      {NOTE_TYPES.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
+                    <label htmlFor="content">Content</label>
+                    <textarea
+                      id="content"
+                      name="content"
+                      ref={textareaRef}
+                      rows={10}
+                      placeholder="Enter note content..."
+                      className="custom-textarea"
+                      required
+                    ></textarea>
+                    <div className="text-editor-toolbar">
+                      <button type="button" onClick={() => {
+                        if (textareaRef.current) {
+                          const textarea = textareaRef.current;
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const text = textarea.value;
+                          const before = text.substring(0, start);
+                          const after = text.substring(end);
+                          textarea.value = before + '**Bold text**' + after;
+                          textarea.focus();
+                        }
+                      }}>
+                        <i className="fas fa-bold"></i>
+                      </button>
+                      <button type="button" onClick={() => {
+                        if (textareaRef.current) {
+                          const textarea = textareaRef.current;
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const text = textarea.value;
+                          const before = text.substring(0, start);
+                          const after = text.substring(end);
+                          textarea.value = before + '*Italic text*' + after;
+                          textarea.focus();
+                        }
+                      }}>
+                        <i className="fas fa-italic"></i>
+                      </button>
+                      <button type="button" onClick={() => {
+                        if (textareaRef.current) {
+                          const textarea = textareaRef.current;
+                          const start = textarea.selectionStart;
+                          const text = textarea.value;
+                          const before = text.substring(0, start);
+                          const after = text.substring(start);
+                          textarea.value = before + '# Heading\n' + after;
+                          textarea.focus();
+                        }
+                      }}>
+                        <i className="fas fa-heading"></i>
+                      </button>
+                      <button type="button" onClick={() => {
+                        if (textareaRef.current) {
+                          const textarea = textareaRef.current;
+                          const start = textarea.selectionStart;
+                          const text = textarea.value;
+                          const before = text.substring(0, start);
+                          const after = text.substring(start);
+                          textarea.value = before + '\n- List item\n- List item\n- List item\n' + after;
+                          textarea.focus();
+                        }
+                      }}>
+                        <i className="fas fa-list-ul"></i>
+                      </button>
+                      <button type="button" onClick={() => {
+                        if (textareaRef.current) {
+                          const textarea = textareaRef.current;
+                          const start = textarea.selectionStart;
+                          const text = textarea.value;
+                          const before = text.substring(0, start);
+                          const after = text.substring(start);
+                          textarea.value = before + '\n1. Numbered item\n2. Numbered item\n3. Numbered item\n' + after;
+                          textarea.focus();
+                        }
+                      }}>
+                        <i className="fas fa-list-ol"></i>
+                      </button>
+                    </div>
+                    <div className="textarea-note">
+                      <small>Tip: You can use Markdown for formatting (*italic*, **bold**, # heading, etc.)</small>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="form-group signature-group">
+                    <label>Signature</label>
+                    <div className="signature-container">
+                      <canvas
+                        ref={canvasRef}
+                        width={500}
+                        height={200}
+                        className="signature-canvas"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseOut={stopDrawing}
+                      />
+                    </div>
+                    <button type="button" className="clear-signature" onClick={clearSignature}>
+                      <i className="fas fa-eraser"></i> Clear
+                    </button>
+                    <div className="signature-instruction">
+                      <small>Sign using your mouse or touchpad in the box above</small>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="category">Category</label>
+                    <select id="category" name="category" defaultValue="Clinical">
+                      {CATEGORIES.map(category => (
+                        <option key={category.value} value={category.value}>
+                          {category.value}
                         </option>
                       ))}
                     </select>
                   </div>
-
+                  
                   <div className="form-group">
-                    <label htmlFor="title">Title</label>
+                    <label htmlFor="tags">Tags (comma separated)</label>
                     <input 
                       type="text" 
-                      id="title" 
-                      name="title" 
-                      placeholder="Enter note title"
-                      required
+                      id="tags" 
+                      name="tags" 
+                      placeholder="e.g. important, follow-up, review"
                     />
                   </div>
-                  
-                  {newNoteType !== 'signature' ? (
-                    <div className="form-group">
-                      <label htmlFor="content">Content</label>
-                      <textarea
-                        id="content"
-                        name="content"
-                        ref={textareaRef}
-                        rows={10}
-                        placeholder="Enter note content..."
-                        className="custom-textarea"
-                        required
-                      ></textarea>
-                      <div className="text-editor-toolbar">
-                        <button type="button" onClick={() => {
-                          if (textareaRef.current) {
-                            textareaRef.current.value += '**Bold text**';
-                          }
-                        }}>
-                          <i className="fas fa-bold"></i>
-                        </button>
-                        <button type="button" onClick={() => {
-                          if (textareaRef.current) {
-                            textareaRef.current.value += '*Italic text*';
-                          }
-                        }}>
-                          <i className="fas fa-italic"></i>
-                        </button>
-                        <button type="button" onClick={() => {
-                          if (textareaRef.current) {
-                            textareaRef.current.value += '# Heading';
-                          }
-                        }}>
-                          <i className="fas fa-heading"></i>
-                        </button>
-                        <button type="button" onClick={() => {
-                          if (textareaRef.current) {
-                            textareaRef.current.value += '\n- List item\n- List item\n- List item';
-                          }
-                        }}>
-                          <i className="fas fa-list-ul"></i>
-                        </button>
-                        <button type="button" onClick={() => {
-                          if (textareaRef.current) {
-                            textareaRef.current.value += '\n1. Numbered item\n2. Numbered item\n3. Numbered item';
-                          }
-                        }}>
-                          <i className="fas fa-list-ol"></i>
-                        </button>
-                      </div>
-                      <div className="textarea-note">
-                        <small>Tip: You can use Markdown for formatting (*italic*, **bold**, # heading, etc.)</small>
-                      </div>
-                    </div>
+                </div>
+              </div>
+              
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="cancel-btn" 
+                  onClick={() => setIsAddingNote(false)}
+                  disabled={isSaving}
+                >
+                  <i className="fas fa-times"></i> Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="save-btn"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Saving...
+                    </>
                   ) : (
-                    <div className="form-group signature-group">
-                      <label>Signature</label>
-                      <div className="signature-container">
-                        <canvas
-                          ref={canvasRef}
-                          width={500}
-                          height={200}
-                          className="signature-canvas"
-                          onMouseDown={startDrawing}
-                          onMouseMove={draw}
-                          onMouseUp={stopDrawing}
-                          onMouseOut={stopDrawing}
-                        />
-                      </div>
-                      <button type="button" className="clear-signature" onClick={clearSignature}>
-                        <i className="fas fa-eraser"></i> Clear
-                      </button>
-                      <div className="signature-instruction">
-                        <small>Sign using your mouse or touchpad in the box above</small>
-                      </div>
-                    </div>
+                    <>
+                      <i className="fas fa-save"></i> Save Note
+                    </>
                   )}
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="category">Category</label>
-                      <select id="category" name="category">
-                        {CATEGORIES.map(category => (
-                          <option key={category.value} value={category.value}>
-                            {category.value}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="tags">Tags (comma separated)</label>
-                      <input 
-                        type="text" 
-                        id="tags" 
-                        name="tags" 
-                        placeholder="e.g. important, follow-up, review"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="modal-footer">
-                  <button type="button" className="cancel-btn" onClick={() => setIsAddingNote(false)}>
-                    <i className="fas fa-times"></i> Cancel
-                  </button>
-                  <button type="submit" className="save-btn">
-                    <i className="fas fa-save"></i> Save Note
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
       
       {/* View Note Modal */}
-      <AnimatePresence>
-        {activeNoteId && (
-          <div className="modal-overlay" onClick={() => setActiveNoteId(null)}>
-            <motion.div 
-              className="note-modal view-note-modal"
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {(() => {
-                const activeNote = notes.find(note => note.id === activeNoteId);
-                if (!activeNote) return null;
-                
-                const dateFormatted = formatShortDate(activeNote.date);
-                const noteTypeInfo = getNoteTypeInfo(activeNote.noteType);
-                
-                return (
-                  <>
-                    <div className="modal-header">
-                      <div className="modal-title">
-                        <div 
-                          className="category-indicator" 
-                          style={{ backgroundColor: getCategoryColor(activeNote.category) }}
-                        ></div>
-                        <h3>{activeNote.title}</h3>
-                      </div>
-                      <div className="modal-actions">
-                        {activeNote.isEditable && (
-                          <button 
-                            className="action-btn pin-btn" 
-                            onClick={() => togglePinNote(activeNote.id)}
-                            title={activeNote.isPinned ? "Unpin Note" : "Pin Note"}
-                          >
-                            <i className={`fas ${activeNote.isPinned ? 'fa-thumbtack' : 'fa-thumbtack'}`}></i>
-                          </button>
-                        )}
-                        <button className="close-modal" onClick={() => setActiveNoteId(null)}>
-                          <i className="fas fa-times"></i>
-                        </button>
-                      </div>
+      {activeNoteId && (
+        <div className="modal-overlay" onClick={() => setActiveNoteId(null)}>
+          <div className="note-modal view-note-modal" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const activeNote = notes.find(note => note.id === activeNoteId);
+              if (!activeNote) return null;
+              
+              const dateFormatted = formatShortDate(activeNote.created_at || activeNote.date || new Date().toISOString());
+              const noteTypeInfo = getNoteTypeInfo(activeNote.note_type || activeNote.noteType);
+              
+              return (
+                <>
+                  <div className="modal-header">
+                    <div className="modal-title">
+                      <div 
+                        className="category-indicator" 
+                        style={{ backgroundColor: getCategoryColor(activeNote.category) }}
+                      ></div>
+                      <h3>{activeNote.title}</h3>
                     </div>
-                    
-                    <div className="modal-body">
-                      <div className="view-note-info">
-                        <div 
-                          className="view-author-avatar"
-                          style={{ backgroundColor: getRoleColor(activeNote.userRole) }}
-                        >
-                          {activeNote.author.charAt(0)}
-                        </div>
-                        <div className="view-note-metadata">
-                          <div className="view-note-author">
-                            <span className="view-author-name">{activeNote.author}</span>
-                            <span 
-                              className="view-author-role"
-                              style={{ color: getRoleColor(activeNote.userRole) }}
-                            >
-                              {activeNote.userRole}
-                            </span>
-                          </div>
-                          <div className="view-note-date">
-                            <span className="date-display">
-                              <i className="far fa-calendar-alt"></i>
-                              {dateFormatted.month} {dateFormatted.day}, {dateFormatted.year} at {dateFormatted.time}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="note-type-label">
-                        <span className="note-type-badge" style={{
-                          backgroundColor: `${noteTypeInfo.color}20`, 
-                          color: noteTypeInfo.color
-                        }}>
-                          <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
-                        </span>
-                      </div>
-                      
-                      {activeNote.type === 'text' && (
-                        <div 
-                          className="note-full-text" 
-                          dangerouslySetInnerHTML={{ 
-                            __html: parseMarkdown(activeNote.content) 
-                          }}
-                        ></div>
-                      )}
-                      
-                      {activeNote.type === 'image' && (
-                        <div className="note-full-image">
-                          <img src={activeNote.content} alt={activeNote.title} />
-                        </div>
-                      )}
-                      
-                      {activeNote.type === 'signature' && (
-                        <div className="note-full-signature">
-                          <img src={activeNote.content} alt="Signature" />
-                        </div>
-                      )}
-                      
-                      {(activeNote.type === 'file' || activeNote.type === 'audio' || activeNote.type === 'video') && (
-                        <div className="note-file-preview">
-                          {activeNote.type === 'audio' && (
-                            <audio controls>
-                              <source src={activeNote.content} />
-                              Your browser does not support the audio element.
-                            </audio>
-                          )}
-                          
-                          {activeNote.type === 'video' && (
-                            <video controls>
-                              <source src={activeNote.content} />
-                              Your browser does not support the video element.
-                            </video>
-                          )}
-                          
-                          {activeNote.type === 'file' && (
-                            <div className="file-info">
-                              <i className="fas fa-file-alt file-icon"></i>
-                              <span className="file-name">{activeNote.title}</span>
-                              <a href={activeNote.content} className="download-link" download>
-                                <i className="fas fa-download"></i> Download File
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {activeNote.tags && activeNote.tags.length > 0 && (
-                        <div className="view-note-tags">
-                          <div className="tags-header">
-                            <i className="fas fa-tags"></i> Tags
-                          </div>
-                          <div className="tags-list">
-                            {activeNote.tags.map((tag, idx) => (
-                              <span key={idx} className="tag">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    <div className="modal-actions">
+                      <button 
+                        className="action-btn pin-btn" 
+                        onClick={() => togglePinNote(activeNote.id)}
+                        title={(activeNote.is_pinned || activeNote.isPinned) ? "Unpin Note" : "Pin Note"}
+                      >
+                        <i className="fas fa-thumbtack"></i>
+                      </button>
+                      <button className="close-modal" onClick={() => setActiveNoteId(null)}>
+                        <i className="fas fa-times"></i>
+                      </button>
                     </div>
-                    
-                    <div className="modal-footer">
-                      <div className="note-details">
-                        <div className="category-info">
-                          <span className="category-label">Category:</span>
+                  </div>
+                  
+                  <div className="modal-body">
+                    <div className="view-note-info">
+                      <div 
+                        className="view-author-avatar"
+                        style={{ backgroundColor: getRoleColor(activeNote.user_role || activeNote.userRole) }}
+                      >
+                        {activeNote.author ? activeNote.author.charAt(0) : 'U'}
+                      </div>
+                      <div className="view-note-metadata">
+                        <div className="view-note-author">
+                          <span className="view-author-name">{activeNote.author || 'Unknown'}</span>
                           <span 
-                            className="category-badge"
-                            style={{ 
-                              backgroundColor: getCategoryColor(activeNote.category),
-                              color: 'white'
-                            }}
+                            className="view-author-role"
+                            style={{ color: getRoleColor(activeNote.user_role || activeNote.userRole) }}
                           >
-                            {activeNote.category}
+                            {activeNote.user_role || activeNote.userRole || 'Staff'}
+                          </span>
+                        </div>
+                        <div className="view-note-date">
+                          <span className="date-display">
+                            <i className="far fa-calendar-alt"></i>
+                            {dateFormatted.month} {dateFormatted.day}, {dateFormatted.year} at {dateFormatted.time}
                           </span>
                         </div>
                       </div>
-                      
-                      {activeNote.isEditable && (
-                        <div className="modal-actions">
-                          <button 
-                            className="delete-btn" 
-                            onClick={() => { 
-                              handleDeleteClick(activeNote); 
-                              setActiveNoteId(null); 
-                            }}
-                          >
-                            <i className="fas fa-trash-alt"></i> Delete
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </>
-                );
-              })()}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteConfirm && noteToDelete && (
-          <div className="modal-overlay">
-            <motion.div 
-              className="note-modal delete-confirm-modal"
-              variants={confirmModalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <div className="modal-header delete-header">
-                <h3>Delete Note</h3>
-                <button className="close-modal" onClick={cancelDelete}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              
-              <div className="modal-body delete-body">
-                <div className="delete-warning-icon">
-                  <i className="fas fa-exclamation-triangle"></i>
-                </div>
-                
-                <h4 className="delete-title">Are you sure you want to delete this note?</h4>
-                
-                <div className="delete-note-preview">
-                  <div className="preview-title">
-                    <i className={`fas ${getNoteTypeInfo(noteToDelete.noteType).icon}`}></i>
-                    {noteToDelete.title}
+                    
+                    <div className="note-type-label">
+                      <span className="note-type-badge" style={{
+                        backgroundColor: `${noteTypeInfo.color}20`, 
+                        color: noteTypeInfo.color
+                      }}>
+                        <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
+                      </span>
+                    </div>
+                    
+                    {(activeNote.note_type || activeNote.noteType) === 'signature' ? (
+                      <div className="note-full-signature">
+                        <img src={activeNote.content} alt="Signature" style={{maxWidth: '100%', height: 'auto'}} />
+                      </div>
+                    ) : (
+                      <div className="note-full-text">
+                        <p style={{whiteSpace: 'pre-wrap'}}>{activeNote.content}</p>
+                      </div>
+                    )}
+                    
+                    {activeNote.tags && (
+                      <div className="view-note-tags">
+                        <div className="tags-header">
+                          <i className="fas fa-tags"></i> Tags
+                        </div>
+                        <div className="tags-list">
+                          {(typeof activeNote.tags === 'string' ? activeNote.tags.split(',') : activeNote.tags).map((tag, idx) => (
+                            <span key={idx} className="tag">
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="preview-details">
-                    <span className="preview-author">
-                      <i className="fas fa-user-md"></i> {noteToDelete.author}
-                    </span>
-                    <span className="preview-date">
-                      <i className="fas fa-calendar-alt"></i> {formatDate(noteToDelete.date)}
-                    </span>
+                  <div className="modal-footer">
+                    <div className="note-details">
+                      <div className="category-info">
+                        <span className="category-label">Category:</span>
+                        <span 
+                          className="category-badge"
+                          style={{ 
+                            backgroundColor: getCategoryColor(activeNote.category),
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}
+                        >
+                          {activeNote.category || 'Clinical'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="modal-actions">
+                      <button 
+                        className="delete-btn" 
+                        onClick={() => { 
+                          handleDeleteClick(activeNote); 
+                          setActiveNoteId(null); 
+                        }}
+                      >
+                        <i className="fas fa-trash-alt"></i> Delete
+                      </button>
+                    </div>
                   </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && noteToDelete && (
+        <div className="modal-overlay">
+          <div className="note-modal delete-confirm-modal">
+            <div className="modal-header delete-header">
+              <h3>Delete Note</h3>
+              <button className="close-modal" onClick={cancelDelete}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body delete-body">
+              <div className="delete-warning-icon">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              
+              <h4 className="delete-title">Are you sure you want to delete this note?</h4>
+              
+              <div className="delete-note-preview">
+                <div className="preview-title">
+                  <i className={`fas ${getNoteTypeInfo(noteToDelete.note_type || noteToDelete.noteType).icon}`}></i>
+                  {noteToDelete.title}
                 </div>
                 
-                <div className="delete-warning">
-                  <i className="fas fa-exclamation-circle"></i>
-                  <span>This action cannot be undone.</span>
+                <div className="preview-details">
+                  <span className="preview-author">
+                    <i className="fas fa-user-md"></i> {noteToDelete.author || 'Unknown'}
+                  </span>
+                  <span className="preview-date">
+                    <i className="fas fa-calendar-alt"></i> {formatDate(noteToDelete.created_at || noteToDelete.date || new Date().toISOString())}
+                  </span>
                 </div>
               </div>
               
-              <div className="modal-footer delete-footer">
-                <button className="cancel-btn" onClick={cancelDelete}>
-                  <i className="fas fa-times"></i> Cancel
-                </button>
-                <button className="delete-confirm-btn" onClick={confirmDelete}>
-                  <i className="fas fa-trash-alt"></i> Delete Note
-                </button>
+              <div className="delete-warning">
+                <i className="fas fa-exclamation-circle"></i>
+                <span>This action cannot be undone.</span>
               </div>
-            </motion.div>
+            </div>
+            
+            <div className="modal-footer delete-footer">
+              <button className="cancel-btn" onClick={cancelDelete}>
+                <i className="fas fa-times"></i> Cancel
+              </button>
+              <button className="delete-confirm-btn" onClick={confirmDelete}>
+                <i className="fas fa-trash-alt"></i> Delete Note
+              </button>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
       
       {/* Floating Action Button */}
       <div className="floating-action-button">

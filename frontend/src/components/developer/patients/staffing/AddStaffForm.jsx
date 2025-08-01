@@ -1,6 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import '../../../../styles/developer/Patients/Staffing/AddStaffForm.scss';
 
+const PasswordField = ({ 
+  label = "Password", 
+  id = "password", 
+  name = "password", 
+  value, 
+  onChange, 
+  required = true, 
+  placeholder = "Enter password",
+  showPassword,
+  onTogglePassword,
+  onGeneratePassword
+}) => (
+  <div className="form-group">
+    <label htmlFor={id}>{label}</label>
+    <div className="password-input-container">
+      <input
+        type={showPassword ? "text" : "password"}
+        id={id}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        className="password-visibility-btn"
+        onClick={onTogglePassword}
+        title={showPassword ? "Hide password" : "Show password"}
+      >
+        <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+      </button>
+      <button
+        type="button"
+        className="generate-password-btn"
+        onClick={onGeneratePassword}
+        title="Generate secure password"
+      >
+        <i className="fas fa-key"></i>
+        <span>Generate</span>
+      </button>
+    </div>
+  </div>
+);
+
 const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
   // Estados para control de carga y guardado
   const [isLoading, setIsLoading] = useState(true);
@@ -8,6 +53,64 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedStaffName, setSavedStaffName] = useState('');
   const [currentStep, setCurrentStep] = useState('role'); // 'role', 'details'
+  
+  // ✅ Estado para mostrar/ocultar contraseña
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ✅ Función para formatear número de teléfono
+  const formatPhoneNumber = (value) => {
+    // Remover todos los caracteres que no sean números
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    
+    // Aplicar formato (XXX) XXX-XXXX
+    if (phoneNumber.length >= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    } else if (phoneNumber.length >= 3) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else if (phoneNumber.length > 0) {
+      return `(${phoneNumber}`;
+    }
+    
+    return '';
+  };
+
+  // ✅ Función para manejar cambios en campos de teléfono
+  const handlePhoneChange = (e, fieldName, isAgencyField = false) => {
+    const formattedValue = formatPhoneNumber(e.target.value);
+    
+    if (isAgencyField) {
+      setFormData({
+        ...formData,
+        agencyFields: {
+          ...formData.agencyFields,
+          [fieldName]: formattedValue
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [fieldName]: formattedValue
+      });
+    }
+  };
+
+  // ✅ Función para manejar cambios en teléfonos de sucursales
+  const handleBranchPhoneChange = (index, value) => {
+    const formattedValue = formatPhoneNumber(value);
+    const updatedBranches = [...formData.agencyFields.branches];
+    updatedBranches[index] = {
+      ...updatedBranches[index],
+      phone: formattedValue
+    };
+
+    setFormData({
+      ...formData,
+      agencyFields: {
+        ...formData.agencyFields,
+        branches: updatedBranches
+      }
+    });
+  };
 
   // Estado principal del formulario
   const [formData, setFormData] = useState({
@@ -98,6 +201,41 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     };
   }, []);
 
+  // Función para convertir el rol al formato del backend
+  const convertRoleForBackend = (role) => {
+    const roleMapping = {
+      'developer': 'Developer',
+      'administrator': 'Administrator', 
+      'agency': 'Agency',
+      'pt': 'PT',
+      'pta': 'PTA',
+      'ot': 'OT',
+      'cota': 'COTA',
+      'st': 'ST',
+      'sta': 'STA'
+    };
+    
+    return roleMapping[role] || role;
+  };
+
+  // ✅ Función para generar contraseña segura
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let newPassword = '';
+    for (let i = 0; i < 12; i++) {
+      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData({
+      ...formData,
+      password: newPassword
+    });
+  };
+
+  // ✅ Función para toggle de visibilidad de contraseña
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   // Handle para cambios en inputs del formulario principal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -164,17 +302,61 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
   };
 
-  // Handle para carga de archivos (documentos)
+  // ✅ Handle mejorado para carga de archivos (documentos)
   const handleFileChange = (documentName, e) => {
-    if (e.target.files[0]) {
-      setDocuments({
-        ...documents,
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tamaño del archivo (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+      if (file.size > maxSize) {
+        alert('El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
+        return;
+      }
+
+      // Validar tipo de archivo
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipo de archivo no permitido. Solo se aceptan: PDF, JPG, PNG, DOC, DOCX');
+        return;
+      }
+
+      console.log(`📎 File selected for ${documentName}:`, {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      setDocuments(prevDocs => ({
+        ...prevDocs,
         [documentName]: {
           status: 'obtained',
-          file: e.target.files[0]
+          file: file,
+          fileName: file.name,
+          fileSize: file.size
         }
-      });
+      }));
     }
+  };
+
+  // ✅ Función para remover archivo subido
+  const removeFile = (documentName) => {
+    setDocuments(prevDocs => ({
+      ...prevDocs,
+      [documentName]: {
+        status: 'pending',
+        file: null,
+        fileName: null,
+        fileSize: null
+      }
+    }));
   };
 
   // Toggle de estado de documentos
@@ -186,6 +368,15 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
         status: documents[documentName].status === 'obtained' ? 'pending' : 'obtained'
       }
     });
+  };
+
+  // ✅ Función para formatear tamaño de archivo
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   // Resetear formulario
@@ -225,34 +416,79 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
     });
 
     setCurrentStep('role');
+    setShowPassword(false);
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    setSavedStaffName(`${formData.firstName} ${formData.lastName}`);
+    
+    // Determinar el nombre a mostrar en el modal de éxito
+    const displayName = formData.role === 'agency' 
+      ? formData.agencyFields.fullName 
+      : `${formData.firstName} ${formData.lastName}`;
+    
+    setSavedStaffName(displayName);
   
     try {
-      const staffBody = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        postal_code: formData.zipCode,
-        email: formData.email,
-        phone: formData.phone,
-        alt_phone: formData.altPhone,
+      // Preparar el objeto base para enviar a la API
+      let staffBody = {
         username: formData.userName,
         password: formData.password,
-        role: formData.role,
+        role: convertRoleForBackend(formData.role),
         is_active: true
       };
 
-      if (formData.dob) {
-        staffBody.birthday = formData.dob;
-      }
+      // Configuración específica para agencias
+      if (formData.role === 'agency') {
+        staffBody = {
+          ...staffBody,
+          name: formData.agencyFields.fullName,
+          email: formData.email || '',
+          phone: formData.agencyFields.contactNumber || '',
+          alt_phone: '',
+          postal_code: '',
+          address: formData.agencyFields.address || '',
+          fax: formData.agencyFields.fax || '',
+          branches: JSON.stringify(formData.agencyFields.branches || [])
+        };
+        
+        // Si hay dirección, intentar extraer código postal
+        if (formData.agencyFields.address) {
+          const zipMatch = formData.agencyFields.address.match(/\b\d{5}(-\d{4})?\b/);
+          if (zipMatch) {
+            staffBody.postal_code = zipMatch[0];
+          }
+        }
+      } else {
+        // Configuración para staff regular (no agencias)
+        staffBody = {
+          ...staffBody,
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone || '',
+          alt_phone: formData.altPhone || '',
+          postal_code: formData.zipCode || '',
+          address: '',
+        };
 
-      if (formData.gender) {
-        staffBody.gender = formData.gender;
+        // Agregar campos opcionales solo si existen
+        if (formData.dob) {
+          staffBody.birthday = formData.dob;
+        }
+
+        if (formData.gender) {
+          staffBody.gender = formData.gender;
+        }
+
+        // Si es un rol que requiere agencia, agregar la información de agencia
+        if (isTherapistOrAdmin() && formData.agency) {
+          staffBody.agency_id = formData.agency;
+        }
       }
   
+      console.log("📤 Sending staff data:", staffBody);
+      
       const res = await fetch('http://localhost:8000/staff/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -271,22 +507,37 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
   
       const staffData = await res.json();
       const newStaffId = staffData.id;
+      
+      console.log("✅ Staff created successfully:", staffData);
   
+      // ✅ Subir documentos mejorado
       for (const key in documents) {
         const doc = documents[key];
         if (doc.file) {
-          const formData = new FormData();
-          formData.append("file", doc.file);
-          formData.append("staff_id", newStaffId);
+          try {
+            const uploadFormData = new FormData();
+            uploadFormData.append("file", doc.file);
+            uploadFormData.append("staff_id", newStaffId);
+            uploadFormData.append("document_type", key);
   
-          const uploadRes = await fetch("http://localhost:8000/documents/upload", {
-            method: "POST",
-            body: formData
-          });
+            console.log(`📤 Uploading document: ${key} - ${doc.file.name}`);
+            
+            const uploadRes = await fetch("http://localhost:8000/documents/upload", {
+              method: "POST",
+              body: uploadFormData
+            });
   
-          if (!uploadRes.ok) {
-            const uploadError = await uploadRes.json();
-            console.warn(`⚠️ Document '${key}' failed to upload:`, uploadError);
+            if (!uploadRes.ok) {
+              const uploadError = await uploadRes.json();
+              console.warn(`⚠️ Document '${key}' failed to upload:`, uploadError);
+              // No detener el proceso por un error de documento
+            } else {
+              const uploadResult = await uploadRes.json();
+              console.log(`✅ Document '${key}' uploaded successfully:`, uploadResult);
+            }
+          } catch (uploadErr) {
+            console.error(`❌ Error uploading document '${key}':`, uploadErr);
+            // Continuar con otros documentos aunque uno falle
           }
         }
       }
@@ -294,6 +545,7 @@ const AddStaffForm = ({ onCancel, onViewAllStaff }) => {
       setIsSaving(false);
       setShowSuccessModal(true);
     } catch (err) {
+      console.error('❌ Error creating staff:', err);
       alert(`Error: ${err.message}`);
       setIsSaving(false);
     }
@@ -468,23 +720,6 @@ const isTherapistOrAdmin = () => {
     );
   }
 
-  // Calcular porcentaje de documentos completados
-  const getCompletedDocsPercentage = () => {
-    const docList = getDocumentsForRole();
-    if (!docList || docList.length === 0) return 0;
-    
-    let completed = 0;
-    let total = docList.length;
-    
-    docList.forEach(doc => {
-      if (documents[doc.id]?.status === 'obtained') {
-        completed++;
-      }
-    });
-    
-    return Math.round((completed / total) * 100);
-  };
-
   return (
     <div className="add-staff-container">
       {/* Modal de éxito */}
@@ -572,13 +807,26 @@ const isTherapistOrAdmin = () => {
                       </div>
                       
                       <div className="form-group">
+                        <label htmlFor="email">Email Address</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="agency@example.com"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
                         <label htmlFor="contactNumber">Contact Number</label>
                         <input
                           type="tel"
                           id="contactNumber"
                           name="contactNumber"
                           value={formData.agencyFields.contactNumber}
-                          onChange={handleAgencyFieldChange}
+                          onChange={(e) => handlePhoneChange(e, 'contactNumber', true)}
                           required
                           placeholder="(555) 123-4567"
                         />
@@ -604,7 +852,7 @@ const isTherapistOrAdmin = () => {
                           id="fax"
                           name="fax"
                           value={formData.agencyFields.fax}
-                          onChange={handleAgencyFieldChange}
+                          onChange={(e) => handlePhoneChange(e, 'fax', true)}
                           placeholder="(555) 123-4567"
                         />
                       </div>
@@ -665,7 +913,7 @@ const isTherapistOrAdmin = () => {
                                   <input
                                     type="tel"
                                     value={branch.phone}
-                                    onChange={(e) => handleBranchChange(index, 'phone', e.target.value)}
+                                    onChange={(e) => handleBranchPhoneChange(index, e.target.value)}
                                     placeholder="(555) 123-4567"
                                   />
                                 </div>
@@ -709,18 +957,18 @@ const isTherapistOrAdmin = () => {
                         />
                       </div>
                       
-                      <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                          type="password"
-                          id="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Enter password"
-                        />
-                      </div>
+                      <PasswordField
+                        label="Password"
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required={true}
+                        placeholder="Enter password"
+                        showPassword={showPassword}
+                        onTogglePassword={togglePasswordVisibility}
+                        onGeneratePassword={generateSecurePassword}
+                      />
                     </div>
                   </div>
                 </>
@@ -829,7 +1077,7 @@ const isTherapistOrAdmin = () => {
                           id="phone"
                           name="phone"
                           value={formData.phone}
-                          onChange={handleInputChange}
+                          onChange={(e) => handlePhoneChange(e, 'phone')}
                           required
                           placeholder="(555) 123-4567"
                         />
@@ -842,14 +1090,14 @@ const isTherapistOrAdmin = () => {
                           id="altPhone"
                           name="altPhone"
                           value={formData.altPhone}
-                          onChange={handleInputChange}
+                          onChange={(e) => handlePhoneChange(e, 'altPhone')}
                           placeholder="(555) 123-4567"
                         />
                       </div>
                     </div>
                   </div>
                   
-                  {/* Información de usuario */}
+                  {/* Información de usuario para STAFF REGULAR */}
                   <div className="form-section">
                     <div className="section-header">
                       <i className="fas fa-lock"></i>
@@ -869,195 +1117,215 @@ const isTherapistOrAdmin = () => {
                         />
                       </div>
                       
-                      <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <div className="password-input-container">
-                          <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Enter password"
-                          />
-                          <button
-                            type="button"
-                            className="generate-password-btn"
-                            onClick={() => {
-                              // Generar contraseña aleatoria más segura
-                              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-                              let newPassword = '';
-                              for (let i = 0; i < 12; i++) {
-                                newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-                              }
-                              setFormData({
-                                ...formData,
-                                password: newPassword
-                              });
-                            }}
-                          >
-                            <i className="fas fa-key"></i>
-                            <span>Generate</span>
-                          </button>
-                        </div>
-                      </div>
+                      <PasswordField
+                        label="Password"
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required={true}
+                        placeholder="Enter password"
+                        showPassword={showPassword}
+                        onTogglePassword={togglePasswordVisibility}
+                        onGeneratePassword={generateSecurePassword}
+                      />
                     </div>
                   </div>
                 </>
               )}
               
-{/* Afiliación de agencia - para terapeutas, administradores Y también para agencias */}
-{(isTherapistOrAdmin() || formData.role === 'agency') && (
-  <div className="form-section">
-    <div className="section-header">
-      <i className="fas fa-hospital-user"></i>
-      <h3>
-        {formData.role === 'agency' ? 'Parent Organization' : 'Agency Affiliation'}
-      </h3>
-      <p className="section-subtitle">
-        {formData.role === 'administrator' 
-          ? 'Select the primary agency this administrator will manage' 
-          : formData.role === 'agency'
-            ? 'Select the parent healthcare organization this agency belongs to (if applicable)'
-            : 'Select the healthcare agency this therapist belongs to'
-        }
-      </p>
-    </div>
-    <div className="section-content">
-      <div className="form-group">
-        <label htmlFor="agency">
-          {formData.role === 'agency' ? 'Select Parent Organization' : 'Select Host Agency'}
-        </label>
-        <select
-          id="agency"
-          name="agency"
-          value={formData.agency}
-          onChange={handleInputChange}
-          required={formData.role !== 'agency'} // No es obligatorio para agencias
-        >
-          {formData.role === 'agency' && (
-            <option value="">-- None (Independent Agency) --</option>
-          )}
-          {formData.role !== 'agency' && (
-            <option value="">-- Select an Agency --</option>
-          )}
-          {agencies.map((agency) => (
-            <option key={agency.id} value={agency.id}>
-              {agency.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {/* Mostrar detalles de la agencia seleccionada */}
-      {formData.agency && (
-        <div className="agency-details-card">
-          <h4 className="agency-details-title">
-            {formData.role === 'agency' ? 'Parent Organization Details:' : 'Agency Details:'}
-          </h4>
-          {agencies.filter(a => a.id === formData.agency).map(agency => (
-            <div key={agency.id} className="agency-details-info">
-              <div className="agency-detail-row">
-                <span className="detail-label">Name:</span>
-                <span className="detail-value">{agency.name}</span>
-              </div>
-              <div className="agency-detail-row">
-                <span className="detail-label">Address:</span>
-                <span className="detail-value">{agency.address}</span>
-              </div>
-              <div className="agency-detail-row">
-                <span className="detail-label">Phone:</span>
-                <span className="detail-value">{agency.phone}</span>
-              </div>
-            </div>
-          ))}
-          <div className="agency-confirmation-box">
-            <div className="confirmation-content">
-              <i className="fas fa-info-circle"></i> 
-              <p>
-                {formData.role === 'administrator'
-                  ? "Administrator will have primary management rights for this agency's resources and staff."
-                  : formData.role === 'agency'
-                    ? "This agency will be linked to the parent organization and operate under its guidelines."
-                    : "Staff member will be linked to this agency and can only access its patients and resources."
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-)}
-              
-{/* Documentos requeridos - solo para terapeutas y agencias */}
-{shouldShowDocuments() && (
-  <div className="form-section documents-section">
-    <div className="section-header">
-      <i className="fas fa-file-medical-alt"></i>
-      <h3>Required Documents</h3>
-      <p className="section-subtitle">Documents are not mandatory to create the profile, but will be necessary for {formData.role === 'agency' ? 'agency operations' : 'patient assignments'}.</p>
-    </div>
-    
-    <div className="section-content documents-grid">
-      {getDocumentsForRole().map((doc) => (
-        <div key={doc.id} className={`document-card ${documents[doc.id].status}`}>
-          <div className="document-header">
-            <span className="document-icon">
-              <i className={`fas ${doc.icon}`}></i>
-            </span>
-            <span className="document-name">{doc.name}</span>
-            <span 
-              className={`document-status ${documents[doc.id].status}`}
-              onClick={() => toggleDocumentStatus(doc.id)}
-            >
-              {documents[doc.id].status === 'obtained' ? (
-                <><i className="fas fa-check-circle"></i> Obtained</>
-              ) : (
-                <><i className="fas fa-clock"></i> Pending</>
+              {/* Afiliación de agencia */}
+              {(isTherapistOrAdmin() || formData.role === 'agency') && (
+                <div className="form-section">
+                  <div className="section-header">
+                    <i className="fas fa-hospital-user"></i>
+                    <h3>
+                      {formData.role === 'agency' ? 'Parent Organization' : 'Agency Affiliation'}
+                    </h3>
+                    <p className="section-subtitle">
+                      {formData.role === 'administrator' 
+                        ? 'Select the primary agency this administrator will manage' 
+                        : formData.role === 'agency'
+                          ? 'Select the parent healthcare organization this agency belongs to (if applicable)'
+                          : 'Select the healthcare agency this therapist belongs to'
+                      }
+                    </p>
+                  </div>
+                  <div className="section-content">
+                    <div className="form-group">
+                      <label htmlFor="agency">
+                        {formData.role === 'agency' ? 'Select Parent Organization' : 'Select Host Agency'}
+                      </label>
+                      <select
+                        id="agency"
+                        name="agency"
+                        value={formData.agency}
+                        onChange={handleInputChange}
+                        required={formData.role !== 'agency'}
+                      >
+                        {formData.role === 'agency' && (
+                          <option value="">-- None (Independent Agency) --</option>
+                        )}
+                        {formData.role !== 'agency' && (
+                          <option value="">-- Select an Agency --</option>
+                        )}
+                        {agencies.map((agency) => (
+                          <option key={agency.id} value={agency.id}>
+                            {agency.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {formData.agency && (
+                      <div className="agency-details-card">
+                        <h4 className="agency-details-title">
+                          {formData.role === 'agency' ? 'Parent Organization Details:' : 'Agency Details:'}
+                        </h4>
+                        {agencies.filter(a => a.id === formData.agency).map(agency => (
+                          <div key={agency.id} className="agency-details-info">
+                            <div className="agency-detail-row">
+                              <span className="detail-label">Name:</span>
+                              <span className="detail-value">{agency.name}</span>
+                            </div>
+                            <div className="agency-detail-row">
+                              <span className="detail-label">Address:</span>
+                              <span className="detail-value">{agency.address}</span>
+                            </div>
+                            <div className="agency-detail-row">
+                              <span className="detail-label">Phone:</span>
+                              <span className="detail-value">{agency.phone}</span>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="agency-confirmation-box">
+                          <div className="confirmation-content">
+                            <i className="fas fa-info-circle"></i> 
+                            <p>
+                              {formData.role === 'administrator'
+                                ? "Administrator will have primary management rights for this agency's resources and staff."
+                                : formData.role === 'agency'
+                                  ? "This agency will be linked to the parent organization and operate under its guidelines."
+                                  : "Staff member will be linked to this agency and can only access its patients and resources."
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </span>
-          </div>
-          
-          {doc.description && (
-            <div className="document-description">{doc.description}</div>
-          )}
-          
-          <div className="document-actions">
-            <div className="file-upload">
-              <label htmlFor={`file-${doc.id}`} className="upload-btn">
-                <i className="fas fa-cloud-upload-alt"></i> Upload document
-              </label>
-              <input
-                type="file"
-                id={`file-${doc.id}`}
-                onChange={(e) => handleFileChange(doc.id, e)}
-                className="file-input"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              />
-            </div>
-            
-            {documents[doc.id].file && (
-              <div className="file-info">
-                <i className="fas fa-file-pdf"></i>
-                <span className="file-name">{documents[doc.id].file.name}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-      
-      {/* Opción para cargar documento adicional */}
-      <div className="document-card add-document">
-        <div className="add-document-content">
-          <i className="fas fa-plus-circle"></i>
-          <span>Add additional document</span>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+              
+              {/* ✅ Documentos requeridos MEJORADOS - solo para terapeutas y agencias */}
+              {shouldShowDocuments() && (
+                <div className="form-section documents-section">
+                  <div className="section-header">
+                    <i className="fas fa-file-medical-alt"></i>
+                    <h3>Required Documents</h3>
+                    <p className="section-subtitle">
+                      Documents are not mandatory to create the profile, but will be necessary for {formData.role === 'agency' ? 'agency operations' : 'patient assignments'}.
+                    </p>
+                  </div>
+                  
+                  <div className="section-content documents-grid">
+                    {getDocumentsForRole().map((doc) => (
+                      <div key={doc.id} className={`document-card ${documents[doc.id]?.status || 'pending'}`}>
+                        <div className="document-header">
+                          <span className="document-icon">
+                            <i className={`fas ${doc.icon}`}></i>
+                          </span>
+                          <span className="document-name">{doc.name}</span>
+                          <span 
+                            className={`document-status ${documents[doc.id]?.status || 'pending'}`}
+                            onClick={() => toggleDocumentStatus(doc.id)}
+                          >
+                            {documents[doc.id]?.status === 'obtained' ? (
+                              <><i className="fas fa-check-circle"></i> Obtained</>
+                            ) : (
+                              <><i className="fas fa-clock"></i> Pending</>
+                            )}
+                          </span>
+                        </div>
+                        
+                        {doc.description && (
+                          <div className="document-description">{doc.description}</div>
+                        )}
+                        
+                        <div className="document-actions">
+                          {/* ✅ Área de upload mejorada */}
+                          {!documents[doc.id]?.file ? (
+                            <div className="upload-zone">
+                              <div className="upload-area">
+                                <input
+                                  type="file"
+                                  id={`file-${doc.id}`}
+                                  onChange={(e) => handleFileChange(doc.id, e)}
+                                  className="file-input"
+                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                  style={{ display: 'none' }}
+                                />
+                                <label htmlFor={`file-${doc.id}`} className="upload-label">
+                                  <div className="upload-content">
+                                    <i className="fas fa-cloud-upload-alt upload-icon"></i>
+                                    <div className="upload-text">
+                                      <span className="upload-main">Click to upload</span>
+                                      <span className="upload-sub">or drag and drop</span>
+                                    </div>
+                                  </div>
+                                </label>
+                              </div>
+                              <div className="upload-info">
+                                <small>PDF, JPG, PNG, DOC, DOCX up to 10MB</small>
+                              </div>
+                            </div>
+                          ) : (
+                            /* ✅ Vista previa del archivo subido */
+                            <div className="file-preview">
+                              <div className="file-info-card">
+                                <div className="file-icon">
+                                  <i className="fas fa-file-pdf"></i>
+                                </div>
+                                <div className="file-details">
+                                  <div className="file-name">{documents[doc.id].fileName}</div>
+                                  <div className="file-size">{formatFileSize(documents[doc.id].fileSize || 0)}</div>
+                                </div>
+                                <div className="file-actions">
+                                  <button
+                                    type="button"
+                                    className="remove-file-btn"
+                                    onClick={() => removeFile(doc.id)}
+                                    title="Remove file"
+                                  >
+                                    <i className="fas fa-times"></i>
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Botón para cambiar archivo */}
+                              <div className="change-file">
+                                <input
+                                  type="file"
+                                  id={`change-file-${doc.id}`}
+                                  onChange={(e) => handleFileChange(doc.id, e)}
+                                  className="file-input"
+                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                  style={{ display: 'none' }}
+                                />
+                                <label htmlFor={`change-file-${doc.id}`} className="change-file-btn">
+                                  <i className="fas fa-exchange-alt"></i>
+                                  Change File
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  
+                  </div>
+                </div>
+              )}
               
               <div className="form-actions">
                 <button type="button" className="cancel-btn" onClick={onCancel}>

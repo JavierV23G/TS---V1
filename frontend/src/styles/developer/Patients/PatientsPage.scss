@@ -3301,6 +3301,39 @@
                       box-shadow: 0 6px 15px rgba(2, 136, 209, 0.3);
                     }
                   }
+                  
+                  &.view-profile {
+                    background: rgba(44, 123, 229, 0.1);
+                    color: var(--color-primary-600);
+                    
+                    &:hover {
+                      background: var(--gradient-blue-premium);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(44, 123, 229, 0.3);
+                    }
+                  }
+                  
+                  &.activate-btn {
+                    background: rgba(16, 185, 129, 0.1);
+                    color: #047857;
+                    
+                    &:hover {
+                      background: var(--gradient-success);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+                    }
+                  }
+                  
+                  &.deactivate-btn {
+                    background: rgba(239, 68, 68, 0.1);
+                    color: #dc2626;
+                    
+                    &:hover {
+                      background: var(--gradient-danger);
+                      color: white;
+                      box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+                    }
+                  }
                 }
               }
             }
@@ -4655,4 +4688,875 @@ z-index: 1;
   transform: rotate(45deg) translateY(100%);
 }
 }
+}
+
+// Estilos mejorados para StatCard con números visibles
+.stat-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  @include card-3d-effect;
+  overflow: hidden;
+  min-height: 100px;
+  
+  // Efectos de borde con gradiente y glow
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    transition: all 0.4s;
+  }
+  
+  &.blue::after {
+    background: var(--gradient-blue-premium);
+    box-shadow: 0 0 20px rgba(44, 123, 229, 0.4);
+  }
+  
+  &.green::after {
+    background: var(--gradient-success);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+  
+  &.orange::after {
+    background: var(--gradient-warning);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+  }
+  
+  &.red::after {
+    background: var(--gradient-danger);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  
+  // Iconos con efecto de fondo
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.4s;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 12px;
+      z-index: -1;
+      opacity: 0.15;
+      transition: all 0.4s;
+      transform: scale(0.9);
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      background: inherit;
+      border-radius: 12px;
+      filter: blur(12px);
+      opacity: 0;
+      z-index: -2;
+      transition: all 0.4s;
+    }
+  }
+  
+  .stat-info {
+    flex: 1;
+    margin-left: 1.2rem;
+    position: relative;
+    z-index: 1;
+    
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .stat-title {
+      font-size: 0.95rem;
+      color: #4e5d78;
+      margin: 0;
+      font-weight: 500;
+      flex: 1;
+    }
+    
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 0;
+      position: relative;
+      flex-shrink: 0;
+      margin-left: 1rem;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 5px;
+        left: 0;
+        width: 0;
+        height: 12px;
+        background: currentColor;
+        opacity: 0.07;
+        z-index: -1;
+        transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+    }
+  }
+  
+  // Icono de fondo decorativo
+  .stat-bg-icon {
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    font-size: 7rem;
+    opacity: 0.03;
+    transform: rotate(15deg);
+    transition: all 0.5s;
+    z-index: 0;
+  }
+  
+  &:hover {
+    .stat-icon {
+      transform: scale(1.1);
+      
+      &::before {
+        transform: scale(1);
+        opacity: 0.2;
+      }
+      
+      &::after {
+        opacity: 0.4;
+      }
+    }
+    
+    .stat-bg-icon {
+      transform: rotate(25deg) scale(1.2);
+      opacity: 0.05;
+    }
+    
+    .stat-info .stat-value::after {
+      width: 100%;
+    }
+  }
+  
+  // Colores específicos
+  &.blue {
+    border: 1px solid rgba(44, 123, 229, 0.1);
+    
+    .stat-icon {
+      color: var(--color-primary-500);
+      
+      &::before {
+        background: var(--gradient-blue-premium);
+      }
+    }
+    
+    .stat-value {
+      color: var(--color-primary-700);
+    }
+  }
+  
+  &.green {
+    border: 1px solid rgba(16, 185, 129, 0.1);
+    
+    .stat-icon {
+      color: #10b981;
+      
+      &::before {
+        background: var(--gradient-success);
+      }
+    }
+    
+    .stat-value {
+      color: #047857;
+    }
+  }
+  
+  &.orange {
+    border: 1px solid rgba(245, 158, 11, 0.1);
+    
+    .stat-icon {
+      color: #f59e0b;
+      
+      &::before {
+        background: var(--gradient-warning);
+      }
+    }
+    
+    .stat-value {
+      color: #b45309;
+    }
+  }
+  
+  &.red {
+    border: 1px solid rgba(239, 68, 68, 0.1);
+    
+    .stat-icon {
+      color: #ef4444;
+      
+      &::before {
+        background: var(--gradient-danger);
+      }
+    }
+    
+    .stat-value {
+      color: #b91c1c;
+    }
+  }
+  
+  // Loading state
+  &.loading {
+    .stat-skeleton {
+      width: 60px;
+      height: 30px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+      
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      
+      .skeleton-bar {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+      }
+    }
+  }
+}
+
+// Responsive para las estadísticas
+@media (max-width: 1440px) {
+  .stats-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .stats-dashboard {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  
+  .stat-card {
+    .stat-info {
+      .stat-value {
+        font-size: 2.2rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 1.2rem;
+    
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 1.3rem;
+    }
+    
+    .stat-info {
+      margin-left: 1rem;
+      
+      .stat-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .stat-title {
+        font-size: 0.9rem;
+      }
+      
+      .stat-value {
+        font-size: 2rem;
+        margin-left: 0;
+      }
+    }
+  }
+}
+
+// Estilos mejorados para las tarjetas de estadísticas
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  animation: fadeIn 0.8s ease 0.6s backwards;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  
+  .stat-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    @include card-3d-effect;
+    overflow: hidden;
+    min-height: 120px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    // Efecto de borde lateral con gradiente
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      border-radius: 20px 0 0 20px;
+      transition: all 0.4s ease;
+      z-index: 1;
+    }
+    
+    // Efecto de brillo sutil en hover
+    &::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    &:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 5px 20px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      
+      &::after {
+        opacity: 1;
+      }
+      
+      .stat-icon {
+        transform: scale(1.15) rotate(5deg);
+        
+        &::before {
+          transform: scale(1.2);
+          opacity: 0.25;
+        }
+        
+        &::after {
+          opacity: 0.6;
+        }
+      }
+      
+      .stat-bg-icon {
+        transform: rotate(25deg) scale(1.3);
+        opacity: 0.08;
+      }
+      
+      .stat-number {
+        transform: scale(1.05);
+      }
+    }
+    
+    // Iconos con efectos mejorados
+    .stat-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2;
+      
+      i {
+        position: relative;
+        z-index: 3;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      }
+      
+      // Fondo del icono con gradiente
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 18px;
+        opacity: 0.12;
+        transition: all 0.4s ease;
+        z-index: 1;
+      }
+      
+      // Efecto de glow detrás del icono
+      &::after {
+        content: '';
+        position: absolute;
+        top: -15%;
+        left: -15%;
+        width: 130%;
+        height: 130%;
+        border-radius: 18px;
+        filter: blur(20px);
+        opacity: 0;
+        z-index: 0;
+        transition: all 0.4s ease;
+      }
+    }
+    
+    // Información de las estadísticas
+    .stat-info {
+      flex: 1;
+      margin-left: 1.5rem;
+      position: relative;
+      z-index: 2;
+      
+      .stat-header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .stat-title {
+        font-size: 1rem;
+        color: #64748b;
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        opacity: 0.8;
+      }
+      
+      .stat-value {
+        font-size: 3.2rem;
+        font-weight: 900;
+        margin: 0;
+        position: relative;
+        line-height: 1;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        
+        .stat-number {
+          display: inline-block;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+          
+          // Efecto de subrayado animado
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 4px;
+            border-radius: 2px;
+            background: currentColor;
+            opacity: 0.2;
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+        }
+        
+        // Skeleton loading mejorado
+        .stat-skeleton {
+          width: 80px;
+          height: 40px;
+          background: linear-gradient(
+            90deg,
+            rgba(226, 232, 240, 0.8) 25%,
+            rgba(203, 213, 225, 0.8) 50%,
+            rgba(226, 232, 240, 0.8) 75%
+          );
+          background-size: 200% 100%;
+          animation: skeletonLoading 1.5s infinite;
+          border-radius: 8px;
+          
+          @keyframes skeletonLoading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+          
+          .skeleton-bar {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border-radius: 8px;
+          }
+        }
+      }
+    }
+    
+    // Icono de fondo decorativo
+    .stat-bg-icon {
+      position: absolute;
+      right: -30px;
+      bottom: -30px;
+      font-size: 8rem;
+      opacity: 0.04;
+      transform: rotate(15deg);
+      transition: all 0.5s ease;
+      z-index: 0;
+      
+      i {
+        background: linear-gradient(135deg, currentColor, transparent);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+    
+    // Estilos específicos por color
+    &.blue {
+      border-left: 6px solid transparent;
+      
+      &::before {
+        background: var(--gradient-blue-premium);
+        box-shadow: 0 0 20px rgba(44, 123, 229, 0.3);
+      }
+      
+      .stat-icon {
+        color: var(--color-primary-600);
+        
+        &::before {
+          background: var(--gradient-blue-premium);
+        }
+        
+        &::after {
+          background: var(--gradient-blue-premium);
+        }
+      }
+      
+      .stat-value {
+        color: var(--color-primary-700);
+        
+        .stat-number::after {
+          background: var(--gradient-blue-premium);
+        }
+      }
+      
+      &:hover {
+        border-color: rgba(44, 123, 229, 0.2);
+        box-shadow: 
+          0 20px 40px rgba(44, 123, 229, 0.15),
+          0 5px 20px rgba(44, 123, 229, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        
+        .stat-number::after {
+          width: 100%;
+        }
+      }
+    }
+    
+    &.green {
+      border-left: 6px solid transparent;
+      
+      &::before {
+        background: var(--gradient-success);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+      }
+      
+      .stat-icon {
+        color: #059669;
+        
+        &::before {
+          background: var(--gradient-success);
+        }
+        
+        &::after {
+          background: var(--gradient-success);
+        }
+      }
+      
+      .stat-value {
+        color: #047857;
+        
+        .stat-number::after {
+          background: var(--gradient-success);
+        }
+      }
+      
+      &:hover {
+        border-color: rgba(16, 185, 129, 0.2);
+        box-shadow: 
+          0 20px 40px rgba(16, 185, 129, 0.15),
+          0 5px 20px rgba(16, 185, 129, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        
+        .stat-number::after {
+          width: 100%;
+        }
+      }
+    }
+    
+    &.red {
+      border-left: 6px solid transparent;
+      
+      &::before {
+        background: var(--gradient-danger);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      }
+      
+      .stat-icon {
+        color: #dc2626;
+        
+        &::before {
+          background: var(--gradient-danger);
+        }
+        
+        &::after {
+          background: var(--gradient-danger);
+        }
+      }
+      
+      .stat-value {
+        color: #b91c1c;
+        
+        .stat-number::after {
+          background: var(--gradient-danger);
+        }
+      }
+      
+      &:hover {
+        border-color: rgba(239, 68, 68, 0.2);
+        box-shadow: 
+          0 20px 40px rgba(239, 68, 68, 0.15),
+          0 5px 20px rgba(239, 68, 68, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        
+        .stat-number::after {
+          width: 100%;
+        }
+      }
+    }
+    
+    &.orange {
+      border-left: 6px solid transparent;
+      
+      &::before {
+        background: var(--gradient-warning);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+      }
+      
+      .stat-icon {
+        color: #d97706;
+        
+        &::before {
+          background: var(--gradient-warning);
+        }
+        
+        &::after {
+          background: var(--gradient-warning);
+        }
+      }
+      
+      .stat-value {
+        color: #b45309;
+        
+        .stat-number::after {
+          background: var(--gradient-warning);
+        }
+      }
+      
+      &:hover {
+        border-color: rgba(245, 158, 11, 0.2);
+        box-shadow: 
+          0 20px 40px rgba(245, 158, 11, 0.15),
+          0 5px 20px rgba(245, 158, 11, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        
+        .stat-number::after {
+          width: 100%;
+        }
+      }
+    }
+    
+    // Estado de loading
+    &.loading {
+      pointer-events: none;
+      
+      .stat-icon {
+        opacity: 0.6;
+        animation: pulse 2s infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+    }
+    
+    // Responsive adjustments
+    @media (max-width: 768px) {
+      padding: 1.5rem;
+      min-height: 100px;
+      
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.6rem;
+      }
+      
+      .stat-info {
+        margin-left: 1rem;
+        
+        .stat-value {
+          font-size: 2.5rem;
+        }
+        
+        .stat-title {
+          font-size: 0.8rem;
+        }
+      }
+      
+      .stat-bg-icon {
+        font-size: 6rem;
+        right: -20px;
+        bottom: -20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      padding: 1.2rem;
+      flex-direction: column;
+      text-align: center;
+      min-height: auto;
+      
+      .stat-icon {
+        margin-bottom: 1rem;
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+      }
+      
+      .stat-info {
+        margin-left: 0;
+        
+        .stat-header {
+          align-items: center;
+        }
+        
+        .stat-value {
+          font-size: 2.2rem;
+        }
+      }
+      
+      .stat-bg-icon {
+        display: none;
+      }
+    }
+  }
+}
+
+// Animación de entrada para las tarjetas
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Efecto de respiración para elementos activos
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.02);
+    filter: brightness(1.05);
+  }
+}
+
+// Clase adicional para efectos especiales
+.stat-card-special {
+  animation: breathe 4s ease-in-out infinite;
+  
+  &:hover {
+    animation-play-state: paused;
+  }
+}
+
+// Tema oscuro para las estadísticas
+@media (prefers-color-scheme: dark) {
+  .stats-dashboard {
+    .stat-card {
+      background: rgba(26, 36, 54, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
+      
+      .stat-title {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      
+      .stat-value {
+        color: rgba(255, 255, 255, 0.95);
+      }
+      
+      &:hover {
+        background: rgba(36, 48, 71, 0.95);
+        box-shadow: 
+          0 20px 40px rgba(0, 0, 0, 0.4),
+          0 5px 20px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      
+      .stat-skeleton {
+        background: linear-gradient(
+          90deg,
+          rgba(71, 85, 105, 0.8) 25%,
+          rgba(100, 116, 139, 0.8) 50%,
+          rgba(71, 85, 105, 0.8) 75%
+        );
+      }
+    }
+  }
 }

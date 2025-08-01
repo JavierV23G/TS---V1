@@ -17,12 +17,64 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [viewMode, setViewMode] = useState('all'); // 'all', 'staff', 'agencies'
 
+  // Roles disponibles con iconos mejorados
+  const roles = [
+    { value: 'developer', label: 'Developer', icon: 'fa-laptop-code', description: 'System development and technical support' },
+    { value: 'administrator', label: 'Administrator', icon: 'fa-user-shield', description: 'System administration and user management' },
+    { value: 'agency', label: 'Agency', icon: 'fa-hospital-alt', description: 'Healthcare provider organization' },
+    { value: 'pt', label: 'PT - Physical Therapist', icon: 'fa-user-md', description: 'Evaluates and treats physical mobility disorders' },
+    { value: 'pta', label: 'PTA - Physical Therapist Assistant', icon: 'fa-user-nurse', description: 'Assists physical therapists in treatment delivery' },
+    { value: 'ot', label: 'OT - Occupational Therapist', icon: 'fa-hand-holding-medical', description: 'Helps patients improve daily living activities' },
+    { value: 'cota', label: 'COTA - Occupational Therapy Assistant', icon: 'fa-hand-holding', description: 'Assists occupational therapists with treatment' },
+    { value: 'st', label: 'ST - Speech Therapist', icon: 'fa-comment-medical', description: 'Evaluates and treats communication disorders' },
+    { value: 'sta', label: 'STA - Speech Therapy Assistant', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
+  ];
+
+  // Lista de documentos requeridos con iconos mejorados
+  const documentsList = {
+    staff: [
+      { id: 'covidVaccine', name: 'Proof of COVID Vaccine', icon: 'fa-syringe', description: 'Vaccination record or certificate' },
+      { id: 'tbTest', name: 'TB Test Proof (PPD/X-Ray)', icon: 'fa-lungs', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)' },
+      { id: 'physicalExam', name: 'Annual Physical Exam Proof', icon: 'fa-stethoscope', description: 'Medical clearance for healthcare duties' },
+      { id: 'liabilityInsurance', name: 'Professional Liability Insurance', icon: 'fa-shield-alt', description: 'Malpractice insurance coverage document' },
+      { id: 'driversLicense', name: 'Driver\'s License', icon: 'fa-id-card', description: 'Valid state-issued driver\'s license' },
+      { id: 'autoInsurance', name: 'Auto Insurance', icon: 'fa-car-alt', description: 'Proof of current auto insurance coverage' },
+      { id: 'cprCertification', name: 'CPR/BLS Certification', icon: 'fa-heartbeat', description: 'Current CPR or Basic Life Support certification' },
+      { id: 'businessLicense', name: 'Copy of Business License or EIN', icon: 'fa-certificate', description: 'Business license or Employer Identification Number document' },
+    ],
+    agency: [
+      { id: 'businessLicense', name: 'Business License', icon: 'fa-building', description: 'Valid business operation license' },
+      { id: 'contractDocument', name: 'Contract with TherapySync', icon: 'fa-file-contract', description: 'Signed service agreement' },
+      { id: 'liabilityInsurance', name: 'Liability Insurance', icon: 'fa-shield-alt', description: 'Organization liability coverage documentation' },
+    ]
+  };
+
   // Función para construir parámetros de consulta para API
   const buildQueryParams = (params) =>
     Object.entries(params)
       .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&');
+
+  // Formatear número de teléfono a formato (123) 456-7890
+  const formatPhoneNumber = (value) => {
+    // Remover todo lo que no sea dígito
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    
+    // Limitar a 10 dígitos
+    const truncated = phoneNumber.slice(0, 10);
+    
+    // Aplicar formato según la longitud
+    if (truncated.length >= 6) {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3, 6)}-${truncated.slice(6)}`;
+    } else if (truncated.length >= 3) {
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3)}`;
+    } else if (truncated.length > 0) {
+      return `(${truncated}`;
+    }
+    
+    return truncated;
+  };
 
   // Simulación de carga con mensajes dinámicos
   useEffect(() => {
@@ -59,7 +111,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     };
   }, []);
 
-  // Obtener datos del personal desde la API
+  // Obtener datos del personal desde la API - FIXED VERSION
   const fetchStaffData = async () => {
     try {
       const response = await fetch('http://localhost:8000/staff/', {
@@ -74,23 +126,37 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
       }
   
       const data = await response.json();
+      console.log("🔍 Raw API Data:", data); // Debug log
   
       const adjustedData = data.map(staff => {
+        console.log(`🔍 Processing staff member:`, staff); // Debug log
+        
         // Procesar el nombre completo para separarlo en nombre y apellido
         const [firstName, ...rest] = staff.name?.split(' ') || [''];
         const lastName = rest.join(' ');
   
+        // ✅ FIX: Obtener el rol REAL de la API, preservando capitalización
+        const actualRole = staff.role || 'developer'; // Usar el rol real de la API sin convertir a minúsculas
+        console.log(`🎯 Staff ${staff.name} - API Role:`, staff.role, "Processed:", actualRole);
+        
         // Mapear el rol a su visualización correspondiente
-        const roleDisplay = roles.find(r => r.value === staff.role)?.label || staff.role;
+        const roleInfo = roles.find(r => r.value === actualRole.toLowerCase());
+        const roleDisplay = roleInfo?.label || actualRole;
+        
+        console.log(`🏷️ Role mapping for ${staff.name}:`, {
+          original: staff.role,
+          processed: actualRole,
+          display: roleDisplay,
+          found: !!roleInfo
+        });
         
         // Determinar el tipo basado en el rol (agency o staff)
-        const type = staff.role === 'agency' ? 'agency' : 'staff';
+        const type = actualRole.toLowerCase() === 'agency' ? 'agency' : 'staff';
         
         // Para el tipo agency, usar el name como agencyName
         const agencyName = type === 'agency' ? staff.name : '';
         
         // Para los tipos staff que pueden tener una agencia asignada, buscar si tiene agency_id 
-        // (esto depende de cómo esté estructurada tu API)
         const agency = staff.agency_id ? {
           id: staff.agency_id,
           name: staff.agency_name || '',
@@ -98,15 +164,15 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           phone: staff.agency_phone || ''
         } : null;
         
-        // Procesar las sucursales si existen (esto depende de cómo esté estructurada tu API)
+        // Procesar las sucursales si existen
         const branches = staff.branches ? JSON.parse(staff.branches) : [];
         
-        // Inicializar documentos basados en el tipo y rol
+        // Inicializar documentos basados en el tipo y rol REAL
         const documents = staff.documents ? JSON.parse(staff.documents) : 
           type === 'agency' ? initializeDocuments('agency', 'agency') : 
-          requiresDocuments(staff.role) ? initializeDocuments(staff.role, 'staff') : {};
-  
-        return {
+          requiresDocuments(actualRole.toLowerCase()) ? initializeDocuments(actualRole.toLowerCase(), 'staff') : {};
+
+        const processedStaff = {
           id: staff.id,
           type: type,
           firstName: firstName || '',
@@ -115,26 +181,41 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
           dob: staff.birthday || '',
           gender: staff.gender || '',
           email: staff.email || '',
-          phone: staff.phone || '',
-          alternatePhone: staff.alt_phone || '',
+          phone: staff.phone ? formatPhoneNumber(staff.phone) : '',
+          alternatePhone: staff.alt_phone ? formatPhoneNumber(staff.alt_phone) : '',
           zipCode: staff.postal_code || '',
           address: staff.address || '',
           userName: staff.username || '',
           password: '********', // Por seguridad siempre ocultamos la contraseña
-          role: staff.role || '',
+          role: actualRole, // ✅ Usar el rol REAL
           roleDisplay: roleDisplay,
           agency: agency,
-          branches: branches,
+          branches: branches.map(branch => ({
+            ...branch,
+            phone: branch.phone ? formatPhoneNumber(branch.phone) : ''
+          })),
           documents: documents,
           status: staff.is_active ? 'active' : 'inactive',
           fax: staff.fax || ''
         };
+
+        console.log(`✅ Final processed staff for ${staff.name}:`, {
+          id: processedStaff.id,
+          name: processedStaff.firstName + ' ' + processedStaff.lastName,
+          role: processedStaff.role,
+          roleDisplay: processedStaff.roleDisplay,
+          type: processedStaff.type
+        });
+
+        return processedStaff;
       });
   
+      console.log("✅ All processed staff data:", adjustedData);
       setStaffList(adjustedData);
       setFilteredStaff(adjustedData);
+      
     } catch (error) {
-      console.error('Error al obtener la lista de personal:', error);
+      console.error('❌ Error al obtener la lista de personal:', error);
       alert('Hubo un error al cargar los datos del personal. Por favor, intenta de nuevo.');
       setStaffList([]);
       setFilteredStaff([]);
@@ -167,7 +248,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     
     // Filtrar por rol (solo si está viendo staff)
     if (filterRole !== 'all' && viewMode !== 'agencies') {
-      filtered = filtered.filter(member => member.role === filterRole);
+      filtered = filtered.filter(member => member.role.toLowerCase() === filterRole);
     }
     
     // Filtrar por estado si no se muestran inactivos
@@ -178,40 +259,11 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     setFilteredStaff(filtered);
   }, [staffList, searchTerm, filterRole, showInactive, viewMode]);
 
-  // Roles disponibles con iconos mejorados
-  const roles = [
-    { value: 'developer', label: 'Developer', icon: 'fa-laptop-code', description: 'System development and technical support' },
-    { value: 'administrator', label: 'Administrator', icon: 'fa-user-shield', description: 'System administration and user management' },
-    { value: 'agency', label: 'Agency', icon: 'fa-hospital-alt', description: 'Healthcare provider organization' },
-    { value: 'pt', label: 'PT - Physical Therapist', icon: 'fa-user-md', description: 'Evaluates and treats physical mobility disorders' },
-    { value: 'pta', label: 'PTA - Physical Therapist Assistant', icon: 'fa-user-nurse', description: 'Assists physical therapists in treatment delivery' },
-    { value: 'ot', label: 'OT - Occupational Therapist', icon: 'fa-hand-holding-medical', description: 'Helps patients improve daily living activities' },
-    { value: 'cota', label: 'COTA - Occupational Therapy Assistant', icon: 'fa-hand-holding', description: 'Assists occupational therapists with treatment' },
-    { value: 'st', label: 'ST - Speech Therapist', icon: 'fa-comment-medical', description: 'Evaluates and treats communication disorders' },
-    { value: 'sta', label: 'STA - Speech Therapy Assistant', icon: 'fa-comment-dots', description: 'Assists speech therapists with therapy sessions' },
-  ];
-
-  // Lista de documentos requeridos con iconos mejorados
-  const documentsList = {
-    staff: [
-      { id: 'covidVaccine', name: 'Proof of COVID Vaccine', icon: 'fa-syringe', description: 'Vaccination record or certificate' },
-      { id: 'tbTest', name: 'TB Test Proof (PPD/X-Ray)', icon: 'fa-lungs', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)' },
-      { id: 'physicalExam', name: 'Annual Physical Exam Proof', icon: 'fa-stethoscope', description: 'Medical clearance for healthcare duties' },
-      { id: 'liabilityInsurance', name: 'Professional Liability Insurance', icon: 'fa-shield-alt', description: 'Malpractice insurance coverage document' },
-      { id: 'driversLicense', name: 'Driver\'s License', icon: 'fa-id-card', description: 'Valid state-issued driver\'s license' },
-      { id: 'autoInsurance', name: 'Auto Insurance', icon: 'fa-car-alt', description: 'Proof of current auto insurance coverage' },
-      { id: 'cprCertification', name: 'CPR/BLS Certification', icon: 'fa-heartbeat', description: 'Current CPR or Basic Life Support certification' },
-      { id: 'businessLicense', name: 'Copy of Business License or EIN', icon: 'fa-certificate', description: 'Business license or Employer Identification Number document' },
-    ],
-    agency: [
-      { id: 'businessLicense', name: 'Business License', icon: 'fa-building', description: 'Valid business operation license' },
-      { id: 'contractDocument', name: 'Contract with TherapySync', icon: 'fa-file-contract', description: 'Signed service agreement' },
-      { id: 'liabilityInsurance', name: 'Liability Insurance', icon: 'fa-shield-alt', description: 'Organization liability coverage documentation' },
-    ]
-  };
-
-  // Abrir modal para editar un miembro existente
+  // ✅ FIX: Abrir modal para editar un miembro existente con rol correcto
   const handleOpenProfile = (member) => {
+    console.log(`🔍 Opening profile for:`, member);
+    console.log(`🎯 Member role:`, member.role, `Role display:`, member.roleDisplay);
+    
     setSelectedStaff({...member}); // Clonar para evitar modificaciones directas
     setShowProfileModal(true);
     setEditMode(true);
@@ -224,6 +276,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     }
     
     setPasswordVisible(false);
+    
+    console.log(`✅ Profile opened with role:`, member.role);
   };
 
   // Cerrar el modal
@@ -238,9 +292,23 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     setPasswordVisible(!passwordVisible);
   };
 
+  // Manejar cambio de teléfono con formato
+  const handlePhoneChange = (field, value) => {
+    const formattedPhone = formatPhoneNumber(value);
+    handleUpdateMember(field, formattedPhone);
+  };
+
+  // Manejar cambio de teléfono para agencias
+  const handleAgencyPhoneChange = (field, value) => {
+    const formattedPhone = formatPhoneNumber(value);
+    handleUpdateAgencyField(field, formattedPhone);
+  };
+
   // Guardar cambios en la API
   const handleSaveProfile = async (updatedStaff) => {
     try {
+      console.log(`💾 Saving profile for:`, updatedStaff);
+      
       // Preparar el objeto para enviar a la API
       const staffToUpdate = {
         name: updatedStaff.type === 'agency' 
@@ -254,10 +322,12 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         alt_phone: updatedStaff.alternatePhone || '',
         address: updatedStaff.address || '',
         username: updatedStaff.userName,
-        role: updatedStaff.role,
+        role: updatedStaff.role, // ✅ Usar el rol correcto
         is_active: updatedStaff.status === 'active',
         fax: updatedStaff.fax || ''
       };
+      
+      console.log(`📤 Data to send to API:`, staffToUpdate);
       
       // Si el password ha sido modificado (no es '********'), enviarlo
       if (updatedStaff.password && updatedStaff.password !== '********') {
@@ -316,7 +386,7 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
         }
         
         if (filterRole !== 'all' && viewMode !== 'agencies') {
-          matchesFilters = matchesFilters && member.role === filterRole;
+          matchesFilters = matchesFilters && member.role.toLowerCase() === filterRole;
         }
         
         if (!showInactive) {
@@ -429,6 +499,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   const handleUpdateMember = (field, value) => {
     if (!selectedStaff) return;
     
+    console.log(`🔄 Updating member field ${field} to:`, value);
+    
     setSelectedStaff(prev => ({
       ...prev,
       [field]: value
@@ -471,9 +543,13 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
     if (!selectedStaff || selectedStaff.type !== 'agency') return;
     
     const updatedBranches = [...(selectedStaff.branches || [])];
+    
+    // Si es un campo de teléfono, formatear
+    const finalValue = field === 'phone' ? formatPhoneNumber(value) : value;
+    
     updatedBranches[index] = {
       ...(updatedBranches[index] || {}),
-      [field]: value
+      [field]: finalValue
     };
     
     setSelectedStaff(prev => ({
@@ -549,17 +625,17 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
   useEffect(() => {
     if (selectedStaff && editMode) {
       // Si cambia de rol y necesita documentos diferentes, inicializamos
-      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role) && 
+      if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(selectedStaff.role.toLowerCase()) && 
           (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
         setSelectedStaff(prev => ({
           ...prev,
-          documents: initializeDocuments(prev.role, prev.type)
+          documents: initializeDocuments(prev.role.toLowerCase(), prev.type)
         }));
-      } else if (selectedStaff.role === 'agency' && 
+      } else if (selectedStaff.role.toLowerCase() === 'agency' && 
                 (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
         setSelectedStaff(prev => ({
           ...prev,
-          documents: initializeDocuments(prev.role, 'agency')
+          documents: initializeDocuments(prev.role.toLowerCase(), 'agency')
         }));
       }
     }
@@ -567,17 +643,19 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
 
   // Verificar si el rol requiere afiliación a una agencia
   const requiresAgency = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(role);
+    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'administrator'].includes(role.toLowerCase());
   };
 
   // Verificar si el rol requiere documentos
   const requiresDocuments = (role) => {
-    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(role);
+    return ['pt', 'pta', 'ot', 'cota', 'st', 'sta', 'agency'].includes(role.toLowerCase());
   };
 
-  // Renderizar pestañas basado en el tipo de miembro seleccionado
+  // ✅ FIX: Renderizar pestañas basado en el tipo de miembro seleccionado con rol correcto
   const renderTabs = () => {
     if (!selectedStaff) return null;
+    
+    console.log(`🎯 Rendering tabs for role:`, selectedStaff.role, `type:`, selectedStaff.type);
     
     const commonTabs = [
       { id: 'info', icon: 'fa-user-circle', label: 'Personal Information' },
@@ -590,32 +668,40 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
       
       // Solo mostrar pestaña de documentos para roles que requieren documentos
       if (requiresDocuments(selectedStaff.role)) {
+        console.log(`📋 Adding documents tab for role:`, selectedStaff.role);
         tabs.splice(1, 0, { id: 'documents', icon: 'fa-file-medical-alt', label: 'Documents' });
       }
       
       // Mostrar pestaña de agencia para roles que requieren afiliación
       if (requiresAgency(selectedStaff.role)) {
+        console.log(`🏥 Adding agency tab for role:`, selectedStaff.role);
         // Solo añadir la pestaña de agencia si no está ya
         if (!tabs.some(tab => tab.id === 'agency')) {
           tabs.splice(1, 0, { id: 'agency', icon: 'fa-hospital-user', label: 'Agency' });
         }
       }
       
+      console.log(`✅ Final tabs for staff:`, tabs.map(t => t.id));
       return tabs;
     }
     
     // Pestañas específicas para agencias
-    return [
+    const agencyTabs = [
       { id: 'info', icon: 'fa-building', label: 'Agency Information' },
       { id: 'branches', icon: 'fa-code-branch', label: 'Branches' },
       { id: 'documents', icon: 'fa-file-contract', label: 'Documents' },
       { id: 'security', icon: 'fa-lock', label: 'Security' },
     ];
+    
+    console.log(`✅ Final tabs for agency:`, agencyTabs.map(t => t.id));
+    return agencyTabs;
   };
 
   // Renderizar contenido de pestañas basado en tipo y rol
   const renderTabContent = () => {
     if (!selectedStaff) return null;
+    
+    console.log(`🎯 Rendering content for tab:`, activeTab, `role:`, selectedStaff.role);
     
     // Renderizar contenido para staff
     if (selectedStaff.type === 'staff') {
@@ -698,7 +784,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
               <input 
                 type="tel" 
                 value={selectedStaff.phone || ''} 
-                onChange={(e) => handleUpdateMember('phone', e.target.value)}
+                onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                placeholder="(123) 456-7890"
               />
             </div>
           </div>
@@ -708,7 +795,8 @@ const DevStaffEditComponent = ({ onBackToOptions, onAddNewStaff }) => {
               <input 
                 type="tel" 
                 value={selectedStaff.alternatePhone || ''} 
-                onChange={(e) => handleUpdateMember('alternatePhone', e.target.value)}
+                onChange={(e) => handlePhoneChange('alternatePhone', e.target.value)}
+                placeholder="(123) 456-7890"
               />
             </div>
             <div className="input-group">
@@ -765,7 +853,8 @@ const renderAgencyInfoTab = () => (
             <input 
               type="tel" 
               value={selectedStaff.phone || ''} 
-              onChange={(e) => handleUpdateAgencyField('phone', e.target.value)}
+              onChange={(e) => handleAgencyPhoneChange('phone', e.target.value)}
+              placeholder="(123) 456-7890"
             />
           </div>
         </div>
@@ -859,7 +948,7 @@ const renderBranchesTab = () => (
                     type="tel" 
                     value={branch.phone || ''} 
                     onChange={(e) => handleUpdateBranch(index, 'phone', e.target.value)}
-                    placeholder="(555) 123-4567"
+                    placeholder="(123) 456-7890"
                   />
                 </div>
               </div>
@@ -1475,78 +1564,80 @@ return (
                         const newRole = e.target.value;
                         const roleDisplay = roles.find(r => r.value === newRole)?.label || newRole;
                         
+                        console.log(`🔄 Changing role from ${selectedStaff.role} to ${newRole}`);
+                        
                         handleUpdateMember('role', newRole);
                         handleUpdateMember('roleDisplay', roleDisplay);
-                        
-                        // Resetear la pestaña activa para evitar bugs al cambiar de rol
-                        setActiveTab('info');
-                        
-                        // Asegurarse de que los documentos se inicialicen correctamente
-                        if (requiresDocuments(newRole) && (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
-                          handleUpdateMember('documents', initializeDocuments(newRole, selectedStaff.type));
-                        }
-                      }}
-                      disabled={selectedStaff.type === 'agency'} // No cambiar rol para agencias
-                    >
-                      {roles.filter(r => selectedStaff.type === 'agency' ? r.value === 'agency' : r.value !== 'agency').map(role => (
-                        <option key={role.value} value={role.value}>{role.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="input-group">
-                    <label>Status</label>
-                    <select 
-                      value={selectedStaff.status || 'active'} 
-                      onChange={(e) => handleUpdateMember('status', e.target.value)}
-                      className={`status-select ${selectedStaff.status}`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="modal-actions">
-              <button className="close-modal-btn" onClick={handleCloseProfile}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-          
-          <div className="modal-tabs">
-            {renderTabs().map(tab => (
-              <button 
-                key={tab.id}
-                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => handleChangeTab(tab.id)}
-              >
-                <i className={`fas ${tab.icon}`}></i>
-                 <span>{tab.label}</span>
-               </button>
-             ))}
+                       
+                       // Resetear la pestaña activa para evitar bugs al cambiar de rol
+                       setActiveTab('info');
+                       
+                       // Asegurarse de que los documentos se inicialicen correctamente
+                       if (requiresDocuments(newRole) && (!selectedStaff.documents || Object.keys(selectedStaff.documents).length === 0)) {
+                         handleUpdateMember('documents', initializeDocuments(newRole.toLowerCase(), selectedStaff.type));
+                       }
+                     }}
+                     disabled={selectedStaff.type === 'agency'} // No cambiar rol para agencias
+                   >
+                     {roles.filter(r => selectedStaff.type === 'agency' ? r.value === 'agency' : r.value !== 'agency').map(role => (
+                       <option key={role.value} value={role.value}>{role.label}</option>
+                     ))}
+                   </select>
+                 </div>
+                 <div className="input-group">
+                   <label>Status</label>
+                   <select 
+                     value={selectedStaff.status || 'active'} 
+                     onChange={(e) => handleUpdateMember('status', e.target.value)}
+                     className={`status-select ${selectedStaff.status}`}
+                   >
+                     <option value="active">Active</option>
+                     <option value="inactive">Inactive</option>
+                   </select>
+                 </div>
+               </div>
+             </div>
            </div>
            
-           <div className="modal-content">
-             {renderTabContent()}
-           </div>
-           
-           <div className="modal-footer">
-             <button className="cancel-btn" onClick={handleCloseProfile}>
+           <div className="modal-actions">
+             <button className="close-modal-btn" onClick={handleCloseProfile}>
                <i className="fas fa-times"></i>
-               <span>Cancel</span>
-             </button>
-             <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
-               <i className="fas fa-save"></i>
-               <span>Save Changes</span>
              </button>
            </div>
          </div>
+         
+         <div className="modal-tabs">
+           {renderTabs().map(tab => (
+             <button 
+               key={tab.id}
+               className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+               onClick={() => handleChangeTab(tab.id)}
+             >
+               <i className={`fas ${tab.icon}`}></i>
+               <span>{tab.label}</span>
+             </button>
+           ))}
+         </div>
+         
+         <div className="modal-content">
+           {renderTabContent()}
+         </div>
+         
+         <div className="modal-footer">
+           <button className="cancel-btn" onClick={handleCloseProfile}>
+             <i className="fas fa-times"></i>
+             <span>Cancel</span>
+           </button>
+           <button className="save-btn" onClick={() => handleSaveProfile(selectedStaff)}>
+             <i className="fas fa-save"></i>
+             <span>Save Changes</span>
+           </button>
+         </div>
        </div>
-     )}
-   </div>
- );
+     </div>
+   )}
+ </div>
+);
 };
 
 export default DevStaffEditComponent;

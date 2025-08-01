@@ -1,0 +1,302 @@
+// TransfersFunctionalSection.scss
+@import 'common';
+
+.transfers-functional-section {
+  @extend .section-common;
+
+  .section-title {
+    margin-bottom: 30px;
+    
+    h2 {
+      color: #2c3e50;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #3498db;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      &::before {
+        content: "\f362"; // FontAwesome wheelchair
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: #3498db;
+        font-size: 1.3rem;
+      }
+    }
+  }
+
+  .transfers-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  // Transfer activities grid
+  .transfers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+
+    .transfer-card {
+      background: white;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      }
+
+      .transfer-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        i {
+          color: #495057;
+          font-size: 1.2rem;
+          width: 24px;
+          text-align: center;
+        }
+
+        label {
+          font-weight: 600;
+          color: #495057;
+          margin: 0;
+          font-size: 1rem;
+        }
+      }
+
+      .transfer-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #ced4da;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+        }
+
+        &:hover {
+          border-color: #adb5bd;
+        }
+      }
+
+      .level-indicator {
+        margin-top: 10px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        animation: fadeIn 0.3s ease;
+      }
+    }
+  }
+
+  // Form groups (wheelchair and additional info)
+  .form-group {
+    &.wheelchair-section {
+      background: #e8f4f8;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+
+      label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+
+        i {
+          color: #3498db;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+      }
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 12px;
+      font-size: 1rem;
+
+      i {
+        color: #6c757d;
+        font-size: 1rem;
+        width: 16px;
+        text-align: center;
+      }
+    }
+
+    .form-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 14px;
+      resize: vertical;
+      font-family: inherit;
+      min-height: 100px;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+      }
+
+      &::placeholder {
+        color: #adb5bd;
+        font-style: italic;
+      }
+    }
+  }
+
+  // Summary card
+  .transfers-summary {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+
+    .summary-header {
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #dee2e6;
+
+      h4 {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        i {
+          color: #3498db;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+
+        .activity {
+          font-weight: 500;
+          color: #495057;
+          font-size: 0.9rem;
+        }
+
+        .level {
+          font-weight: 600;
+          font-size: 0.85rem;
+          padding: 4px 8px;
+          border-radius: 12px;
+          background: rgba(52, 152, 219, 0.1);
+        }
+      }
+    }
+  }
+
+  // Animation keyframes
+  @keyframes fadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(-5px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    .transfers-grid {
+      grid-template-columns: 1fr;
+      gap: 15px;
+      padding: 15px;
+    }
+
+    .transfer-card {
+      padding: 15px;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+
+      .summary-item {
+        padding: 8px 12px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .transfer-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+
+      label {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}

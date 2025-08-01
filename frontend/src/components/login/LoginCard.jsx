@@ -42,16 +42,8 @@ const LoginCard = () => {
     setActiveCard('login');
   };
 
-  useEffect(() => {
-    // Efecto de entrada suave al cargar
-    const timeout = setTimeout(() => {
-      if (!isFlipped) {
-        document.getElementById('username')?.focus();
-      }
-    }, 1800);
-
-    return () => clearTimeout(timeout);
-  }, [isFlipped]);
+  // Eliminado el autofocus del campo username para permitir 
+  // que el usuario decida cuándo empezar a escribir
   
   // Efecto para manejar focus en inputs para efecto neón
   useEffect(() => {

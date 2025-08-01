@@ -1,6 +1,6 @@
 import os, shutil, re
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from datetime import datetime, timedelta, date
 from database.connection import get_db
@@ -16,16 +16,63 @@ from database.models import (
 from schemas import (
     StaffCreate, StaffResponse, StaffAssignmentResponse,
     PatientCreate, PatientResponse,
+    CertificationPeriodResponse,
     DocumentResponse, 
     ExerciseCreate, ExerciseResponse, PatientExerciseAssignmentCreate, 
     VisitCreate, VisitResponse,
-    VisitNoteResponse,
+    VisitNoteCreate, VisitNoteResponse,
     NoteSectionCreate, NoteSectionResponse,
     NoteTemplateCreate, NoteTemplateResponse)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
 
 router = APIRouter()
+
+def determine_note_status(sections_data, template, db):
+    if not sections_data or len(sections_data) == 0:
+        return "Scheduled"
+    
+    template_sections = db.query(NoteTemplateSection).filter(
+        NoteTemplateSection.template_id == template.id
+    ).all()
+    
+    total_sections = len(template_sections)
+    sections_with_data = 0
+    
+    for ts in template_sections:
+        section = db.query(NoteSection).filter(NoteSection.id == ts.section_id).first()
+        if section and section.section_name in sections_data:
+            section_data = sections_data[section.section_name]
+            
+            if section_data and isinstance(section_data, dict):
+                has_data = False
+                for key, value in section_data.items():
+                    if value is not None:
+                        if isinstance(value, str) and value.strip():
+                            has_data = True
+                            break
+                        elif isinstance(value, (int, float)) and value > 0:
+                            has_data = True
+                            break
+                        elif isinstance(value, bool) and value:
+                            has_data = True
+                            break
+                        elif isinstance(value, list) and len(value) > 0:
+                            has_data = True
+                            break
+                        elif isinstance(value, dict) and any(v for v in value.values() if v):
+                            has_data = True
+                            break
+                
+                if has_data:
+                    sections_with_data += 1
+    
+    if sections_with_data == 0:
+        return "Scheduled"
+    elif sections_with_data == total_sections:
+        return "Completed"
+    else:
+        return "Pending"
 
 BASE_STORAGE_PATH = "/app/storage/docs"
 
@@ -40,9 +87,8 @@ def create_staff(staff: StaffCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered.")
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already registered.")
-    
-    hashed_password = hash_password(staff.password)#
 
+    hashed_password = hash_password(staff.password)
     staff_data = staff.dict()
     staff_data["password"] = hashed_password
 
@@ -50,7 +96,8 @@ def create_staff(staff: StaffCreate, db: Session = Depends(get_db)):
     db.add(new_staff)
     db.commit()
     db.refresh(new_staff)
-    return new_staff
+
+    return StaffResponse.model_validate(new_staff)
 
 @router.post("/assign-staff", response_model=StaffAssignmentResponse)
 def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depends(get_db)):
@@ -58,21 +105,38 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found.")
 
-    assigned_role = staff.role
-    existing_assignment = db.query(StaffAssignment).filter(
+    assigned_role = staff.role.upper()
+    discipline_groups = {
+        'PT': ['PT'], 'PTA': ['PTA'], 'OT': ['OT'], 
+        'COTA': ['COTA'], 'ST': ['ST'], 'STA': ['STA']
+    }
+    roles_to_replace = discipline_groups.get(assigned_role, [assigned_role])
+    
+    existing_assignment = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
         StaffAssignment.patient_id == patient_id,
-        StaffAssignment.assigned_role == assigned_role
+        StaffAssignment.assigned_role.in_(roles_to_replace)
     ).first()
 
     if existing_assignment and existing_assignment.staff_id == staff_id:
-        return existing_assignment
+        return StaffAssignmentResponse(
+            id=existing_assignment.id,
+            assigned_at=existing_assignment.assigned_at,
+            assigned_role=existing_assignment.assigned_role,
+            staff=StaffResponse.model_validate(existing_assignment.staff)
+        )
 
     if existing_assignment:
         existing_assignment.staff_id = staff_id
+        existing_assignment.assigned_role = assigned_role
         existing_assignment.assigned_at = datetime.utcnow()
         db.commit()
         db.refresh(existing_assignment)
-        return existing_assignment
+        return StaffAssignmentResponse(
+            id=existing_assignment.id,
+            assigned_at=existing_assignment.assigned_at,
+            assigned_role=existing_assignment.assigned_role,
+            staff=StaffResponse.model_validate(staff)
+        )
 
     new_assignment = StaffAssignment(
         patient_id=patient_id,
@@ -83,7 +147,13 @@ def assign_staff_to_patient(patient_id: int, staff_id: int, db: Session = Depend
     db.add(new_assignment)
     db.commit()
     db.refresh(new_assignment)
-    return new_assignment
+    
+    return StaffAssignmentResponse(
+        id=new_assignment.id,
+        assigned_at=new_assignment.assigned_at,
+        assigned_role=new_assignment.assigned_role,
+        staff=StaffResponse.model_validate(staff)
+    )
 
 #====================== PATIENTS ======================#
 
@@ -109,7 +179,6 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
     cert_start = patient.initial_cert_start_date
     cert_end = cert_start + timedelta(days=60)
-
     cert_period = CertificationPeriod(
         patient_id=new_patient.id,
         start_date=cert_start,
@@ -125,7 +194,7 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
 def sanitize_filename(filename: str) -> str:
     name, ext = os.path.splitext(filename)
-    name = re.sub(r'[^\w\d-]', '_', name)  
+    name = re.sub(r'[^\w\d-]', '_', name)
     return f"{name}{ext.lower()}"
 
 @router.post("/documents/upload", response_model=DocumentResponse)
@@ -176,26 +245,21 @@ def create_exercise(exercise: ExerciseCreate, db: Session = Depends(get_db)):
 
 @router.post("/patients/exercises/")
 def assign_exercises_to_patient(assignments: List[PatientExerciseAssignmentCreate], db: Session = Depends(get_db)):
-    for a in assignments:
-        db.add(PatientExerciseAssignment(**a.dict()))
+    for assignment in assignments:
+        db.add(PatientExerciseAssignment(**assignment.dict()))
     db.commit()
     return {"message": "Exercises assigned successfully."}
 
 #====================== CERTIFICATION PERIODS ======================#
 
-@router.post("/patients/{patient_id}/certification-period")
-def create_certification_period(
-    patient_id: int,
-    start_date: date,
-    db: Session = Depends(get_db)
-):
+@router.post("/patients/{patient_id}/certification-period", response_model=CertificationPeriodResponse)
+def create_certification_period(patient_id: int, start_date: date, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
     end_date = start_date + timedelta(days=60)
     today = date.today()
-
     is_active = patient.is_active and (start_date <= today <= end_date)
 
     new_cert = CertificationPeriod(
@@ -204,14 +268,10 @@ def create_certification_period(
         end_date=end_date,
         is_active=is_active
     )
-
     db.add(new_cert)
     db.commit()
     db.refresh(new_cert)
-    return {
-        "message": "New certification period created successfully.",
-        "certification_period_id": new_cert.id
-    }
+    return new_cert
 
 #====================== VISITS ======================#
 
@@ -229,46 +289,112 @@ def create_visit(data: VisitCreate, db: Session = Depends(get_db)):
     if not cert:
         raise HTTPException(status_code=404, detail="No certification period found for given date")
 
+    # Validate approved visit limits
+    therapy_type = staff.role.upper()
+    discipline_map = {
+        'PT': 'pt_approved_visits',
+        'PTA': 'pt_approved_visits',
+        'OT': 'ot_approved_visits', 
+        'COTA': 'ot_approved_visits',
+        'ST': 'st_approved_visits',
+        'STA': 'st_approved_visits'
+    }
+    
+    approved_field = discipline_map.get(therapy_type)
+    if approved_field:
+        approved_limit = getattr(cert, approved_field, 0)
+        if approved_limit > 0:
+            # Count existing visits for this discipline in the certification period
+            existing_visits = db.query(Visit).filter(
+                Visit.certification_period_id == cert.id,
+                Visit.therapy_type.in_(['PT', 'PTA'] if therapy_type in ['PT', 'PTA'] 
+                                     else ['OT', 'COTA'] if therapy_type in ['OT', 'COTA']
+                                     else ['ST', 'STA'])
+            ).count()
+            
+            if existing_visits >= approved_limit:
+                discipline_name = 'PT' if therapy_type in ['PT', 'PTA'] else 'OT' if therapy_type in ['OT', 'COTA'] else 'ST'
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Cannot schedule visit: {discipline_name} approved visits limit ({approved_limit}) reached. Current visits: {existing_visits}"
+                )
+
     visit = Visit(
         patient_id=data.patient_id,
         staff_id=data.staff_id,
         certification_period_id=cert.id,
         visit_date=data.visit_date,
         visit_type=data.visit_type,
-        therapy_type=staff.role.upper(), 
+        therapy_type=staff.role.upper(),
         status=data.status,
         scheduled_time=data.scheduled_time
     )
     db.add(visit)
-    db.flush()
-
-    template = db.query(NoteTemplate).filter_by(
-        discipline=staff.role.upper(),
-        note_type=data.visit_type,
-        is_active=True
-    ).first()
-    if not template:
-        raise HTTPException(status_code=404, detail="No active template for this visit type and discipline")
-
-    sections = db.query(NoteTemplateSection).filter(
-        NoteTemplateSection.template_id == template.id
-    ).order_by(NoteTemplateSection.position.asc()).all()
-
-    sections_data = [{"section_id": s.section_id, "content": {}} for s in sections]
-
-    note = VisitNote(
-        visit_id=visit.id,
-        discipline=template.discipline,
-        note_type=template.note_type,
-        status="Scheduled",
-        sections_data=sections_data
-    )
-    db.add(note)
     db.commit()
     db.refresh(visit)
     return visit
 
-#====================== NOTES ======================#
+@router.post("/visit-notes/", response_model=VisitNoteResponse)
+def create_visit_note(note_data: VisitNoteCreate, db: Session = Depends(get_db)):
+    
+    visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
+    if not visit:
+        raise HTTPException(status_code=404, detail="Visit not found")
+    
+    existing_note = db.query(VisitNote).filter(VisitNote.visit_id == note_data.visit_id).first()
+    if existing_note:
+        raise HTTPException(status_code=400, detail="Note already exists for this visit")
+    
+    template = db.query(NoteTemplate).filter_by(
+        discipline=visit.therapy_type.upper(),
+        note_type=visit.visit_type,
+        is_active=True
+    ).first()
+    
+    if not template:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No active template found for discipline '{visit.therapy_type}' and note type '{visit.visit_type}'"
+        )
+    
+    # Process sections_data to ensure we use section names, not IDs
+    sections_data = note_data.sections_data
+    if not sections_data or len(sections_data) == 0:
+        # Create empty sections with names when no data provided
+        sections = db.query(NoteTemplateSection).filter(
+            NoteTemplateSection.template_id == template.id
+        ).order_by(NoteTemplateSection.position.asc()).all()
+        sections_data = {}
+        for s in sections:
+            section = db.query(NoteSection).filter(NoteSection.id == s.section_id).first()
+            if section:
+                sections_data[section.section_name] = {}
+    # Note: Frontend should always send section names, not IDs
+    # If we receive IDs, they will be handled in future iterations
+    
+    note_status = determine_note_status(sections_data, template, db)
+    
+    staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
+    therapist_name = staff.name if staff else "Unknown Therapist"
+    
+    note = VisitNote(
+        visit_id=note_data.visit_id,
+        status=note_status,
+        sections_data=sections_data,
+        therapist_name=therapist_name
+    )
+    db.add(note)
+    
+    visit = db.query(Visit).filter(Visit.id == note_data.visit_id).first()
+    if visit:
+        visit.status = note_status
+    
+    db.commit()
+    db.refresh(note)
+    
+    return note
+
+#====================== NOTES ======================
 
 @router.post("/note-templates", response_model=NoteTemplateResponse)
 def create_template(template_data: NoteTemplateCreate, db: Session = Depends(get_db)):

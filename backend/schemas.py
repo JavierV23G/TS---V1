@@ -20,14 +20,13 @@ class StaffCreate(BaseModel):
 class StaffResponse(BaseModel):
     id: int
     name: str
-    birthday: date
-    gender: str
-    postal_code: str
+    birthday: Optional[date] = None
+    gender: Optional[str] = None
+    postal_code: Optional[str] = None
     email: str
-    phone: str
-    alt_phone: str
+    phone: Optional[str] = None
+    alt_phone: Optional[str] = None
     username: str
-    password: str
     role: str
     is_active: bool
 
@@ -50,9 +49,10 @@ class PatientCreate(BaseModel):
     birthday: date
     gender: str
     address: str
-    contact_info: Optional[str] = None  
-    payor_type: Optional[str] = None
+    contact_info: Optional[Dict[str, str]] = None  
+    insurance: Optional[str] = None
     physician: Optional[str] = None
+    nurse: Optional[str] = None
     agency_id: int
     nursing_diagnosis: Optional[str] = None
     urgency_level: Optional[str] = None
@@ -68,13 +68,59 @@ class PatientCreate(BaseModel):
     is_active: Optional[bool] = True
     initial_cert_start_date: date
 
+class PatientUpdate(BaseModel):
+    full_name: Optional[str] = None
+    birthday: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    contact_info: Optional[Dict[str, str]] = None
+    insurance: Optional[str] = None
+    physician: Optional[str] = None
+    nurse: Optional[str] = None
+    agency_id: Optional[int] = None
+    nursing_diagnosis: Optional[str] = None
+    urgency_level: Optional[str] = None
+    prior_level_of_function: Optional[str] = None
+    homebound_status: Optional[str] = None
+    weight_bearing_status: Optional[str] = None
+    referral_reason: Optional[str] = None
+    weight: Optional[str] = None
+    height: Optional[str] = None
+    past_medical_history: Optional[str] = None
+    clinical_grouping: Optional[str] = None
+    required_disciplines: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    class Config:
+        extra = "forbid"
+
 class PatientResponse(BaseModel):
     id: int
     full_name: str
-    agency_id: int
+    birthday: Optional[date]
     gender: str
     address: str
+    contact_info: Optional[Dict[str, str]]
+    primary_phone: Optional[str] = None  # Formatted primary phone from backend
+    insurance: Optional[str] = None
+    physician: Optional[str]
+    nurse: Optional[str] = None
+    agency_name: Optional[str] = None
+    nursing_diagnosis: Optional[str]
+    urgency_level: Optional[str]
+    prior_level_of_function: Optional[str]
+    homebound_status: Optional[str]
+    weight_bearing_status: Optional[str]
+    referral_reason: Optional[str]
+    weight: Optional[str]
+    height: Optional[str]
+    past_medical_history: Optional[str]
+    clinical_grouping: Optional[str]
+    required_disciplines: Optional[str]
     is_active: Optional[bool] = True
+
+    cert_start_date: Optional[date] = None
+    cert_end_date: Optional[date] = None
 
     class Config:
         from_attributes = True
@@ -172,6 +218,12 @@ class CertificationPeriodResponse(BaseModel):
     start_date: date
     end_date: date
     is_active: bool
+    pt_frequency: str
+    ot_frequency: str
+    st_frequency: str
+    pt_approved_visits: int
+    ot_approved_visits: int
+    st_approved_visits: int
 
     class Config:
         from_attributes = True
@@ -179,6 +231,12 @@ class CertificationPeriodResponse(BaseModel):
 class CertificationPeriodUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    pt_frequency: Optional[str] = None
+    ot_frequency: Optional[str] = None
+    st_frequency: Optional[str] = None
+    pt_approved_visits: Optional[int] = None
+    ot_approved_visits: Optional[int] = None
+    st_approved_visits: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -212,32 +270,21 @@ class NoteSectionResponse(NoteSectionCreate):
 
 #========================= NOTES =========================#
 
-class VisitNoteSectionData(BaseModel):
-    section_id: int
-    content: dict
-
-class VisitNoteSectionUpdate(BaseModel):
-    section_id: int
-    content: Dict
+class VisitNoteCreate(BaseModel):
+    visit_id: int
+    status: Optional[str] = "Pending"
+    sections_data: Optional[dict] = None
 
 class VisitNoteUpdate(BaseModel):
     status: Optional[str] = None
-    therapist_signature: Optional[str] = None
-    patient_signature: Optional[str] = None
-    visit_date_signature: Optional[str] = None
-    updated_sections: Optional[List[VisitNoteSectionUpdate]] = None
+    sections_data: Optional[dict] = None
 
 class VisitNoteResponse(BaseModel):
     id: int
     visit_id: int
     status: str
-    discipline: str
-    note_type: str
-    therapist_signature: Optional[str] = None
-    patient_signature: Optional[str] = None
-    visit_date_signature: Optional[date] = None
-    sections_data: Optional[List[VisitNoteSectionData]] = None
-    template_sections: List[NoteSectionResponse] = []
+    sections_data: Optional[dict] = None
+    therapist_name: str
 
     class Config:
         from_attributes = True

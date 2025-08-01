@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Body, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import date, datetime, timedelta
 from database.connection import get_db
 from database.models import (
@@ -13,16 +13,17 @@ from database.models import (
 from schemas import (
     VisitCreate, VisitResponse, VisitUpdate,
     CertificationPeriodUpdate, CertificationPeriodResponse,
-    ExerciseResponse,
+    ExerciseResponse, PatientUpdate,
     NoteSectionResponse, NoteSectionUpdate,
     NoteTemplateUpdate, NoteTemplateResponse,
     VisitNoteResponse, VisitNoteUpdate)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
+from .create_endpoints import determine_note_status
 
 router = APIRouter()
 
-#////////////////////////// STAFF //////////////////////////#
+#====================== STAFF ======================#
 
 @router.put("/staff/{staff_id}")
 def update_staff_info(
@@ -82,7 +83,7 @@ def update_staff_info(
 
     return {"message": "Staff updated successfully.", "staff_id": staff.id}
 
-#////////////////////////// PACIENTES //////////////////////////#
+#====================== PATIENTS ======================#
 
 @router.put("/patients/{patient_id}")
 def update_patient_info(
@@ -92,8 +93,9 @@ def update_patient_info(
     gender: Optional[str] = None,
     address: Optional[str] = None,
     contact_info: Optional[str] = None,
-    payor_type: Optional[str] = None,
+    insurance: Optional[str] = None,
     physician: Optional[str] = None,
+    nurse: Optional[str] = None,
     agency_id: Optional[int] = None,
     nursing_diagnosis: Optional[str] = None,
     urgency_level: Optional[str] = None,
@@ -107,73 +109,81 @@ def update_patient_info(
     clinical_grouping: Optional[str] = None,
     required_disciplines: Optional[str] = None,
     is_active: Optional[bool] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found.")
 
+    if agency_id is not None:
+        agency = db.query(Staff).filter(Staff.id == agency_id).first()
+        if not agency:
+            raise HTTPException(status_code=404, detail="Agency does not exist.")
+        if agency.role.lower() != "agency":
+            raise HTTPException(status_code=400, detail="Provided ID does not belong to a valid agency.")
+
+    processed_contact_info = None
+    if contact_info is not None:
+        try:
+            import json
+            processed_contact_info = json.loads(contact_info)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid contact_info JSON format.")
+
     update_data = {
-        k: v for k, v in {
-            "full_name": full_name,
-            "birthday": birthday,
-            "gender": gender,
-            "address": address,
-            "contact_info": contact_info,
-            "payor_type": payor_type,
-            "physician": physician,
-            "agency_id": agency_id,
-            "nursing_diagnosis": nursing_diagnosis,
-            "urgency_level": urgency_level,
-            "prior_level_of_function": prior_level_of_function,
-            "homebound_status": homebound_status,
-            "weight_bearing_status": weight_bearing_status,
-            "referral_reason": referral_reason,
-            "weight": weight,
-            "height": height,
-            "past_medical_history": past_medical_history,
-            "clinical_grouping": clinical_grouping,
-            "required_disciplines": required_disciplines,
-            "is_active": is_active
-        }.items() if v is not None
+        "full_name": full_name,
+        "birthday": birthday,
+        "gender": gender,
+        "address": address,
+        "contact_info": processed_contact_info,
+        "insurance": insurance,
+        "physician": physician,
+        "nurse": nurse,
+        "agency_id": agency_id,
+        "nursing_diagnosis": nursing_diagnosis,
+        "urgency_level": urgency_level,
+        "prior_level_of_function": prior_level_of_function,
+        "homebound_status": homebound_status,
+        "weight_bearing_status": weight_bearing_status,
+        "referral_reason": referral_reason,
+        "weight": weight,
+        "height": height,
+        "past_medical_history": past_medical_history,
+        "clinical_grouping": clinical_grouping,
+        "required_disciplines": required_disciplines,
+        "is_active": is_active
     }
 
     for key, value in update_data.items():
-        setattr(patient, key, value)
+        if value is not None:
+            setattr(patient, key, value)
+
+    # Si se está actualizando is_active, manejar certification periods
+    if is_active is not None:
+        from datetime import datetime
+        today = datetime.utcnow().date()
+        cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
+        
+        if is_active:
+            # Activando paciente: activar períodos de certificación válidos para hoy
+            for cert in cert_periods:
+                if cert.start_date <= today <= cert.end_date:
+                    cert.is_active = True
+                else:
+                    cert.is_active = False
+        else:
+            # Desactivando paciente: desactivar todos los períodos de certificación activos
+            for cert in cert_periods:
+                if cert.is_active:
+                    cert.is_active = False
 
     db.commit()
     db.refresh(patient)
 
     return {"message": "Patient updated successfully.", "patient_id": patient.id}
 
-@router.put("/patients/{patient_id}/activate")
-def activate_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found.")
 
-    patient.is_active = True
-    today = datetime.utcnow().date()
-
-    cert_periods = db.query(CertificationPeriod).filter(CertificationPeriod.patient_id == patient_id).all()
-
-    found_valid = False
-
-    for cert in cert_periods:
-        if cert.start_date <= today <= cert.end_date:
-            cert.is_active = True
-            found_valid = True
-        else:
-            cert.is_active = False 
-
-    db.commit()
-    return {
-        "message": "Patient reactivated successfully.",
-        "patient_id": patient_id,
-        "valid_cert_found": found_valid
-    }
-
-#////////////////////////// VISITS //////////////////////////#
+#====================== VISITS ======================#
 
 @router.put("/visits/{id}", response_model=VisitResponse)
 def update_visit(
@@ -272,7 +282,7 @@ def restore_hidden_visit(visit_id: int, db: Session = Depends(get_db)):
     db.refresh(visit)
     return visit
 
-#////////////////////////// NOTAS //////////////////////////#
+#====================== NOTES ======================#
 
 @router.put("/note-sections/{section_id}", response_model=NoteSectionResponse)
 def update_section(section_id: int, data: NoteSectionUpdate, db: Session = Depends(get_db)):
@@ -333,67 +343,45 @@ def update_template(
 
 @router.put("/visit-notes/{note_id}", response_model=VisitNoteResponse)
 def update_visit_note(note_id: int, data: VisitNoteUpdate, db: Session = Depends(get_db)):
+    
     note = db.query(VisitNote).filter(VisitNote.id == note_id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Visit note not found")
 
-    # Update primitive fields
     if data.status is not None:
         note.status = data.status
-    if data.therapist_signature is not None:
-        note.therapist_signature = data.therapist_signature
-    if data.patient_signature is not None:
-        note.patient_signature = data.patient_signature
-    if data.visit_date_signature is not None:
-        if isinstance(data.visit_date_signature, str):
-            try:
-                note.visit_date_signature = date.fromisoformat(data.visit_date_signature)
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
-        else:
-            note.visit_date_signature = data.visit_date_signature
+        if data.status.lower() == "completed":
+            visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
+            if visit:
+                visit.status = "Completed"
 
-    # Update sections_data content
-    if data.updated_sections:
-        existing = note.sections_data or []
-        section_map = {s["section_id"]: s for s in existing}
-
-        for update in data.updated_sections:
-            section_map[update.section_id] = {
-                "section_id": update.section_id,
-                "content": update.content
-            }
-
-        note.sections_data = list(section_map.values())
+    if data.sections_data is not None:
+        note.sections_data = data.sections_data
+        
+        visit = db.query(Visit).filter(Visit.id == note.visit_id).first()
+        if visit:
+            staff = db.query(Staff).filter(Staff.id == visit.staff_id).first()
+            if staff:
+                note.therapist_name = staff.name
+            
+            template = db.query(NoteTemplate).filter_by(
+                discipline=visit.therapy_type.upper(),
+                note_type=visit.visit_type,
+                is_active=True
+            ).first()
+            
+            if template:
+                auto_status = determine_note_status(data.sections_data, template, db)
+                note.status = auto_status
+                visit.status = auto_status
 
     db.commit()
     db.refresh(note)
+    
+    
+    return note
 
-    # Return optional template_sections for frontend context
-    template = db.query(NoteTemplate).filter_by(
-        discipline=note.discipline,
-        note_type=note.note_type,
-        is_active=True
-    ).first()
-
-    template_sections = []
-    if template:
-        links = (
-            db.query(NoteTemplateSection)
-            .filter(NoteTemplateSection.template_id == template.id)
-            .join(NoteSection)
-            .order_by(NoteTemplateSection.position.asc())
-            .all()
-        )
-        template_sections = [ts.section for ts in links]
-
-    return {
-        **note.__dict__,
-        "template_sections": template_sections
-    }
-
-
-#////////////////////////// CERT PERIOD //////////////////////////#
+#====================== CERTIFICATION PERIODS ======================#
 
 @router.put("/cert-periods/{cert_id}", response_model=CertificationPeriodResponse)
 def update_certification_period(cert_id: int, cert_update: CertificationPeriodUpdate, db: Session = Depends(get_db)):
@@ -420,6 +408,26 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
     elif "start_date" in update_data:
         cert.end_date = cert.start_date + timedelta(days=60)
 
+    # Update frequencies if provided
+    if "pt_frequency" in update_data:
+        cert.pt_frequency = update_data["pt_frequency"]
+    
+    if "ot_frequency" in update_data:
+        cert.ot_frequency = update_data["ot_frequency"]
+    
+    if "st_frequency" in update_data:
+        cert.st_frequency = update_data["st_frequency"]
+    
+    # Update approved visits if provided
+    if "pt_approved_visits" in update_data:
+        cert.pt_approved_visits = update_data["pt_approved_visits"]
+    
+    if "ot_approved_visits" in update_data:
+        cert.ot_approved_visits = update_data["ot_approved_visits"]
+    
+    if "st_approved_visits" in update_data:
+        cert.st_approved_visits = update_data["st_approved_visits"]
+
     today = date.today()
     patient_active = cert.patient.is_active if cert.patient else False
     cert.is_active = patient_active and (cert.start_date <= today <= cert.end_date)
@@ -428,7 +436,7 @@ def update_certification_period(cert_id: int, cert_update: CertificationPeriodUp
     db.refresh(cert)
     return cert
 
-#////////////////////////// EXERCISES //////////////////////////#
+#====================== EXERCISES ======================#
 
 @router.put("/exercises/{exercise_id}", response_model=ExerciseResponse)
 def update_exercise(

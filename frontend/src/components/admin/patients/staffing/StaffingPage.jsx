@@ -604,18 +604,7 @@ const AdminStaffingPage = () => {
         </div>
       </main>
       
-      {!isLoggingOut && (
-        <div className="quick-action-btn">
-          <button 
-            className="add-staff-btn" 
-            onClick={(e) => handleAddStaffClick(e)}
-            disabled={isLoggingOut}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="btn-tooltip">Add New Staff</span>
-          </button>
-        </div>
-      )}
+ 
     </div>
   );
 };

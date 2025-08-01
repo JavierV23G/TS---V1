@@ -625,6 +625,203 @@
           }
         }
         
+        // Enhanced form field styling with representative colors
+        .weight-input {
+          label {
+            i {
+              background: rgba(37, 99, 235, 0.08);
+              color: #2563eb;
+            }
+          }
+        }
+        
+        .height-input {
+          label {
+            i {
+              background: rgba(22, 163, 74, 0.08);
+              color: #16a34a;
+            }
+          }
+        }
+        
+        .clinical-group-select {
+          label {
+            i {
+              background: rgba(124, 58, 237, 0.08);
+              color: #7c3aed;
+            }
+          }
+        }
+        
+        // Nursing diagnosis, PMH, WBS, Homebound colors
+        .form-group:has(label .fa-heartbeat) {
+          label {
+            i {
+              background: rgba(239, 68, 68, 0.08);
+              color: #ef4444;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-history) {
+          label {
+            i {
+              background: rgba(14, 165, 233, 0.08);
+              color: #0ea5e9;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-band-aid) {
+          label {
+            i {
+              background: rgba(234, 88, 12, 0.08);
+              color: #ea580c;
+            }
+          }
+        }
+        
+        .form-group:has(label .fa-home) {
+          label {
+            i {
+              background: rgba(139, 92, 246, 0.08);
+              color: #8b5cf6;
+            }
+          }
+        }
+        
+        // Specific styles for new form fields
+        .physician-input {
+          label {
+            i {
+              background: rgba(5, 150, 105, 0.08);
+              color: #059669;
+            }
+          }
+          
+          input {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            
+            &::placeholder {
+              color: #94a3b8;
+              font-weight: 400;
+            }
+            
+            &:hover:not(:focus) {
+              border-color: #a7f3d0;
+              box-shadow: 0 3px 8px rgba(5, 150, 105, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #059669;
+              box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+            }
+          }
+        }
+        
+        .nurse-input {
+          label {
+            i {
+              background: rgba(220, 38, 38, 0.08);
+              color: #dc2626;
+            }
+          }
+          
+          input {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            
+            &::placeholder {
+              color: #94a3b8;
+              font-weight: 400;
+            }
+            
+            &:hover:not(:focus) {
+              border-color: #fecaca;
+              box-shadow: 0 3px 8px rgba(220, 38, 38, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #dc2626;
+              box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+            }
+          }
+        }
+        
+        .urgency-level-select {
+          label {
+            i {
+              background: rgba(217, 119, 6, 0.08);
+              color: #d97706;
+            }
+          }
+          
+          select {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            font-weight: 500;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-position: right 14px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            cursor: pointer;
+            
+            &:hover:not(:focus) {
+              border-color: #fed7aa;
+              box-shadow: 0 3px 8px rgba(217, 119, 6, 0.05);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #d97706;
+              box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15), 0 4px 10px rgba(0, 0, 0, 0.04);
+              transform: translateY(-1px);
+              background: white;
+              background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d97706'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            }
+            
+            option {
+              padding: 10px;
+              font-weight: 500;
+              background: white;
+              color: #1e293b;
+              
+              &:hover {
+                background: #f8fafc;
+              }
+            }
+          }
+        }
+        
         .form-actions {
           display: flex;
           justify-content: flex-end;
@@ -845,15 +1042,93 @@
           }
           
           &.weight-section .info-icon {
-            background: #eff6ff;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
             
             i {
               color: #2563eb;
             }
           }
           
+          &.height-section .info-icon {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            
+            i {
+              color: #16a34a;
+            }
+          }
+          
           &.clinical-section .info-icon {
-            background: #f8fafc;
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            
+            i {
+              color: #7c3aed;
+            }
+          }
+          
+          &.physician-section .info-icon {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            
+            i {
+              color: #059669;
+            }
+          }
+          
+          &.nurse-section .info-icon {
+            background: linear-gradient(135deg, #fef2f2, #fecaca);
+            
+            i {
+              color: #dc2626;
+            }
+          }
+          
+          &.urgency-section .info-icon {
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            
+            i {
+              color: #d97706;
+            }
+          }
+          
+          // Specific icon colors for medical info sections
+          .info-section:has(.fas.fa-heartbeat) .info-icon {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            
+            i {
+              color: #ef4444;
+            }
+          }
+          
+          .info-section:has(.fas.fa-history) .info-icon {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            
+            i {
+              color: #0ea5e9;
+            }
+          }
+          
+          .info-section:has(.fas.fa-band-aid) .info-icon {
+            background: linear-gradient(135deg, #fff7ed, #fed7aa);
+            
+            i {
+              color: #ea580c;
+            }
+          }
+          
+          .info-section:has(.fas.fa-home) .info-icon {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            
+            i {
+              color: #8b5cf6;
+            }
+          }
+          
+          // Approved visits section icon
+          .info-section:has(.fas.fa-calendar-check) .info-icon {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            
+            i {
+              color: #3b82f6;
+            }
           }
           
           .info-content {
@@ -1016,6 +1291,18 @@
                     background: linear-gradient(to bottom, #8b5cf6, #7c3aed);
                   }
                   
+                  &.physician-data::before {
+                    background: linear-gradient(to bottom, #059669, #047857);
+                  }
+                  
+                  &.nurse-data::before {
+                    background: linear-gradient(to bottom, #dc2626, #b91c1c);
+                  }
+                  
+                  &.urgency-data::before {
+                    background: linear-gradient(to bottom, #d97706, #b45309);
+                  }
+                  
                   &:hover {
                     border-color: #cbd5e1;
                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
@@ -1069,6 +1356,55 @@
                     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
                     
                     
+                    
+                    i {
+                      transform: scale(1.2);
+                    }
+                  }
+                }
+                
+                .urgency-level-badge {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 10px;
+                  padding: 10px 18px;
+                  border-radius: 30px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  border: 1px solid;
+                  margin-top: 5px;
+                  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  position: relative;
+                  overflow: hidden;
+                  
+                  &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent);
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                    pointer-events: none;
+                  }
+                  
+                  i {
+                    font-size: 16px;
+                    color: inherit;
+                    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+                    transition: all 0.3s ease;
+                  }
+                  
+                  &:hover {
+                    transform: translateY(-3px) scale(1.03);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+                    
+                    &::before {
+                      opacity: 1;
+                    }
                     
                     i {
                       transform: scale(1.2);
@@ -1314,3 +1650,913 @@
         }
       }
     }
+
+    // NUEVOS ESTILOS PARA LA SECCIÓN DE VISITAS APROBADAS - ULTRA PREMIUM
+// Sección de edición de visitas aprobadas
+.approved-visits-section {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 2px solid #e2e8f0;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6);
+    border-radius: 2px;
+  }
+  
+  h5 {
+    margin: 0 0 24px 0;
+    font-size: 16px;
+    color: #0f172a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    
+    i {
+      color: #3b82f6;
+      font-size: 18px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+      animation: pulse 3s infinite;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent);
+    }
+  }
+  
+  .visits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    
+    .visit-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      border: 2px solid #e5e7eb;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #e5e7eb, #cbd5e1);
+        transition: all 0.3s ease;
+      }
+      
+      &:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+        border-color: #3b82f6;
+        
+        &::before {
+          background: linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6);
+        }
+      }
+      
+      .visit-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+        
+        .discipline-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: rgba(59, 130, 246, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          transition: all 0.3s ease;
+          position: relative;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            border-radius: inherit;
+            filter: blur(8px);
+            opacity: 0.3;
+            z-index: -1;
+            transition: all 0.3s ease;
+          }
+          
+          i {
+            color: inherit;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+          }
+        }
+        
+        .discipline-info {
+          flex: 1;
+          
+          h6 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+          }
+          
+          .discipline-code {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+          }
+        }
+      }
+      
+      .visit-inputs {
+        .input-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 16px;
+          
+          .input-group {
+            flex: 1;
+            
+            label {
+              display: block;
+              font-size: 12px;
+              color: #64748b;
+              font-weight: 500;
+              margin-bottom: 6px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            input {
+              width: 100%;
+              padding: 10px 12px;
+              border-radius: 8px;
+              border: 1px solid #cbd5e1;
+              font-size: 16px;
+              font-weight: 600;
+              text-align: center;
+              transition: all 0.3s ease;
+              background: #f8fafc;
+              
+              &:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                background: white;
+                transform: scale(1.05);
+              }
+            }
+          }
+        }
+        
+        .status-selector {
+          label {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            
+            &:focus {
+              outline: none;
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              background: white;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Sección de visualización de visitas aprobadas - VIEW MODE ULTRA PREMIUM
+.approved-visits-section-view {
+  .visits-grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 12px;
+    
+    .visit-card-view {
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 50%);
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        opacity: 0;
+      }
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+        border-radius: 22px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        filter: blur(8px);
+      }
+      
+      &:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border-color: transparent;
+        
+        &::before {
+          opacity: 1;
+        }
+        
+        &::after {
+          opacity: 0.3;
+        }
+        
+        .discipline-badge {
+          transform: scale(1.05);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .progress-fill {
+          animation: progressGlow 1s ease-in-out;
+        }
+      }
+      
+      .visit-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        gap: 10px;
+        
+        .discipline-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 25px;
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          position: relative;
+          overflow: hidden;
+          
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          
+          &:hover::before {
+            opacity: 1;
+          }
+          
+          i {
+            font-size: 16px;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+          }
+          
+          span {
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          }
+        }
+        
+        .status-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+          border: 1px solid currentColor;
+          opacity: 0.9;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
+          
+          &:hover {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          
+          i {
+            font-size: 10px;
+          }
+          
+          span {
+            white-space: nowrap;
+            text-transform: capitalize;
+          }
+        }
+      }
+      
+      .visit-stats {
+        .stats-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          
+          .stat {
+            text-align: center;
+            flex: 1;
+            
+            .stat-label {
+              display: block;
+              font-size: 11px;
+              color: #64748b;
+              font-weight: 500;
+              margin-bottom: 4px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .stat-value {
+              display: block;
+              font-size: 20px;
+              font-weight: 700;
+              color: #1e293b;
+              transition: all 0.3s ease;
+              
+              &.remaining {
+                position: relative;
+                
+                &::after {
+                  content: '';
+                  position: absolute;
+                  bottom: -2px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 20px;
+                  height: 2px;
+                  background: currentColor;
+                  border-radius: 2px;
+                  opacity: 0.3;
+                }
+              }
+            }
+          }
+        }
+        
+        .progress-container {
+          .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 8px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+              animation: shimmerProgress 2s infinite;
+            }
+            
+            .progress-fill {
+              height: 100%;
+              border-radius: 10px;
+              transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+              position: relative;
+              overflow: hidden;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              
+              &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), transparent, rgba(255, 255, 255, 0.3));
+                animation: progressShine 2s infinite;
+              }
+              
+              &::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 50%;
+                background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+                border-radius: 10px 10px 0 0;
+              }
+            }
+          }
+          
+          .progress-text {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            text-align: center;
+            display: block;
+          }
+        }
+      }
+      
+      .discipline-name {
+        margin-top: 16px;
+        font-size: 13px;
+        color: #475569;
+        font-weight: 500;
+        text-align: center;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+        position: relative;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 30px;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+        }
+      }
+    }
+  }
+}
+
+// Animaciones adicionales para la sección de visitas
+@keyframes progressGlow {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes shimmerProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+// Animaciones de entrada específicas para las tarjetas de visitas
+.visits-grid-view {
+  .visit-card-view {
+    opacity: 0;
+    animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    
+    &:nth-child(1) { animation-delay: 0.1s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.3s; }
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Efectos específicos para diferentes estados de las disciplinas
+.visit-card-view {
+  // PT - Physical Therapy específico
+  &:has(.discipline-badge[style*="3b82f6"]) {
+    &:hover {
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+    }
+  }
+  
+  // OT - Occupational Therapy específico  
+  &:has(.discipline-badge[style*="10b981"]) {
+    &:hover {
+      box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
+    }
+  }
+  
+  // ST - Speech Therapy específico
+  &:has(.discipline-badge[style*="f59e0b"]) {
+    &:hover {
+      box-shadow: 0 20px 40px rgba(245, 158, 11, 0.15);
+    }
+  }
+}
+
+// Efectos responsivos mejorados para la sección de visitas
+@media (max-width: 768px) {
+  .approved-visits-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    
+    .visits-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      
+      .visit-card {
+        padding: 16px;
+        
+        .visit-header {
+          .discipline-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+          }
+        }
+        
+        .visit-inputs .input-row {
+          flex-direction: column;
+          gap: 12px;
+        }
+      }
+    }
+  }
+  
+  .visits-grid-view {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    
+    .visit-card-view {
+      padding: 16px;
+      
+      &:hover {
+        transform: translateY(-4px) scale(1.01);
+      }
+      
+      .visit-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        
+        .discipline-badge {
+          align-self: flex-start;
+        }
+        
+        .status-badge {
+          align-self: flex-start;
+        }
+      }
+      
+      .visit-stats .stats-row {
+        gap: 8px;
+        
+        .stat .stat-value {
+          font-size: 18px;
+        }
+      }
+    }
+  }
+}
+
+// Microinteracciones adicionales
+.visit-card-view:hover {
+  .stat-value {
+    transform: scale(1.1);
+    color: #3b82f6 !important;
+  }
+  
+  .progress-text {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+  
+  .discipline-name {
+    color: #1e293b;
+    font-weight: 600;
+  }
+}
+
+// Efectos de carga suaves
+.approved-visits-section-view {
+  .visits-grid-view {
+    opacity: 0;
+    animation: fadeInGrid 0.8s ease-out 0.3s forwards;
+  }
+}
+
+@keyframes fadeInGrid {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ESTILOS MEJORADOS PARA INPUTS EDITABLES DE VISITAS
+.approved-visits-section {
+  .visit-card {
+    .visit-inputs {
+      .input-row {
+        .input-group {
+          label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+          }
+          
+          .visit-input {
+            width: 100%;
+            height: 45px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            background: #ffffff;
+            color: #1e293b;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            
+            // Remove default number input arrows
+            -moz-appearance: textfield;
+            &::-webkit-outer-spin-button,
+            &::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+            
+            &::placeholder {
+              color: #cbd5e1;
+              font-weight: 400;
+            }
+            
+            &:hover:not(:focus) {
+              border-color: #cbd5e1;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+              transform: translateY(-1px);
+            }
+            
+            &:focus {
+              outline: none;
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+              transform: translateY(-2px) scale(1.02);
+              background: #fafbff;
+            }
+            
+            &:disabled {
+              background: #f8fafc;
+              color: #94a3b8;
+              cursor: not-allowed;
+              border-color: #e2e8f0;
+            }
+          }
+          
+          .approved-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          
+          .used-input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+        }
+      }
+      
+      .status-selector {
+        margin-top: 16px;
+        
+        label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+          display: block;
+        }
+        
+        .status-select {
+          width: 100%;
+          height: 45px;
+          padding: 12px 16px;
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 500;
+          background: #ffffff;
+          color: #1e293b;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+          background-position: right 14px center;
+          background-repeat: no-repeat;
+          background-size: 16px;
+          padding-right: 40px;
+          
+          &:hover:not(:focus) {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+          }
+          
+          &:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b5cf6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+          }
+          
+          option {
+            padding: 10px;
+            font-weight: 500;
+            
+            &:hover {
+              background: #f8fafc;
+            }
+          }
+        }
+      }
+    }
+    
+    // Discipline specific styling
+    &:nth-child(1) { // PT
+      .visit-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    &:nth-child(2) { // OT
+      .visit-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    &:nth-child(3) { // ST
+      .visit-input:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+// Animation for value changes
+.visit-input {
+  &.value-changed {
+    animation: valueChange 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+}
+
+@keyframes valueChange {
+  0% {
+    transform: scale(1);
+    background: #ffffff;
+  }
+  50% {
+    transform: scale(1.05);
+    background: #f0f9ff;
+  }
+  100% {
+    transform: scale(1);
+    background: #ffffff;
+  }
+}
+
+// Status indicator styles
+.status-select {
+  &[value="waiting"] {
+    color: #64748b;
+    background-color: #f8fafc;
+  }
+  
+  &[value="active"] {
+    color: #10b981;
+    background-color: #ecfdf5;
+  }
+  
+  &[value="no_more"] {
+    color: #ef4444;
+    background-color: #fef2f2;
+  }
+}
+
+// Responsive improvements
+@media (max-width: 768px) {
+  .approved-visits-section {
+    .visit-card {
+      .visit-inputs {
+        .input-row {
+          gap: 8px;
+        }
+        
+        .visit-input {
+          height: 40px;
+          font-size: 14px;
+          padding: 10px 12px;
+        }
+        
+        .status-select {
+          height: 40px;
+          font-size: 13px;
+          padding: 10px 12px;
+        }
+      }
+    }
+  }
+}

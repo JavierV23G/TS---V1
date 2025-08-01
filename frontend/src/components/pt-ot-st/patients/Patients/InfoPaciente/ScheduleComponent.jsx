@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import '../../../../../styles/developer/Patients/InfoPaciente/ScheduleComponent.scss';
-import VisitCompletionModal from './NotesAndSign/Evaluation/VisitCompletionModal';
+import '../../../../../styles/pt-ot-st/Patients/InfoPaciente/ScheduleComponent.scss';
+import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import SignaturePad from './SignaturePad';
 
 const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
@@ -694,26 +694,46 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
   };
 
   // Manejar guardado del formulario de finalización
-  const handleCompletionFormSave = async (formData) => {
+  const handleCompletionFormSave = async (formData, options = {}) => {
     console.log('Saving completion form data:', formData);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const updatedVisits = visits.map((visit) =>
-          visit.id === completionVisitData.id
-            ? {
-                ...visit,
-                evaluationCompleted: true,
-                evaluationData: formData,
-              }
-            : visit
-        );
-        setVisits(updatedVisits);
-        if (onUpdateSchedule) {
-          onUpdateSchedule(updatedVisits);
-        }
-        resolve();
-      }, 2000);
-    });
+    
+    try {
+      // Get the note for this visit
+      const noteResponse = await fetch(`http://localhost:8000/visit-notes/${completionVisitData.id}`);
+      if (!noteResponse.ok) {
+        throw new Error('Failed to fetch note');
+      }
+      const noteData = await noteResponse.json();
+      
+      // Update the note with new data and completed status
+      const updateResponse = await fetch(`http://localhost:8000/visit-notes/${noteData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: options.isCompleted ? "Completed" : "Pending",
+          sections_data: formData,
+          therapist_signature: formData.therapist_signature,
+          patient_signature: formData.patient_signature,
+          visit_date_signature: formData.visit_date_signature
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update note');
+      }
+      
+      const updatedNote = await updateResponse.json();
+      
+      // Refresh visits list to show updated status
+      await fetchVisits();
+      
+      return updatedNote;
+    } catch (error) {
+      console.error('Error saving completion form:', error);
+      throw error;
+    }
   };
 
   // Obtener nombre del terapeuta por ID
@@ -1599,13 +1619,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                     <i className="fas fa-calendar-times"></i>
                     Missed Visit
                   </button>
-                  <button 
-                    className={`tab-button ${activeTab === 'reschedule' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('reschedule')}
-                  >
-                    <i className="fas fa-calendar-alt"></i>
-                    Reschedule
-                  </button>
                 </div>
                 
                 <div className="tab-content">
@@ -1778,49 +1791,6 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
                       </div>
                     </div>
                   )}
-                  
-                  {activeTab === 'reschedule' && (
-                    <div className="reschedule-tab">
-                      <div className="info-message">
-                        <i className="fas fa-info-circle"></i>
-                        <p>Please select a new date for this visit. The current visit details will be preserved.</p>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Original Date</label>
-                        <input
-                          type="date"
-                          value={formData.date}
-                          readOnly
-                          className="form-input readonly"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>New Date <span className="required">*</span></label>
-                        <input
-                          type="date"
-                          value={rescheduleDate}
-                          onChange={(e) => setRescheduleDate(e.target.value)}
-                          className="form-input"
-                          min={certPeriodDates.startDate || undefined}
-                          max={certPeriodDates.endDate || undefined}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Reason for Rescheduling</label>
-                        <textarea
-                          name="rescheduleReason"
-                          value={formData.notes}
-                          onChange={handleInputChange}
-                          placeholder="Enter reason for rescheduling"
-                          className="form-input"
-                          rows="4"
-                        ></textarea>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1860,10 +1830,13 @@ const ScheduleComponent = ({ patient, onUpdateSchedule, certPeriodDates }) => {
         </div>
       </div>
 
-      <VisitCompletionModal
+      <NoteTemplateModal
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
-        visitData={completionVisitData}
+        patientData={patient}
+        disciplina={completionVisitData?.discipline || 'PT'}
+        tipoNota="Initial Evaluation"
+        initialData={completionVisitData}
         onSave={handleCompletionFormSave}
       />
 

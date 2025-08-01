@@ -1,555 +1,617 @@
 import React, { useState, useEffect } from 'react';
 import '../../../../../styles/developer/Patients/InfoPaciente/MedicalInfoComponent.scss';
 
-const MedicalInfoComponent = ({ patient, onUpdateMedicalInfo }) => {
+const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [medicalData, setMedicalData] = useState({
-    weight: 0,
-    height: 0, // Height in inches (total)
-    feet: 0,   // Added feet for display
-    inches: 0, // Added inches for display
+    weight: '',
+    height: '',
+    feet: '',
+    inches: '',
     nursingDiagnosis: '',
     pmh: '',
     wbs: '',
     clinicalGrouping: '',
-    homebound: ''
+    homebound: '',
+    physician: '',
+    nurse: '',
+    urgencyLevel: ''
   });
   
-  // Initialize with patient data
+  const [approvedVisits, setApprovedVisits] = useState({
+    pt: 0,
+    ot: 0,
+    st: 0
+  });
+
+  // Cargar datos médicos del paciente
   useEffect(() => {
-    if (patient?.medicalInfo) {
-      // Convert total inches to feet and inches for display
-      const totalInches = patient.medicalInfo.height || 0;
-      const feet = Math.floor(totalInches / 12);
-      const inches = Math.round((totalInches % 12) * 10) / 10; // Round to 1 decimal place
+    if (patient) {
+      const totalInches = patient.height ? parseFloat(patient.height) : 0;
+      const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
+      const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
       
       setMedicalData({
-        weight: patient.medicalInfo.weight || 0,
-        height: totalInches,
+        weight: patient.weight || '',
+        height: totalInches.toString() || '',
         feet: feet,
         inches: inches,
-        nursingDiagnosis: patient.medicalInfo.nursingDiagnosis || '',
-        pmh: patient.medicalInfo.pmh || '',
-        wbs: patient.medicalInfo.wbs || '',
-        clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || ''
+        nursingDiagnosis: patient.nursing_diagnosis || '',
+        pmh: patient.past_medical_history || '',
+        wbs: patient.weight_bearing_status || '',
+        clinicalGrouping: patient.clinical_grouping || '',
+        homebound: patient.homebound_status || '',
+        physician: patient.physician || '',
+        nurse: patient.nurse || '',
+        urgencyLevel: patient.urgency_level || ''
       });
     }
   }, [patient]);
-  
-  // Handle input changes for text fields
+
+  // Cargar approved visits del cert period
+  useEffect(() => {
+    fetchApprovedVisits();
+  }, [certPeriodId]);
+
+  const fetchApprovedVisits = async () => {
+    if (!certPeriodId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8000/cert-periods/${certPeriodId}`);
+      const certData = await response.json();
+      
+      setApprovedVisits({
+        pt: certData.pt_approved_visits || 0,
+        ot: certData.ot_approved_visits || 0,
+        st: certData.st_approved_visits || 0
+      });
+    } catch (error) {
+      console.error('Error fetching approved visits:', error);
+    }
+  };
+
+  // Actualizar información médica
+  const saveMedicalInfo = async () => {
+    setLoading(true);
+    try {
+      const heightInInches = medicalData.feet && medicalData.inches 
+        ? (parseInt(medicalData.feet) * 12) + parseFloat(medicalData.inches)
+        : parseFloat(medicalData.height) || 0;
+
+      const updateData = {
+        weight: medicalData.weight,
+        height: heightInInches.toString(),
+        nursing_diagnosis: medicalData.nursingDiagnosis,
+        past_medical_history: medicalData.pmh,
+        weight_bearing_status: medicalData.wbs,
+        clinical_grouping: medicalData.clinicalGrouping,
+        homebound_status: medicalData.homebound,
+        physician: medicalData.physician,
+        nurse: medicalData.nurse,
+        urgency_level: medicalData.urgencyLevel
+      };
+
+      const params = new URLSearchParams();
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key]) params.append(key, updateData[key]);
+      });
+
+      const response = await fetch(`http://localhost:8000/patients/${patient.id}?${params.toString()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        setIsEditing(false);
+        onUpdateMedicalInfo?.();
+      }
+    } catch (error) {
+      console.error('Error updating medical info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Actualizar approved visits
+  const updateApprovedVisits = async (discipline, value) => {
+    try {
+      const field = `${discipline}_approved_visits`;
+      const response = await fetch(`http://localhost:8000/cert-periods/${certPeriodId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: parseInt(value) || 0 })
+      });
+
+      if (response.ok) {
+        setApprovedVisits(prev => ({
+          ...prev,
+          [discipline]: parseInt(value) || 0
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating approved visits:', error);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setMedicalData({
-      ...medicalData,
+    setMedicalData(prev => ({
+      ...prev,
       [name]: value
-    });
-  };
-  
-  // Handle weight input specifically
-  const handleWeightChange = (e) => {
-    const value = parseFloat(e.target.value) || 0;
-    setMedicalData({
-      ...medicalData,
-      weight: value
-    });
-  };
-  
-  // Handle feet input for height
-  const handleFeetChange = (e) => {
-    const feetValue = parseInt(e.target.value) || 0;
-    // Calculate total height in inches
-    const totalInches = (feetValue * 12) + medicalData.inches;
-    
-    setMedicalData({
-      ...medicalData,
-      feet: feetValue,
-      height: totalInches
-    });
-  };
-  
-  // Handle inches input for height
-  const handleInchesChange = (e) => {
-    const inchesValue = parseFloat(e.target.value) || 0;
-    // Calculate total height in inches
-    const totalInches = (medicalData.feet * 12) + inchesValue;
-    
-    setMedicalData({
-      ...medicalData,
-      inches: inchesValue,
-      height: totalInches
-    });
-  };
-  
-  // Save changes
-  const handleSaveChanges = () => {
-    // Show saving animation
-    setIsSaving(true);
-    
-    // Prepare data for saving - we want to save the total height in inches
-    const dataToSave = {
-      ...medicalData,
-      // Ensure height is saved as total inches
-      height: (medicalData.feet * 12) + medicalData.inches
-    };
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Notify parent component
-      if (onUpdateMedicalInfo) {
-        onUpdateMedicalInfo(dataToSave);
-      }
-      
-      // Hide saving animation and exit edit mode
-      setIsSaving(false);
-      setIsEditing(false);
-    }, 1500); // 1.5 seconds for animation to be visible
-  };
-  
-  // Cancel editing
-  const handleCancelEdit = () => {
-    // Restore original data
-    if (patient?.medicalInfo) {
-      const totalInches = patient.medicalInfo.height || 0;
-      const feet = Math.floor(totalInches / 12);
-      const inches = Math.round((totalInches % 12) * 10) / 10;
-      
-      setMedicalData({
-        weight: patient.medicalInfo.weight || 0,
-        height: totalInches,
-        feet: feet,
-        inches: inches,
-        nursingDiagnosis: patient.medicalInfo.nursingDiagnosis || '',
-        pmh: patient.medicalInfo.pmh || '',
-        wbs: patient.medicalInfo.wbs || '',
-        clinicalGrouping: patient.medicalInfo.clinicalGrouping || '',
-        homebound: patient.medicalInfo.homebound || ''
-      });
-    } else {
-      // Reset to defaults if no patient data
-      setMedicalData({
-        weight: 0,
-        height: 0,
-        feet: 0,
-        inches: 0,
-        nursingDiagnosis: '',
-        pmh: '',
-        wbs: '',
-        clinicalGrouping: '',
-        homebound: ''
-      });
-    }
-    
-    // Exit edit mode
-    setIsEditing(false);
+    }));
   };
 
-  // Format height for display in view mode
   const formatHeight = (totalInches) => {
-    if (!totalInches || totalInches <= 0) return null;
-    
+    if (!totalInches) return 'Not set';
     const feet = Math.floor(totalInches / 12);
     const inches = Math.round((totalInches % 12) * 10) / 10;
-    
-    return {
-      feet,
-      inches
-    };
+    return `${feet}'${inches}"`;
   };
 
-  // Get icon for clinical grouping
-  const getClinicalGroupingIcon = (grouping) => {
-    if (!grouping) return 'fas fa-layer-group';
-    
-    if (grouping.includes('Cardiac') || grouping.includes('Circulatory')) 
-      return 'fas fa-heartbeat';
-    if (grouping.includes('Respiratory')) 
-      return 'fas fa-lungs';
-    if (grouping.includes('Neuro')) 
-      return 'fas fa-brain';
-    if (grouping.includes('Wound')) 
-      return 'fas fa-band-aid';
-    if (grouping.includes('Musculoskeletal')) 
-      return 'fas fa-bone';
-    if (grouping.includes('Behavioral')) 
-      return 'fas fa-brain';
-    if (grouping.includes('Endocrine')) 
-      return 'fas fa-pills';
-    
-    return 'fas fa-layer-group';
-  };
-  
-  // Get color for clinical grouping
-  const getClinicalGroupingColor = (grouping) => {
-    if (!grouping) return '#64748b';
-    
-    if (grouping.includes('Cardiac') || grouping.includes('Circulatory')) 
-      return '#ef4444';
-    if (grouping.includes('Respiratory')) 
-      return '#3b82f6';
-    if (grouping.includes('Neuro')) 
-      return '#8b5cf6';
-    if (grouping.includes('Wound')) 
-      return '#f97316';
-    if (grouping.includes('Musculoskeletal')) 
-      return '#14b8a6';
-    if (grouping.includes('Behavioral')) 
-      return '#a855f7';
-    if (grouping.includes('Endocrine')) 
-      return '#eab308';
-    
-    return '#64748b';
-  };
-  
+  if (loading) return <div>Loading medical info...</div>;
+
   return (
     <div className="medical-info-component">
+      <div className="component-decoration">
+        <div className="glass-orb top-left"></div>
+        <div className="glass-orb bottom-right"></div>
+      </div>
+      
       <div className="card-header">
         <div className="header-title">
-          <i className="fas fa-notes-medical"></i>
+          <div className="header-icon-wrapper">
+            <i className="fas fa-heartbeat"></i>
+            <div className="icon-glow"></div>
+          </div>
           <h3>Medical Information</h3>
         </div>
         <div className="header-actions">
-          {!isEditing && (
-            <button 
-              className="edit-button" 
-              onClick={() => setIsEditing(true)}
-              title="Edit medical information"
-            >
-              <i className="fas fa-edit"></i>
-            </button>
-          )}
+          <button 
+            className="edit-button"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            <i className={isEditing ? 'fas fa-times' : 'fas fa-edit'}></i>
+          </button>
         </div>
+        <div className="header-decoration"></div>
       </div>
       
       <div className="card-body">
-        {isEditing ? (
-          // Edit form
-          <div className="edit-form">
-            <h4>
-              <i className="fas fa-pen-fancy"></i>
-              Edit Medical Information
-            </h4>
-            
-            {isSaving && (
-              <div className="saving-overlay">
-                <div className="saving-animation">
-                  <div className="loader">
-                    <svg className="circular" viewBox="25 25 50 50">
-                      <circle className="path" cx="50" cy="50" r="20" fill="none" strokeWidth="3" strokeMiterlimit="10"/>
-                    </svg>
-                  </div>
-                  <div className="saving-text">
-                    <span>Saving</span>
-                    <span className="dots"><span>.</span><span>.</span><span>.</span></span>
+
+      {isEditing ? (
+        <div className="edit-form glass-form">
+          <div className="edit-form-decoration"></div>
+          {loading && (
+            <div className="saving-overlay">
+              <div className="backdrop-blur"></div>
+              <div className="saving-animation">
+                <div className="loader">
+                  <svg className="circular" viewBox="25 25 50 50">
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                      </linearGradient>
+                    </defs>
+                    <circle className="path" cx="50" cy="50" r="20" fill="none" strokeWidth="2" strokeMiterlimit="10"/>
+                  </svg>
+                </div>
+                <div className="saving-text">
+                  Saving
+                  <div className="dots">
+                    <span>.</span>
+                    <span>.</span>
+                    <span>.</span>
                   </div>
                 </div>
-                <div className="backdrop-blur"></div>
               </div>
-            )}
-            
+            </div>
+          )}
+          
+          <h4><i className="fas fa-weight"></i>Physical Information</h4>
+          <div className="form-group weight-input">
+            <label><i className="fas fa-weight"></i>Weight</label>
+            <div className="input-with-icon">
+              <input
+                name="weight"
+                value={medicalData.weight}
+                onChange={handleInputChange}
+                placeholder="Enter weight"
+                className="glass-input"
+              />
+              <span className="unit-indicator">lbs</span>
+            </div>
+          </div>
+          
+          <div className="form-group height-input">
+            <label><i className="fas fa-ruler-vertical"></i>Height</label>
             <div className="form-row">
-              <div className="form-group weight-input">
-                <label>
-                  <i className="fas fa-weight"></i>
-                  Weight (lbs)
-                </label>
-                <div className="input-with-icon">
-                  <input 
-                    type="number" 
-                    name="weight"
-                    value={medicalData.weight} 
-                    onChange={handleWeightChange}
-                    min="0"
-                    step="0.1"
-                  />
-                  <span className="unit-indicator">lbs</span>
-                </div>
-              </div>
-              
-              {/* Updated height input with feet and inches */}
-              <div className="form-group height-input">
-                <label>
-                  <i className="fas fa-ruler-vertical"></i>
-                  Height
-                </label>
-                <div className="height-inputs-container">
-                  <div className="input-with-icon ft-input">
-                    <input 
-                      type="number" 
-                      name="feet"
-                      value={medicalData.feet} 
-                      onChange={handleFeetChange}
-                      min="0"
-                      step="1"
-                    />
-                    <span className="unit-indicator">ft</span>
-                  </div>
-                  <div className="input-with-icon in-input">
-                    <input 
-                      type="number" 
-                      name="inches"
-                      value={medicalData.inches} 
-                      onChange={handleInchesChange}
-                      min="0"
-                      max="11.9"
-                      step="0.1"
-                    />
-                    <span className="unit-indicator">in</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="form-group clinical-group-select">
-                <label>
-                  <i className="fas fa-layer-group"></i>
-                  Clinical Grouping
-                </label>
-                <select 
-                  name="clinicalGrouping"
-                  value={medicalData.clinicalGrouping} 
+              <div className="form-group">
+                <input
+                  name="feet"
+                  value={medicalData.feet}
                   onChange={handleInputChange}
-                >
-                  <option value="">Select Wound Bed Status</option>
-                  <option value="No wounds present">No wounds present</option>
-                  <option value="Wound healing well, no signs of infection">Wound healing well, no signs of infection</option>
-                  <option value="Clean wound, granulating tissue present">Clean wound, granulating tissue present</option>
-                  <option value="Red, inflamed wound edges">Red, inflamed wound edges</option>
-                  <option value="Wound with serous drainage">Wound with serous drainage</option>
-                  <option value="Wound with purulent drainage">Wound with purulent drainage</option>
-                  <option value="Wound with necrotic tissue">Wound with necrotic tissue</option>
-                  <option value="Pressure ulcer, Stage 1">Pressure ulcer, Stage 1</option>
-                  <option value="Pressure ulcer, Stage 2">Pressure ulcer, Stage 2</option>
-                  <option value="Pressure ulcer, Stage 3">Pressure ulcer, Stage 3</option>
-                  <option value="Pressure ulcer, Stage 4">Pressure ulcer, Stage 4</option>
-                  <option value="Unstageable pressure ulcer">Unstageable pressure ulcer</option>
-                  <option value="Deep tissue pressure injury">Deep tissue pressure injury</option>
-                  <option value="Venous ulcer">Venous ulcer</option>
-                  <option value="Arterial ulcer">Arterial ulcer</option>
-                  <option value="Diabetic ulcer">Diabetic ulcer</option>
-                  <option value="Surgical wound, well-healing">Surgical wound, well-healing</option>
-                  <option value="Surgical wound, dehiscence present">Surgical wound, dehiscence present</option>
-                  <option value="Abrasion/Skin tear">Abrasion/Skin tear</option>
-                  <option value="To be assessed">To be assessed</option>
-                  <option value="TBD">TBD</option>
-                </select>
+                  placeholder="Feet"
+                  className="glass-input"
+                  style={{ width: '80px' }}
+                />
               </div>
-            </div>
-            
-            <div className="form-group">
-              <label>
-                <i className="fas fa-heartbeat"></i>
-                Nursing Diagnosis
-              </label>
-              <textarea 
-                name="nursingDiagnosis"
-                value={medicalData.nursingDiagnosis} 
-                onChange={handleInputChange}
-                placeholder="Enter nursing diagnosis"
-                rows="2"
-              ></textarea>
-            </div>
-            
-            <div className="form-group">
-              <label>
-                <i className="fas fa-history"></i>
-                PMH (Past Medical History)
-              </label>
-              <textarea 
-                name="pmh"
-                value={medicalData.pmh} 
-                onChange={handleInputChange}
-                placeholder="Enter past medical history"
-                rows="3"
-              ></textarea>
-            </div>
-            
-            <div className="form-group">
-              <label>
-                <i className="fas fa-band-aid"></i>
-                WBS (Wound Bed Status)
-              </label>
-              <textarea 
-                name="wbs"
-                value={medicalData.wbs} 
-                onChange={handleInputChange}
-                placeholder="Enter wound bed status"
-                rows="2"
-              ></textarea>
-            </div>
-            
-            <div className="form-group">
-              <label>
-                <i className="fas fa-home"></i>
-                Homebound Status
-              </label>
-              <textarea 
-                name="homebound"
-                value={medicalData.homebound} 
-                onChange={handleInputChange}
-                placeholder="Enter homebound reason"
-                rows="2"
-              ></textarea>
-            </div>
-            
-            <div className="form-actions">
-              <button className="cancel-btn" onClick={handleCancelEdit}>
-                <i className="fas fa-times"></i>
-                Cancel
-              </button>
-              <button 
-                className="save-btn" 
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-              >
-                <i className="fas fa-check"></i>
-                Save Changes
-              </button>
+              <span style={{ alignSelf: 'flex-end', marginBottom:'10px', fontSize:'18px', fontWeight:'600' }}>'</span>
+              <div className="form-group">
+                <input
+                  name="inches"
+                  value={medicalData.inches}
+                  onChange={handleInputChange}
+                  placeholder="Inches"
+                  className="glass-input"
+                  style={{ width: '80px' }}
+                />
+              </div>
+              <span style={{ alignSelf: 'flex-end', marginBottom:'10px', fontSize:'18px', fontWeight:'600' }}>"</span>
             </div>
           </div>
-        ) : (
-          // View mode
-          <div className="medical-info-display">
-            <div className="info-section weight-section">
-              <div className="info-icon">
-                <i className="fas fa-weight"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">Weight</div>
-                <div className="info-value weight-value">
-                  {medicalData.weight > 0 ? (
-                    <div className="data-display">
-                      <span className="primary-data">{medicalData.weight}</span>
-                      <span className="secondary-data">lbs</span>
-                    </div>
-                  ) : (
-                    <span className="no-data">Not recorded</span>
-                  )}
-                </div>
-              </div>
+
+          <h4><i className="fas fa-user-md"></i>Medical Details</h4>
+          
+          <div className="form-group physician-input">
+            <label><i className="fas fa-user-md"></i>Physician</label>
+            <input
+              name="physician"
+              value={medicalData.physician}
+              onChange={handleInputChange}
+              placeholder="Physician name"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group nurse-input">
+            <label><i className="fas fa-user-nurse"></i>Nurse</label>
+            <input
+              name="nurse"
+              value={medicalData.nurse}
+              onChange={handleInputChange}
+              placeholder="Nurse name"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label><i className="fas fa-heartbeat"></i>Nursing Diagnosis</label>
+            <textarea
+              name="nursingDiagnosis"
+              value={medicalData.nursingDiagnosis}
+              onChange={handleInputChange}
+              placeholder="Nursing diagnosis"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label><i className="fas fa-history"></i>Past Medical History</label>
+            <textarea
+              name="pmh"
+              value={medicalData.pmh}
+              onChange={handleInputChange}
+              placeholder="Past medical history"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label><i className="fas fa-band-aid"></i>Weight Bearing Status</label>
+            <input
+              name="wbs"
+              value={medicalData.wbs}
+              onChange={handleInputChange}
+              placeholder="Weight bearing status"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group clinical-group-select">
+            <label><i className="fas fa-clipboard-list"></i>Clinical Grouping</label>
+            <input
+              name="clinicalGrouping"
+              value={medicalData.clinicalGrouping}
+              onChange={handleInputChange}
+              placeholder="Clinical grouping"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label><i className="fas fa-home"></i>Homebound Status</label>
+            <input
+              name="homebound"
+              value={medicalData.homebound}
+              onChange={handleInputChange}
+              placeholder="Homebound status"
+              className="glass-input"
+            />
+          </div>
+          
+          <div className="form-group urgency-level-select">
+            <label><i className="fas fa-exclamation-triangle"></i>Urgency Level</label>
+            <select
+              name="urgencyLevel"
+              value={medicalData.urgencyLevel}
+              onChange={handleInputChange}
+              className="glass-input"
+            >
+              <option value="">Select urgency level</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+
+          <div className="form-actions">
+            <button 
+              className="cancel-btn glass-btn" 
+              onClick={() => setIsEditing(false)}
+            >
+              <i className="fas fa-times"></i>
+              Cancel
+            </button>
+            <button 
+              className="save-btn glass-btn" 
+              onClick={saveMedicalInfo} 
+              disabled={loading}
+            >
+              <div className="btn-shine"></div>
+              <i className="fas fa-save"></i>
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="medical-info-display">
+          <div className="info-section weight-section">
+            <div className="info-icon">
+              <i className="fas fa-weight"></i>
             </div>
-            
-            {/* Updated height display with feet and inches */}
-            <div className="info-section height-section">
-              <div className="info-icon">
-                <i className="fas fa-ruler-vertical"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">Height</div>
-                <div className="info-value height-value">
-                  {medicalData.height > 0 ? (
-                    <div className="data-display">
-                      <span className="primary-data">
-                        {formatHeight(medicalData.height).feet}' {formatHeight(medicalData.height).inches}"
-                      </span>
-                      <span className="secondary-data">({medicalData.height} in)</span>
-                    </div>
-                  ) : (
-                    <span className="no-data">Not recorded</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="info-section">
-              <div className="info-icon">
-                <i className="fas fa-heartbeat"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">Nursing Diagnosis</div>
-                <div className="info-value">
-                  {medicalData.nursingDiagnosis ? (
-                    <div className="data-box nursing-diagnosis">
-                      {medicalData.nursingDiagnosis}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="info-section">
-              <div className="info-icon">
-                <i className="fas fa-history"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">PMH (Past Medical History)</div>
-                <div className="info-value">
-                  {medicalData.pmh ? (
-                    <div className="data-box pmh-data">
-                      {medicalData.pmh}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="info-section">
-              <div className="info-icon">
-                <i className="fas fa-band-aid"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">WBS (Wound Bed Status)</div>
-                <div className="info-value">
-                  {medicalData.wbs ? (
-                    <div className="data-box wbs-data">
-                      {medicalData.wbs}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not available</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="info-section clinical-section">
-              <div className="info-icon" style={{ 
-                color: getClinicalGroupingColor(medicalData.clinicalGrouping),
-                background: `${getClinicalGroupingColor(medicalData.clinicalGrouping)}15` 
-              }}>
-                <i className={getClinicalGroupingIcon(medicalData.clinicalGrouping)}></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">Clinical Grouping</div>
-                <div className="info-value">
-                  {medicalData.clinicalGrouping ? (
-                    <div className="clinical-grouping-badge" style={{ 
-                      color: getClinicalGroupingColor(medicalData.clinicalGrouping),
-                      borderColor: `${getClinicalGroupingColor(medicalData.clinicalGrouping)}50`,
-                      background: `${getClinicalGroupingColor(medicalData.clinicalGrouping)}10`
-                    }}>
-                      <i className={getClinicalGroupingIcon(medicalData.clinicalGrouping)}></i>
-                      <span>{medicalData.clinicalGrouping}</span>
-                    </div>
-                  ) : (
-                    <span className="no-data">Not assigned</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="info-section">
-              <div className="info-icon">
-                <i className="fas fa-home"></i>
-              </div>
-              <div className="info-content">
-                <div className="info-label">Homebound Status</div>
-                <div className="info-value">
-                  {medicalData.homebound ? (
-                    <div className="data-box homebound-data">
-                      {medicalData.homebound}
-                    </div>
-                  ) : (
-                    <span className="no-data">Not specified</span>
-                  )}
-                </div>
+            <div className="info-content">
+              <div className="info-label">Weight</div>
+              <div className="info-value">
+                {medicalData.weight ? (
+                  <div className="data-display weight-value">
+                    <span className="primary-data">{medicalData.weight}</span>
+                    <span className="secondary-data">lbs</span>
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
               </div>
             </div>
           </div>
-        )}
+
+          <div className="info-section height-section">
+            <div className="info-icon">
+              <i className="fas fa-ruler-vertical"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Height</div>
+              <div className="info-value">
+                {medicalData.height ? (
+                  <div className="data-display">
+                    <span className="primary-data">{formatHeight(parseFloat(medicalData.height))}</span>
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section physician-section">
+            <div className="info-icon">
+              <i className="fas fa-user-md"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Physician</div>
+              <div className="info-value">
+                {medicalData.physician ? (
+                  <div className="data-box physician-data">
+                    {medicalData.physician}
+                  </div>
+                ) : (
+                  <span className="no-data">Not assigned</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section nurse-section">
+            <div className="info-icon">
+              <i className="fas fa-user-nurse"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Nurse</div>
+              <div className="info-value">
+                {medicalData.nurse ? (
+                  <div className="data-box nurse-data">
+                    {medicalData.nurse}
+                  </div>
+                ) : (
+                  <span className="no-data">Not assigned</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section">
+            <div className="info-icon">
+              <i className="fas fa-heartbeat"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Nursing Diagnosis</div>
+              <div className="info-value">
+                {medicalData.nursingDiagnosis ? (
+                  <div className="data-box nursing-diagnosis">
+                    {medicalData.nursingDiagnosis}
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section">
+            <div className="info-icon">
+              <i className="fas fa-history"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Past Medical History</div>
+              <div className="info-value">
+                {medicalData.pmh ? (
+                  <div className="data-box pmh-data">
+                    {medicalData.pmh}
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section">
+            <div className="info-icon">
+              <i className="fas fa-band-aid"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Weight Bearing Status</div>
+              <div className="info-value">
+                {medicalData.wbs ? (
+                  <div className="data-box wbs-data">
+                    {medicalData.wbs}
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section clinical-section">
+            <div className="info-icon">
+              <i className="fas fa-clipboard-list"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Clinical Grouping</div>
+              <div className="info-value">
+                {medicalData.clinicalGrouping ? (
+                  <div className="clinical-grouping-badge">
+                    <i className="fas fa-clipboard-list"></i>
+                    <span>{medicalData.clinicalGrouping}</span>
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section">
+            <div className="info-icon">
+              <i className="fas fa-home"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Homebound Status</div>
+              <div className="info-value">
+                {medicalData.homebound ? (
+                  <div className="data-box homebound-data">
+                    {medicalData.homebound}
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="info-section urgency-section">
+            <div className="info-icon">
+              <i className="fas fa-exclamation-triangle"></i>
+            </div>
+            <div className="info-content">
+              <div className="info-label">Urgency Level</div>
+              <div className="info-value">
+                {medicalData.urgencyLevel ? (
+                  <div className={`urgency-level-badge urgency-${medicalData.urgencyLevel.toLowerCase()}`} style={{
+                    backgroundColor: medicalData.urgencyLevel === 'Critical' ? '#fef2f2' : 
+                                   medicalData.urgencyLevel === 'High' ? '#fef3c7' :
+                                   medicalData.urgencyLevel === 'Medium' ? '#ecfdf5' : '#f0f9ff',
+                    color: medicalData.urgencyLevel === 'Critical' ? '#dc2626' : 
+                           medicalData.urgencyLevel === 'High' ? '#d97706' :
+                           medicalData.urgencyLevel === 'Medium' ? '#059669' : '#0ea5e9',
+                    borderColor: medicalData.urgencyLevel === 'Critical' ? '#fecaca' : 
+                                medicalData.urgencyLevel === 'High' ? '#fed7aa' :
+                                medicalData.urgencyLevel === 'Medium' ? '#a7f3d0' : '#bae6fd'
+                  }}>
+                    <i className={
+                      medicalData.urgencyLevel === 'Critical' ? 'fas fa-exclamation-triangle' :
+                      medicalData.urgencyLevel === 'High' ? 'fas fa-exclamation' :
+                      medicalData.urgencyLevel === 'Medium' ? 'fas fa-info-circle' : 'fas fa-check-circle'
+                    }></i>
+                    <span>{medicalData.urgencyLevel}</span>
+                  </div>
+                ) : (
+                  <span className="no-data">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approved Visits Section */}
+      <div className="approved-visits-section">
+        <h5>
+          <i className="fas fa-calendar-check"></i>
+          Approved Visits (Visit Limits)
+        </h5>
+        <div className="visits-grid">
+          {[
+            { key: 'pt', name: 'Physical Therapy', icon: 'fas fa-walking', color: '#3b82f6' },
+            { key: 'ot', name: 'Occupational Therapy', icon: 'fas fa-hand-paper', color: '#10b981' },
+            { key: 'st', name: 'Speech Therapy', icon: 'fas fa-comments', color: '#f59e0b' }
+          ].map(discipline => (
+            <div key={discipline.key} className="visit-card">
+              <div className="visit-header">
+                <div className="discipline-icon" style={{ color: discipline.color }}>
+                  <i className={discipline.icon}></i>
+                </div>
+                <div className="discipline-info">
+                  <h6>{discipline.name}</h6>
+                  <div className="discipline-code">{discipline.key.toUpperCase()}</div>
+                </div>
+              </div>
+              <div className="visit-inputs">
+                <div className="input-row">
+                  <div className="input-group">
+                    <label>Approved Visits</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={approvedVisits[discipline.key]}
+                      onChange={(e) => updateApprovedVisits(discipline.key, e.target.value)}
+                      placeholder="0"
+                      className="visit-input approved-input"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="visits-note">
+          <i className="fas fa-info-circle"></i>
+          These limits prevent scheduling more visits than approved for each discipline.
+        </p>
+      </div>
       </div>
     </div>
   );
