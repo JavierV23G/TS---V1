@@ -1,95 +1,221 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../../../styles/developer/Security/SecurityDashboard.scss';
 import Header from '../../header/Header';
 import { useAuth } from '../../login/AuthContext';
-// import SecurityMetrics from './SecurityMetrics';
-// import ThreatIntelligence from './ThreatIntelligence';
-// import SecurityLogs from './SecurityLogs';
-// import ComplianceStatus from './ComplianceStatus';
+import failedAttemptsService from '../../login/FailedAttemptsService';
+import '../../../styles/developer/Security/SecurityDashboard.scss';
+import '../../../styles/developer/Security/ClinicalStyles.scss';
 
 const SecurityDashboard = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [activeSubSection, setActiveSubSection] = useState(null);
   const [securityData, setSecurityData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
+  const [allUsers, setAllUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [activeBlocks, setActiveBlocks] = useState([]);
+  const [activeSessions, setActiveSessions] = useState([]);
   const [revoking, setRevoking] = useState({});
-  
-  const intervalRef = useRef(null);
+  const [blocking, setBlocking] = useState({});
+  const [blockDetails, setBlockDetails] = useState({});
+  const [refreshing, setRefreshing] = useState(false);
+  const [terminating, setTerminating] = useState({});
+
+  // Remove inline styles - using SCSS instead
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
-    };
-    
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    
-    return () => window.removeEventListener('resize', handleResize);
+    fetchData();
+    // Actualizar cada 5 segundos para mejor tiempo real
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchSecurityData = async () => {
+  const fetchData = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch security stats
-      const statsResponse = await fetch('http://localhost:8000/auth/security-stats', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-
-      if (!statsResponse.ok) {
-        throw new Error('Failed to fetch security data');
-      }
-
-      const statsData = await statsResponse.json();
-      setSecurityData(statsData);
-
-      // Fetch active blocks
-      const blocksResponse = await fetch('http://localhost:8000/auth/active-blocks', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-
-      if (blocksResponse.ok) {
-        const blocksData = await blocksResponse.json();
-        setActiveBlocks(blocksData['📊 ACTIVE_BLOCKS'] || []);
-      }
-
+      if (!refreshing) setLoading(true);
+      await Promise.all([fetchSecurityData(), fetchUsers(), fetchActiveSessions()]);
       setError(null);
     } catch (err) {
-      console.error('Error fetching security data:', err);
+      console.error('[FRONTEND] Error fetching data:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchSecurityData = async () => {
+    const response = await fetch('http://localhost:8000/auth/security-stats');
+    if (!response.ok) throw new Error('Failed to fetch security data');
+    const data = await response.json();
+    setSecurityData(data);
+
+    const blocksResponse = await fetch('http://localhost:8000/auth/active-blocks');
+    if (blocksResponse.ok) {
+      const blocksData = await blocksResponse.json();
+      const blocks = blocksData['📊 ACTIVE_BLOCKS'] || [];
+      setActiveBlocks(blocks);
+      
+      // Procesar detalles de bloqueos con información más completa
+      const details = {};
+      blocks.forEach(block => {
+        details[block.username] = {
+          level: block.block_level || 7,
+          type: block.block_level === 7 ? 'Permanent' : getBlockTypeText(block.block_level),
+          reason: block.reason || 'Security block',
+          blocked_by: block.blocked_by || 'System',
+          blocked_at: block.blocked_at || new Date().toISOString(),
+          expires_at: block.expires_at || null
+        };
+      });
+      setBlockDetails(details);
+    }
+  };
+
+  const getBlockTypeText = (level) => {
+    const types = {
+      1: '1 Minute',
+      2: '2 Minutes', 
+      3: '10 Minutes',
+      4: '30 Minutes',
+      5: '1 Hour',
+      6: '2 Hours',
+      7: 'Permanent'
+    };
+    return types[level] || `Level ${level}`;
+  };
+
+  const fetchUsers = async () => {
+    const response = await fetch('http://localhost:8000/auth/all-users');
+    if (!response.ok) throw new Error('Failed to fetch users');
+    const data = await response.json();
+    const users = data.users || data['👥 USERS'] || [];
+    setAllUsers(users);
+    setFilteredUsers(users);
+  };
+
+  const fetchActiveSessions = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/auth/active-sessions');
+      if (response.ok) {
+        const data = await response.json();
+        const sessions = data['🔐 ACTIVE_SESSIONS'] || [];
+        setActiveSessions(sessions);
+      }
+    } catch (err) {
+      console.error('[FRONTEND] Error fetching active sessions:', err);
+    }
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    if (!term) {
+      setFilteredUsers(getActiveUsers());
+    } else {
+      const filtered = getActiveUsers().filter(user =>
+        user.name?.toLowerCase().includes(term.toLowerCase()) ||
+        user.username?.toLowerCase().includes(term.toLowerCase()) ||
+        user.email?.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  };
+
+  // Separar usuarios activos de los bloqueados
+  const getActiveUsers = () => {
+    const blockedUsernames = activeBlocks.map(block => block.username);
+    return allUsers.filter(user => !blockedUsernames.includes(user.username));
+  };
+
+  const getBlockedUsers = () => {
+    const blockedUsernames = activeBlocks.map(block => block.username);
+    return allUsers.filter(user => blockedUsernames.includes(user.username));
+  };
+
+  // Organizar sesiones por roles
+  const getSessionsByRole = () => {
+    const sessionsByRole = {};
+    activeSessions.forEach(session => {
+      const user = allUsers.find(u => u.username === session.username);
+      const role = user ? user.role.split(' - ')[0] : 'Unknown';
+      
+      if (!sessionsByRole[role]) {
+        sessionsByRole[role] = [];
+      }
+      sessionsByRole[role].push({...session, userRole: user?.role || 'Unknown'});
+    });
+    return sessionsByRole;
+  };
+
+  const getRoleIcon = (role) => {
+    switch(role.toLowerCase()) {
+      case 'developer': return 'fas fa-code';
+      case 'admin': return 'fas fa-user-shield';
+      case 'support': return 'fas fa-headset';
+      case 'manager': return 'fas fa-user-tie';
+      case 'staff': return 'fas fa-user-md';
+      default: return 'fas fa-user';
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch(role.toLowerCase()) {
+      case 'developer': return 'var(--info-blue)';
+      case 'admin': return 'var(--danger-red)';
+      case 'support': return 'var(--success-green)';
+      case 'manager': return 'var(--warning-orange)';
+      case 'staff': return 'var(--primary-blue)';
+      default: return 'var(--gray-500)';
+    }
+  };
+
+  const blockUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setBlocking(prev => ({ ...prev, [selectedUser.username]: true }));
+      
+      const response = await fetch('http://localhost:8000/auth/manual-block-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: selectedUser.username,
+          block_level: 7,
+          blocked_by: currentUser?.username || 'developer',
+          reason: `Permanent security block applied by ${currentUser?.username || 'developer'}`
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data['⚡ RESULT']?.success) {
+        setShowBlockModal(false);
+        await fetchData();
+      } else {
+        setError(data['⚡ RESULT']?.message || 'Failed to block user');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBlocking(prev => ({ ...prev, [selectedUser.username]: false }));
+    }
+  };
+
   const revokeBlock = async (username) => {
     try {
+      console.log(`[FRONTEND] 🚀 Iniciando revocación para ${username}`);
       setRevoking(prev => ({ ...prev, [username]: true }));
-
+      setRefreshing(true);
+      
       const response = await fetch('http://localhost:8000/auth/revoke-block', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: username,
           revoked_by: currentUser?.username || 'developer'
@@ -97,406 +223,642 @@ const SecurityDashboard = () => {
       });
 
       const data = await response.json();
-
+      console.log(`[FRONTEND] Backend response:`, data);
+      
       if (response.ok && data['⚡ RESULT']?.success) {
-        // Refresh data immediately after successful revocation
-        await fetchSecurityData();
+        console.log(`[FRONTEND] ✅ Backend confirmó revocación para ${username}`);
         
-        // Show success message (you could add a toast notification here)
-        console.log(`✅ Block revoked successfully for ${username}`);
+        // CRÍTICO: Limpiar localStorage del frontend
+        console.log(`[FRONTEND] 🧹 Limpiando localStorage para ${username}`);
+        
+        // Verificar estado ANTES de limpiar
+        const beforeClean = failedAttemptsService.isAccountLocked(username);
+        console.log(`[FRONTEND] Estado ANTES de limpiar:`, beforeClean);
+        
+        // Limpiar localStorage
+        const cleanResult = failedAttemptsService.forceUnlockAccount(username);
+        console.log(`[FRONTEND] Resultado de limpieza:`, cleanResult);
+        
+        // Verificar estado DESPUÉS de limpiar
+        const afterClean = failedAttemptsService.isAccountLocked(username);
+        console.log(`[FRONTEND] Estado DESPUÉS de limpiar:`, afterClean);
+        
+        console.log(`[FRONTEND] ✅ localStorage limpiado para ${username}`);
+        
+        // Esperar un poco más para que el backend procese completamente
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Ahora sí actualizar desde el backend
+        await fetchData();
+        console.log(`[FRONTEND] ✅ Datos actualizados desde backend para ${username}`);
+        
+        // Verificación FINAL: Asegurar que el usuario puede hacer login
+        const finalCheck = failedAttemptsService.isAccountLocked(username);
+        console.log(`[FRONTEND] 🔍 VERIFICACIÓN FINAL - ¿${username} puede hacer login?`, !finalCheck.isLocked);
+        
+        if (finalCheck.isLocked) {
+          console.error(`[FRONTEND] 🚨 PROBLEMA: ${username} AÚN está bloqueado después de la limpieza:`, finalCheck);
+          // Intentar una limpieza adicional
+          failedAttemptsService.clearAttempts(username);
+          console.log(`[FRONTEND] 🔧 Limpieza adicional aplicada para ${username}`);
+        }
+        
+        setError(null);
       } else {
-        console.error('Failed to revoke block:', data);
+        console.error(`[FRONTEND] ❌ Error del backend:`, data);
         setError(data['⚡ RESULT']?.message || 'Failed to revoke block');
       }
     } catch (err) {
-      console.error('Error revoking block:', err);
-      setError('Failed to revoke block');
+      console.error(`[FRONTEND] ❌ Error en revocación:`, err);
+      setError(err.message);
     } finally {
       setRevoking(prev => ({ ...prev, [username]: false }));
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    fetchSecurityData();
-  }, []);
+  const terminateSession = async (username) => {
+    try {
+      console.log(`[FRONTEND] 🚀 Terminando sesión para ${username}`);
+      setTerminating(prev => ({ ...prev, [username]: true }));
+      setRefreshing(true);
+      
+      const response = await fetch('http://localhost:8000/auth/terminate-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          reason: "Session terminated by developer from Security Dashboard",
+          terminated_by: currentUser?.username || 'developer'
+        })
+      });
 
-  useEffect(() => {
-    if (autoRefresh && refreshInterval > 0) {
-      intervalRef.current = setInterval(() => {
-        fetchSecurityData();
-      }, refreshInterval * 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      const data = await response.json();
+      console.log(`[FRONTEND] Backend response:`, data);
+      
+      if (response.ok && data['⚡ RESULT']?.success) {
+        console.log(`[FRONTEND] ✅ Sesión terminada para ${username}`);
+        
+        // Actualizar datos inmediatamente
+        await fetchData();
+        
+        setError(null);
+      } else {
+        console.error(`[FRONTEND] ❌ Error del backend:`, data);
+        setError(data['⚡ RESULT']?.message || 'Failed to terminate session');
       }
+    } catch (err) {
+      console.error(`[FRONTEND] ❌ Error terminando sesión:`, err);
+      setError(err.message);
+    } finally {
+      setTerminating(prev => ({ ...prev, [username]: false }));
+      setRefreshing(false);
     }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [autoRefresh, refreshInterval]);
-
-  const handleLogout = () => {
-    setIsLoggingOut(true);
-    document.body.classList.add('logging-out');
   };
 
-  const handleLogoutAnimationComplete = () => {
-    logout();
-    navigate('/');
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const tabs = [
-    { 
-      id: 'overview', 
-      name: 'Security Overview', 
-      icon: 'fa-shield-alt',
-      color: '#4facfe',
-      description: 'General security system status'
-    }
-  ];
+  // Render functions for each section
+  const renderUsersSection = () => (
+    <div className="clinical-section">
+      <div className="clinical-section__header">
+        <h2 className="clinical-section__title">
+          <i className="fas fa-users"></i>
+          Active Users Management
+        </h2>
+        <p className="clinical-section__subtitle">
+          Manage active users and apply security measures
+        </p>
+      </div>
 
-  const renderTabContent = () => {
-    if (loading) {
-      return (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading security data...</p>
+      <div className="clinical-search-bar">
+        <div className="clinical-search-input">
+          <i className="fas fa-search"></i>
+          <input
+            type="text"
+            placeholder="Search users by name, username, or email..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
         </div>
-      );
-    }
+      </div>
 
-    if (error) {
-      return (
-        <div className="error-container">
-          <i className="fas fa-exclamation-triangle"></i>
-          <h3>Error Loading Security Data</h3>
-          <p>{error}</p>
-          <button onClick={fetchSecurityData} className="retry-button">
-            <i className="fas fa-sync-alt"></i>
-            Retry
-          </button>
-        </div>
-      );
-    }
-
-    switch (activeTab) {
-      case 'overview':
-        return (
-          <div className="overview-content">
-            <div className="security-status-card">
-              <div className="status-header">
-                <h2>
-                  <i className="fas fa-shield-alt"></i>
-                  Enterprise Security System
-                </h2>
-                <div className="status-badge active">
-                  <i className="fas fa-check-circle"></i>
-                  ACTIVE
+      <div className="clinical-users-grid">
+        {getActiveUsers().length === 0 ? (
+          <div className="clinical-empty-state">
+            <i className="fas fa-users"></i>
+            <h3>No Active Users</h3>
+            <p>All users are currently blocked or no users exist in the system.</p>
+          </div>
+        ) : (
+          filteredUsers.map(user => (
+            <div key={user.id} className="clinical-user-card">
+              <div className="clinical-user-card__header">
+                <div className="clinical-user-card__avatar" style={{backgroundColor: getRoleColor(user.role)}}>
+                  {getInitials(user.name)}
+                </div>
+                <div className="clinical-user-card__info">
+                  <h3 className="clinical-user-card__name">{user.name}</h3>
+                  <p className="clinical-user-card__username">@{user.username}</p>
+                  <div className="clinical-user-card__role">
+                    <i className={getRoleIcon(user.role)}></i>
+                    {user.role}
+                  </div>
                 </div>
               </div>
               
-              <div className="system-info">
-                <div className="info-row">
-                  <span className="label">Version:</span>
-                  <span className="value">{securityData?.['🛡️ TERAPY_SUITE_ENTERPRISE_SECURITY'] || 'v2.1.0-TITANIUM'}</span>
-                </div>
-                <div className="info-row">
-                  <span className="label">Certification:</span>
-                  <span className="value">{securityData?.['🏆 CERTIFICATION'] || 'NSA LEVEL 4'}</span>
-                </div>
-                <div className="info-row">
-                  <span className="label">Protection:</span>
-                  <span className="value">{securityData?.['🔐 PROTECTION_LEVEL'] || 'TITANIUM FORTRESS'}</span>
-                </div>
-                <div className="info-row">
-                  <span className="label">Compliance:</span>
-                  <span className="value">{securityData?.['📋 COMPLIANCE'] || 'HIPAA/SOX/PCI-DSS/ISO-27001'}</span>
-                </div>
-                <div className="info-row">
-                  <span className="label">Status:</span>
-                  <span className="value status-active">{securityData?.['⚡ SYSTEM_STATUS'] || 'ENTERPRISE ACTIVE'}</span>
-                </div>
+              <div className="clinical-user-card__actions">
+                <button
+                  className="clinical-btn clinical-btn--danger"
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowBlockModal(true);
+                  }}
+                  disabled={blocking[user.username]}
+                >
+                  {blocking[user.username] ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      Blocking...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-ban"></i>
+                      Block User
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-            
-            <div className="quick-stats">
-              <div className="stat-card blocked-accounts">
-                <div className="stat-icon">
-                  <i className="fas fa-ban"></i>
-                </div>
-                <div className="stat-content">
-                  <h3>{securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.active_temporary_blocks || 0}</h3>
-                  <p>Blocked Accounts</p>
-                </div>
-              </div>
-              
-              <div className="stat-card permanent-blocks">
-                <div className="stat-icon">
-                  <i className="fas fa-lock"></i>
-                </div>
-                <div className="stat-content">
-                  <h3>{securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.permanent_blocks || 0}</h3>
-                  <p>Permanent Blocks</p>
-                </div>
-              </div>
-              
-              <div className="stat-card monitored-users">
-                <div className="stat-icon">
-                  <i className="fas fa-users"></i>
-                </div>
-                <div className="stat-content">
-                  <h3>{securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.monitored_user_accounts || 0}</h3>
-                  <p>Monitored Users</p>
-                </div>
-              </div>
-              
-              <div className="stat-card threats-detected">
-                <div className="stat-icon">
-                  <i className="fas fa-exclamation-triangle"></i>
-                </div>
-                <div className="stat-content">
-                  <h3>{securityData?.['📊 ENTERPRISE_METRICS']?.threat_intelligence?.suspicious_activities_detected || 0}</h3>
-                  <p>Threats Detected</p>
-                </div>
-              </div>
-            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
 
-            {/* Active Blocks in Progress - DEVELOPER CONTROL */}
-            {activeBlocks && activeBlocks.length > 0 && (
-              <div className="active-blocks-section">
-                <h3>
-                  <i className="fas fa-clock"></i>
-                  Active Blocks in Progress
-                  <span className="developer-badge">DEVELOPER CONTROL</span>
-                </h3>
-                <div className="active-blocks-list">
-                  {activeBlocks.map((block, index) => (
-                    <div key={index} className={`active-block-item ${block.type}`}>
-                      <div className="block-info">
-                        <div className="user-details">
-                          <i className={`fas ${block.type === 'permanent' ? 'fa-ban' : 'fa-user-clock'}`}></i>
-                          <div className="user-data">
-                            <span className="username">{block.username}</span>
-                            <span className="block-type">
-                              {block.type === 'permanent' 
-                                ? 'Permanent Block' 
-                                : `Level ${block.block_level} - ${block.remaining_minutes}min remaining`
-                              }
-                            </span>
+  const renderBlockedUsers = () => (
+    <div className="clinical-section">
+      <div className="clinical-section__header">
+        <h2 className="clinical-section__title">
+          <i className="fas fa-user-slash"></i>
+          Blocked Users
+        </h2>
+        <p className="clinical-section__subtitle">
+          Users who have been blocked from accessing the system
+        </p>
+      </div>
+
+      <div className="clinical-blocked-grid">
+        {getBlockedUsers().length === 0 ? (
+          <div className="clinical-empty-state">
+            <i className="fas fa-check-circle"></i>
+            <h3>No Blocked Users</h3>
+            <p>All users currently have active access to the system.</p>
+          </div>
+        ) : (
+          getBlockedUsers().map(user => {
+            const blockInfo = activeBlocks.find(block => block.username === user.username);
+            return (
+              <div key={user.id} className="clinical-blocked-card">
+                <div className="clinical-blocked-card__header">
+                  <div className="clinical-blocked-card__avatar">
+                    {getInitials(user.name)}
+                  </div>
+                  <div className="clinical-blocked-card__info">
+                    <h3 className="clinical-blocked-card__name">{user.name}</h3>
+                    <p className="clinical-blocked-card__username">@{user.username}</p>
+                    <div className="clinical-blocked-card__role">
+                      <i className={getRoleIcon(user.role)}></i>
+                      {user.role}
+                    </div>
+                  </div>
+                  <div className="clinical-blocked-badge">
+                    <i className="fas fa-ban"></i>
+                    BLOCKED
+                  </div>
+                </div>
+                
+                {blockInfo && (
+                  <div className="clinical-blocked-card__details">
+                    <div className="clinical-blocked-detail">
+                      <span className="clinical-blocked-detail__label">Blocked:</span>
+                      <span className="clinical-blocked-detail__value">
+                        {new Date(blockInfo.blocked_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="clinical-blocked-detail">
+                      <span className="clinical-blocked-detail__label">Reason:</span>
+                      <span className="clinical-blocked-detail__value">{blockInfo.reason}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="clinical-blocked-card__actions">
+                  <button
+                    className="clinical-btn clinical-btn--success"
+                    onClick={() => revokeBlock(user.username)}
+                    disabled={revoking[user.username]}
+                  >
+                    {revoking[user.username] ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        Unblocking...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-unlock"></i>
+                        Unblock User
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+
+  const renderSessionsByRole = () => {
+    const sessionsByRole = getSessionsByRole();
+    const roles = Object.keys(sessionsByRole);
+
+    return (
+      <div className="clinical-section">
+        <div className="clinical-section__header">
+          <h2 className="clinical-section__title">
+            <i className="fas fa-desktop"></i>
+            Active Sessions by Role
+          </h2>
+          <p className="clinical-section__subtitle">
+            Monitor user sessions organized by their roles
+          </p>
+        </div>
+
+        {roles.length === 0 ? (
+          <div className="clinical-empty-state">
+            <i className="fas fa-desktop"></i>
+            <h3>No Active Sessions</h3>
+            <p>No users are currently logged into the system.</p>
+          </div>
+        ) : (
+          <div className="clinical-roles-grid">
+            {roles.map(role => (
+              <div key={role} className="clinical-role-section">
+                <div className="clinical-role-header">
+                  <div className="clinical-role-icon" style={{backgroundColor: getRoleColor(role)}}>
+                    <i className={getRoleIcon(role)}></i>
+                  </div>
+                  <div className="clinical-role-info">
+                    <h3 className="clinical-role-title">{role}</h3>
+                    <p className="clinical-role-count">{sessionsByRole[role].length} active session{sessionsByRole[role].length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                
+                <div className="clinical-sessions-list">
+                  {sessionsByRole[role].map((session, index) => {
+                    const isCurrentUserSession = session.username === currentUser?.username;
+                    const isTerminatingThis = terminating[session.username];
+                    
+                    return (
+                      <div key={index} className={`clinical-session-card ${isCurrentUserSession ? 'clinical-session-card--current' : ''}`}>
+                        <div className="clinical-session-card__header">
+                          <div className="clinical-session-card__avatar">
+                            {getInitials(session.username)}
+                          </div>
+                          <div className="clinical-session-card__info">
+                            <h4 className="clinical-session-card__username">{session.username}</h4>
+                            <p className="clinical-session-card__status">
+                              {isCurrentUserSession ? (
+                                <span className="clinical-current-session">
+                                  <i className="fas fa-star"></i> Your session • {session.duration_text}
+                                </span>
+                              ) : (
+                                `Online • ${session.duration_text}`
+                              )}
+                            </p>
+                          </div>
+                          <div className="clinical-session-indicator">
+                            <div className="clinical-online-dot"></div>
                           </div>
                         </div>
                         
-                        <div className="block-status-info">
-                          <span className={`status-indicator ${block.type}`}>
-                            {block.status}
-                          </span>
-                          {block.type === 'temporary' && (
-                            <div className="countdown">
-                              <i className="fas fa-hourglass-half"></i>
-                              {block.remaining_minutes}m left
-                            </div>
+                        <div className="clinical-session-card__details">
+                          <div className="clinical-session-detail">
+                            <span className="clinical-session-detail__label">Started:</span>
+                            <span className="clinical-session-detail__value">
+                              {new Date(session.started_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="clinical-session-detail">
+                            <span className="clinical-session-detail__label">IP Address:</span>
+                            <span className="clinical-session-detail__value">{session.ip_address}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="clinical-session-card__actions">
+                          {isCurrentUserSession ? (
+                            <button className="clinical-btn clinical-btn--current" disabled>
+                              <i className="fas fa-user-shield"></i>
+                              Current Session
+                            </button>
+                          ) : (
+                            <button
+                              className="clinical-btn clinical-btn--warning"
+                              onClick={() => terminateSession(session.username)}
+                              disabled={isTerminatingThis}
+                            >
+                              {isTerminatingThis ? (
+                                <>
+                                  <i className="fas fa-spinner fa-spin"></i>
+                                  Terminating...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-sign-out-alt"></i>
+                                  Force Logout
+                                </>
+                              )}
+                            </button>
                           )}
                         </div>
                       </div>
-                      
-                      <div className="block-actions">
-                        <button
-                          className={`revoke-button ${revoking[block.username] ? 'revoking' : ''}`}
-                          onClick={() => revokeBlock(block.username)}
-                          disabled={revoking[block.username]}
-                          title={`Revoke block for ${block.username}`}
-                        >
-                          {revoking[block.username] ? (
-                            <>
-                              <i className="fas fa-spinner fa-spin"></i>
-                              Revoking...
-                            </>
-                          ) : (
-                            <>
-                              <i className="fas fa-unlock"></i>
-                              Revoke Block
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="developer-warning">
-                  <i className="fas fa-exclamation-triangle"></i>
-                  <span>
-                    <strong>Developer Control:</strong> Use revoke carefully. All revocations are logged for security audit.
-                  </span>
+                    );
+                  })}
                 </div>
               </div>
-            )}
-
-            {/* Real Blocked Users List */}
-            {securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.blocked_usernames?.length > 0 && (
-              <div className="blocked-users-section">
-                <h3>
-                  <i className="fas fa-ban"></i>
-                  Currently Blocked Users
-                </h3>
-                <div className="blocked-users-list">
-                  {securityData['📊 ENTERPRISE_METRICS'].account_lockout_metrics.blocked_usernames.map((username, index) => (
-                    <div key={index} className="blocked-user-item">
-                      <div className="user-info">
-                        <i className="fas fa-user-slash"></i>
-                        <span className="username">{username}</span>
-                      </div>
-                      <div className="block-status">
-                        <span className="status-badge blocked">BLOCKED</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Real Permanent Blocks List */}
-            {securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.permanently_blocked_usernames?.length > 0 && (
-              <div className="permanent-blocks-section">
-                <h3>
-                  <i className="fas fa-lock"></i>
-                  Permanently Blocked Users
-                </h3>
-                <div className="permanent-blocks-list">
-                  {securityData['📊 ENTERPRISE_METRICS'].account_lockout_metrics.permanently_blocked_usernames.map((username, index) => (
-                    <div key={index} className="permanent-block-item">
-                      <div className="user-info">
-                        <i className="fas fa-ban"></i>
-                        <span className="username">{username}</span>
-                      </div>
-                      <div className="block-status">
-                        <span className="status-badge permanent">PERMANENT</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Real Escalation Levels */}
-            {securityData?.['📊 ENTERPRISE_METRICS']?.account_lockout_metrics?.escalation_levels && 
-             Object.keys(securityData['📊 ENTERPRISE_METRICS'].account_lockout_metrics.escalation_levels).length > 0 && (
-              <div className="escalation-levels-section">
-                <h3>
-                  <i className="fas fa-chart-bar"></i>
-                  User Escalation Levels
-                </h3>
-                <div className="escalation-list">
-                  {Object.entries(securityData['📊 ENTERPRISE_METRICS'].account_lockout_metrics.escalation_levels).map(([username, level]) => (
-                    <div key={username} className="escalation-item">
-                      <div className="user-info">
-                        <i className="fas fa-user"></i>
-                        <span className="username">{username}</span>
-                      </div>
-                      <div className="escalation-info">
-                        <span className={`level-badge level-${level}`}>
-                          Level {level}
-                        </span>
-                        <span className="level-description">
-                          {level === 7 ? 'Permanent' : `${[1, 2, 10, 30, 60, 300][level-1]} min`}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className={`security-dashboard ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''}`}>
-      <Header onLogout={handleLogout} />
-      
-      <div className="security-content">
-        <div className="security-header">
-          <div className="header-content">
-            <div className="title-section">
-              <h1>
-                <i className="fas fa-shield-alt"></i>
-                Security Dashboard Enterprise
-              </h1>
-              <p className="subtitle">
-                NSA Level 4 - Titanium Fortress Security Monitoring & Management
-              </p>
-            </div>
-            
-            <div className="header-controls">
-              <div className="refresh-controls">
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={autoRefresh}
-                    onChange={(e) => setAutoRefresh(e.target.checked)}
-                  />
-                  <span className="slider"></span>
-                  <span className="toggle-label">Auto-refresh</span>
-                </label>
-                
-                {autoRefresh && (
-                  <select 
-                    value={refreshInterval} 
-                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                    className="refresh-interval"
-                  >
-                    <option value={10}>10s</option>
-                    <option value={30}>30s</option>
-                    <option value={60}>1m</option>
-                    <option value={300}>5m</option>
-                  </select>
-                )}
-              </div>
-              
-              <button onClick={fetchSecurityData} className="manual-refresh" disabled={loading}>
-                <i className={`fas fa-sync-alt ${loading ? 'spinning' : ''}`}></i>
-                Refresh
-              </button>
-            </div>
-          </div>
-          
-          <div className="security-tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={`security-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  '--tab-color': tab.color
-                }}
-              >
-                <div className="tab-icon">
-                  <i className={`fas ${tab.icon}`}></i>
-                </div>
-                <div className="tab-content">
-                  <span className="tab-title">{tab.name}</span>
-                  {!isMobile && (
-                    <span className="tab-description">{tab.description}</span>
-                  )}
-                </div>
-                {activeTab === tab.id && (
-                  <div className="tab-indicator"></div>
-                )}
-              </button>
             ))}
           </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderOverview = () => {
+    const activeUsers = getActiveUsers();
+    const blockedUsers = getBlockedUsers();
+    const sessionsByRole = getSessionsByRole();
+    const roles = Object.keys(sessionsByRole);
+
+    return (
+      <div className="clinical-section">
+        <div className="clinical-section__header">
+          <h2 className="clinical-section__title">
+            <i className="fas fa-chart-line"></i>
+            Security Overview
+          </h2>
+          <p className="clinical-section__subtitle">
+            Real-time security metrics and system status
+          </p>
         </div>
-        
-        <div className="security-body">
-          {renderTabContent()}
+
+        <div className="clinical-stats-grid">
+          <div className="clinical-stat-card clinical-stat-card--primary">
+            <div className="clinical-stat-card__icon">
+              <i className="fas fa-users"></i>
+            </div>
+            <div className="clinical-stat-card__content">
+              <div className="clinical-stat-card__value">{activeUsers.length}</div>
+              <div className="clinical-stat-card__label">Active Users</div>
+            </div>
+            <div className="clinical-stat-card__action">
+              <button 
+                className="clinical-quick-nav"
+                onClick={() => setActiveTab('users')}
+              >
+                View All <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="clinical-stat-card clinical-stat-card--danger">
+            <div className="clinical-stat-card__icon">
+              <i className="fas fa-user-slash"></i>
+            </div>
+            <div className="clinical-stat-card__content">
+              <div className="clinical-stat-card__value">{blockedUsers.length}</div>
+              <div className="clinical-stat-card__label">Blocked Users</div>
+            </div>
+            <div className="clinical-stat-card__action">
+              <button 
+                className="clinical-quick-nav"
+                onClick={() => setActiveTab('blocked')}
+              >
+                Manage <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="clinical-stat-card clinical-stat-card--success">
+            <div className="clinical-stat-card__icon">
+              <i className="fas fa-desktop"></i>
+            </div>
+            <div className="clinical-stat-card__content">
+              <div className="clinical-stat-card__value">{activeSessions.length}</div>
+              <div className="clinical-stat-card__label">Active Sessions</div>
+            </div>
+            <div className="clinical-stat-card__action">
+              <button 
+                className="clinical-quick-nav"
+                onClick={() => setActiveTab('sessions')}
+              >
+                Monitor <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="clinical-stat-card clinical-stat-card--info">
+            <div className="clinical-stat-card__icon">
+              <i className="fas fa-check-circle"></i>
+            </div>
+            <div className="clinical-stat-card__content">
+              <div className="clinical-stat-card__value">{securityData?.total_successful_logins || 0}</div>
+              <div className="clinical-stat-card__label">Total Logins</div>
+            </div>
+            <div className="clinical-stat-card__action">
+              <span className="clinical-stat-trend">Today</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="clinical-overview-sections">
+          <div className="clinical-overview-section">
+            <h3 className="clinical-overview-title">
+              <i className="fas fa-users-cog"></i>
+              Role Distribution
+            </h3>
+            <div className="clinical-role-overview">
+              {roles.length === 0 ? (
+                <p className="clinical-no-data">No active sessions to display</p>
+              ) : (
+                roles.map(role => (
+                  <div key={role} className="clinical-role-item">
+                    <div className="clinical-role-item__icon" style={{backgroundColor: getRoleColor(role)}}>
+                      <i className={getRoleIcon(role)}></i>
+                    </div>
+                    <div className="clinical-role-item__info">
+                      <span className="clinical-role-item__name">{role}</span>
+                      <span className="clinical-role-item__count">{sessionsByRole[role].length} active</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="clinical-overview-section">
+            <h3 className="clinical-overview-title">
+              <i className="fas fa-shield-alt"></i>
+              Security Status
+            </h3>
+            <div className="clinical-security-status">
+              <div className="clinical-status-item clinical-status-item--good">
+                <i className="fas fa-check-circle"></i>
+                <span>Session Management: Active</span>
+              </div>
+              <div className="clinical-status-item clinical-status-item--good">
+                <i className="fas fa-check-circle"></i>
+                <span>User Authentication: Secure</span>
+              </div>
+              <div className={`clinical-status-item ${blockedUsers.length > 0 ? 'clinical-status-item--warning' : 'clinical-status-item--good'}`}>
+                <i className={`fas ${blockedUsers.length > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}></i>
+                <span>Blocked Users: {blockedUsers.length > 0 ? `${blockedUsers.length} users blocked` : 'No blocks active'}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    );
+  };
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      logout();
+      navigate('/login');
+    }, 1000);
+  };
+
+  const stats = securityData?.['📊 ENTERPRISE_METRICS'] || {};
+
+  if (loading && !securityData) {
+    return (
+      <div className="security-dashboard">
+        <Header onLogout={handleLogout} />
+        <div className="security-dashboard__container">
+          <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', color: '#64748b'}}>
+            <div>Loading Security Dashboard...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="security-dashboard">
+      <Header onLogout={handleLogout} />
+      
+      <div className="security-dashboard__container">
+        {error && (
+          <div className="error-alert">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
+        <div className="dashboard-header">
+          <div className="dashboard-header__content">
+            <div className="dashboard-header__title-section">
+              <h1 className="dashboard-header__title">
+                <i className="fas fa-shield-alt icon"></i>
+                Security Dashboard
+              </h1>
+              <span className="dashboard-header__badge">Enterprise</span>
+            </div>
+            
+            <button
+              className={`refresh-button ${refreshing ? 'disabled' : ''}`}
+              onClick={() => !refreshing && fetchData()}
+              disabled={refreshing}
+            >
+              <i className={`fas fa-sync icon ${refreshing ? 'spinning' : ''}`}></i>
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+          <p className="dashboard-header__subtitle">
+            Comprehensive security management and user administration
+          </p>
+        </div>
+
+        <div className="clinical-navigation">
+          <div className="clinical-nav-tabs">
+            <button
+              className={`clinical-nav-tab ${activeTab === 'overview' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('overview'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-chart-line"></i>
+              <span>Overview</span>
+            </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'users' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('users'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-users"></i>
+              <span>Active Users</span>
+            </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'blocked' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('blocked'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-user-slash"></i>
+              <span>Blocked Users</span>
+            </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'sessions' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('sessions'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-desktop"></i>
+              <span>Active Sessions</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="clinical-content">
+          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'users' && renderUsersSection()}
+          {activeTab === 'blocked' && renderBlockedUsers()}
+          {activeTab === 'sessions' && renderSessionsByRole()}
+        </div>
+      </div>
+
+      {showBlockModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3 className="modal__title">Block User</h3>
+            <p className="modal__message">
+              Are you sure you want to permanently block user <strong>{selectedUser?.name}</strong>?
+            </p>
+            <div className="modal__actions">
+              <button
+                className="modal__button modal__button--cancel"
+                onClick={() => setShowBlockModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal__button modal__button--confirm"
+                onClick={blockUser}
+                disabled={blocking[selectedUser?.username]}
+              >
+                {blocking[selectedUser?.username] ? 'Blocking...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

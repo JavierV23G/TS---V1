@@ -57,7 +57,7 @@ const SecurityMetrics = ({ data }) => {
           <i className="fas fa-chart-line"></i>
           Security Metrics Overview
         </h2>
-        <p>Métricas detalladas del sistema de seguridad enterprise</p>
+        <p>Detailed metrics of the enterprise security system</p>
       </div>
 
       {/* Account Lockout Metrics */}
@@ -69,45 +69,45 @@ const SecurityMetrics = ({ data }) => {
         
         <div className="metrics-grid">
           <MetricCard
-            title="Bloqueos Temporales"
+            title="Temporary Blocks"
             value={accountMetrics.active_temporary_blocks || 0}
             icon="fa-clock"
             color="#ffa502"
-            description="Cuentas actualmente bloqueadas temporalmente"
+            description="Accounts currently temporarily blocked"
             trend={-15}
           />
           
           <MetricCard
-            title="Bloqueos Permanentes"
+            title="Permanent Blocks"
             value={accountMetrics.permanent_blocks || 0}
             icon="fa-lock"
             color="#ff4757"
-            description="Cuentas bloqueadas permanentemente"
+            description="Permanently blocked accounts"
             trend={0}
           />
           
           <MetricCard
-            title="Usuarios con Fallos"
+            title="Users with Failures"
             value={accountMetrics.users_with_failures || 0}
             icon="fa-exclamation-triangle"
             color="#ff6b6b"
-            description="Usuarios con intentos fallidos activos"
+            description="Users with active failed attempts"
             trend={-8}
           />
           
           <MetricCard
-            title="Usuarios Monitoreados"
+            title="Monitored Users"
             value={accountMetrics.monitored_user_accounts || 0}
             icon="fa-users"
             color="#3742fa"
-            description="Total de cuentas bajo monitoreo"
+            description="Total accounts under monitoring"
             trend={12}
           />
         </div>
 
         {/* Escalation Levels */}
         <div className="escalation-metrics">
-          <h4>Niveles de Escalamiento</h4>
+          <h4>Escalation Levels</h4>
           <div className="escalation-bars">
             {[1, 2, 3, 4, 5, 6, 7].map(level => {
               const count = Object.values(accountMetrics.escalation_levels || {})
@@ -116,11 +116,11 @@ const SecurityMetrics = ({ data }) => {
               return (
                 <ProgressBar
                   key={level}
-                  label={`Nivel ${level} ${level === 7 ? '(Permanente)' : `(${[1, 2, 10, 30, 60, 300][level-1]}min)`}`}
+                  label={`Level ${level} ${level === 7 ? '(Permanent)' : `(${[1, 2, 10, 30, 60, 300][level-1]}min)`}`}
                   value={count}
                   max={Math.max(10, count + 2)}
                   color={level <= 2 ? '#00d2d3' : level <= 4 ? '#ffa502' : '#ff4757'}
-                  formatValue={(val, max) => `${val} usuarios`}
+                  formatValue={(val, max) => `${val} users`}
                 />
               );
             })}
@@ -137,39 +137,39 @@ const SecurityMetrics = ({ data }) => {
         
         <div className="metrics-grid">
           <MetricCard
-            title="Actividades Sospechosas"
+            title="Suspicious Activities"
             value={threatMetrics.suspicious_activities_detected || 0}
             icon="fa-exclamation-triangle"
             color="#ff6b6b"
-            description="Total de actividades sospechosas detectadas"
+            description="Total suspicious activities detected"
             trend={-25}
             trendIcon="fa-shield-alt"
           />
           
           <MetricCard
-            title="Ataques Rapid-Fire"
+            title="Rapid-Fire Attacks"
             value={threatMetrics.rapid_fire_attacks || 0}
             icon="fa-bolt"
             color="#ff4757"
-            description="Ataques de velocidad alta bloqueados"
+            description="High-speed attacks blocked"
             trend={-40}
           />
           
           <MetricCard
-            title="Ataques de Fuerza Bruta"
+            title="Brute Force Attacks"
             value={threatMetrics.brute_force_attempts || 0}
             icon="fa-hammer"
             color="#c44569"
-            description="Intentos de fuerza bruta detectados"
+            description="Brute force attempts detected"
             trend={-30}
           />
           
           <MetricCard
-            title="Ataques Distribuidos"
+            title="Distributed Attacks"
             value={threatMetrics.distributed_attacks || 0}
             icon="fa-network-wired"
             color="#6c5ce7"
-            description="Ataques coordinados desde múltiples IPs"
+            description="Coordinated attacks from multiple IPs"
             trend={-50}
           />
         </div>
@@ -184,38 +184,38 @@ const SecurityMetrics = ({ data }) => {
         
         <div className="metrics-grid">
           <MetricCard
-            title="Verificaciones Totales"
+            title="Total Verifications"
             value={operationalMetrics.total_security_checks || 0}
             icon="fa-check-circle"
             color="#00d2d3"
-            description="Total de verificaciones de seguridad realizadas"
+            description="Total security verifications performed"
             trend={15}
           />
           
           <MetricCard
-            title="Promedio por Usuario"
+            title="Average per User"
             value={parseFloat(operationalMetrics.average_attempts_per_user || 0).toFixed(1)}
             icon="fa-user-check"
             color="#0984e3"
-            description="Promedio de intentos por usuario"
+            description="Average attempts per user"
             trend={-5}
           />
           
           <MetricCard
-            title="Efectividad"
+            title="Effectiveness"
             value={operationalMetrics.security_effectiveness || '0%'}
             icon="fa-chart-pie"
             color="#00b894"
-            description="Efectividad del sistema de seguridad"
+            description="Security system effectiveness"
             trend={3}
           />
           
           <MetricCard
-            title="Prevención de Amenazas"
+            title="Threat Prevention"
             value={operationalMetrics.threat_prevention_rate || '99.7%'}
             icon="fa-shield-alt"
             color="#00a085"
-            description="Tasa de prevención de amenazas"
+            description="Threat prevention rate"
             trend={1}
           />
         </div>

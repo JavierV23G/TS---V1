@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLoadingModal from './AuthLoadingModal';
 import AccountLockoutModal from './AccountLockoutModal';
+import ActiveSessionModal from './ActiveSessionModal';
 import failedAttemptsService from './FailedAttemptsService';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import { useAuth } from './AuthContext';
@@ -21,6 +22,11 @@ const Login = ({ onForgotPassword }) => {
   const [lockoutModal, setLockoutModal] = useState({
     isVisible: false,
     lockoutInfo: null,
+    username: ''
+  });
+  const [activeSessionModal, setActiveSessionModal] = useState({
+    isVisible: false,
+    sessionInfo: null,
     username: ''
   });
   const [unblockAnimation, setUnblockAnimation] = useState({
@@ -144,15 +150,73 @@ const Login = ({ onForgotPassword }) => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    // NUEVO: Verificar estado del localStorage con logs detallados
     const lockStatus = failedAttemptsService.isAccountLocked(formData.username);
+    console.log(`[LOGIN] 🔍 Verificando estado de ${formData.username} en localStorage:`, lockStatus);
+    
     if (lockStatus.isLocked) {
-      setLockoutModal({
-        isVisible: true,
-        lockoutInfo: lockStatus,
-        username: formData.username
+      console.log(`[LOGIN] ❌ Usuario ${formData.username} AÚN bloqueado en localStorage, mostrando modal`);
+      console.log(`[LOGIN] Datos del bloqueo:`, {
+        remainingTime: lockStatus.remainingTime,
+        lockoutLevel: lockStatus.lockoutLevel,
+        lockoutUntil: new Date(lockStatus.lockoutUntil).toISOString()
       });
-      return;
+      
+      // DOBLE VERIFICACIÓN: Consultar backend para confirmar
+      console.log(`[LOGIN] 🔍 Verificando con backend si ${formData.username} realmente está bloqueado...`);
+      
+      try {
+        const backendCheck = await fetch('http://localhost:8000/auth/check-block-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: formData.username })
+        });
+        
+        if (backendCheck.ok) {
+          const backendData = await backendCheck.json();
+          console.log(`[LOGIN] Backend dice que ${formData.username} bloqueado:`, backendData.blocked);
+          
+          if (!backendData.blocked) {
+            // Backend dice que NO está bloqueado - limpiar localStorage
+            console.log(`[LOGIN] 🚨 INCONSISTENCIA: localStorage dice bloqueado, backend dice NO bloqueado`);
+            console.log(`[LOGIN] 🧹 Limpiando localStorage para sincronizar con backend...`);
+            
+            failedAttemptsService.clearAttempts(formData.username);
+            
+            // Continuar con el login normalmente
+            console.log(`[LOGIN] ✅ localStorage limpiado, continuando con login...`);
+          } else {
+            // Backend confirma el bloqueo - mostrar modal
+            console.log(`[LOGIN] ✅ Backend confirma el bloqueo, mostrando modal...`);
+            setLockoutModal({
+              isVisible: true,
+              lockoutInfo: lockStatus,
+              username: formData.username
+            });
+            return;
+          }
+        } else {
+          // Error consultando backend - usar localStorage como fallback
+          console.log(`[LOGIN] ⚠️ Error consultando backend, usando localStorage como fallback`);
+          setLockoutModal({
+            isVisible: true,
+            lockoutInfo: lockStatus,
+            username: formData.username
+          });
+          return;
+        }
+      } catch (err) {
+        console.error(`[LOGIN] ❌ Error en verificación con backend:`, err);
+        setLockoutModal({
+          isVisible: true,
+          lockoutInfo: lockStatus,
+          username: formData.username
+        });
+        return;
+      }
     }
+    
+    console.log(`[LOGIN] ✅ Usuario ${formData.username} NO está bloqueado en localStorage, continuando con backend...`);
 
     setAuthModal({
       isOpen: true,
@@ -189,6 +253,21 @@ const Login = ({ onForgotPassword }) => {
         
         setAuthModal({ isOpen: false, status: 'loading', message: '' });
         return; // Salir sin procesar más
+      }
+
+      // MANEJAR STATUS 409 - SESIÓN YA ACTIVA
+      if (credentialsRes.status === 409) {
+        const sessionData = await credentialsRes.json();
+        console.log('[LOGIN DEBUG] Status 409 recibido - sesión ya existe:', sessionData);
+        
+        // Mostrar modal elegante de sesión activa
+        setAuthModal({ isOpen: false, status: 'loading', message: '' });
+        setActiveSessionModal({
+          isVisible: true,
+          sessionInfo: sessionData.existing_session,
+          username: formData.username
+        });
+        return;
       }
 
       // MANEJAR STATUS 401 - CREDENCIALES INCORRECTAS
@@ -263,6 +342,55 @@ const Login = ({ onForgotPassword }) => {
     setLockoutModal({
       isVisible: false,
       lockoutInfo: null,
+      username: ''
+    });
+  };
+
+  const handleForceLogin = async () => {
+    // Usuario eligió forzar el login - primero terminar sesión existente
+    try {
+      setActiveSessionModal({ isVisible: false, sessionInfo: null, username: '' });
+      setAuthModal({
+        isOpen: true,
+        status: 'loading',
+        message: 'Closing other session... Please wait 8 seconds.'
+      });
+
+      await fetch('http://localhost:8000/auth/terminate-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          reason: `Forced login from new device/browser`,
+          terminated_by: 'user_self'
+        })
+      });
+      
+      // Esperar 8 segundos para que la primera sesión detecte la invalidación y haga logout
+      await new Promise(resolve => setTimeout(resolve, 8000));
+      
+      // Reintentar el login
+      console.log('[LOGIN] Reintentando login después de forzar terminación...');
+      
+      // Simular el evento de submit
+      const fakeEvent = { preventDefault: () => {} };
+      handleSubmit(fakeEvent);
+      
+    } catch (err) {
+      console.error('[LOGIN] Error forzando terminación de sesión:', err);
+      setAuthModal({
+        isOpen: true,
+        status: 'error',
+        message: 'Failed to terminate existing session'
+      });
+    }
+  };
+
+  const handleCancelActiveSession = () => {
+    // Usuario canceló - cerrar modal y no hacer login
+    setActiveSessionModal({
+      isVisible: false,
+      sessionInfo: null,
       username: ''
     });
   };
@@ -414,6 +542,14 @@ const Login = ({ onForgotPassword }) => {
         username={lockoutModal.username}
         onContactAdmin={handleContactAdmin}
         onTryAgainLater={handleTryAgainLater}
+      />
+
+      <ActiveSessionModal
+        isVisible={activeSessionModal.isVisible}
+        username={activeSessionModal.username}
+        sessionInfo={activeSessionModal.sessionInfo}
+        onForceLogin={handleForceLogin}
+        onCancel={handleCancelActiveSession}
       />
 
       {/* ANIMACIÓN DE DESBLOQUEO POR DEVELOPER */}

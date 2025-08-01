@@ -204,6 +204,33 @@ class FailedAttemptsService {
         };
     }
 
+    // NUEVA FUNCIÓN: Forzar limpieza completa (para revocaciones desde dashboard)
+    forceUnlockAccount(username) {
+        console.log(`[FAILED-ATTEMPTS-SERVICE] 🚨 Limpieza FORZADA para ${username}`);
+        
+        // Limpiar localStorage completamente
+        const key = `failed_attempts_${username.toLowerCase()}`;
+        localStorage.removeItem(key);
+        
+        // También limpiar cualquier dato relacionado que pueda existir
+        const relatedKeys = Object.keys(localStorage).filter(k => 
+            k.includes(username.toLowerCase()) && k.includes('failed')
+        );
+        relatedKeys.forEach(k => {
+            console.log(`[FAILED-ATTEMPTS-SERVICE] Limpiando clave relacionada: ${k}`);
+            localStorage.removeItem(k);
+        });
+        
+        console.log(`[FAILED-ATTEMPTS-SERVICE] ✅ Usuario ${username} completamente limpiado del localStorage`);
+        
+        this.onAccountUnlocked(username);
+        
+        return {
+            success: true,
+            message: `Account ${username} force unlocked and completely cleaned`
+        };
+    }
+
     // Set maximum attempts (for testing or dynamic configuration)
     setMaxAttempts(maxAttempts) {
         this.MAX_ATTEMPTS = maxAttempts;

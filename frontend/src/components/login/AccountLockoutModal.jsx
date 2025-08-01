@@ -92,30 +92,44 @@ const AccountLockoutModal = ({
             low: {
                 iconColor: '#f59e0b',
                 progressColor: '#fbbf24',
-                title: 'Account Temporarily Locked',
-                description: 'Your account has been locked due to multiple failed login attempts.'
+                title: 'Account Security Block',
+                description: 'Your account has been blocked by the Security System. Please contact your administrator for assistance.'
             },
             medium: {
                 iconColor: '#f97316', 
                 progressColor: '#fb923c',
-                title: 'Security Lock Active',
-                description: 'Extended lockout due to repeated access attempts.'
+                title: 'Account Security Block',
+                description: 'Your account has been blocked by the Security System. Please contact your administrator for assistance.'
             },
             high: {
                 iconColor: '#dc2626',
                 progressColor: '#ef4444', 
-                title: 'Advanced Security Lock',
-                description: 'Your account requires additional time before the next attempt.'
+                title: 'Account Security Block',
+                description: 'Your account has been blocked by the Security System. Please contact your administrator for assistance.'
             },
             critical: {
                 iconColor: '#991b1b',
                 progressColor: '#dc2626',
-                title: 'Maximum Security Lock',
-                description: 'Contact the system administrator to restore access.'
+                title: 'Account Security Block',
+                description: 'Your account has been blocked by the Security System. Please contact your administrator for assistance.'
             }
         };
         
         return configs[severity];
+    };
+
+    const getBlockLevelText = (level) => {
+        const blockLevels = {
+            1: 'One Minute Block',
+            2: 'Two Minutes Block',
+            3: 'Ten Minutes Block',
+            4: 'Thirty Minutes Block',
+            5: 'One Hour Block',
+            6: 'Two Hours Block',
+            7: 'Permanent Block'
+        };
+        
+        return blockLevels[level] || `Level ${level} Block`;
     };
 
     const config = getSeverityConfig();
@@ -221,17 +235,12 @@ const AccountLockoutModal = ({
                                 <div className="security-details">
                                     <div className="detail-item">
                                         <FontAwesomeIcon icon={faExclamationTriangle} />
-                                        <span>Lockout level: {lockoutInfo?.block_level || lockoutInfo?.lockoutLevel || 1}</span>
+                                        <span>Block Level: {getBlockLevelText(lockoutInfo?.block_level || lockoutInfo?.lockoutLevel || 1)}</span>
                                     </div>
                                     
                                     <div className="detail-item">
                                         <FontAwesomeIcon icon={faLock} />
-                                        <span>
-                                            {lockoutInfo?.contact_admin || lockoutInfo?.isMaxLevel
-                                                ? 'Contact administrator required' 
-                                                : 'Temporary lockout active'
-                                            }
-                                        </span>
+                                        <span>Account has been blocked by Security System</span>
                                     </div>
                                 </div>
                             </div>
@@ -242,34 +251,22 @@ const AccountLockoutModal = ({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5 }}
                             >
-                                {lockoutInfo?.contact_admin || lockoutInfo?.isMaxLevel ? (
-                                    <motion.button 
-                                        className="contact-admin-button"
-                                        onClick={onContactAdmin}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <FontAwesomeIcon icon={faShieldAlt} className="button-icon" />
-                                        Contact Administrator
-                                    </motion.button>
-                                ) : (
-                                    <motion.button 
-                                        className="try-later-button"
-                                        onClick={onTryAgainLater}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        disabled={timeRemaining > 0}
-                                    >
-                                        <FontAwesomeIcon icon={faClock} className="button-icon" />
-                                        {timeRemaining > 0 ? 'Waiting...' : 'Try Again'}
-                                    </motion.button>
-                                )}
+                                <motion.button 
+                                    className="try-later-button"
+                                    onClick={onTryAgainLater}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    disabled={timeRemaining > 0}
+                                >
+                                    <FontAwesomeIcon icon={faClock} className="button-icon" />
+                                    {timeRemaining > 0 ? 'Waiting...' : 'Close'}
+                                </motion.button>
                             </motion.div>
 
                             <div className="security-notice">
                                 <FontAwesomeIcon icon={faShieldAlt} />
                                 <span>
-                                    This measure protects system security and medical data privacy.
+                                    Please contact your system administrator to restore account access.
                                 </span>
                             </div>
                         </div>

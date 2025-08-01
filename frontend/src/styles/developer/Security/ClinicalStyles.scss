@@ -1,0 +1,827 @@
+// ===================================
+// 🏥 CLINICAL DASHBOARD STYLES
+// ===================================
+
+.clinical-navigation {
+  background: var(--clinical-white);
+  border-bottom: 1px solid var(--clinical-blue-light);
+  margin-bottom: 2rem;
+  
+  .clinical-nav-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    max-width: 100%;
+    overflow-x: auto;
+    
+    .clinical-nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: var(--clinical-gray-50);
+      color: var(--gray-600);
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      white-space: nowrap;
+      
+      i {
+        font-size: 1rem;
+      }
+      
+      &:hover {
+        background: var(--clinical-blue-light);
+        color: var(--clinical-blue);
+      }
+      
+      &--active {
+        background: var(--clinical-blue);
+        color: var(--clinical-white);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        
+        &:hover {
+          background: var(--clinical-blue-dark);
+          color: var(--clinical-white);
+        }
+      }
+    }
+  }
+}
+
+.clinical-content {
+  min-height: 60vh;
+}
+
+.clinical-section {
+  background: var(--clinical-white);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  
+  .clinical-section__header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--clinical-blue-light);
+    
+    .clinical-section__title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      i {
+        color: var(--clinical-blue);
+        font-size: 1.25rem;
+      }
+    }
+    
+    .clinical-section__subtitle {
+      color: var(--gray-500);
+      margin: 0;
+      font-size: 1rem;
+    }
+  }
+}
+
+.clinical-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.clinical-stat-card {
+  background: var(--clinical-white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--clinical-blue-light);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .clinical-stat-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    
+    i {
+      font-size: 1.5rem;
+      color: var(--clinical-white);
+    }
+  }
+  
+  .clinical-stat-card__content {
+    .clinical-stat-card__value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 0.25rem;
+    }
+    
+    .clinical-stat-card__label {
+      color: var(--gray-500);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+  }
+  
+  .clinical-stat-card__action {
+    .clinical-quick-nav {
+      background: var(--clinical-blue-light);
+      color: var(--clinical-blue);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--clinical-blue);
+        color: var(--clinical-white);
+      }
+    }
+    
+    .clinical-stat-trend {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      font-weight: 500;
+    }
+  }
+  
+  &--primary .clinical-stat-card__icon { background: var(--clinical-blue); }
+  &--danger .clinical-stat-card__icon { background: var(--danger-red); }
+  &--success .clinical-stat-card__icon { background: var(--success-green); }
+  &--info .clinical-stat-card__icon { background: var(--info-blue); }
+}
+
+.clinical-users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.clinical-user-card {
+  background: var(--clinical-white);
+  border: 1px solid var(--clinical-blue-light);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .clinical-user-card__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    
+    .clinical-user-card__avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+    
+    .clinical-user-card__info {
+      flex: 1;
+      
+      .clinical-user-card__name {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0 0 0.25rem 0;
+      }
+      
+      .clinical-user-card__username {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+        margin: 0 0 0.5rem 0;
+      }
+      
+      .clinical-user-card__role {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--clinical-blue);
+        font-weight: 500;
+        
+        i {
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+}
+
+.clinical-search-bar {
+  padding: 1.5rem 2rem;
+  background: var(--clinical-gray-50);
+  
+  .clinical-search-input {
+    position: relative;
+    max-width: 400px;
+    
+    i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      border: 1px solid var(--clinical-blue-light);
+      border-radius: 8px;
+      font-size: 1rem;
+      background: var(--clinical-white);
+      
+      &:focus {
+        outline: none;
+        border-color: var(--clinical-blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+    }
+  }
+}
+
+.clinical-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--gray-500);
+  
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--gray-400);
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin: 0 0 0.5rem 0;
+  }
+  
+  p {
+    margin: 0;
+    color: var(--gray-500);
+  }
+}
+
+// Clinical buttons
+.clinical-btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  &--danger {
+    background: var(--danger-red);
+    color: var(--clinical-white);
+    
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+  
+  &--success {
+    background: var(--success-green);
+    color: var(--clinical-white);
+    
+    &:hover:not(:disabled) {
+      background: #047857;
+    }
+  }
+  
+  &--warning {
+    background: var(--warning-orange);
+    color: var(--clinical-white);
+    
+    &:hover:not(:disabled) {
+      background: #d97706;
+    }
+  }
+  
+  &--current {
+    background: var(--success-green);
+    color: var(--clinical-white);
+    opacity: 0.8;
+    cursor: default;
+    
+    &:hover {
+      background: var(--success-green);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+//===================================
+// 🚫 BLOCKED USERS STYLES
+//===================================
+
+.clinical-blocked-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.clinical-blocked-card {
+  background: var(--clinical-white);
+  border: 1px solid var(--danger-light);
+  border-left: 4px solid var(--danger-red);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--danger-red);
+    color: var(--clinical-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+  }
+  
+  &__info {
+    flex: 1;
+  }
+  
+  &__name {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+  }
+  
+  &__username {
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  &__role {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--clinical-blue);
+    font-weight: 500;
+    
+    i {
+      font-size: 0.75rem;
+    }
+  }
+  
+  &__details {
+    background: var(--clinical-gray-50);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+}
+
+.clinical-blocked-badge {
+  background: var(--danger-light);
+  color: var(--danger-red);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  
+  i {
+    font-size: 0.75rem;
+  }
+}
+
+.clinical-blocked-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &__label {
+    color: var(--gray-500);
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  &__value {
+    color: var(--gray-800);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+}
+
+//===================================
+// 🖥️ SESSIONS BY ROLE STYLES
+//===================================
+
+.clinical-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.clinical-role-section {
+  background: var(--clinical-white);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  border: 1px solid var(--clinical-blue-light);
+}
+
+.clinical-role-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--clinical-gray-50);
+  border-bottom: 1px solid var(--clinical-blue-light);
+}
+
+.clinical-role-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clinical-white);
+  font-size: 1.25rem;
+}
+
+.clinical-role-info {
+  flex: 1;
+}
+
+.clinical-role-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 0.25rem 0;
+}
+
+.clinical-role-count {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.clinical-sessions-list {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clinical-session-card {
+  background: var(--clinical-white);
+  border: 1px solid var(--clinical-blue-light);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--clinical-blue);
+  }
+  
+  &--current {
+    border-left: 4px solid var(--warning-orange);
+    background: linear-gradient(145deg, #fef3c7 0%, rgba(251, 191, 36, 0.1) 20%, var(--clinical-white) 40%);
+  }
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--clinical-blue);
+    color: var(--clinical-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+  
+  &__info {
+    flex: 1;
+  }
+  
+  &__username {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.875rem;
+    margin: 0 0 0.25rem 0;
+  }
+  
+  &__status {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    margin: 0;
+  }
+  
+  &__details {
+    background: var(--clinical-gray-50);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.clinical-session-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.clinical-online-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success-green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
+}
+
+.clinical-session-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  &__label {
+    color: var(--gray-500);
+    font-weight: 500;
+    font-size: 0.75rem;
+  }
+  
+  &__value {
+    color: var(--gray-800);
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+}
+
+.clinical-current-session {
+  color: var(--warning-orange);
+  font-weight: 600;
+  
+  i {
+    color: #f59e0b;
+    margin-right: 4px;
+  }
+}
+
+//===================================
+// 📊 OVERVIEW SECTION STYLES
+//===================================
+
+.clinical-overview-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.clinical-overview-section {
+  background: var(--clinical-white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--clinical-blue-light);
+}
+
+.clinical-overview-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  i {
+    color: var(--clinical-blue);
+    font-size: 1rem;
+  }
+}
+
+.clinical-role-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.clinical-role-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--clinical-gray-50);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: var(--clinical-blue-light);
+  }
+  
+  &__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--clinical-white);
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  
+  &__name {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.875rem;
+  }
+  
+  &__count {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+  }
+}
+
+.clinical-security-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.clinical-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  i {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  
+  &--good {
+    background: var(--success-light);
+    color: var(--success-green);
+    
+    i {
+      color: var(--success-green);
+    }
+  }
+  
+  &--warning {
+    background: var(--warning-light);
+    color: var(--warning-orange);
+    
+    i {
+      color: var(--warning-orange);
+    }
+  }
+  
+  &--danger {
+    background: var(--danger-light);
+    color: var(--danger-red);
+    
+    i {
+      color: var(--danger-red);
+    }
+  }
+}
+
+.clinical-no-data {
+  color: var(--gray-500);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+  margin: 0;
+}
+
+// Responsive design for clinical dashboard
+@media (max-width: 768px) {
+  .clinical-nav-tabs {
+    padding: 1rem;
+    
+    .clinical-nav-tab {
+      padding: 0.5rem 1rem;
+      
+      span {
+        display: none;
+      }
+    }
+  }
+  
+  .clinical-stats-grid,
+  .clinical-users-grid,
+  .clinical-blocked-grid,
+  .clinical-roles-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  
+  .clinical-blocked-card,
+  .clinical-role-section {
+    margin-bottom: 1rem;
+  }
+}

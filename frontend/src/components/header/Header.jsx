@@ -266,25 +266,10 @@ const Header = ({ onLogout }) => {
   };
   
   const getCarouselPositions = () => {
-    if (menuOptions.length === 3) {
-      const positions = ['left', 'center', 'right'];
-      
-      let rotatedPositions = [...positions];
-      for (let i = 0; i < activeMenuIndex; i++) {
-        rotatedPositions.unshift(rotatedPositions.pop());
-      }
-      
-      return menuOptions.map((option, index) => {
-        return {
-          ...option,
-          position: rotatedPositions[index]
-        };
-      });
-    }
-    
     const result = [];
     const totalOptions = menuOptions.length;
     
+    // Always show only 3 positions: left, center, right
     for (let i = 0; i < totalOptions; i++) {
       let position;
       const relativePos = (i - activeMenuIndex + totalOptions) % totalOptions;
@@ -296,7 +281,8 @@ const Header = ({ onLogout }) => {
       } else if (relativePos === totalOptions - 1) {
         position = "left";
       } else {
-        position = relativePos < totalOptions / 2 ? "far-right" : "far-left";
+        // Hide additional items beyond the 3 visible positions
+        position = "hidden";
       }
       
       result.push({
@@ -352,7 +338,9 @@ const Header = ({ onLogout }) => {
             )}
             
             <div className="carousel-options">
-              {getCarouselPositions().map((item) => (
+              {getCarouselPositions()
+                .filter(item => item.position !== 'hidden')
+                .map((item) => (
                 <div 
                   key={item.id} 
                   className={`carousel-option ${item.position}`}
