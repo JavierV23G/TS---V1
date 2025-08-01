@@ -186,11 +186,6 @@ const TemplateRenderer = ({
     // Backend now uses consistent section names - no mapping needed
     const sectionData = data[activeSection] || {};
     
-    // Debug logging
-    console.log('=== TemplateRenderer renderActiveSection ===');
-    console.log('activeSection:', activeSection);
-    console.log('sectionData:', sectionData);
-    console.log('Available data keys:', Object.keys(data));
 
     return (
       <div className="active-section">

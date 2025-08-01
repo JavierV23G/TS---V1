@@ -186,16 +186,10 @@ const useSectionData = (initialData = {}, autoSaveConfig = {}) => {
 
   // Effect para actualizar datos cuando cambia initialData
   useEffect(() => {
-    console.log('=== DEBUG: useSectionData initialData effect ===');
-    console.log('Received initialData:', initialData);
-    
     const safeInitialData = initialData && typeof initialData === 'object' ? initialData : {};
-    console.log('Safe initial data:', safeInitialData);
     
     setData(safeInitialData);
     setIsDirty(false);
-    
-    console.log('Data state after setting:', safeInitialData);
   }, [initialData]);
 
   // Función para obtener estadísticas de completitud

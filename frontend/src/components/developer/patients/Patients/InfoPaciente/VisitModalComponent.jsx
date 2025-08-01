@@ -472,22 +472,30 @@ const VisitModalComponent = ({
         const existingNote = await response.json();
         console.log('Loading existing note for editing:', existingNote);
         
-        // Extract sections_data and handle both corrupted (nested) and clean structures
+        // Extract sections_data and handle corrupted nested structures
         let sectionsData = existingNote.sections_data || {};
         
-        // Handle corrupted nested structure from old notes
-        if (sectionsData.sections_data) {
-          console.log('🔧 Fixing corrupted nested sections_data structure');
+        
+        // Handle multiple levels of corrupted nested structure
+        while (sectionsData.sections_data && typeof sectionsData.sections_data === 'object') {
           sectionsData = sectionsData.sections_data;
         }
         
-        console.log('Extracted sections data:', sectionsData);
+        // Filter out metadata fields that shouldn't be in sections
+        const cleanSectionsData = {};
+        Object.entries(sectionsData).forEach(([key, value]) => {
+          // Skip metadata fields
+          if (!['id', 'visit_id', 'status', 'therapist_name'].includes(key.toLowerCase())) {
+            cleanSectionsData[key] = value;
+          }
+        });
+        
         
         setFormData(prev => {
           const updatedFormData = {
             ...prev,
             existingNoteId: existingNote.id,
-            existingNoteData: sectionsData  // This will be spread into initialData
+            existingNoteData: cleanSectionsData  // Use the cleaned sections data
           };
           console.log('Updated formData for editing:', updatedFormData);
           return updatedFormData;
@@ -509,11 +517,6 @@ const VisitModalComponent = ({
    * Handle view note - Open printable view in new window
    */
   const handleViewNote = () => {
-    console.log('🔍 handleViewNote called');
-    console.log('🔍 visitData:', visitData);
-    console.log('🔍 visitData.hasNoteSaved:', visitData?.hasNoteSaved);
-    console.log('🔍 visitData.status:', visitData?.status);
-    console.log('🔍 patientInfo:', patientInfo);
     
     if (!visitData || !patientInfo) {
       setError('Missing visit or patient information');
@@ -525,7 +528,6 @@ const VisitModalComponent = ({
     
     try {
       const userRole = getNormalizedUserRole(user);
-      console.log('🔍 userRole:', userRole);
       
       // Open printable view with visit data
       openNotePrintableView(patientInfo.id, visitData.id, userRole, {
@@ -1095,7 +1097,6 @@ const VisitModalComponent = ({
         
         console.log('Passing initialData to NoteTemplateModal:', initialDataForModal);
         console.log('formData.existingNoteData:', formData.existingNoteData);
-        console.log('🔍 VisitModalComponent: Passing existingNoteId:', formData.existingNoteId);
         
         // Debug: Log section data summary
         console.log('Sections found:', Object.keys(formData.existingNoteData));

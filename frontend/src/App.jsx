@@ -43,6 +43,9 @@ import TBSettingsPage from './components/pt-ot-st/settings/SettingsPage.jsx';
 // Import new support modal components for Developer role
 import FloatingSupportButton from './components/developer/support/FloatingSupportButton';
 
+// Import PrintableVisitNote component
+import PrintableVisitNote from './components/developer/patients/Patients/InfoPaciente/NotesAndSign/PrintableVisitNote';
+
 // Import styles
 import './styles/Login/Login.scss';
 import './styles/Login/AuthLoadingModal.scss';
@@ -65,6 +68,9 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LoginCard />} />
+          
+          {/* Printable routes - accessible without authentication for printing */}
+          <Route path="/printable-note/:visitId" element={<PrintableVisitNote />} />
 
           {/* Main authenticated layout */}
           <Route element={<Outlet />}>

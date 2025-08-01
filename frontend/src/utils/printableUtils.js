@@ -9,9 +9,9 @@
  */
 export const generateNotePrintableUrl = (patientId, visitId, userRole = 'developer') => {
   const baseUrl = window.location.origin;
-  const basePath = `#/${userRole}/paciente/${patientId}`;
   
-  return `${baseUrl}/${basePath}?printable=true&visitId=${visitId}`;
+  // Use the new simplified printable route
+  return `${baseUrl}/#/printable-note/${visitId}`;
 };
 
 /**

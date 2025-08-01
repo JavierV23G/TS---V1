@@ -471,57 +471,14 @@ const PatientInfoPage = () => {
   const [certPeriodDates, setCertPeriodDates] = useState({ startDate: '', endDate: '' });
   const [currentCertPeriod, setCurrentCertPeriod] = useState(null);
 
-  // Check if we're in printable mode
-  const searchParams = new URLSearchParams(location.search);
-  const isPrintableMode = searchParams.get('printable') === 'true';
-  const visitId = searchParams.get('visitId');
-
-  // State for printable note data
-  const [noteData, setNoteData] = useState(null);
-  const [visitData, setVisitData] = useState(null);
-  const [loadingNote, setLoadingNote] = useState(false);
+  // Removed printable mode logic - now handled by dedicated PrintableVisitNote component
 
   // ===== ESTADO COMPARTIDO PARA SINCRONIZACIÓN =====
   const [scheduledVisits, setScheduledVisits] = useState([]);
   const [approvedVisits, setApprovedVisits] = useState(null);
   const [disciplines, setDisciplines] = useState(null);
 
-  // Load note data when in printable mode
-  useEffect(() => {
-    if (isPrintableMode && visitId && !loadingNote && !noteData) {
-      const fetchNoteData = async () => {
-        console.log('🔍 Starting to fetch note for visitId:', visitId);
-        setLoadingNote(true);
-        try {
-          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-          const url = `${API_BASE_URL}/visit-notes/${visitId}`;
-          console.log('🔍 Fetching from URL:', url);
-          
-          // Fetch the note data for this visit
-          const noteResponse = await fetch(url);
-          console.log('🔍 Response status:', noteResponse.status);
-          
-          if (noteResponse.ok) {
-            const note = await noteResponse.json();
-            console.log('🔍 Loaded note data:', note);
-            setNoteData(note);
-          } else {
-            console.warn('No note found for visit:', visitId, 'Status:', noteResponse.status);
-            // Set empty note data to stop loading
-            setNoteData({ sections_data: {} });
-          }
-        } catch (err) {
-          console.error('Error loading note data:', err);
-          // Set empty note data to stop loading
-          setNoteData({ sections_data: {} });
-        } finally {
-          setLoadingNote(false);
-        }
-      };
-
-      fetchNoteData();
-    }
-  }, [isPrintableMode, visitId, loadingNote, noteData]);
+  // Removed printable note loading logic - now handled by dedicated PrintableVisitNote component
 
   useEffect(() => {
     if (patient?.certification_periods?.length > 0) {
@@ -744,44 +701,7 @@ const PatientInfoPage = () => {
     }
   };
 
-  // If in printable mode, show only the note modal in printable view
-  if (isPrintableMode && visitId && patient) {
-    console.log('🖨️ Rendering printable mode for visitId:', visitId);
-    console.log('🖨️ Note data:', noteData);
-    console.log('🖨️ Loading note:', loadingNote);
-    
-    if (loadingNote || !noteData) {
-      return (
-        <div className="note-printable-loading">
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading note for printing...</p>
-            <small style={{marginTop: '10px', color: '#999'}}>
-              Visit ID: {visitId}
-            </small>
-          </div>
-        </div>
-      );
-    }
-    
-    return (
-      <NoteTemplateModal
-        isOpen={true}
-        onClose={() => window.close()}
-        patientData={{
-          firstName: patient.full_name?.split(' ')[0] || '',
-          lastName: patient.full_name?.split(' ').slice(1).join(' ') || '',
-          dateOfBirth: patient.birthday,
-          gender: patient.gender
-        }}
-        disciplina="PT" // Default for now
-        tipoNota="Initial Evaluation" // Default for now  
-        initialData={noteData?.sections_data || {}}
-        existingNoteId={noteData?.id || null}
-        onSave={() => {}}
-      />
-    );
-  }
+  // Removed printable mode rendering logic - now handled by dedicated PrintableVisitNote component
 
   // Render loading state
   if (loading) {
