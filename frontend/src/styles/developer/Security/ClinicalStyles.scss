@@ -1017,3 +1017,126 @@
     }
   }
 }
+
+// ===================================
+// 🚀 QUICK ACTIONS STYLES
+// ===================================
+
+.clinical-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.clinical-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--clinical-white);
+  border: 2px solid var(--clinical-blue-light);
+  color: var(--clinical-blue);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  
+  i {
+    font-size: 1.5rem;
+  }
+  
+  span {
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  &--primary {
+    border-color: var(--clinical-blue);
+    
+    &:hover {
+      background: var(--clinical-blue);
+      color: var(--clinical-white);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+  }
+  
+  &--warning {
+    border-color: #f59e0b;
+    color: #d97706;
+    
+    &:hover {
+      background: #f59e0b;
+      color: var(--clinical-white);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+    }
+  }
+  
+  &--info {
+    border-color: #0ea5e9;
+    color: #0284c7;
+    
+    &:hover {
+      background: #0ea5e9;
+      color: var(--clinical-white);
+      box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+    }
+  }
+  
+  &--success {
+    border-color: #10b981;
+    color: #059669;
+    
+    &:hover {
+      background: #10b981;
+      color: var(--clinical-white);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    }
+  }
+  
+  &--danger {
+    border-color: #ef4444;
+    color: #dc2626;
+    
+    &:hover {
+      background: #ef4444;
+      color: var(--clinical-white);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+    }
+  }
+}
+
+// Responsive adjustments for quick actions
+@media (max-width: 768px) {
+  .clinical-quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .clinical-action-btn {
+    padding: 1.25rem 0.75rem;
+    gap: 0.5rem;
+    
+    i {
+      font-size: 1.25rem;
+    }
+    
+    span {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .clinical-quick-actions {
+    grid-template-columns: 1fr;
+  }
+}

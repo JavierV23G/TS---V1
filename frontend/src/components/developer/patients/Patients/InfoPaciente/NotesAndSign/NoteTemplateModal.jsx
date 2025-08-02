@@ -19,8 +19,7 @@ const NoteTemplateModal = ({
   const [currentStep, setCurrentStep] = useState('template');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Check if we're in printable mode
-  const isPrintableMode = new URLSearchParams(location.search).get('printable') === 'true';
+  // Removed printable mode logic - now handled by dedicated PrintableVisitNote component
 
   // Load template configuration - hooks must be called unconditionally
   const { 
@@ -71,14 +70,6 @@ const NoteTemplateModal = ({
     setIsSubmitting(true);
     
     try {
-      console.log('=== 🔍 DEBUG: handleSubmit called ===');
-      console.log('🔍 existingNoteId:', existingNoteId);
-      console.log('🔍 Current data state:', data);
-      console.log('🔍 Data keys:', Object.keys(data));
-      console.log('🔍 Template config:', templateConfig);
-      console.log('🔍 Template sections:', templateConfig?.sections);
-      console.log('🔍 Initial data received:', initialData);
-      console.log('🔍 Initial data keys:', Object.keys(initialData));
       
       const validation = validateData(data, templateConfig);
       console.log('Validation result:', validation);
@@ -111,14 +102,11 @@ const NoteTemplateModal = ({
       // No enviamos therapist_name desde el frontend para evitar duplicación
       
       // Llamar al endpoint apropiado según si es edición o creación
-      console.log('🔄 About to call backend...');
-      console.log('🔄 existingNoteId check:', existingNoteId, typeof existingNoteId);
       
       try {
         let response, result;
         
         if (existingNoteId) {
-          console.log('🔄 Taking UPDATE path');
           // UPDATE existing note using PUT
           console.log('Updating existing note:', existingNoteId);
           
@@ -144,7 +132,6 @@ const NoteTemplateModal = ({
           result = await response.json();
           console.log('Note updated successfully:', result);
         } else {
-          console.log('🔄 Taking CREATE path');
           // CREATE new note using POST
           console.log('Creating new note for visit:', data.id);
           
@@ -187,9 +174,9 @@ const NoteTemplateModal = ({
 
       onClose();
     } catch (error) {
-      console.error('🚨 ERROR submitting template:', error);
-      console.error('🚨 Error message:', error.message);
-      console.error('🚨 Error stack:', error.stack);
+      console.error('ERROR submitting template:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       alert(`Failed to save template: ${error.message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
@@ -252,101 +239,7 @@ const NoteTemplateModal = ({
 
   const completionStats = getCompletionStats(templateConfig);
 
-  // Render printable view
-  if (isPrintableMode) {
-    return (
-      <div className="note-printable-view">
-        {/* Print Controls - Hidden in print */}
-        <div className="print-controls no-print">
-          <div className="controls-container">
-            <div className="note-title">
-              <h2>Visit Note - {patientData?.firstName} {patientData?.lastName}</h2>
-              <p>{disciplina} • {tipoNota}</p>
-            </div>
-            
-            <div className="action-buttons">
-              <button onClick={() => window.print()} className="print-button">
-                <i className="fas fa-print"></i>
-                Print
-              </button>
-              <button onClick={() => window.print()} className="pdf-button">
-                <i className="fas fa-file-pdf"></i>
-                Save as PDF
-              </button>
-              <button onClick={() => window.close()} className="close-button">
-                <i className="fas fa-times"></i>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Patient & Visit Info Header */}
-        <div className="printable-header">
-          <div className="header-content">
-            <div className="logo-section">
-              <h1>Visit Note</h1>
-              <p>Patient Care Documentation</p>
-            </div>
-            
-            <div className="info-grid">
-              <div className="info-section">
-                <h3>Patient Information</h3>
-                <div className="info-item">
-                  <span className="label">Name:</span>
-                  <span className="value">{patientData?.firstName} {patientData?.lastName}</span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Date of Birth:</span>
-                  <span className="value">{patientData?.dateOfBirth}</span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Gender:</span>
-                  <span className="value">{patientData?.gender}</span>
-                </div>
-              </div>
-              
-              <div className="info-section">
-                <h3>Visit Information</h3>
-                <div className="info-item">
-                  <span className="label">Date:</span>
-                  <span className="value">{new Date().toLocaleDateString()}</span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Type:</span>
-                  <span className="value">{tipoNota}</span>
-                </div>
-                <div className="info-item">
-                  <span className="label">Therapy:</span>
-                  <span className="value">{disciplina}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Note Content using existing TemplateRenderer */}
-        <div className="printable-content">
-          <TemplateRenderer
-            templateConfig={templateConfig}
-            data={data}
-            onChange={() => {}} // Read-only mode
-            onOpenTest={() => {}} // Disabled in print mode
-            onOpenDiagnosisModal={() => {}} // Disabled in print mode
-            autoSaveMessage=""
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="printable-footer">
-          <div className="footer-content">
-            <p>Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
-            <p>This document contains confidential patient information</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Removed printable view rendering - now handled by dedicated PrintableVisitNote component
 
   // Normal modal view
   return (

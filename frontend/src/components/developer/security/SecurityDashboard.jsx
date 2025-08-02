@@ -659,7 +659,10 @@ const SecurityDashboard = () => {
             <div className="clinical-stat-card__action">
               <button 
                 className="clinical-quick-nav"
-                onClick={() => setActiveTab('users')}
+                onClick={() => {
+                  console.log('[NAVIGATION] Clicking Active Users button');
+                  setActiveTab('users');
+                }}
               >
                 View All <i className="fas fa-arrow-right"></i>
               </button>
@@ -677,7 +680,10 @@ const SecurityDashboard = () => {
             <div className="clinical-stat-card__action">
               <button 
                 className="clinical-quick-nav"
-                onClick={() => setActiveTab('blocked')}
+                onClick={() => {
+                  console.log('[NAVIGATION] Clicking Blocked Users button');
+                  setActiveTab('blocked');
+                }}
               >
                 Manage <i className="fas fa-arrow-right"></i>
               </button>
@@ -702,16 +708,39 @@ const SecurityDashboard = () => {
             </div>
           </div>
 
-          <div className="clinical-stat-card clinical-stat-card--info">
+          <div className="clinical-stat-card clinical-stat-card--warning">
             <div className="clinical-stat-card__icon">
-              <i className="fas fa-check-circle"></i>
+              <i className="fas fa-mobile-alt"></i>
             </div>
             <div className="clinical-stat-card__content">
-              <div className="clinical-stat-card__value">{securityData?.total_successful_logins || 0}</div>
-              <div className="clinical-stat-card__label">Total Logins</div>
+              <div className="clinical-stat-card__value">{devicesSummary?.total_devices_registered || 0}</div>
+              <div className="clinical-stat-card__label">Tracked Devices</div>
             </div>
             <div className="clinical-stat-card__action">
-              <span className="clinical-stat-trend">Today</span>
+              <button 
+                className="clinical-quick-nav"
+                onClick={() => setActiveTab('devices')}
+              >
+                Analyze <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="clinical-stat-card clinical-stat-card--info">
+            <div className="clinical-stat-card__icon">
+              <i className="fas fa-fingerprint"></i>
+            </div>
+            <div className="clinical-stat-card__content">
+              <div className="clinical-stat-card__value">{devicesSummary?.total_users_with_devices || 0}</div>
+              <div className="clinical-stat-card__label">Users with Devices</div>
+            </div>
+            <div className="clinical-stat-card__action">
+              <button 
+                className="clinical-quick-nav"
+                onClick={() => setActiveTab('monitoring')}
+              >
+                Monitor <i className="fas fa-arrow-right"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -759,8 +788,17 @@ const SecurityDashboard = () => {
                 <i className={`fas ${blockedUsers.length > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}></i>
                 <span>Blocked Users: {blockedUsers.length > 0 ? `${blockedUsers.length} users blocked` : 'No blocks active'}</span>
               </div>
+              <div className={`clinical-status-item ${(devicesSummary?.high_risk_devices || 0) > 0 ? 'clinical-status-item--warning' : 'clinical-status-item--good'}`}>
+                <i className={`fas ${(devicesSummary?.high_risk_devices || 0) > 0 ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}></i>
+                <span>Device Security: {(devicesSummary?.high_risk_devices || 0) > 0 ? `${devicesSummary.high_risk_devices} high-risk devices` : 'All devices secure'}</span>
+              </div>
+              <div className={`clinical-status-item ${(devicesSummary?.bot_devices || 0) > 0 ? 'clinical-status-item--danger' : 'clinical-status-item--good'}`}>
+                <i className={`fas ${(devicesSummary?.bot_devices || 0) > 0 ? 'fa-robot' : 'fa-check-circle'}`}></i>
+                <span>Bot Detection: {(devicesSummary?.bot_devices || 0) > 0 ? `${devicesSummary.bot_devices} bots detected` : 'No bots detected'}</span>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
     );

@@ -63,7 +63,7 @@ const VisitStatusModal = ({
     }
   ];
 
-  // Initialize data when modal opens
+  // OPTIMIZACIÓN: Usar endpoint unificado en lugar de múltiples llamadas
   useEffect(() => {
     if (isOpen && visitData) {
       // Set form fields from visitData
@@ -74,16 +74,65 @@ const VisitStatusModal = ({
       setSelectedStatus(visitData.status || 'Scheduled');
       setSelectedTherapist(visitData.staff_id || null);
       
-      // Fetch related data
+      // Fetch all data in single API call
+      fetchAllVisitData();
+    }
+  }, [isOpen, visitData]);
+
+  // OPTIMIZACIÓN: Función unificada que reemplaza 3 llamadas API separadas
+  const fetchAllVisitData = async () => {
+    try {
+      if (visitData?.id) {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/visits/${visitData.id}/complete-data`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Establecer datos del paciente
+          if (data.patient) {
+            setPatientData({
+              first_name: data.patient.full_name ? data.patient.full_name.split(' ')[0] : 'Unknown',
+              last_name: data.patient.full_name ? data.patient.full_name.split(' ').slice(1).join(' ') : 'Patient',
+              physician: data.patient.physician || 'Not assigned'
+            });
+          }
+          
+          // Establecer terapeuta asignado
+          if (data.assigned_therapist) {
+            setAssignedTherapist(data.assigned_therapist);
+          }
+          
+          // Establecer terapeutas disponibles (solo si el usuario puede editar)
+          if (canEditTherapist() && data.available_therapists) {
+            setAvailableTherapists(data.available_therapists);
+          }
+          
+        } else {
+          console.error('Failed to fetch visit complete data:', response.status, response.statusText);
+          // Fallback a método anterior si falla el nuevo endpoint
+          fetchPatientData();
+          fetchAssignedTherapist();
+          if (canEditTherapist()) {
+            fetchAvailableTherapists();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching visit complete data:', error);
+      // Fallback a método anterior si hay error
       fetchPatientData();
       fetchAssignedTherapist();
-      
-      // Only fetch available therapists if user can edit
       if (canEditTherapist()) {
         fetchAvailableTherapists();
       }
     }
-  }, [isOpen, visitData]);
+  };
 
   // Fetch patient data
   const fetchPatientData = async () => {
