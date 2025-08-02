@@ -1,4 +1,3 @@
-// Modificaciones a AuthLoadingModal.jsx para hacerlo más responsive
 
 import React, { useEffect, useState, useCallback } from 'react';
 
@@ -10,7 +9,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
   const [animateBg, setAnimateBg] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Detectar dispositivo móvil para ajustar contenido
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 576);
@@ -24,7 +22,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
     };
   }, []);
   
-  // Pasos del proceso según el tipo de modal y dispositivo
   const getSteps = useCallback(() => {
     if (modalType === 'auth') {
       return isMobile 
@@ -58,7 +55,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
     }
   }, [modalType, isMobile]);
   
-  // Efecto para animar el fondo
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -69,27 +65,20 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
     }
   }, [isOpen]);
   
-  // Efecto para manejar la animación de progreso
   useEffect(() => {
     let interval;
     
     if (isOpen && status === 'loading') {
-      // Resetear estados al abrirse
       setProgress(0);
       setShowSpinner(true);
       setShowStatusIcon(false);
       setCurrentStep(0);
       
-      // Animar el progreso - más realista con variaciones de velocidad
       interval = setInterval(() => {
         setProgress(prev => {
-          // Algoritmo mejorado para progreso más natural
           const remainingProgress = 95 - prev;
-          // Velocidad variable basada en el progreso actual
           const baseIncrement = prev < 30 ? 7 : prev < 60 ? 5 : prev < 80 ? 3 : 1.5;
-          // Añadir variación aleatoria para que se vea orgánico
           const variableComponent = Math.random() * 2 - 1;
-          // Ralentización cuando se acerca al final
           const slowdownFactor = Math.max(0.3, (95 - prev) / 95);
           
           const increment = (baseIncrement + variableComponent) * slowdownFactor;
@@ -99,11 +88,10 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
         });
       }, 300);
       
-      // Cambiar el paso actual de forma más orgánica
       const steps = getSteps();
       let stepTimes = Array(steps.length).fill(0).map(() => 
         Math.floor(Math.random() * 800 + 1600)
-      ); // Tiempos variados para cada paso
+      );
       
       const scheduleNextStep = (currentStepIndex) => {
         if (currentStepIndex < steps.length - 1) {
@@ -117,15 +105,12 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
       scheduleNextStep(0);
       
     } else if (status === 'success' || status === 'error') {
-      // Completar el progreso
       setProgress(100);
       
-      // Mostrar el ícono correspondiente después de completar la animación
       const timeout = setTimeout(() => {
         setShowSpinner(false);
         setShowStatusIcon(true);
         
-        // Si es error, cerrar automáticamente después de un tiempo
         if (status === 'error') {
           setTimeout(() => {
             if (onClose) onClose();
@@ -141,33 +126,26 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
     };
   }, [isOpen, status, getSteps, onClose]);
   
-  // Si no está abierto, no renderizar nada
   if (!isOpen) return null;
   
   const steps = getSteps();
   
-  // Determinar el mensaje a mostrar con formato condicional
   const displayMessage = status === 'loading' 
     ? (message || steps[currentStep])
     : message;
   
-  // Obtener el nombre del usuario si está disponible
   const getUserName = () => {
     if (!userData) return 'User';
     
-    // Primero intenta usar fullname si está disponible
     if (userData.fullname) return userData.fullname;
     
-    // Si no, usa el username o email
     return userData.username || userData.email || 'User';
   };
   
-  // Generar ID único para el servidor (simulación)
   const generateServerId = () => {
     return `SEC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   };
   
-  // Calcular el tiempo restante estimado (simulación)
   const getEstimatedTime = () => {
     const remainingProgress = 100 - progress;
     if (remainingProgress < 5) return "Almost done...";
@@ -178,7 +156,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
   
   return (
     <div className={`auth-loading-overlay ${isOpen ? 'show' : ''} ${animateBg ? 'animate-bg' : ''} ${status === 'error' ? 'error-bg' : status === 'success' ? 'success-bg' : ''}`}>
-      {/* Elementos decorativos */}
       <div className="auth-decoration deco-1"></div>
       <div className="auth-decoration deco-2"></div>
       <div className="auth-decoration deco-3"></div>
@@ -189,7 +166,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
         <div className="auth-loading-spinner">
           {showSpinner && (
             <>
-              {/* Spinner SVG mejorado con degradado */}
               <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -201,7 +177,6 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
                 <circle className="circle-progress" cx="50" cy="50" r="45" />
               </svg>
               
-              {/* Anillos de pulso */}
               <div className="pulse-rings">
                 <div className="pulse-ring ring1"></div>
                 <div className="pulse-ring ring2"></div>

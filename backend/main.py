@@ -20,6 +20,10 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
+# Security system enabled without WebSocket notifications
+NOTIFICATIONS_ENABLED = False
+print("🔐 [MAIN] Security System Active (WebSocket disabled)")
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -27,6 +31,10 @@ async def startup():
             conn.execute(text("SET search_path TO public;"))
         Base.metadata.create_all(bind=engine)
         print("✅ Tablas creadas o ya existentes.")
+        
+        # Security system active (WebSocket notifications disabled)
+        print("🔐 [STARTUP] Security system ready - WebSocket notifications disabled")
+            
     except Exception as e:
         print(f"Error during startup: {e}")
 

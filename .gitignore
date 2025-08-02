@@ -43,3 +43,4 @@ yarn-error.log*
 
 database_data/
 documents_uploaded/
+CLAUDE.md

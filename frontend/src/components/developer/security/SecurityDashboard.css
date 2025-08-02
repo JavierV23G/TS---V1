@@ -1,0 +1,456 @@
+/* QUANTUM SECURITY SUITE ANIMATIONS */
+
+/* Core Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* DNA Loader Animations */
+@keyframes dna1 {
+  0% {
+    transform: translateX(-50%) rotateY(0deg);
+  }
+  100% {
+    transform: translateX(-50%) rotateY(360deg);
+  }
+}
+
+@keyframes dna2 {
+  0% {
+    transform: translateX(-50%) rotateY(90deg);
+  }
+  100% {
+    transform: translateX(-50%) rotateY(450deg);
+  }
+}
+
+/* Hover Effects */
+.stat-card:hover .stat-glow {
+  opacity: 1 !important;
+}
+
+.entity-option:hover .entity-glow {
+  opacity: 1 !important;
+}
+
+.user-card:hover .user-card-glow {
+  opacity: 1 !important;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.refresh-btn:hover .refresh-btn-glow {
+  opacity: 1 !important;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.lockdown-btn:hover .lockdown-glow {
+  opacity: 1 !important;
+}
+
+.lockdown-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(245, 101, 101, 0.4);
+}
+
+.threat-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(72, 187, 120, 0.4);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-2px);
+}
+
+.confirm-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(245, 101, 101, 0.4);
+}
+
+/* Quantum Loader Specific */
+.quantum-loader {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Node Core Pseudo Element Fix */
+.node-core::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  background: #48bb78;
+  border-radius: 50%;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* DNA Strands Positioning */
+.dna-strand:first-child {
+  animation: dna1 2s linear infinite;
+}
+
+.dna-strand:last-child {
+  animation: dna2 2s linear infinite;
+  left: calc(50% + 20px);
+}
+
+/* Avatar Container Fix */
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-radius: 50%;
+}
+
+/* Input Placeholder Styling */
+input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 10px !important;
+    margin-top: 70px !important;
+  }
+  
+  .header-content {
+    flex-direction: column !important;
+    gap: 20px;
+    padding: 20px !important;
+  }
+  
+  .title {
+    font-size: 1.8rem !important;
+  }
+  
+  .title-badge {
+    display: none;
+  }
+  
+  .header-controls {
+    flex-direction: column !important;
+    width: 100%;
+    gap: 15px;
+  }
+  
+  .tabs-container {
+    flex-direction: column !important;
+  }
+  
+  .tab {
+    width: 100% !important;
+    padding: 15px !important;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .entity-selector {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .users-list {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .modal {
+    padding: 20px !important;
+  }
+  
+  .block-info {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Premium Glass Effect */
+@supports (backdrop-filter: blur(20px)) {
+  .header,
+  .content {
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+/* Font Import for Orbitron */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap');
+
+/* Selection Color */
+::selection {
+  background: rgba(102, 126, 234, 0.5);
+  color: white;
+}
+
+/* Focus States */
+input:focus,
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+/* Disabled States */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Loading Spinner for DNA */
+.dna-loader {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+/* Matrix Node Hover */
+.matrix-node:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(72, 187, 120, 0.3);
+  border-color: rgba(72, 187, 120, 0.4);
+}
+
+/* Tab Indicator Animation */
+@keyframes tabGlow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.tab-indicator {
+  animation: tabGlow 2s ease-in-out infinite;
+}
+
+/* Error Alert Animation */
+.error-alert {
+  animation: slideInDown 0.5s ease-out, shake 0.5s ease-out 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Threat Pulse Animation Enhancement */
+@keyframes threatPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.threat-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #f56565;
+  border-radius: 50%;
+  animation: threatPulse 2s ease-out infinite;
+}
+
+/* Premium Button Press Effect */
+button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Status Indicators */
+.status-pulse,
+.matrix-pulse {
+  position: relative;
+}
+
+.status-pulse::after,
+.matrix-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: pulse 2s ease-out infinite;
+}
+
+/* Search Input Focus Glow */
+.search-input:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3),
+              inset 0 0 20px rgba(102, 126, 234, 0.1);
+}
+
+/* Card Hover States */
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+/* Quantum Core Enhanced Animation */
+@keyframes quantumPulse {
+  0%, 100% {
+    box-shadow: 0 0 40px rgba(102, 126, 234, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(102, 126, 234, 1),
+                0 0 100px rgba(118, 75, 162, 0.5);
+  }
+}
+
+.quantum-core {
+  animation: pulse 2s ease-in-out infinite,
+             quantumPulse 3s ease-in-out infinite;
+}
+
+/* Final Touch - Smooth All Transitions */
+* {
+  transition: all 0.3s ease;
+}
+
+/* Performance Optimization */
+.header-glow,
+.content-glow,
+.modal-glow {
+  will-change: transform, opacity;
+}
+
+.quantum-ring1,
+.quantum-ring2,
+.quantum-ring3,
+.avatar-ring {
+  will-change: transform;
+}
