@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../login/AuthContext';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import '../../styles/Header/Header.scss';
+// 🚨 IMPORT SECURITY NOTIFICATIONS
+import SecurityNotifications from '../developer/security/SecurityNotifications';
 
 const Header = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -376,6 +378,13 @@ const Header = ({ onLogout }) => {
               </button>
             )}
           </div>
+          
+          {/* 🚨 SECURITY NOTIFICATIONS - Only for developers/admins */}
+          {(currentUser?.role === 'developer' || currentUser?.role === 'admin') && (
+            <div className="security-notifications-container">
+              <SecurityNotifications />
+            </div>
+          )}
           
           <div className="support-user-profile" ref={userMenuRef}>
             <div 

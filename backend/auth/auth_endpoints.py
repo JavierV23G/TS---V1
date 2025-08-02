@@ -42,6 +42,11 @@ router = APIRouter()
 async def verify_credentials(http_request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     # PASO 1: VERIFICAR BLOQUEO PRIMERO (ANTES DE CREDENCIALES)
     print(f"[ENDPOINT DEBUG] verify-credentials llamado para usuario: {login_data.username}")
+    print(f"[ENDPOINT DEBUG] Device fingerprint in request: {login_data.device_fingerprint is not None}")
+    if login_data.device_fingerprint:
+        print(f"[ENDPOINT DEBUG] Device fingerprint keys: {list(login_data.device_fingerprint.keys())}")
+        print(f"[ENDPOINT DEBUG] Device hash: {login_data.device_fingerprint.get('hash', 'NO_HASH')}")
+    
     allowed, security_error = await security_manager.check_security(http_request, login_data.username)
     
     if not allowed:
@@ -93,7 +98,7 @@ async def verify_credentials(http_request: Request, login_data: LoginRequest, db
         )
     
     # PASO 4: CREDENCIALES CORRECTAS - CREAR SESIÓN Y REGISTRAR LOGIN EXITOSO
-    security_manager.record_successful_login(http_request, login_data.username)
+    security_manager.record_successful_login(http_request, login_data.username, login_data.device_fingerprint)
     security_manager.create_user_session(login_data.username, http_request)
     
     return UserCredentials(
@@ -168,7 +173,7 @@ async def login(http_request: Request, login_data: LoginRequest, db: Session = D
         )
     
     # PASO 4: CREDENCIALES CORRECTAS - CREAR SESIÓN Y REGISTRAR LOGIN EXITOSO
-    security_manager.record_successful_login(http_request, login_data.username)
+    security_manager.record_successful_login(http_request, login_data.username, login_data.device_fingerprint)
     security_manager.create_user_session(login_data.username, http_request)
     
     token = create_access_token(data={"sub": user.username})
@@ -215,6 +220,39 @@ async def get_security_stats(http_request: Request):
         "📊 ENTERPRISE_METRICS": stats,
         "🕐 TIMESTAMP": datetime.utcnow().isoformat(),
         "👨‍💼 ARCHITECT": "Dr. Luis - Chief Security Officer"
+    }
+
+# 📱 ENDPOINT - DISPOSITIVOS DE USUARIOS (DEVICE FINGERPRINTS)
+@router.get("/user-devices")
+async def get_user_devices(http_request: Request):
+    """
+    📱 OBTENER DISPOSITIVOS DE TODOS LOS USUARIOS
+    
+    Proporciona información de todos los device fingerprints registrados
+    para análisis de seguridad y detección de patrones sospechosos.
+    
+    🔍 INCLUYE:
+    ├── 📊 Resumen de dispositivos por usuario
+    ├── 🎯 Risk scores y análisis de bots
+    ├── 📈 Historial de dispositivos recientes
+    ├── ⚠️ Alertas de dispositivos de alto riesgo
+    └── 🕐 Timestamps de último acceso
+    
+    ACCESO: Solo administradores de seguridad
+    """
+    devices_summary = security_manager.get_devices_summary()
+    all_devices = security_manager.get_all_user_devices()
+    
+    print(f"[DEVICES API] Devices summary: {devices_summary}")
+    print(f"[DEVICES API] All devices count: {len(all_devices)}")
+    print(f"[DEVICES API] Device users: {list(all_devices.keys())}")
+    
+    return {
+        "📱 DEVICE_TRACKING_SYSTEM": "ACTIVE",
+        "📊 SUMMARY": devices_summary,
+        "👥 USER_DEVICES": all_devices,
+        "🕐 TIMESTAMP": datetime.utcnow().isoformat(),
+        "🔐 SYSTEM_STATUS": "MONITORING ALL USER DEVICES"
     }
 
 # 🚨 ENDPOINT CRÍTICO - OBTENER BLOQUEOS ACTIVOS (SOLO DEVELOPERS)

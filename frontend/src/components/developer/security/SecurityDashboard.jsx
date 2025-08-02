@@ -3,8 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../header/Header';
 import { useAuth } from '../../login/AuthContext';
 import failedAttemptsService from '../../login/FailedAttemptsService';
+import SecurityNotifications from './SecurityNotifications';
+import SecurityMonitor from './SecurityMonitor';
+import SecurityLiveMonitor from './SecurityLiveMonitor';
 import '../../../styles/developer/Security/SecurityDashboard.scss';
 import '../../../styles/developer/Security/ClinicalStyles.scss';
+// 🧪 IMPORT TEST UTILITIES FOR DEVELOPMENT
+import '../../../utils/TestDeviceFingerprint';
 
 const SecurityDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +32,8 @@ const SecurityDashboard = () => {
   const [blockDetails, setBlockDetails] = useState({});
   const [refreshing, setRefreshing] = useState(false);
   const [terminating, setTerminating] = useState({});
+  const [userDevices, setUserDevices] = useState(null);
+  const [devicesSummary, setDevicesSummary] = useState(null);
 
   // Remove inline styles - using SCSS instead
 
@@ -40,7 +47,7 @@ const SecurityDashboard = () => {
   const fetchData = async () => {
     try {
       if (!refreshing) setLoading(true);
-      await Promise.all([fetchSecurityData(), fetchUsers(), fetchActiveSessions()]);
+      await Promise.all([fetchSecurityData(), fetchUsers(), fetchActiveSessions(), fetchUserDevices()]);
       setError(null);
     } catch (err) {
       console.error('[FRONTEND] Error fetching data:', err);
@@ -110,6 +117,30 @@ const SecurityDashboard = () => {
       }
     } catch (err) {
       console.error('[FRONTEND] Error fetching active sessions:', err);
+    }
+  };
+
+  const fetchUserDevices = async () => {
+    try {
+      console.log('[DEVICES] Fetching user devices...');
+      const response = await fetch('http://localhost:8000/auth/user-devices');
+      console.log('[DEVICES] Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[DEVICES] Full response data:', data);
+        console.log('[DEVICES] USER_DEVICES:', data['👥 USER_DEVICES']);
+        console.log('[DEVICES] SUMMARY:', data['📊 SUMMARY']);
+        
+        setUserDevices(data['👥 USER_DEVICES'] || {});
+        setDevicesSummary(data['📊 SUMMARY'] || {});
+      } else {
+        console.error('[DEVICES] Error response:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('[DEVICES] Error details:', errorText);
+      }
+    } catch (err) {
+      console.error('[FRONTEND] Error fetching user devices:', err);
     }
   };
 
@@ -758,6 +789,194 @@ const SecurityDashboard = () => {
     );
   }
 
+  const renderUserDevices = () => {
+    if (!userDevices || !devicesSummary) {
+      return (
+        <div className="clinical-section">
+          <div className="clinical-card">
+            <div className="clinical-card__header">
+              <h3>📱 User Devices</h3>
+            </div>
+            <div className="clinical-card__content">
+              <div className="loading-state">
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading device data...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const userCount = devicesSummary.total_users_with_devices || 0;
+    const deviceCount = devicesSummary.total_devices_registered || 0;
+    const highRiskCount = devicesSummary.high_risk_devices || 0;
+    const botCount = devicesSummary.bot_devices || 0;
+
+    return (
+      <div className="clinical-section">
+        {/* Summary Cards */}
+        <div className="clinical-grid clinical-grid--4">
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--primary">
+                <i className="fas fa-users"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{userCount}</div>
+                <div className="clinical-metric__label">Users with Devices</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--info">
+                <i className="fas fa-mobile-alt"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{deviceCount}</div>
+                <div className="clinical-metric__label">Total Devices</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--warning">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{highRiskCount}</div>
+                <div className="clinical-metric__label">High Risk Devices</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--danger">
+                <i className="fas fa-robot"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{botCount}</div>
+                <div className="clinical-metric__label">Bot Detections</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* User Devices List */}
+        <div className="clinical-card">
+          <div className="clinical-card__header">
+            <h3>
+              <i className="fas fa-mobile-alt"></i>
+              Device History by User
+            </h3>
+          </div>
+          <div className="clinical-card__content">
+            {Object.keys(userDevices).length === 0 ? (
+              <div className="empty-state">
+                <i className="fas fa-mobile-alt"></i>
+                <p>No device data available</p>
+                <small>Devices will appear here when users log in</small>
+              </div>
+            ) : (
+              <div className="user-devices-list">
+                {Object.entries(userDevices).map(([username, devices]) => (
+                  <div key={username} className="user-device-item">
+                    <div className="user-device-header">
+                      <div className="user-info">
+                        <h4>👤 {username}</h4>
+                        <span className="device-count">{devices.length} device(s)</span>
+                      </div>
+                      <div className="latest-activity">
+                        {devices.length > 0 && (
+                          <>
+                            <span className="activity-time">
+                              Last: {new Date(devices[devices.length - 1].timestamp).toLocaleString()}
+                            </span>
+                            <span className={`risk-badge risk-${devices[devices.length - 1].risk_score > 50 ? 'high' : devices[devices.length - 1].risk_score > 25 ? 'medium' : 'low'}`}>
+                              Risk: {devices[devices.length - 1].risk_score}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="devices-grid">
+                      {devices.slice(-3).map((device, index) => (
+                        <div key={index} className="device-card">
+                          <div className="device-card-header">
+                            <div className="device-hash">
+                              <code>{device.hash.substring(0, 16)}...</code>
+                              <button
+                                className="copy-btn"
+                                onClick={() => navigator.clipboard.writeText(device.hash)}
+                                title="Copy full hash"
+                              >
+                                <i className="fas fa-copy"></i>
+                              </button>
+                            </div>
+                            <div className="device-indicators">
+                              {device.is_bot && <span className="bot-indicator">🤖 Bot</span>}
+                              {device.risk_score > 50 && <span className="risk-indicator">⚠️ High Risk</span>}
+                            </div>
+                          </div>
+                          
+                          <div className="device-details">
+                            <div className="detail-row">
+                              <span className="label">Features:</span>
+                              <span className="value">{device.features_count}</span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="label">Screen:</span>
+                              <span className="value">
+                                {device.browser_info.screen.width}x{device.browser_info.screen.height}
+                              </span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="label">Timezone:</span>
+                              <span className="value">{device.browser_info.timezone}</span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="label">IP:</span>
+                              <span className="value">{device.ip}</span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="label">Time:</span>
+                              <span className="value">
+                                {new Date(device.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="device-security">
+                            <div className="security-features">
+                              <span className={`feature ${device.security_features.canvas ? 'enabled' : 'disabled'}`}>
+                                Canvas {device.security_features.canvas ? '✅' : '❌'}
+                              </span>
+                              <span className={`feature ${device.security_features.webgl ? 'enabled' : 'disabled'}`}>
+                                WebGL {device.security_features.webgl ? '✅' : '❌'}
+                              </span>
+                              <span className={`feature ${device.security_features.audio ? 'enabled' : 'disabled'}`}>
+                                Audio {device.security_features.audio ? '✅' : '❌'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="security-dashboard">
       <Header onLogout={handleLogout} />
@@ -779,14 +998,18 @@ const SecurityDashboard = () => {
               <span className="dashboard-header__badge">Enterprise</span>
             </div>
             
-            <button
-              className={`refresh-button ${refreshing ? 'disabled' : ''}`}
-              onClick={() => !refreshing && fetchData()}
-              disabled={refreshing}
-            >
-              <i className={`fas fa-sync icon ${refreshing ? 'spinning' : ''}`}></i>
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
+            <div className="dashboard-header__actions">
+              <SecurityMonitor />
+              <SecurityNotifications />
+              <button
+                className={`refresh-button ${refreshing ? 'disabled' : ''}`}
+                onClick={() => !refreshing && fetchData()}
+                disabled={refreshing}
+              >
+                <i className={`fas fa-sync icon ${refreshing ? 'spinning' : ''}`}></i>
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
           </div>
           <p className="dashboard-header__subtitle">
             Comprehensive security management and user administration
@@ -823,6 +1046,20 @@ const SecurityDashboard = () => {
               <i className="fas fa-desktop"></i>
               <span>Active Sessions</span>
             </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'devices' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('devices'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-mobile-alt"></i>
+              <span>User Devices</span>
+            </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'monitoring' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('monitoring'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-fingerprint"></i>
+              <span>Live Monitor</span>
+            </button>
           </div>
         </div>
 
@@ -831,6 +1068,8 @@ const SecurityDashboard = () => {
           {activeTab === 'users' && renderUsersSection()}
           {activeTab === 'blocked' && renderBlockedUsers()}
           {activeTab === 'sessions' && renderSessionsByRole()}
+          {activeTab === 'devices' && renderUserDevices()}
+          {activeTab === 'monitoring' && <SecurityLiveMonitor />}
         </div>
       </div>
 

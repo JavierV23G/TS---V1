@@ -6,6 +6,8 @@ import ActiveSessionModal from './ActiveSessionModal';
 import failedAttemptsService from './FailedAttemptsService';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import { useAuth } from './AuthContext';
+// 🖥️ IMPORT INTELLIGENT DEVICE FINGERPRINTING
+import DeviceFingerprint from '../../utils/DeviceFingerprint';
 
 const Login = ({ onForgotPassword }) => {
   const navigate = useNavigate();
@@ -225,10 +227,23 @@ const Login = ({ onForgotPassword }) => {
     });
 
     try {
+      // 🖥️ GENERATE DEVICE FINGERPRINT
+      console.log('[LOGIN] 🖥️ Generating device fingerprint...');
+      const deviceFingerprint = await DeviceFingerprint.generate();
+      console.log('[LOGIN] ✅ Device fingerprint generated:', {
+        hash: deviceFingerprint.hash,
+        userAgent: deviceFingerprint.userAgent?.substring(0, 50) + '...',
+        screen: deviceFingerprint.screen,
+        timezone: deviceFingerprint.timezone
+      });
+
       const credentialsRes = await fetch('http://localhost:8000/auth/verify-credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          device_fingerprint: deviceFingerprint  // 🚨 Include device fingerprint (snake_case)
+        })
       });
 
       // MANEJAR STATUS 429 - CUENTA BLOQUEADA POR EL BACKEND

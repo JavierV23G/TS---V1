@@ -46,6 +46,15 @@ import asyncio
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 
+# 🚨 IMPORT INTELLIGENT NOTIFICATIONS SYSTEM
+try:
+    from notifications.security_alerts import security_notifier
+    NOTIFICATIONS_ENABLED = True
+    print("🚨 [SECURITY] Intelligent Notification System ACTIVATED")
+except ImportError:
+    NOTIFICATIONS_ENABLED = False
+    print("⚠️ [SECURITY] Notification system not available")
+
 class BankLevelSecurityManager:
     """
     🏛️ ENTERPRISE SECURITY FORTRESS - CLASE TITANIUM
@@ -102,6 +111,10 @@ class BankLevelSecurityManager:
         # 🔐 SINGLE SESSION MANAGEMENT - Solo una sesión activa por usuario
         # Diccionario: username -> session_info
         self._active_sessions: Dict[str, Dict] = {}
+        
+        # 📱 DEVICE FINGERPRINT TRACKING - Almacenamiento de huellas digitales
+        # Diccionario: username -> lista de device fingerprints
+        self._user_devices: Dict[str, List[Dict]] = defaultdict(list)
         
         # Lock para operaciones thread-safe
         self._lock = asyncio.Lock()
@@ -276,6 +289,21 @@ class BankLevelSecurityManager:
                 # Verificar si debe ser bloqueo permanente
                 if current_level >= len(self.config["lockout_durations"]) - 1:
                     self._permanent_blocks[username] = current_time
+                    
+                    # 🚨 INTELLIGENT NOTIFICATION - Permanent Block Alert
+                    if NOTIFICATIONS_ENABLED:
+                        try:
+                            asyncio.create_task(
+                                security_notifier.alert_account_lockout(
+                                    username=username,
+                                    level=7,  # Permanent = Level 7
+                                    reason=f"Maximum failed attempts reached ({current_level + 1} cycles)"
+                                )
+                            )
+                            print(f"🚨 [NOTIFICATION] Permanent block alert sent for {username}")
+                        except Exception as e:
+                            print(f"⚠️ [NOTIFICATION] Failed to send permanent block alert: {e}")
+                    
                     self._log_security_event({
                         "event": "account_blocked_permanently",
                         "username": username,
@@ -296,7 +324,21 @@ class BankLevelSecurityManager:
                 
                 self._active_blocks[username] = unblock_time
                 self._block_levels[username] += 1
-                self._failed_attempts[username].clear()  # Limpiar para el próximo ciclo
+                # Note: Do NOT clear failed_attempts here - they should only be cleared when block expires or is manually revoked
+                
+                # 🚨 INTELLIGENT NOTIFICATION - Temporary Block Alert
+                if NOTIFICATIONS_ENABLED:
+                    try:
+                        asyncio.create_task(
+                            security_notifier.alert_account_lockout(
+                                username=username,
+                                level=current_level + 1,
+                                reason=f"5 failed attempts - blocked for {duration} minutes"
+                            )
+                        )
+                        print(f"🚨 [NOTIFICATION] Temporary block alert sent for {username} (Level {current_level + 1})")
+                    except Exception as e:
+                        print(f"⚠️ [NOTIFICATION] Failed to send temporary block alert: {e}")
                 
                 self._log_security_event({
                     "event": "account_blocked_temporarily",
@@ -333,7 +375,34 @@ class BankLevelSecurityManager:
         # Registrar IP para historial de seguridad
         self._user_ip_history[username].append((ip, current_time.timestamp()))
         
-        print(f"[SECURITY DEBUG] Failed attempt recorded - User: {username}, IP: {ip}, Total user attempts: {len(self._failed_attempts[username])}")
+        attempts_count = len(self._failed_attempts[username])
+        
+        print(f"[SECURITY DEBUG] Failed attempt recorded - User: {username}, IP: {ip}, Total user attempts: {attempts_count}")
+        
+        # 🚨 INTELLIGENT NOTIFICATION - Failed Login Alert
+        if NOTIFICATIONS_ENABLED and attempts_count >= 1:
+            try:
+                # Extract device fingerprint from request if available
+                device_fingerprint = None
+                if hasattr(request, 'json') and request.method == 'POST':
+                    try:
+                        body = request.json() if callable(request.json) else {}
+                        device_fingerprint = body.get('deviceFingerprint', {})
+                    except:
+                        pass
+                
+                # Trigger async notification
+                asyncio.create_task(
+                    security_notifier.alert_failed_login(
+                        username=username,
+                        ip=ip,
+                        attempts=attempts_count,
+                        device_fingerprint=device_fingerprint
+                    )
+                )
+                print(f"🚨 [NOTIFICATION] Failed login alert sent for {username}")
+            except Exception as e:
+                print(f"⚠️ [NOTIFICATION] Failed to send alert: {e}")
         
         # Log de seguridad
         self._log_security_event({
@@ -342,15 +411,104 @@ class BankLevelSecurityManager:
             "ip": ip,
             "timestamp": current_time.isoformat(),
             "user_agent": request.headers.get("user-agent", "unknown"),
-            "attempts_in_current_cycle": len(self._failed_attempts.get(username, [])),
+            "attempts_in_current_cycle": attempts_count,
             "block_level": self._block_levels.get(username, 0)
         })
+        
+        # 🚨 VERIFICAR SI DEBE BLOQUEAR DESPUÉS DE REGISTRAR EL INTENTO
+        self._check_and_apply_block_after_failed_attempt(username, attempts_count, current_time, ip)
+    
+    def _check_and_apply_block_after_failed_attempt(self, username: str, attempts_count: int, current_time: datetime, ip: str):
+        """
+        🚨 FUNCIÓN CRÍTICA: Verificar si debe aplicar bloqueo después de registrar intento fallido
+        Esta función se ejecuta DESPUÉS de registrar el intento, por lo que tiene el conteo correcto
+        """
+        # Verificar si alcanzó el límite de intentos por ciclo
+        if attempts_count >= self.config["max_attempts_per_cycle"]:
+            print(f"[SECURITY] 🚨 TRIGGER BLOCK: User {username} reached {attempts_count} attempts, applying block...")
+            
+            # Calcular el nivel de bloqueo y duración
+            current_level = self._block_levels.get(username, 0)
+            
+            # Verificar si debe ser bloqueo permanente
+            if current_level >= len(self.config["lockout_durations"]) - 1:
+                self._permanent_blocks[username] = current_time
+                
+                # 🚨 INTELLIGENT NOTIFICATION - Permanent Block Alert
+                if NOTIFICATIONS_ENABLED:
+                    try:
+                        asyncio.create_task(
+                            security_notifier.alert_account_lockout(
+                                username=username,
+                                level=7,  # Permanent = Level 7
+                                reason=f"Maximum failed attempts reached ({current_level + 1} cycles)"
+                            )
+                        )
+                        print(f"🚨 [NOTIFICATION] Permanent block alert sent for {username}")
+                    except Exception as e:
+                        print(f"⚠️ [NOTIFICATION] Failed to send permanent block alert: {e}")
+                
+                self._log_security_event({
+                    "event": "account_blocked_permanently",
+                    "username": username,
+                    "ip": ip,
+                    "total_cycles": current_level + 1,
+                    "timestamp": current_time.isoformat()
+                })
+                
+                print(f"[SECURITY] ⛔ PERMANENT BLOCK applied to {username} after {attempts_count} attempts")
+                return
+            
+            # Bloqueo temporal
+            duration = self.config["lockout_durations"][current_level]
+            unblock_time = current_time + timedelta(minutes=duration)
+            
+            self._active_blocks[username] = unblock_time
+            self._block_levels[username] += 1
+            
+            # 🚨 INTELLIGENT NOTIFICATION - Temporary Block Alert
+            if NOTIFICATIONS_ENABLED:
+                try:
+                    asyncio.create_task(
+                        security_notifier.alert_account_lockout(
+                            username=username,
+                            level=current_level + 1,
+                            reason=f"5 failed attempts - blocked for {duration} minutes"
+                        )
+                    )
+                    print(f"🚨 [NOTIFICATION] Temporary block alert sent for {username} (Level {current_level + 1})")
+                except Exception as e:
+                    print(f"⚠️ [NOTIFICATION] Failed to send temporary block alert: {e}")
+            
+            self._log_security_event({
+                "event": "account_blocked_temporarily",
+                "username": username,
+                "ip": ip,
+                "duration_minutes": duration,
+                "block_level": current_level + 1,
+                "timestamp": current_time.isoformat(),
+                "trigger": "immediate_after_failed_attempt"
+            })
+            
+            print(f"[SECURITY] ⏰ TEMPORARY BLOCK applied to {username}: {duration} minute(s), level {current_level + 1}")
+        else:
+            print(f"[SECURITY] ✅ No block needed for {username}: {attempts_count}/{self.config['max_attempts_per_cycle']} attempts")
 
-    def record_successful_login(self, request: Request, username: str):
+    def record_successful_login(self, request: Request, username: str, device_fingerprint: Optional[Dict] = None):
         """Registra un login exitoso y limpia contadores del USUARIO"""
         ip = self._get_real_ip(request)
         
         print(f"[SECURITY DEBUG] Successful login - User: {username}, IP: {ip}")
+        print(f"[SECURITY DEBUG] Device fingerprint provided: {device_fingerprint is not None}")
+        if device_fingerprint:
+            print(f"[SECURITY DEBUG] Device fingerprint keys: {list(device_fingerprint.keys())}")
+            print(f"[SECURITY DEBUG] Device hash: {device_fingerprint.get('hash', 'NO_HASH')}")
+        
+        # 📱 REGISTRAR DEVICE FINGERPRINT si se proporciona
+        if device_fingerprint:
+            self._record_device_fingerprint(username, device_fingerprint, ip)
+        else:
+            print(f"[SECURITY DEBUG] ❌ No device fingerprint provided for {username}")
         
         # Log de seguridad
         self._log_security_event({
@@ -359,7 +517,8 @@ class BankLevelSecurityManager:
             "ip": ip,
             "timestamp": datetime.utcnow().isoformat(),
             "previous_failures": len(self._failed_attempts.get(username, [])),
-            "block_level_before_success": self._block_levels.get(username, 0)
+            "block_level_before_success": self._block_levels.get(username, 0),
+            "has_device_fingerprint": device_fingerprint is not None
         })
         
         # Limpiar intentos fallidos de este USUARIO (solo del ciclo actual)
@@ -368,6 +527,132 @@ class BankLevelSecurityManager:
             
         # NO limpiar block_levels - mantener escalamiento para próximos ciclos  
         # El usuario mantiene su nivel de escalamiento aunque haga login exitoso
+    
+    def _record_device_fingerprint(self, username: str, fingerprint: Dict, ip: str):
+        """Almacena el device fingerprint del usuario"""
+        current_time = datetime.utcnow()
+        
+        # Calcular risk score si no viene incluido
+        risk_score = self._calculate_fingerprint_risk(fingerprint)
+        
+        device_data = {
+            "hash": fingerprint.get("hash", "unknown"),
+            "timestamp": current_time.isoformat(),
+            "ip": ip,
+            "risk_score": risk_score,
+            "features_count": len(fingerprint),
+            "is_bot": self._detect_bot_from_fingerprint(fingerprint),
+            "browser_info": {
+                "user_agent": fingerprint.get("userAgent", "unknown"),
+                "screen": fingerprint.get("screen", {}),
+                "timezone": fingerprint.get("timezone", "unknown"),
+                "languages": fingerprint.get("languages", "unknown")
+            },
+            "security_features": {
+                "canvas": fingerprint.get("canvas") != "error",
+                "webgl": fingerprint.get("webgl") != "not_supported",
+                "audio": fingerprint.get("audio") != "error"
+            }
+        }
+        
+        # Añadir a la lista del usuario (mantener últimos 10 dispositivos)
+        user_devices = self._user_devices[username]
+        user_devices.append(device_data)
+        
+        # Mantener solo los últimos 10 registros por usuario
+        if len(user_devices) > 10:
+            self._user_devices[username] = user_devices[-10:]
+            
+        print(f"[DEVICE TRACKING] 📱 Device registered for {username}: Hash={device_data['hash'][:16]}..., Risk={risk_score}")
+    
+    def _calculate_fingerprint_risk(self, fingerprint: Dict) -> int:
+        """Calcula el risk score del device fingerprint"""
+        risk = 0
+        
+        # Canvas blocking
+        if fingerprint.get("canvas") == "error":
+            risk += 30
+            
+        # WebGL unavailable
+        if fingerprint.get("webgl") == "not_supported":
+            risk += 25
+            
+        # Audio context blocked
+        if fingerprint.get("audio") == "error":
+            risk += 20
+            
+        # No languages detected
+        if not fingerprint.get("languages"):
+            risk += 15
+            
+        # No plugins
+        plugins = fingerprint.get("plugins", [])
+        if not plugins or len(plugins) == 0:
+            risk += 10
+            
+        # Automation detection
+        user_agent = fingerprint.get("userAgent", "")
+        if any(keyword in user_agent.lower() for keyword in ["headless", "phantom", "selenium", "chrome-headless"]):
+            risk += 50
+            
+        return min(risk, 100)
+    
+    def _detect_bot_from_fingerprint(self, fingerprint: Dict) -> bool:
+        """Detecta si el fingerprint parece ser de un bot"""
+        bot_indicators = 0
+        
+        if fingerprint.get("canvas") == "error":
+            bot_indicators += 1
+        if fingerprint.get("webgl") == "not_supported":
+            bot_indicators += 1
+        if not fingerprint.get("languages"):
+            bot_indicators += 1
+        if not fingerprint.get("plugins") or len(fingerprint.get("plugins", [])) == 0:
+            bot_indicators += 1
+        if any(keyword in fingerprint.get("userAgent", "").lower() for keyword in ["headless", "phantom", "selenium"]):
+            bot_indicators += 1
+            
+        return bot_indicators >= 3
+    
+    def get_all_user_devices(self) -> Dict[str, List[Dict]]:
+        """Obtiene todos los dispositivos registrados de todos los usuarios"""
+        return dict(self._user_devices)
+    
+    def get_user_devices(self, username: str) -> List[Dict]:
+        """Obtiene los dispositivos de un usuario específico"""
+        return self._user_devices.get(username, [])
+    
+    def get_devices_summary(self) -> Dict:
+        """Obtiene un resumen de todos los dispositivos registrados"""
+        print(f"[DEVICES SUMMARY] Total users in _user_devices: {len(self._user_devices)}")
+        print(f"[DEVICES SUMMARY] Users: {list(self._user_devices.keys())}")
+        
+        total_users = len(self._user_devices)
+        total_devices = sum(len(devices) for devices in self._user_devices.values())
+        high_risk_devices = 0
+        bot_devices = 0
+        
+        for username, devices in self._user_devices.items():
+            for device in devices:
+                if device.get("risk_score", 0) > 50:
+                    high_risk_devices += 1
+                if device.get("is_bot", False):
+                    bot_devices += 1
+        
+        return {
+            "total_users_with_devices": total_users,
+            "total_devices_registered": total_devices,
+            "high_risk_devices": high_risk_devices,
+            "bot_devices": bot_devices,
+            "users": {
+                username: {
+                    "device_count": len(devices),
+                    "latest_device": devices[-1] if devices else None,
+                    "high_risk_count": sum(1 for d in devices if d.get("risk_score", 0) > 50)
+                }
+                for username, devices in self._user_devices.items()
+            }
+        }
 
     async def revoke_user_block(self, username: str, revoked_by: str = "developer") -> Dict:
         """
@@ -1147,14 +1432,3 @@ class BankLevelSecurityManager:
 # 
 # 🏆 CERTIFICADO PARA PRODUCCIÓN MÉDICA CRÍTICA
 security_manager = BankLevelSecurityManager()
-
-# 🚀 AUTO-INICIALIZACIÓN ENTERPRISE
-print("🛡️ TERAPY SUITE ENTERPRISE SECURITY FRAMEWORK v2.1.0-TITANIUM INITIALIZED")
-print("🏆 NSA LEVEL 4 - BANK GRADE SECURITY SYSTEM - ACTIVE")
-print("🔐 TITANIUM FORTRESS PROTECTION - ONLINE")
-print("📋 HIPAA/SOX/PCI-DSS/ISO-27001 COMPLIANCE - VERIFIED")
-print("🎯 GLOBAL ACCOUNT LOCKOUT SYSTEM - READY")
-print("⚡ REAL-TIME THREAT DETECTION - MONITORING")
-print("🧠 PROGRESSIVE INTELLIGENCE ENGINE - ACTIVE")
-print("🔍 FORENSIC AUDIT TRAIL - RECORDING")
-print("✅ Dr. Luis Enterprise Security Framework - OPERATIONAL")
