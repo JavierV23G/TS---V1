@@ -1,0 +1,422 @@
+// ===============================
+// SECURITY METRICS - DISEÑO CLÍNICO PREMIUM
+// Fondo Blanco + Azul Claro - Estilo Médico Enterprise
+// ===============================
+
+.security-metrics {
+  .metrics-header {
+    margin-bottom: 30px;
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      i {
+        color: #4169e1;
+        font-size: 1.5rem;
+        padding: 6px;
+        background: linear-gradient(135deg, #e8f4fd, #ffffff);
+        border-radius: 10px;
+        border: 2px solid rgba(65, 105, 225, 0.1);
+      }
+    }
+
+    p {
+      color: #7f8c8d;
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 400;
+    }
+  }
+
+  .metrics-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(65, 105, 225, 0.08);
+    box-shadow: 0 4px 20px rgba(65, 105, 225, 0.06);
+
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0 0 20px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(65, 105, 225, 0.1);
+
+      i {
+        color: #4169e1;
+        font-size: 1.1rem;
+      }
+    }
+
+    h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 20px 0 15px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .escalation-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .performance-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      margin-top: 20px;
+    }
+  }
+
+  .metric-card {
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.9), 
+      rgba(248, 251, 255, 0.9)
+    );
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid rgba(65, 105, 225, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--card-color), rgba(255, 255, 255, 0.5));
+      opacity: 0.8;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(65, 105, 225, 0.12);
+      border-color: rgba(65, 105, 225, 0.2);
+    }
+
+    .metric-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+
+      .metric-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--card-color), rgba(255, 255, 255, 0.2));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .metric-title {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+      }
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+
+      .metric-trend {
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        &.up {
+          background: rgba(231, 76, 60, 0.1);
+          color: #e74c3c;
+        }
+
+        &.down {
+          background: rgba(39, 174, 96, 0.1);
+          color: #27ae60;
+        }
+
+        i {
+          font-size: 0.7rem;
+        }
+      }
+    }
+
+    .metric-description {
+      color: #7f8c8d;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      margin: 0;
+    }
+  }
+
+  .progress-metric {
+    margin-bottom: 15px;
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      .progress-label {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.9rem;
+      }
+
+      .progress-value {
+        font-weight: 600;
+        color: #7f8c8d;
+        font-size: 0.85rem;
+      }
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(65, 105, 225, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg, 
+            transparent, 
+            rgba(255, 255, 255, 0.3), 
+            transparent
+          );
+          animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+      }
+    }
+  }
+
+  .performance-gauge {
+    display: flex;
+    justify-content: center;
+
+    .gauge-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+
+      .gauge-circle {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+          from 0deg,
+          rgba(65, 105, 225, 0.1) 0deg,
+          rgba(65, 105, 225, 0.1) calc(var(--percentage) * 3.6deg),
+          rgba(65, 105, 225, 0.05) calc(var(--percentage) * 3.6deg),
+          rgba(65, 105, 225, 0.05) 360deg
+        );
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 50%;
+        }
+
+        .gauge-fill {
+          position: absolute;
+          top: 5px;
+          left: 5px;
+          right: 5px;
+          bottom: 5px;
+          border-radius: 50%;
+          background: conic-gradient(
+            from -90deg,
+            #4169e1 0deg,
+            #5d7cfa calc(var(--percentage) * 3.6deg),
+            rgba(65, 105, 225, 0.1) calc(var(--percentage) * 3.6deg),
+            rgba(65, 105, 225, 0.1) 360deg
+          );
+        }
+
+        .gauge-center {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+          z-index: 10;
+
+          .gauge-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1;
+            margin-bottom: 4px;
+          }
+
+          .gauge-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .security-metrics {
+    .metrics-section {
+      padding: 20px;
+      margin-bottom: 20px;
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .performance-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 20px;
+
+        .performance-gauge {
+          .gauge-container {
+            width: 120px;
+            height: 120px;
+
+            .gauge-circle {
+              .gauge-center {
+                .gauge-value {
+                  font-size: 1.2rem;
+                }
+
+                .gauge-label {
+                  font-size: 0.7rem;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .metric-card {
+      padding: 16px;
+
+      .metric-header {
+        .metric-icon {
+          width: 35px;
+          height: 35px;
+          font-size: 0.9rem;
+        }
+
+        .metric-title {
+          font-size: 0.9rem;
+        }
+      }
+
+      .metric-value {
+        font-size: 1.6rem;
+
+        .metric-trend {
+          font-size: 0.75rem;
+          padding: 3px 6px;
+        }
+      }
+
+      .metric-description {
+        font-size: 0.8rem;
+      }
+    }
+
+    .progress-metric {
+      .progress-header {
+        .progress-label,
+        .progress-value {
+          font-size: 0.85rem;
+        }
+      }
+
+      .progress-bar {
+        height: 6px;
+      }
+    }
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .security-metrics {
+    .metrics-section {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .performance-metrics {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  }
+}

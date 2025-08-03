@@ -1,4 +1,3 @@
-// components/login/RoleRedirect.jsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
@@ -16,7 +15,6 @@ const RoleRedirect = () => {
   const currentPath = location.pathname.substring(1); // Remove leading "/"
   const pathSegments = currentPath.split('/');
 
-  // Handle redirection for subroutes like /patients or /paciente/:id
   if (currentPath !== 'homePage' && currentPath !== 'home') {
     if (pathSegments.length > 1) {
       return <Navigate to={`/${baseRole}/${pathSegments.slice(1).join('/')}`} replace />;
@@ -25,7 +23,6 @@ const RoleRedirect = () => {
     }
   }
 
-  // Default redirect to homePage
   return <Navigate to={`/${baseRole}/homePage`} replace />;
 };
 

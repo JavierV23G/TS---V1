@@ -63,9 +63,6 @@ class Document(Base):
     staff_id = Column(Integer, ForeignKey("staff.id"), nullable=True)
     file_name = Column(String, nullable=False)
     file_path = Column(String)
-    file_size = Column(Integer, nullable=True)  # Tamaño del archivo en bytes
-    file_type = Column(String, nullable=True)   # MIME type del archivo
-    category = Column(String, default="Other")  # Categoría del documento
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient", back_populates="documents")

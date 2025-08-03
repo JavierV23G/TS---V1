@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../../../../../../styles/pt-ot-st/Patients/InfoPaciente/NotesAndSign/sections/LivingArrangementsSection.scss';
+import '../../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/sections/LivingArrangementsSection.scss';
 
 const LivingArrangementsSection = ({ data, onChange, sectionId, config }) => {
   const handleChange = (field, value) => {

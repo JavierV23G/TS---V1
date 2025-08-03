@@ -17,6 +17,20 @@ $error-color: #FF5E62;
 $success-color: #4CAF50;
 $warning-color: #FF9800;
 
+// ===================================
+// 🚨 SECURITY NOTIFICATIONS IN HEADER
+// ===================================
+
+.security-notifications-container {
+  position: relative;
+  margin-right: 1rem;
+  
+  // Ensure proper z-index for dropdowns
+  .security-notifications-panel {
+    z-index: 9999;
+  }
+}
+
 @mixin responsive($breakpoint) {
   @if map-has-key($breakpoints, $breakpoint) {
     @media (max-width: map-get($breakpoints, $breakpoint)) {

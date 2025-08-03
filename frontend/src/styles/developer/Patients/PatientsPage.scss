@@ -5560,3 +5560,835 @@ z-index: 1;
     }
   }
 }
+
+// ===============================================
+// COMPANY GATEWAY SCREEN - ULTRA PREMIUM DESIGN
+// ===============================================
+
+// Import nebula gateway styles
+@import './NebulaGateway.scss';
+
+.company-gateway-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  &.animating-out {
+    animation: gatewayExit 0.8s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+}
+
+.gateway-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center,
+    var(--nebula-primary, #0f0f23) 0%,
+    var(--nebula-secondary, #1a1a3a) 30%,
+    var(--nebula-primary, #0f0f23) 70%,
+    #000011 100%);
+  background-size: 400% 400%;
+  animation: nebulaShift 20s ease infinite;
+  
+  .nebula-gradient-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 20%, 
+      rgba(45, 77, 224, 0.3) 0%, 
+      transparent 50%),
+    radial-gradient(circle at 70% 80%, 
+      rgba(45, 77, 224, 0.2) 0%, 
+      transparent 50%),
+    linear-gradient(135deg, 
+      rgba(0, 0, 0, 0.6) 0%, 
+      rgba(0, 0, 0, 0.3) 50%, 
+      rgba(0, 0, 0, 0.6) 100%);
+    animation: nebulaOverlay 25s ease infinite;
+  }
+  
+  .cosmic-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, var(--nebula-color, #87ceeb), transparent),
+      radial-gradient(3px 3px at 40px 70px, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 90px 40px, var(--nebula-accent, #2d4de0), transparent),
+      radial-gradient(2px 2px at 130px 80px, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 160px 30px, var(--nebula-color, #87ceeb), transparent);
+    background-repeat: repeat;
+    background-size: 200px 200px, 300px 300px, 250px 250px, 180px 180px, 220px 220px;
+    animation: cosmicFloat 30s linear infinite;
+  }
+  
+  .nebula-clouds {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    
+    .cloud {
+      position: absolute;
+      background: radial-gradient(ellipse, 
+        rgba(135, 206, 235, 0.4) 0%, 
+        rgba(135, 206, 235, 0.2) 40%, 
+        transparent 70%);
+      border-radius: 50%;
+      filter: blur(3px);
+      animation: nebulaCloudFloat 40s ease-in-out infinite;
+      
+      &.cloud-1 {
+        width: 400px;
+        height: 200px;
+        top: 15%;
+        left: -200px;
+        animation-delay: 0s;
+      }
+      
+      &.cloud-2 {
+        width: 350px;
+        height: 180px;
+        top: 50%;
+        right: -175px;
+        animation-delay: -10s;
+      }
+      
+      &.cloud-3 {
+        width: 300px;
+        height: 150px;
+        bottom: 25%;
+        left: 10%;
+        animation-delay: -20s;
+      }
+      
+      &.cloud-4 {
+        width: 250px;
+        height: 120px;
+        top: 30%;
+        left: 60%;
+        animation-delay: -30s;
+      }
+    }
+  }
+  
+  .stellar-dust {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(1px 1px at 15px 15px, white, transparent),
+      radial-gradient(1px 1px at 35px 45px, white, transparent),
+      radial-gradient(2px 2px at 65px 25px, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 85px 55px, white, transparent),
+      radial-gradient(1px 1px at 105px 35px, rgba(255, 255, 255, 0.6), transparent);
+    background-repeat: repeat;
+    background-size: 120px 120px;
+    animation: stellarTwinkle 10s ease-in-out infinite;
+    opacity: 0.7;
+  }
+  
+  .floating-orbs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
+    .orb {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, 
+        rgba(45, 77, 224, 0.8), 
+        rgba(45, 77, 224, 0.3));
+      filter: blur(1px);
+      animation: orbFloat 25s ease-in-out infinite;
+      
+      &.orb-1 {
+        top: 20%;
+        left: 15%;
+        animation-delay: 0s;
+      }
+      
+      &.orb-2 {
+        top: 70%;
+        right: 20%;
+        animation-delay: -8s;
+        width: 40px;
+        height: 40px;
+      }
+      
+      &.orb-3 {
+        bottom: 30%;
+        left: 70%;
+        animation-delay: -15s;
+        width: 80px;
+        height: 80px;
+      }
+    }
+  }
+}
+
+.gateway-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  animation: contentSlideUp 1s ease-out;
+}
+
+.gateway-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: white;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: white;
+      margin: 0;
+      text-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      letter-spacing: -0.02em;
+    }
+  }
+  
+  .gateway-title {
+    h2 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 0 1rem 0;
+      text-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    
+    p {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0 0 2rem 0;
+      font-weight: 500;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      line-height: 1.5;
+    }
+  }
+  
+  .search-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+    
+    .search-box {
+      position: relative;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      
+      &:focus-within {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      }
+      
+      .search-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.1rem;
+        z-index: 2;
+      }
+      
+      .search-input {
+        width: 100%;
+        padding: 18px 60px 18px 55px;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 500;
+        outline: none;
+        
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 400;
+        }
+      }
+      
+      .clear-search {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateY(-50%) scale(1.1);
+        }
+      }
+    }
+    
+    .search-info {
+      text-align: center;
+      margin-top: 1rem;
+      
+      span {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.95rem;
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 16px;
+        border-radius: 20px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+}
+
+.companies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+
+.company-card {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+  
+  &:hover {
+    transform: translateY(-12px) scale(1.02);
+    
+    .company-card-content {
+      backdrop-filter: blur(25px);
+    }
+    
+    .card-glow {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    
+    .company-icon {
+      transform: scale(1.1) rotate(5deg);
+      
+      .icon-pulse {
+        animation: iconPulse 1s ease-in-out infinite;
+      }
+    }
+    
+    .access-button {
+      background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+      color: #1e293b;
+      transform: translateX(4px);
+      box-shadow: 
+        0 12px 30px rgba(255, 255, 255, 0.3),
+        0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+  &.hovered {
+    z-index: 100;
+  }
+}
+
+.company-card-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  
+  .card-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.25) 0%, 
+      rgba(255, 255, 255, 0.1) 100%);
+  }
+  
+  .card-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    background-size: 100px 100px, 150px 150px;
+  }
+}
+
+.company-card-content {
+  position: relative;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 2.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s ease;
+  min-height: 300px;
+  
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.2),
+    0 10px 25px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.company-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 1.5rem;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  
+  .icon-background {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+    border-radius: 22px;
+    z-index: -1;
+  }
+  
+  .icon-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    opacity: 0;
+  }
+  
+  i {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    z-index: 1;
+  }
+}
+
+.company-info {
+  flex: 1;
+  margin-bottom: 2rem;
+  
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    letter-spacing: -0.01em;
+  }
+  
+  .company-type {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .company-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      font-size: 0.95rem;
+      
+      i {
+        width: 20px;
+        text-align: center;
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+.company-action {
+  .access-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    
+    i {
+      transition: transform 0.3s ease;
+    }
+  }
+}
+
+.card-glow {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 32px;
+  opacity: 0;
+  transition: all 0.4s ease;
+  z-index: -1;
+  filter: blur(20px);
+}
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 2rem 0;
+  animation: contentSlideUp 0.6s ease-out;
+  
+  .no-results-icon {
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    animation: float 3s ease-in-out infinite;
+    
+    i {
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+  
+  h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 1rem 0;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 2rem 0;
+    font-weight: 500;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+  
+  .clear-search-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    color: white;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    i {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.gateway-footer {
+  text-align: center;
+  
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .database-info {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 16px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    
+    i {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+  }
+}
+
+// Company indicator in title (for when company is selected)
+.patients-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  
+  .company-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary-700);
+    backdrop-filter: blur(10px);
+    animation: indicatorGlow 3s ease-in-out infinite;
+    
+    i {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Ultra-premium animations
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+
+@keyframes particlesFloat {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-20px) rotate(360deg); }
+}
+
+@keyframes shapeFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+@keyframes contentSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes iconPulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+@keyframes gatewayExit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes indicatorGlow {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .gateway-content {
+    padding: 1rem;
+  }
+  
+  .gateway-header {
+    margin-bottom: 2rem;
+    
+    .brand-logo {
+      .logo-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+    }
+    
+    .gateway-title {
+      h2 {
+        font-size: 2rem;
+      }
+      
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .companies-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .company-card-content {
+    padding: 2rem;
+    min-height: 280px;
+  }
+  
+  .company-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .company-info h3 {
+    font-size: 1.3rem;
+  }
+}

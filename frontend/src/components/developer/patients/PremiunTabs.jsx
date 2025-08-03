@@ -7,7 +7,6 @@ const DevPremiumTabs = ({ activeTab, onTabChange }) => {
   const location = useLocation();
   const [isAnimating, setIsAnimating] = useState(false);
   
-  // Animation when component mounts
   useEffect(() => {
     setIsAnimating(true);
     const timer = setTimeout(() => {
@@ -21,14 +20,12 @@ const DevPremiumTabs = ({ activeTab, onTabChange }) => {
     if (tab !== activeTab) {
       setIsAnimating(true);
       
-      // If onTabChange prop exists, use it for in-app navigation without page reload
       if (onTabChange) {
         onTabChange(tab);
         setTimeout(() => {
           setIsAnimating(false);
         }, 300);
       } else {
-        // Otherwise use traditional navigation
         setTimeout(() => {
           if (tab === 'Staffing') {
             navigate('/staffing');

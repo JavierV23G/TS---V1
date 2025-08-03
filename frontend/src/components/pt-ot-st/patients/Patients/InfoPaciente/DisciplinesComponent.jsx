@@ -14,7 +14,8 @@ const DisciplineCard = ({
   onChangeAssistant,
   onChangeFrequency,
   therapistsList,
-  assistantsList
+  assistantsList,
+  scheduledVisits = []  // NUEVO PROP PARA SINCRONIZACIÓN
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFrequencyEditing, setIsFrequencyEditing] = useState(false);
@@ -28,10 +29,15 @@ const DisciplineCard = ({
   // Inicializar selectedTherapist y selectedAssistant al entrar en modo de edición
   useEffect(() => {
     if (isEditing) {
-      setSelectedTherapist(therapist?.id || '');
-      setSelectedAssistant(assistant?.id || '');
+      setSelectedTherapist(therapist?.id?.toString() || '');
+      setSelectedAssistant(assistant?.id?.toString() || '');
     }
   }, [isEditing, therapist, assistant]);
+
+  // Update tempFrequency when frequency prop changes
+  useEffect(() => {
+    setTempFrequency(frequency);
+  }, [frequency]);
 
   // Get icon and color based on discipline type
   const getDisciplineIcon = () => {
@@ -98,10 +104,10 @@ const DisciplineCard = ({
   const handleSaveChanges = () => {
     // Buscar el nuevo terapeuta y asistente
     const newTherapist = selectedTherapist 
-      ? therapistsList.find(t => t.id === selectedTherapist) || null 
+      ? therapistsList.find(t => t.id === parseInt(selectedTherapist)) || null 
       : null;
     const newAssistant = selectedAssistant 
-      ? assistantsList.find(a => a.id === selectedAssistant) || null 
+      ? assistantsList.find(a => a.id === parseInt(selectedAssistant)) || null 
       : null;
 
     console.log('Saving therapist:', newTherapist);
@@ -113,6 +119,7 @@ const DisciplineCard = ({
     const assistantId = assistant?.id || null;
     const newAssistantId = newAssistant?.id || null;
 
+    // Only call onChange if there's an actual change in selection
     if (newTherapistId !== therapistId) {
       onChangeTherapist(newTherapist);
     }
@@ -120,6 +127,13 @@ const DisciplineCard = ({
       onChangeAssistant(newAssistant);
     }
     
+    // If both are null, and the discipline was active, deactivate it
+    if (!newTherapist && !newAssistant && isActive) {
+      onToggle(false); // Pass false to explicitly deactivate
+    } else if ((newTherapist || newAssistant) && !isActive) {
+      onToggle(true); // Pass true to explicitly activate if staff is assigned
+    }
+
     setIsEditing(false);
   };
   
@@ -129,19 +143,32 @@ const DisciplineCard = ({
     setIsFrequencyEditing(false);
   };
   
-  // Get frequency display format
+  // Get frequency display format - updated to match correct interpretation
   const getFrequencyDisplay = (freq) => {
     if (!freq) return 'Not set';
     
-    const parts = freq.match(/(\d+[wW])(\d+)/);
+    const parts = freq.match(/(\d+)w(\d+)/);
     if (parts && parts.length === 3) {
-      const weeks = parts[1].slice(0, -1);
-      const visits = parts[2];
-      return `${visits} visit${visits > 1 ? 's' : ''} per ${weeks} week${weeks > 1 ? 's' : ''}`;
+      const visits = parts[1];
+      const weeks = parts[2];
+      return `${visits} visit${visits > 1 ? 's' : ''} every ${weeks} week${weeks > 1 ? 's' : ''}`;
     }
     
     return freq;
   };
+
+  // Available frequency options
+  const frequencyPresets = [
+    { value: '1w1', label: '1w1' }, // 1 visit every 1 week
+    { value: '2w2', label: '2w2' }, // 2 visits every 2 weeks
+    { value: '1w2', label: '1w2' }, // 1 visit every 2 weeks 
+    { value: '1w5', label: '1w5' }, // 1 visit every 5 weeks
+    { value: '2w4', label: '2w4' }, // 2 visits every 4 weeks
+    { value: '3w2', label: '3w2' }, // 3 visits every 2 weeks
+    { value: '5w4', label: '5w4' }, // 5 visits every 4 weeks
+    { value: '2w1', label: '2w1' }, // 2 visits every 1 week
+    { value: '3w1', label: '3w1' }  // 3 visits every 1 week
+  ];
   
   return (
     <div 
@@ -174,7 +201,7 @@ const DisciplineCard = ({
         <div className="discipline-toggle">
           <button 
             className={`toggle-button glass-effect ${isActive ? 'active' : ''}`}
-            onClick={onToggle}
+            onClick={() => onToggle(null)}
             title={isActive ? 'Deactivate discipline' : 'Activate discipline'}
           >
             <div className="toggle-track">
@@ -331,10 +358,10 @@ const DisciplineCard = ({
                             <span>{therapist.email}</span>
                           </div>
                         )}
-                        {therapist.licenseNumber && (
+                        {therapist.alt_phone && (
                           <div className="info-item glass-item">
-                            <i className="fas fa-id-card"></i>
-                            <span>License: {therapist.licenseNumber}</span>
+                            <i className="fas fa-phone"></i>
+                            <span>Alt #: {therapist.alt_phone}</span>
                           </div>
                         )}
                       </div>
@@ -390,10 +417,10 @@ const DisciplineCard = ({
                             <span>{assistant.email}</span>
                           </div>
                         )}
-                        {assistant.licenseNumber && (
+                        {assistant.alt_phone && (
                           <div className="info-item glass-item">
-                            <i className="fas fa-id-card"></i>
-                            <span>License: {assistant.licenseNumber}</span>
+                            <i className="fas fa-phone"></i>
+                            <span>Alt #: {assistant.alt_phone}</span>
                           </div>
                         )}
                       </div>
@@ -443,22 +470,27 @@ const DisciplineCard = ({
                   type="text" 
                   value={tempFrequency} 
                   onChange={(e) => setTempFrequency(e.target.value)}
-                  placeholder="e.g. 2w3"
+                  placeholder="e.g. 1w1"
                   className="glass-input frequency-input"
                 />
                 <div className="format-hint">
                   <i className="fas fa-info-circle"></i>
-                  <span>Format: [weeks]w[visits] (e.g. 2w3 = 3 visits every 2 weeks)</span>
+                  <span>Format: [visits]w[weeks] (e.g. 1w1 = 1 visit every 1 week)</span>
                 </div>
               </div>
               
-              <div className="frequency-presets">
-                <button onClick={() => setTempFrequency('1w1')} className="glass-chip">1w1</button>
-                <button onClick={() => setTempFrequency('1w2')} className="glass-chip">1w2</button>
-                <button onClick={() => setTempFrequency('1w3')} className="glass-chip">1w3</button>
-                <button onClick={() => setTempFrequency('2w1')} className="glass-chip">2w1</button>
-                <button onClick={() => setTempFrequency('2w3')} className="glass-chip">2w3</button>
-                <button onClick={() => setTempFrequency('4w1')} className="glass-chip">4w1</button>
+              <div className="frequency-presets-container">
+                <div className="frequency-presets">
+                  {frequencyPresets.map((preset) => (
+                    <button 
+                      key={preset.value} 
+                      onClick={() => setTempFrequency(preset.value)} 
+                      className={`glass-chip ${tempFrequency === preset.value ? 'active' : ''}`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               
               <div className="form-actions">
@@ -490,8 +522,35 @@ const DisciplineCard = ({
                     <div className="frequency-code glass-highlight">
                       <span>{frequency}</span>
                       <div className="frequency-glow"></div>
+                      {scheduledVisits.length > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px',
+                          background: '#10b981',
+                          color: 'white',
+                          fontSize: '10px',
+                          padding: '2px 4px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold'
+                        }}>
+                          🔗
+                        </span>
+                      )}
                     </div>
-                    <span className="frequency-readable">{getFrequencyDisplay(frequency)}</span>
+                    <span className="frequency-readable">
+                      {getFrequencyDisplay(frequency)}
+                      {scheduledVisits.length > 0 && (
+                        <span style={{ 
+                          fontSize: '11px', 
+                          color: '#10b981', 
+                          marginLeft: '8px',
+                          fontWeight: '500'
+                        }}>
+                          (Auto-sync)
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className="frequency-visualization">
                     {renderFrequencyVisualization(frequency, colors)}
@@ -525,24 +584,54 @@ const DisciplineCard = ({
   );
 };
 
-// Helper function to render frequency visualization
+// Helper function to render frequency visualization - CORRECTED
 const renderFrequencyVisualization = (frequency, colors) => {
   if (!frequency) return null;
   
-  const parts = frequency.match(/(\d+[wW])(\d+)/);
+  // Updated regex to match the format [visits-per-week]w[total-weeks]
+  const parts = frequency.match(/(\d+)w(\d+)/);
   if (!parts || parts.length < 3) return null;
   
-  const weeks = parseInt(parts[1].slice(0, -1));
-  const visits = parseInt(parts[2]);
+  // Correctly parsing the frequency
+  const visitsPerWeek = parseInt(parts[1]);
+  const totalWeeks = parseInt(parts[2]);
   
   const daysInWeek = 7;
-  const totalDays = weeks * daysInWeek;
+  const totalDays = totalWeeks * daysInWeek;
   
   const dayDots = [];
-  const visitInterval = Math.floor(totalDays / visits);
   
+  // Calculate days with visits based on the correct interpretation
+  const calculateVisitDays = () => {
+    const visitDaysArray = [];
+    
+    // For each week
+    for (let weekIdx = 0; weekIdx < totalWeeks; weekIdx++) {
+      // Distribute the visits per week evenly (excluding weekends if possible)
+      for (let visitIdx = 0; visitIdx < visitsPerWeek; visitIdx++) {
+        // If we have more visits than weekdays, we'll need to place multiple visits on some days
+        if (visitsPerWeek <= 5) {
+          // We can place visits on weekdays only
+          // Spread visits evenly across weekdays (Mon-Fri)
+          const dayOffset = Math.floor(visitIdx * (5 / visitsPerWeek));
+          // Add to visit days (weekIdx * 7 for week offset, dayOffset for day within week, +1 to start on Monday)
+          visitDaysArray.push(weekIdx * daysInWeek + dayOffset + 1);
+        } else {
+          // If more than 5 visits per week, we need to use weekends too
+          const dayOffset = Math.floor(visitIdx * (daysInWeek / visitsPerWeek));
+          visitDaysArray.push(weekIdx * daysInWeek + dayOffset);
+        }
+      }
+    }
+    
+    return visitDaysArray;
+  };
+  
+  const visitDays = calculateVisitDays();
+  
+  // Create the array of day objects
   for (let day = 0; day < totalDays; day++) {
-    const isVisit = day % visitInterval === Math.floor(visitInterval / 2) && dayDots.filter(d => d.isVisit).length < visits;
+    const isVisit = visitDays.includes(day);
     const isWeekend = day % 7 === 5 || day % 7 === 6;
     
     dayDots.push({
@@ -551,11 +640,11 @@ const renderFrequencyVisualization = (frequency, colors) => {
       isWeekend
     });
   }
-
+  
   return (
     <div className="frequency-calendar glass-card-inner">
       <div className="weeks-container">
-        {Array.from({ length: weeks }).map((_, weekIndex) => (
+        {Array.from({ length: totalWeeks }).map((_, weekIndex) => (
           <div key={weekIndex} className="week">
             <div className="week-label">W{weekIndex + 1}</div>
             <div className="days">
@@ -585,8 +674,15 @@ const renderFrequencyVisualization = (frequency, colors) => {
   );
 };
 
-// Main component
-const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
+const DisciplinesComponent = ({ 
+  patient, 
+  onUpdateDisciplines,
+  // NUEVOS PROPS PARA SINCRONIZACIÓN
+  scheduledVisits = [],     // Visitas del calendario
+  approvedVisits = null,    // Datos de medical info
+  onSyncDisciplinesData     // Callback para sincronizar cambios
+}) => {
+  
   const [disciplines, setDisciplines] = useState({
     PT: {
       isActive: false,
@@ -608,116 +704,767 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
     }
   });
   
-  // Mock therapists data
-  const [therapistsList, setTherapistsList] = useState([
-    { id: 'pt1', name: 'Dr. James Wilson', type: 'PT', phone: '(310) 555-1234', email: 'jwilson@therapysync.com', licenseNumber: 'PT12345' },
-    { id: 'pt2', name: 'Dr. Sarah Johnson', type: 'PT', phone: '(310) 555-2345', email: 'sjohnson@therapysync.com', licenseNumber: 'PT23456' },
-    { id: 'pt3', name: 'Dr. Michael Chen', type: 'PT', phone: '(310) 555-3456', email: 'mchen@therapysync.com', licenseNumber: 'PT34567' },
-    { id: 'ot1', name: 'Dr. Emily Parker', type: 'OT', phone: '(310) 555-4567', email: 'eparker@therapysync.com', licenseNumber: 'OT12345' },
-    { id: 'ot2', name: 'Dr. David Garcia', type: 'OT', phone: '(310) 555-5678', email: 'dgarcia@therapysync.com', licenseNumber: 'OT23456' },
-    { id: 'st1', name: 'Dr. Jessica Lee', type: 'ST', phone: '(310) 555-6789', email: 'jlee@therapysync.com', licenseNumber: 'ST12345' },
-    { id: 'st2', name: 'Dr. Robert Taylor', type: 'ST', phone: '(310) 555-7890', email: 'rtaylor@therapysync.com', licenseNumber: 'ST23456' }
-  ]);
+  // Estados para datos de API - CORREGIDO
+  const [allStaff, setAllStaff] = useState([]);
+  const [assignedStaff, setAssignedStaff] = useState(null); // Cambiar a null para detectar cuando no se ha cargado
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
-  const [assistantsList, setAssistantsList] = useState([
-    { id: 'pta1', name: 'Carlos Rodriguez', type: 'PTA', phone: '(310) 555-8901', email: 'crodriguez@therapysync.com', licenseNumber: 'PTA12345' },
-    { id: 'pta2', name: 'Maria Gonzalez', type: 'PTA', phone: '(310) 555-9012', email: 'mgonzalez@therapysync.com', licenseNumber: 'PTA23456' },
-    { id: 'cota1', name: 'Thomas Smith', type: 'COTA', phone: '(310) 555-0123', email: 'tsmith@therapysync.com', licenseNumber: 'COTA12345' },
-    { id: 'cota2', name: 'Anna Williams', type: 'COTA', phone: '(310) 555-1234', email: 'awilliams@therapysync.com', licenseNumber: 'COTA23456' },
-    { id: 'slpa1', name: 'Jennifer Brown', type: 'SLPA', phone: '(310) 555-2345', email: 'jbrown@therapysync.com', licenseNumber: 'SLPA12345' },
-    { id: 'slpa2', name: 'Daniel Martinez', type: 'SLPA', phone: '(310) 555-3456', email: 'dmartinez@therapysync.com', licenseNumber: 'SLPA23456' }
-  ]);
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // ===== FUNCIONES DE ALMACENAMIENTO LOCAL =====
   
-  // Initialize with patient data
-  useEffect(() => {
-    if (patient?.disciplines) {
-      setDisciplines(patient.disciplines);
+  // Guardar disciplines data en localStorage
+  const saveDisciplinesToLocal = (disciplinesData) => {
+    if (patient?.id) {
+      const key = `disciplines_${patient.id}`;
+      localStorage.setItem(key, JSON.stringify(disciplinesData));
     }
-  }, [patient]);
+  };
+
+  // Cargar disciplines data desde localStorage
+  const loadDisciplinesFromLocal = () => {
+    if (patient?.id) {
+      const key = `disciplines_${patient.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return parsed;
+        } catch (e) {
+          console.warn('Error parsing stored disciplines:', e);
+        }
+      }
+    }
+    return null;
+  };
+
+  // ===== FUNCIONES DE SINCRONIZACIÓN =====
+  
+  // Calcular frecuencia automáticamente basado en visitas del calendario
+  const calculateFrequencyFromVisits = (disciplineType, visits = scheduledVisits) => {
+    const disciplineMapping = {
+      'PT': ['PT', 'PTA'],
+      'OT': ['OT', 'COTA'],
+      'ST': ['ST', 'STA']
+    };
+    
+    const relevantRoles = disciplineMapping[disciplineType] || [];
+    
+    // Filtrar visitas de esta disciplina
+    const disciplineVisits = visits.filter(visit => {
+      const therapyType = visit.therapy_type?.toUpperCase();
+      const status = visit.status?.toLowerCase();
+      const validStatuses = ['completed', 'scheduled', 'in_progress'];
+      return relevantRoles.includes(therapyType) && validStatuses.includes(status);
+    });
+    
+    if (disciplineVisits.length === 0) return '';
+    
+    // Agrupar visitas por semana
+    const visitsByWeek = {};
+    disciplineVisits.forEach(visit => {
+      const visitDate = new Date(visit.visit_date);
+      const weekKey = getWeekKey(visitDate);
+      
+      if (!visitsByWeek[weekKey]) {
+        visitsByWeek[weekKey] = [];
+      }
+      visitsByWeek[weekKey].push(visit);
+    });
+    
+    const weeks = Object.keys(visitsByWeek).sort();
+    if (weeks.length === 0) return '';
+    
+    // Calcular frecuencia más común
+    const weeklyVisitCounts = weeks.map(week => visitsByWeek[week].length);
+    const totalVisits = weeklyVisitCounts.reduce((sum, count) => sum + count, 0);
+    const totalWeeks = weeks.length;
+    
+    // Determinar el patrón más representativo
+    if (totalWeeks === 1) {
+      return `${totalVisits}w1`; // X visitas en 1 semana
+    }
+    
+    // Para múltiples semanas, calcular el promedio
+    const avgVisitsPerWeek = Math.round(totalVisits / totalWeeks);
+    
+    // Patrones comunes
+    if (avgVisitsPerWeek === 1 && totalWeeks <= 2) return '1w1';
+    if (avgVisitsPerWeek === 2 && totalWeeks <= 2) return '2w1';
+    if (avgVisitsPerWeek === 3 && totalWeeks <= 2) return '3w1';
+    
+    // Para períodos más largos
+    return `${totalVisits}w${totalWeeks}`;
+  };
+  
+  // Obtener clave de semana para una fecha
+  const getWeekKey = (date) => {
+    const year = date.getFullYear();
+    const week = getWeekNumber(date);
+    return `${year}-W${week}`;
+  };
+  
+  // Calcular número de semana
+  const getWeekNumber = (date) => {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  };
+  
+  // Sincronizar datos con otros componentes
+  const syncWithOtherComponents = (updatedDisciplinesData) => {
+    if (onSyncDisciplinesData && typeof onSyncDisciplinesData === 'function') {
+      onSyncDisciplinesData(updatedDisciplinesData);
+    }
+  };
+  
+  // Obtener límites de visitas aprobadas desde medical info
+  const getApprovedVisitsLimit = (disciplineType) => {
+    if (!approvedVisits) return null;
+    
+    const disciplineMap = {
+      'PT': 'pt',
+      'OT': 'ot',
+      'ST': 'st'
+    };
+    
+    const disciplineKey = disciplineMap[disciplineType];
+    const approved = approvedVisits[disciplineKey]?.approved;
+    
+    return approved ? parseInt(approved) : null;
+  };
+  
+  // Fetch staff data from API
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await fetch(`${API_BASE_URL}/staff/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch staff: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received staff data:', data);
+        setAllStaff(data);
+        
+      } catch (err) {
+        console.error('Error fetching staff:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStaff();
+  }, [API_BASE_URL]);
+
+  // Fetch assigned staff for patient - CORREGIDO PARA BACKEND
+  useEffect(() => {
+    const fetchAssignedStaff = async () => {
+      if (!patient?.id) {
+        console.log('❌ No patient ID found for fetching assigned staff');
+        setAssignedStaff([]);
+        return;
+      }
+      
+      try {
+        console.log('🔍 Fetching assigned staff for patient:', patient.id);
+        // USAR LA URL CORRECTA SEGÚN TU BACKEND
+        const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/assigned-staff`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('📡 Assigned staff response status:', response.status);
+        console.log('📡 Response URL:', response.url);
+        
+        if (response.ok) {
+          const assignedData = await response.json();
+          console.log('✅ Assigned staff data received:', assignedData);
+          console.log('📊 Number of assignments found:', assignedData.length);
+          
+          // Log each assignment details
+          assignedData.forEach((assignment, index) => {
+            console.log(`   Assignment ${index + 1}:`, {
+              id: assignment.id,
+              role: assignment.assigned_role,
+              staff_name: assignment.staff?.name,
+              staff_id: assignment.staff?.id
+            });
+          });
+          
+          setAssignedStaff(assignedData);
+        } else {
+          console.log('❌ Failed to fetch assigned staff. Status:', response.status);
+          try {
+            const errorText = await response.text();
+            console.log('❌ Error response:', errorText);
+          } catch (e) {
+            console.log('❌ Could not read error response');
+          }
+          setAssignedStaff([]);
+        }
+      } catch (err) {
+        console.error('💥 Error fetching assigned staff:', err);
+        console.error('💥 Error details:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack
+        });
+        
+        // Si falla por CORS o red, intentar endpoint alternativo
+        console.log('🔄 Trying alternative approach...');
+        try {
+          // Verificar si el endpoint existe usando otra estrategia
+          const testResponse = await fetch(`${API_BASE_URL}/staff/`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (testResponse.ok) {
+            console.log('✅ Basic API connection works, but assigned-staff endpoint has issues');
+          }
+        } catch (testErr) {
+          console.error('💥 Complete API failure:', testErr);
+        }
+        
+        setAssignedStaff([]);
+      }
+    };
+    
+    fetchAssignedStaff();
+  }, [patient?.id, API_BASE_URL]);
+  
+  // Initialize with patient data and assigned staff - CORREGIDO PARA REINICIALIZAR CUANDO CAMBIAN LOS DATOS
+  useEffect(() => {
+    console.log('🔄 Initialization check:', {
+      hasPatient: !!patient,
+      patientId: patient?.id,
+      allStaffCount: allStaff.length,
+      assignedStaffCount: assignedStaff ? assignedStaff.length : 'null',
+      isInitialized
+    });
+    
+    // CAMBIO CLAVE: Reinicializar cuando assignedStaff tiene datos nuevos
+    if (patient && allStaff.length > 0 && assignedStaff !== null && 
+        (!isInitialized || (assignedStaff.length > 0 && !disciplines.PT.therapist && !disciplines.OT.therapist && !disciplines.ST.therapist))) {
+      console.log('🚀 Starting disciplines initialization with:', {
+        patient: patient.id,
+        staffCount: allStaff.length,
+        assignedStaffCount: assignedStaff.length,
+        assignedStaff
+      });
+      
+      // Procesar required_disciplines - CON MEJOR DEBUG
+      let requiredDisciplines = [];
+      
+      console.log('🔍 Raw required_disciplines from patient:', patient.required_disciplines);
+      console.log('🔍 Type of required_disciplines:', typeof patient.required_disciplines);
+      
+      if (patient.required_disciplines) {
+        try {
+          if (typeof patient.required_disciplines === 'string') {
+            requiredDisciplines = JSON.parse(patient.required_disciplines);
+            console.log('✅ Parsed string required_disciplines:', requiredDisciplines);
+          } else if (Array.isArray(patient.required_disciplines)) {
+            requiredDisciplines = patient.required_disciplines;
+            console.log('✅ Used array required_disciplines:', requiredDisciplines);
+          } else if (typeof patient.required_disciplines === 'object') {
+            // NUEVO: Si viene como objeto {PT: {...}, OT: {...}}, extraer las activas
+            const disciplineObj = patient.required_disciplines;
+            requiredDisciplines = Object.keys(disciplineObj).filter(key => 
+              disciplineObj[key] && disciplineObj[key].isActive
+            );
+            console.log('✅ Extracted from object required_disciplines:', requiredDisciplines);
+          } else {
+            requiredDisciplines = [];
+            console.log('⚠️ Unknown format for required_disciplines, using empty array');
+          }
+        } catch (parseError) {
+          console.warn('⚠️ Failed to parse required_disciplines:', parseError);
+          requiredDisciplines = [];
+        }
+      } else {
+        console.log('⚠️ No required_disciplines found in patient data');
+      }
+      
+      console.log('📋 Required disciplines from patient:', requiredDisciplines);
+      
+      // Mapear staff asignado por rol
+      const assignedByRole = {};
+      assignedStaff.forEach(assignment => {
+        const role = assignment.assigned_role.toUpperCase();
+        assignedByRole[role] = assignment.staff;
+        console.log(`🔗 Mapped assigned staff: ${role} -> ${assignment.staff.name} (ID: ${assignment.staff.id})`);
+      });
+      
+      console.log('👥 Final assigned staff by role:', assignedByRole);
+      
+      // Crear estado inicial de disciplinas - MEJORADO
+      const newDisciplines = {
+        PT: {
+          // CAMBIO CLAVE: Priorizar required_disciplines sobre staff asignado
+          isActive: requiredDisciplines.includes('PT') || Boolean(assignedByRole['PT']) || Boolean(assignedByRole['PTA']),
+          therapist: assignedByRole['PT'] || null,
+          assistant: assignedByRole['PTA'] || null,
+          frequency: ''
+        },
+        OT: {
+          isActive: requiredDisciplines.includes('OT') || Boolean(assignedByRole['OT']) || Boolean(assignedByRole['COTA']),
+          therapist: assignedByRole['OT'] || null,
+          assistant: assignedByRole['COTA'] || null,
+          frequency: ''
+        },
+        ST: {
+          isActive: requiredDisciplines.includes('ST') || Boolean(assignedByRole['ST']) || Boolean(assignedByRole['STA']),
+          therapist: assignedByRole['ST'] || null,
+          assistant: assignedByRole['STA'] || null,
+          frequency: ''
+        }
+      };
+      
+      // NUEVO: Cargar disciplines_data desde localStorage primero, luego desde paciente
+      const localData = loadDisciplinesFromLocal();
+      if (localData) {
+        // Combinar datos guardados con datos generados
+        Object.keys(newDisciplines).forEach(type => {
+          if (localData[type]) {
+            // Preservar frecuencias guardadas
+            if (localData[type].frequency) {
+              newDisciplines[type].frequency = localData[type].frequency;
+            }
+            // Preservar otros datos si existen
+            if (localData[type].isActive !== undefined) {
+              newDisciplines[type].isActive = localData[type].isActive;
+            }
+          }
+        });
+      }
+      // Fallback: cargar desde patient data si existe
+      else if (patient.disciplines_data) {
+        try {
+          const parsedDisciplinesData = typeof patient.disciplines_data === 'string' 
+            ? JSON.parse(patient.disciplines_data) 
+            : patient.disciplines_data;
+          
+          // Combinar datos guardados con datos generados
+          Object.keys(newDisciplines).forEach(type => {
+            if (parsedDisciplinesData[type]) {
+              // Preservar frecuencias guardadas
+              if (parsedDisciplinesData[type].frequency) {
+                newDisciplines[type].frequency = parsedDisciplinesData[type].frequency;
+              }
+              // Preservar otros datos si existen
+              if (parsedDisciplinesData[type].isActive !== undefined) {
+                newDisciplines[type].isActive = parsedDisciplinesData[type].isActive;
+              }
+            }
+          });
+          
+        } catch (e) {
+          console.warn('Error parsing disciplines_data:', e);
+        }
+      }
+
+      console.log('🎯 Final disciplines state being set:', newDisciplines);
+      
+      // Log each discipline status
+      Object.keys(newDisciplines).forEach(type => {
+        const disc = newDisciplines[type];
+        console.log(`   ${type}: Active=${disc.isActive}, Therapist=${disc.therapist?.name || 'None'}, Assistant=${disc.assistant?.name || 'None'}, Frequency=${disc.frequency || 'None'}`);
+      });
+      
+      setDisciplines(newDisciplines);
+      setIsInitialized(true);
+      console.log('✅ Disciplines initialization completed');
+    }
+  }, [patient, allStaff, assignedStaff, isInitialized]);
+
+  // NUEVO: Sincronización automática de frecuencias con visitas del calendario
+  useEffect(() => {
+    if (scheduledVisits.length >= 0 && isInitialized) {
+      console.log('🔄 Disciplines: Syncing frequencies with calendar visits:', scheduledVisits.length);
+      
+      setDisciplines(prev => {
+        const updated = { ...prev };
+        let hasChanges = false;
+        
+        Object.keys(updated).forEach(disciplineType => {
+          if (updated[disciplineType].isActive) {
+            const calculatedFrequency = calculateFrequencyFromVisits(disciplineType, scheduledVisits);
+            
+            // Solo actualizar si la frecuencia calculada es diferente y no está vacía
+            if (calculatedFrequency && calculatedFrequency !== updated[disciplineType].frequency) {
+              console.log(`📊 ${disciplineType}: Auto-calculated frequency: ${calculatedFrequency}`);
+              updated[disciplineType] = {
+                ...updated[disciplineType],
+                frequency: calculatedFrequency
+              };
+              hasChanges = true;
+            }
+          }
+        });
+        
+        // Sincronizar cambios con otros componentes si hay cambios
+        if (hasChanges) {
+          syncWithOtherComponents({
+            type: 'frequency_auto_calculated',
+            disciplines: updated
+          });
+          
+          // Notificar al componente padre
+          if (onUpdateDisciplines) {
+            setTimeout(() => {
+              onUpdateDisciplines(updated);
+            }, 0);
+          }
+        }
+        
+        return hasChanges ? updated : prev;
+      });
+    }
+  }, [scheduledVisits, isInitialized]); // Se ejecuta cuando cambian las visitas del calendario
+  
+  // TODAS LAS FUNCIONES DE MANEJO - SIN VERIFICACIÓN AUTOMÁTICA
   
   // Filter therapists by type
   const getTherapistsByType = (type) => {
-    return therapistsList.filter(t => t.type === type) || [];
+    return allStaff.filter(staff => 
+      staff.role && staff.role.toLowerCase() === type.toLowerCase()
+    );
   };
   
   // Filter assistants by type
   const getAssistantsByType = (type) => {
-    const assistantType = type === 'PT' ? 'PTA' : (type === 'OT' ? 'COTA' : 'SLPA');
-    return assistantsList.filter(a => a.type === assistantType) || [];
+    let assistantType;
+    switch (type) {
+      case 'PT':
+        assistantType = 'pta';
+        break;
+      case 'OT':
+        assistantType = 'cota';
+        break;
+      case 'ST':
+        assistantType = 'sta';
+        break;
+      default:
+        return [];
+    }
+    
+    return allStaff.filter(staff => 
+      staff.role && staff.role.toLowerCase() === assistantType
+    );
   };
-  
-  // Toggle discipline active status
-  const handleToggleDiscipline = (type) => {
-    const updatedDisciplines = {
-      ...disciplines,
-      [type]: {
-        ...disciplines[type],
-        isActive: !disciplines[type].isActive
+
+  // Assign staff to patient via API
+  const assignStaffToPatient = async (staffId, patientId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/assign-staff?patient_id=${patientId}&staff_id=${staffId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to assign staff: ${response.status} ${response.statusText}`);
       }
-    };
-    
-    setDisciplines(updatedDisciplines);
-    
-    if (onUpdateDisciplines) {
-      onUpdateDisciplines(updatedDisciplines);
+      
+      const result = await response.json();
+      console.log('Staff assigned successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error assigning staff:', error);
+      throw error;
     }
   };
-  
+
+  // Unassign staff from patient via API
+  const unassignStaffFromPatient = async (patientId, staffRole) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/unassign-staff?patient_id=${patientId}&staff_role=${staffRole}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to unassign staff: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Staff unassigned successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error unassigning staff:', error);
+      throw error;
+    }
+  };
+
+  // Update required disciplines in patient - CORREGIDO
+  const updatePatientDisciplines = async (patientId, activeDisciplines) => {
+    try {
+      console.log('Updating patient disciplines. Active disciplines:', activeDisciplines);
+      
+      const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          required_disciplines: JSON.stringify(activeDisciplines) // CORREGIDO: Ya es un array
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update patient disciplines: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Patient disciplines updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('Error updating patient disciplines:', error);
+      throw error;
+    }
+  };
+
+  // Toggle discipline active status - CORREGIDO Y MEJORADO
+  const handleToggleDiscipline = async (type, explicitActiveState = null) => {
+    console.log(`[handleToggleDiscipline] Toggling ${type} discipline. Explicit state: ${explicitActiveState}`);
+    
+    const currentDiscipline = disciplines[type];
+    let newActiveState = explicitActiveState !== null ? explicitActiveState : !currentDiscipline.isActive;
+    
+    let updatedDisciplines = { ...disciplines };
+
+    if (!newActiveState) {
+      // If deactivating, clear therapist and assistant
+      updatedDisciplines = {
+        ...updatedDisciplines,
+        [type]: {
+          ...updatedDisciplines[type],
+          isActive: false,
+          therapist: null,
+          assistant: null
+        }
+      };
+      console.log(`[handleToggleDiscipline] Deactivating ${type}. Clearing staff.`);
+    } else {
+      // If activating, set isActive to true
+      updatedDisciplines = {
+        ...updatedDisciplines,
+        [type]: {
+          ...updatedDisciplines[type],
+          isActive: true
+        }
+      };
+      console.log(`[handleToggleDiscipline] Activating ${type}.`);
+    }
+
+    setDisciplines(updatedDisciplines);
+
+    // Always update required_disciplines in the backend
+    const activeDisciplines = Object.keys(updatedDisciplines)
+      .filter(key => updatedDisciplines[key].isActive);
+    
+    console.log('[handleToggleDiscipline] Active disciplines to save:', activeDisciplines);
+    
+    if (patient?.id) {
+      try {
+        await updatePatientDisciplines(patient.id, activeDisciplines);
+        console.log(`[handleToggleDiscipline] Successfully updated patient disciplines for ${type}.`);
+      } catch (err) {
+        console.error(`[handleToggleDiscipline] Error updating patient disciplines for ${type}:`, err);
+        setError(`Failed to update discipline status: ${err.message}`);
+      }
+    }
+    
+    // Notify parent component of the change - usando setTimeout para evitar warning de React  
+    if (onUpdateDisciplines) {
+      setTimeout(() => {
+        onUpdateDisciplines(updatedDisciplines);
+      }, 0);
+    }
+  };
+
   // Change therapist
-  const handleChangeTherapist = (type, therapist) => {
-    const updatedDisciplines = {
-      ...disciplines,
-      [type]: {
-        ...disciplines[type],
-        therapist: therapist || null
+  const handleChangeTherapist = async (type, therapist) => {
+    console.log(`[handleChangeTherapist] Updating ${type} therapist:`, therapist);
+    
+    try {
+      if (therapist && patient?.id) {
+        console.log(`[handleChangeTherapist] Assigning therapist ${therapist.name} (ID: ${therapist.id}) to patient ${patient.id}`);
+        const result = await assignStaffToPatient(therapist.id, patient.id);
+        console.log('[handleChangeTherapist] Assignment result:', result);
+        
+        // Update assignedStaff with the API response
+        setAssignedStaff(prevAssigned => {
+          const updated = prevAssigned ? [...prevAssigned] : [];
+          // Remove assignment if role already exists and add new one
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== type.toUpperCase());
+          filteredUpdated.push(result);
+          console.log('[handleChangeTherapist] Updated assigned staff state:', filteredUpdated);
+          return filteredUpdated;
+        });
+      } else if (!therapist && patient?.id) {
+        console.log(`[handleChangeTherapist] Unassigning ${type} therapist from patient ${patient.id}.`);
+        await unassignStaffFromPatient(patient.id, type);
+        
+        setAssignedStaff(prevAssigned => {
+          const updated = prevAssigned ? [...prevAssigned] : [];
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== type.toUpperCase());
+          return filteredUpdated;
+        });
       }
-    };
-    
-    console.log(`Updated disciplines for ${type}:`, updatedDisciplines);
-    
-    setDisciplines(updatedDisciplines);
-    
-    if (onUpdateDisciplines) {
-      onUpdateDisciplines(updatedDisciplines);
+      
+      setDisciplines(prevDisciplines => {
+        const updatedDisciplines = {
+          ...prevDisciplines,
+          [type]: {
+            ...prevDisciplines[type],
+            therapist: therapist || null,
+            isActive: (therapist || prevDisciplines[type].assistant) ? true : false
+          }
+        };
+        
+        const activeDisciplines = Object.keys(updatedDisciplines)
+          .filter(key => updatedDisciplines[key].isActive);
+        
+        if (patient?.id) {
+          updatePatientDisciplines(patient.id, activeDisciplines);
+        }
+        
+        if (onUpdateDisciplines) {
+          setTimeout(() => {
+            onUpdateDisciplines(updatedDisciplines);
+          }, 0);
+        }
+        
+        return updatedDisciplines;
+      });
+      
+    } catch (error) {
+      console.error('[handleChangeTherapist] Error updating therapist:', error);
+      setError(`Failed to assign ${therapist?.name || 'therapist'}: ${error.message}`);
     }
   };
-  
+
   // Change assistant
-  const handleChangeAssistant = (type, assistant) => {
-    const updatedDisciplines = {
-      ...disciplines,
-      [type]: {
-        ...disciplines[type],
-        assistant: assistant || null
+  const handleChangeAssistant = async (type, assistant) => {
+    console.log(`[handleChangeAssistant] Updating ${type} assistant:`, assistant);
+    const assistantRole = type === 'PT' ? 'PTA' : type === 'OT' ? 'COTA' : 'STA';
+    
+    try {
+      if (assistant && patient?.id) {
+        console.log(`[handleChangeAssistant] Assigning assistant ${assistant.name} (ID: ${assistant.id}) to patient ${patient.id}`);
+        const result = await assignStaffToPatient(assistant.id, patient.id);
+        console.log('[handleChangeAssistant] Assignment result:', result);
+        
+        // Update assignedStaff with the API response
+        setAssignedStaff(prevAssigned => {
+          const updated = prevAssigned ? [...prevAssigned] : [];
+          // Remove assignment if role already exists and add new one
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== assistantRole.toUpperCase());
+          filteredUpdated.push(result);
+          console.log('[handleChangeAssistant] Updated assigned staff state:', filteredUpdated);
+          return filteredUpdated;
+        });
+      } else if (!assistant && patient?.id) {
+        console.log(`[handleChangeAssistant] Unassigning ${assistantRole} assistant from patient ${patient.id}.`);
+        await unassignStaffFromPatient(patient.id, assistantRole);
+        
+        setAssignedStaff(prevAssigned => {
+          const updated = prevAssigned ? [...prevAssigned] : [];
+          const filteredUpdated = updated.filter(a => a.assigned_role.toUpperCase() !== assistantRole.toUpperCase());
+          return filteredUpdated;
+        });
       }
-    };
-    
-    console.log(`Updated disciplines for ${type}:`, updatedDisciplines);
-    
-    setDisciplines(updatedDisciplines);
-    
-    if (onUpdateDisciplines) {
-      onUpdateDisciplines(updatedDisciplines);
+      
+      setDisciplines(prevDisciplines => {
+        const updatedDisciplines = {
+          ...prevDisciplines,
+          [type]: {
+            ...prevDisciplines[type],
+            assistant: assistant || null,
+            isActive: (assistant || prevDisciplines[type].therapist) ? true : false
+          }
+        };
+        
+        const activeDisciplines = Object.keys(updatedDisciplines)
+          .filter(key => updatedDisciplines[key].isActive);
+        
+        if (patient?.id) {
+          updatePatientDisciplines(patient.id, activeDisciplines);
+        }
+        
+        if (onUpdateDisciplines) {
+          setTimeout(() => {
+            onUpdateDisciplines(updatedDisciplines);
+          }, 0);
+        }
+        
+        return updatedDisciplines;
+      });
+      
+    } catch (error) {
+      console.error('[handleChangeAssistant] Error updating assistant:', error);
+      setError(`Failed to assign ${assistant?.name || 'assistant'}: ${error.message}`);
     }
   };
-  
-  // Change frequency
-  const handleChangeFrequency = (type, frequency) => {
-    const updatedDisciplines = {
-      ...disciplines,
-      [type]: {
-        ...disciplines[type],
-        frequency
+
+  // Change frequency - MEJORADO CON SINCRONIZACIÓN
+  const handleChangeFrequency = async (type, frequency) => {
+    console.log(`🔄 Updating ${type} frequency to: ${frequency}`);
+    
+    setDisciplines(prevDisciplines => {
+      const updatedDisciplines = {
+        ...prevDisciplines,
+        [type]: {
+          ...prevDisciplines[type],
+          frequency
+        }
+      };
+      
+      // NUEVO: Guardar en localStorage
+      saveDisciplinesToLocal(updatedDisciplines);
+      
+      // NUEVO: Sincronizar cambios con otros componentes
+      syncWithOtherComponents({
+        type: 'frequency_manually_changed',
+        discipline: type,
+        frequency: frequency,
+        disciplines: updatedDisciplines
+      });
+      
+      if (onUpdateDisciplines) {
+        setTimeout(() => {
+          onUpdateDisciplines(updatedDisciplines);
+        }, 0);
       }
-    };
-    
-    setDisciplines(updatedDisciplines);
-    
-    if (onUpdateDisciplines) {
-      onUpdateDisciplines(updatedDisciplines);
-    }
+      
+      return updatedDisciplines;
+    });
   };
+
   
+
   // Generate cards for each discipline type
   const disciplineCards = [
     {
@@ -739,7 +1486,81 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
       data: disciplines.ST
     }
   ];
-  
+
+  // Loading state - MEJORADO
+  if (isLoading || assignedStaff === null) {
+    return (
+      <div className="disciplines-component">
+        <div className="card-header">
+          <div className="header-title">
+            <div className="header-icon-wrapper">
+              <i className="fas fa-user-md"></i>
+              <div className="icon-glow"></div>
+            </div>
+            <h3>Therapy Disciplines</h3>
+          </div>
+        </div>
+        
+        <div className="card-body">
+          <div className="loading-container">
+            <div className="loading-spinner">
+              <i className="fas fa-spinner fa-spin"></i>
+            </div>
+            <p>Loading therapy staff and assignments...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="disciplines-component">
+        <div className="card-header">
+          <div className="header-title">
+            <div className="header-icon-wrapper">
+              <i className="fas fa-user-md"></i>
+              <div className="icon-glow"></div>
+            </div>
+            <h3>Therapy Disciplines</h3>
+          </div>
+        </div>
+        
+        <div className="card-body">
+          <div className="error-message" style={{
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '15px',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <i className="fas fa-exclamation-triangle" style={{ marginRight: '8px' }}></i>
+            <span>Error: {error}</span>
+            <button 
+              onClick={() => {
+                setError(null);
+                window.location.reload();
+              }}
+              style={{
+                marginLeft: '10px',
+                padding: '5px 10px',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="disciplines-component">
       <div className="card-header">
@@ -754,26 +1575,131 @@ const DisciplinesComponent = ({ patient, onUpdateDisciplines }) => {
       </div>
       
       <div className="card-body">
+        {/* Mostrar información si no hay staff */}
+        {allStaff.length === 0 && !isLoading && (
+          <div style={{ 
+            backgroundColor: '#fef3c7', 
+            border: '1px solid #fbbf24', 
+            color: '#92400e', 
+            padding: '10px', 
+            borderRadius: '6px', 
+            marginBottom: '15px',
+            fontSize: '14px'
+          }}>
+            <i className="fas fa-info-circle" style={{ marginRight: '6px' }}></i>
+            No staff members found. Please ensure staff data is available in the system.
+          </div>
+        )}
+        
+        {/* Mostrar mensaje de éxito temporal */}
+        {error && error.includes('successfully') && (
+          <div style={{ 
+            backgroundColor: '#d1fae5', 
+            border: '1px solid #10b981', 
+            color: '#065f46', 
+            padding: '10px', 
+            borderRadius: '6px', 
+            marginBottom: '15px',
+            fontSize: '14px'
+          }}>
+            <i className="fas fa-check-circle" style={{ marginRight: '6px' }}></i>
+            {error}
+          </div>
+        )}
+        
         <div className="disciplines-list">
-          {disciplineCards.map((card, index) => (
-            <DisciplineCard
-              key={card.type}
-              disciplineType={card.type}
-              disciplineLabel={card.label}
-              assistantLabel={card.assistantLabel}
-              therapist={card.data.therapist}
-              assistant={card.data.assistant}
-              frequency={card.data.frequency}
-              isActive={card.data.isActive}
-              onToggle={() => handleToggleDiscipline(card.type)}
-              onChangeTherapist={(therapist) => handleChangeTherapist(card.type, therapist)}
-              onChangeAssistant={(assistant) => handleChangeAssistant(card.type, assistant)}
-              onChangeFrequency={(frequency) => handleChangeFrequency(card.type, frequency)}
-              therapistsList={getTherapistsByType(card.type)}
-              assistantsList={getAssistantsByType(card.type)}
-            />
-          ))}
+          {disciplineCards.map((card) => {
+            const approvedLimit = getApprovedVisitsLimit(card.type);
+            
+            return (
+              <div key={card.type} style={{ position: 'relative' }}>
+                {/* Indicador de límite de visitas aprobadas */}
+                {approvedLimit && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                    color: 'white',
+                    fontSize: '11px',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontWeight: 'bold',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                  }}>
+                    📋 {approvedLimit} visits approved
+                  </div>
+                )}
+                
+                <DisciplineCard
+                  disciplineType={card.type}
+                  disciplineLabel={card.label}
+                  assistantLabel={card.assistantLabel}
+                  therapist={card.data.therapist}
+                  assistant={card.data.assistant}
+                  frequency={card.data.frequency}
+                  isActive={card.data.isActive}
+                  onToggle={() => handleToggleDiscipline(card.type)}
+                  onChangeTherapist={(therapist) => handleChangeTherapist(card.type, therapist)}
+                  onChangeAssistant={(assistant) => handleChangeAssistant(card.type, assistant)}
+                  onChangeFrequency={(frequency) => handleChangeFrequency(card.type, frequency)}
+                  therapistsList={getTherapistsByType(card.type)}
+                  assistantsList={getAssistantsByType(card.type)}
+                  // NUEVOS PROPS PARA SINCRONIZACIÓN
+                  scheduledVisits={scheduledVisits}
+                  approvedVisitsLimit={approvedLimit}
+                />
+              </div>
+            );
+          })}
         </div>
+        
+        {/* Información adicional y sincronización */}
+        <div className="disciplines-info">
+          {/* Panel de sincronización */}
+          {(scheduledVisits.length > 0 || approvedVisits) && (
+            <div style={{
+              backgroundColor: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+              border: '1px solid #10b981',
+              color: '#065f46',
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              marginTop: '15px',
+              marginBottom: '15px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <i className="fas fa-sync-alt" style={{ color: '#10b981' }}></i>
+                <strong>Live Synchronization Active</strong>
+              </div>
+              <ul style={{ margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                {scheduledVisits.length > 0 && (
+                  <li>✅ <strong>Frequencies</strong> auto-calculate from {scheduledVisits.length} calendar visits</li>
+                )}
+                {approvedVisits && (
+                  <li>✅ <strong>Visit limits</strong> sync with Medical Info component</li>
+                )}
+                <li>✅ Manual frequency changes <strong>override auto-calculation</strong></li>
+                <li>✅ All changes <strong>sync instantly</strong> with Calendar and Medical Info</li>
+              </ul>
+            </div>
+          )}
+          
+          <div style={{
+            backgroundColor: '#f0f9ff',
+            border: '1px solid #0ea5e9',
+            color: '#0c4a6e',
+            padding: '12px',
+            borderRadius: '6px',
+            fontSize: '13px'
+          }}>
+            <i className="fas fa-lightbulb" style={{ marginRight: '6px' }}></i>
+            <strong>Tip:</strong> Frequencies update automatically as you add visits to the calendar. 
+            You can manually override them by editing the frequency field.
+          </div>
+        </div>
+        
         <div className="component-decoration">
           <div className="glass-orb top-left"></div>
           <div className="glass-orb bottom-right"></div>

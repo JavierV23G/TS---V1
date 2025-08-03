@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional, Dict, Any
 
 class Token(BaseModel):
     access_token: str
@@ -10,6 +11,7 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+    device_fingerprint: Optional[Dict[str, Any]] = None
 
 class UserCredentials(BaseModel):
     user_id: int

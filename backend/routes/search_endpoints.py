@@ -29,42 +29,50 @@ router = APIRouter()
 #====================== UTILITY FUNCTIONS ======================#
 
 def format_phone_number(phone_str):
+    """Format phone number to (XXX) XXX-XXXX format"""
     if not phone_str:
         return ''
     
+    # Clean string - only numbers
     cleaned = re.sub(r'\D', '', str(phone_str))
     
+    # Validate at least 10 digits
     if len(cleaned) < 10:
-        return phone_str 
+        return phone_str  # Return original if invalid
     
+    # Format as (123) 456-7890
     match = re.match(r'^(\d{3})(\d{3})(\d{4})$', cleaned)
     if match:
         return f"({match.group(1)}) {match.group(2)}-{match.group(3)}"
     
-    return phone_str
+    return phone_str  # Return original if doesn't match pattern
 
 def get_primary_phone_number(contact_info):
+    """Get primary phone number from contact_info dictionary"""
     if not contact_info:
         return ''
     
     phone_number = ''
     
+    # If it's a dictionary (new structure)
     if isinstance(contact_info, dict):
         phone_number = contact_info.get('primary#') or contact_info.get('primary') or contact_info.get('secondary')
         
+        # If no primary or secondary, search other contacts
         if not phone_number:
             other_contacts = {k: v for k, v in contact_info.items() 
                             if k not in ['primary#', 'primary', 'secondary']}
             if other_contacts:
                 first_contact = next(iter(other_contacts.values()))
                 if isinstance(first_contact, str) and '|' in first_contact:
-                    phone_number = first_contact.split('|')[0]
+                    phone_number = first_contact.split('|')[0]  # Get phone from phone|relation format
                 elif isinstance(first_contact, dict):
                     phone_number = first_contact.get('phone', '')
                 else:
                     phone_number = str(first_contact)
     
     elif isinstance(contact_info, str):
+        # Compatibility with old structure
         try:
             parsed = json.loads(contact_info)
             if isinstance(parsed, list) and parsed:
@@ -91,6 +99,7 @@ def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(No
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     
+    # If no cert_period_id provided, use active one
     if not cert_period_id:
         cert_period = db.query(CertificationPeriod).filter(
             CertificationPeriod.patient_id == patient_id,
@@ -106,20 +115,23 @@ def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(No
         if not cert_period:
             raise HTTPException(status_code=404, detail="Certification period not found")
     
+    # Get global staff assignments
     assignments = db.query(StaffAssignment).options(joinedload(StaffAssignment.staff)).filter(
         StaffAssignment.patient_id == patient_id
     ).all()
     
+    # Get all active staff
     all_staff = db.query(Staff).filter(Staff.is_active == True).all()
     
+    # Organize by discipline with frequencies from selected cert period  
     disciplines = {
         'PT': {
             'available_staff': [
                 {'id': s.id, 'name': s.name, 'role': s.role}
                 for s in all_staff if s.role.upper() in ['PT', 'PTA']
             ],
-            'assigned_pt': None,   
-            'assigned_pta': None,  
+            'assigned_pt': None,   # PT therapist
+            'assigned_pta': None,  # PTA assistant
             'frequency': cert_period.pt_frequency,
             'is_active': False
         },
@@ -128,8 +140,8 @@ def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(No
                 {'id': s.id, 'name': s.name, 'role': s.role}
                 for s in all_staff if s.role.upper() in ['OT', 'COTA']
             ],
-            'assigned_ot': None,  
-            'assigned_cota': None,
+            'assigned_ot': None,   # OT therapist
+            'assigned_cota': None, # COTA assistant
             'frequency': cert_period.ot_frequency,
             'is_active': False
         },
@@ -138,13 +150,14 @@ def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(No
                 {'id': s.id, 'name': s.name, 'role': s.role}
                 for s in all_staff if s.role.upper() in ['ST', 'STA']
             ],
-            'assigned_st': None,  
-            'assigned_sta': None, 
+            'assigned_st': None,   # ST therapist
+            'assigned_sta': None,  # STA assistant  
             'frequency': cert_period.st_frequency,
             'is_active': False
         }
     }
     
+    # Fill in assigned staff
     for assignment in assignments:
         role = assignment.assigned_role.upper()
         staff_data = {
@@ -153,6 +166,7 @@ def get_assigned_staff(patient_id: int, cert_period_id: Optional[int] = Query(No
             'role': assignment.staff.role
         }
         
+        # Assign to specific role fields within each discipline
         if role == 'PT':
             disciplines['PT']['assigned_pt'] = staff_data
             disciplines['PT']['is_active'] = True
@@ -333,120 +347,6 @@ def get_deleted_visits(cert_id: int, db: Session = Depends(get_db)):
         Visit.certification_period_id == cert_id,
         Visit.is_hidden == True
     ).all()
-
-@router.get("/visits/{visit_id}/complete-data")
-def get_visit_complete_data(visit_id: int, db: Session = Depends(get_db)):
-    
-    visit = db.query(Visit).options(
-        joinedload(Visit.patient),
-        joinedload(Visit.staff),
-        joinedload(Visit.certification_period)
-    ).filter(Visit.id == visit_id).first()
-    
-    if not visit:
-        raise HTTPException(status_code=404, detail="Visit not found")
-    
-    note = db.query(VisitNote).filter(VisitNote.visit_id == visit_id).first()
-    note_id = note.id if note else None
-    
-    visit_response = VisitResponse(
-        id=visit.id,
-        patient_id=visit.patient_id,
-        staff_id=visit.staff_id,
-        certification_period_id=visit.certification_period_id,
-        visit_date=visit.visit_date,
-        visit_type=visit.visit_type,
-        therapy_type=visit.therapy_type,  
-        status=visit.status,
-        scheduled_time=visit.scheduled_time,
-        note_id=note_id
-    )
-    
-    patient = visit.patient
-    agency_name = None
-    if patient.agency_id:
-        agency = db.query(Staff).filter(Staff.id == patient.agency_id).first()
-        if agency:
-            agency_name = agency.name
-    
-    today = date.today()
-    current_cert = db.query(CertificationPeriod).filter(
-        CertificationPeriod.patient_id == patient.id,
-        CertificationPeriod.start_date <= today,
-        CertificationPeriod.end_date >= today
-    ).order_by(CertificationPeriod.start_date.desc()).first()
-    
-    patient_response = PatientResponse(
-        id=patient.id,
-        full_name=patient.full_name,
-        birthday=patient.birthday,
-        gender=patient.gender,
-        address=patient.address,
-        contact_info=patient.contact_info,
-        primary_phone=get_primary_phone_number(patient.contact_info),
-        insurance=patient.insurance,
-        physician=patient.physician,
-        agency_name=agency_name,
-        nursing_diagnosis=patient.nursing_diagnosis,
-        urgency_level=patient.urgency_level,
-        prior_level_of_function=patient.prior_level_of_function,
-        homebound_status=patient.homebound_status,
-        weight_bearing_status=patient.weight_bearing_status,
-        referral_reason=patient.referral_reason,
-        weight=patient.weight,
-        height=patient.height,
-        past_medical_history=patient.past_medical_history,
-        clinical_grouping=patient.clinical_grouping,
-        required_disciplines=patient.required_disciplines,
-        is_active=patient.is_active,
-        cert_start_date=current_cert.start_date if current_cert else None,
-        cert_end_date=current_cert.end_date if current_cert else None
-    )
-    
-    assigned_therapist = None
-    if visit.staff:
-        assigned_therapist = StaffResponse(
-            id=visit.staff.id,
-            name=visit.staff.name,
-            birthday=visit.staff.birthday,
-            gender=visit.staff.gender,
-            postal_code=visit.staff.postal_code,
-            email=visit.staff.email,
-            phone=visit.staff.phone,
-            alt_phone=visit.staff.alt_phone,
-            username=visit.staff.username,
-            role=visit.staff.role,
-            is_active=visit.staff.is_active
-        )
-    
-    therapy_roles = ['PT', 'OT', 'ST', 'PTA', 'COTA', 'STA']
-    available_therapists_query = db.query(Staff).filter(
-        Staff.role.in_(therapy_roles),
-        Staff.is_active == True
-    ).all()
-    
-    available_therapists = [
-        StaffResponse(
-            id=therapist.id,
-            name=therapist.name,
-            birthday=therapist.birthday,
-            gender=therapist.gender,
-            postal_code=therapist.postal_code,
-            email=therapist.email,
-            phone=therapist.phone,
-            alt_phone=therapist.alt_phone,
-            username=therapist.username,
-            role=therapist.role,
-            is_active=therapist.is_active
-        ) for therapist in available_therapists_query
-    ]
-    
-    return {
-        "visit": visit_response,
-        "patient": patient_response,
-        "assigned_therapist": assigned_therapist,
-        "available_therapists": available_therapists
-    }
 
 #====================== VISIT NOTES ======================#
 
