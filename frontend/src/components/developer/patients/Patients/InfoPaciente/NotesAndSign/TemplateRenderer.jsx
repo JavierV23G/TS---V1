@@ -16,24 +16,34 @@ const TemplateRenderer = ({
   const [activeSection, setActiveSection] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Map backend section names to frontend components
+  // Auto-mapeo directo: el backend envía exactamente el nombre del componente
   const getSectionComponent = (sectionName) => {
-    const sectionMap = {
-      // Usar nombres consistentes con primera letra mayúscula
-      'Vitals': 'VitalsSection',
-      'Pain': 'PainSection', 
-      'Transfers / Functional Independence': 'TransfersFunctionalSection',
-    };
-    
-    return sectionMap[sectionName] || null;
+    // El backend debe enviar exactamente el nombre del componente JSX
+    // Ejemplo: "VitalsSection", "PainSection", "TransfersFunctionalSection"
+    return sectionName;
   };
 
-  // Get icon for section
+  // Get icon for section - mapeo basado en nombres actuales del index.js
   const getIconForSection = (sectionName) => {
     const iconMap = {
       'Vitals': 'fas fa-heartbeat',
-      'Transfers / Functional Independence': 'fas fa-walking',
-      'Pain': 'fas fa-exclamation-triangle'
+      'TransfersFunctionalIndependence': 'fas fa-walking',
+      'Pain': 'fas fa-exclamation-triangle',
+      'Subjective': 'fas fa-user-md',
+      'Medication': 'fas fa-pills',
+      'LivingArrangements': 'fas fa-home',
+      'GaitMobility': 'fas fa-walking',
+      'MuscleStrengthSection': 'fas fa-dumbbell',
+      'BalanceSection': 'fas fa-balance-scale',
+      'ADLSelfCare': 'fas fa-hands',
+      'StandardizedTests': 'fas fa-clipboard-check',
+      'ProblemListSection': 'fas fa-list-ul',
+      'AssessmentJustificationSection': 'fas fa-stethoscope',
+      'RehabPotentialSection': 'fas fa-chart-line',
+      'TreatmentInterventions': 'fas fa-therapy',
+      'SkilledCareSection': 'fas fa-user-nurse',
+      'Goals': 'fas fa-bullseye',
+      'Signature': 'fas fa-signature'
     };
     
     return iconMap[sectionName] || 'fas fa-file-alt';
@@ -52,6 +62,10 @@ const TemplateRenderer = ({
         const componentName = getSectionComponent(sectionConfig.section_name);
         const SectionComponent = componentName ? Sections[componentName] : null;
         
+        console.log(`🎯 Buscando component: "${componentName}"`);
+        console.log('📦 Sections disponibles:', Object.keys(Sections));
+        console.log(`✅ Component encontrado:`, !!SectionComponent);
+        
         if (SectionComponent) {
           sectionsMap[sectionConfig.section_name] = {
             Component: SectionComponent,
@@ -63,6 +77,8 @@ const TemplateRenderer = ({
               required: sectionConfig.is_required || false
             }
           };
+        } else {
+          console.error(`❌ Component "${componentName}" no encontrado en Sections`);
         }
       });
 
@@ -189,25 +205,13 @@ const TemplateRenderer = ({
 
     return (
       <div className="active-section">
-        <div className="section-header">
-          <div className="section-info">
-            <h2>
-              <i className={config.icon || 'fas fa-file-alt'}></i>
-              {config.name || config.component.replace('Section', '')}
-            </h2>
-            {config.description && (
-              <p className="section-description">{config.description}</p>
-            )}
-          </div>
-          
-          <div className="section-actions">
-            {autoSaveMessage && (
-              <span className="autosave-indicator">
-                <i className="fas fa-check-circle"></i>
-                {autoSaveMessage}
-              </span>
-            )}
-          </div>
+        <div className="section-actions">
+          {autoSaveMessage && (
+            <span className="autosave-indicator">
+              <i className="fas fa-check-circle"></i>
+              {autoSaveMessage}
+            </span>
+          )}
         </div>
 
         <div className="section-content">
