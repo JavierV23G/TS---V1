@@ -25,7 +25,7 @@ const PremiumTabs = ({ activeTab, onChangeTab }) => {
 };
 
 // Patient Card component
-const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
+const PatientCard = ({ patient, onView, certPeriods = [] }) => {
   const getStatusClass = (status) => {
     switch(status?.toLowerCase()) {
       case 'active': 
@@ -110,23 +110,6 @@ const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
           <i className="fas fa-eye"></i> View Profile
           <span className="btn-highlight"></span>
         </button>
-        {patient.status === 'Active' ? (
-          <button 
-            className="card-btn deactivate-btn" 
-            title="Deactivate Patient" 
-            onClick={() => onStatusChange(patient.id, 'deactivate')}
-          >
-            <i className="fas fa-user-times"></i> Deactivate
-          </button>
-        ) : (
-          <button 
-            className="card-btn activate-btn" 
-            title="Activate Patient" 
-            onClick={() => onStatusChange(patient.id, 'activate')}
-          >
-            <i className="fas fa-user-check"></i> Activate
-          </button>
-        )}
       </div>
     </div>
   );
@@ -180,7 +163,7 @@ const PatientCardSkeleton = () => (
 
 // Calculate statistics - CORREGIDO
 const calculateStats = (patients) => {
-  console.log('Calculating stats for patients:', patients);
+  console.log('Calculating stats for assigned patients:', patients);
   
   if (!patients || !Array.isArray(patients)) {
     return [
@@ -316,18 +299,16 @@ const TPPatientsPage = () => {
     { title: "Inactive Patients", value: 0, icon: "fa-user-times", color: "red" },
   ]);
   
-  // Search and filter states - Inicializar con 'Active'
+  // Search and filter states - Initialize with 'Active'
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
-  const [agencySearchTerm, setAgencySearchTerm] = useState('');
-  const [selectedAgency, setSelectedAgency] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('Active'); // Cambio: Inicializar con 'Active'
+  const [selectedStatus, setSelectedStatus] = useState('Active'); // Initialize with 'Active'
   
   // Refs
   const userMenuRef = useRef(null);
   const searchInputRef = useRef(null);
   
   // Constants
-  const statusOptions = ['all', 'Active', 'Inactive'];
+  const statusOptions = ['Active', 'Inactive', 'all'];
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
   // Helper functions
@@ -364,12 +345,14 @@ const TPPatientsPage = () => {
       }
       
       const data = await response.json();
+      console.log('All staff data:', data);
       
       const agenciesOnly = data.filter(person => {
         const role = person.role?.toLowerCase();
         return role === 'agency';
       });
       
+      console.log('Filtered agencies:', agenciesOnly);
       setAgencies(agenciesOnly);
       return agenciesOnly;
       
@@ -408,13 +391,26 @@ const TPPatientsPage = () => {
     }
   }, [API_BASE_URL]);
   
-  // FUNCIÓN FETCHPATIENTS CORREGIDA
+  // FUNCIÓN FETCHPATIENTS CORREGIDA - Ahora filtra por terapeuta asignado
   const fetchPatients = useCallback(async () => {
     try {
       setIsLoadingPatients(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/patients/`, {
+      // Verify if we have current user ID
+      console.log('Current user object:', currentUser);
+      
+      if (!currentUser?.id && !currentUser?.user_id) {
+        console.error('No user ID found in currentUser:', currentUser);
+        throw new Error('Could not get current user ID');
+      }
+      
+      // Use either id or user_id field
+      const userId = currentUser.id || currentUser.user_id;
+      console.log('Using user ID:', userId);
+      
+      // Obtener solo los pacientes asignados al terapeuta actual
+      const response = await fetch(`${API_BASE_URL}/staff/${userId}/assigned-patients`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -427,18 +423,44 @@ const TPPatientsPage = () => {
       
       const data = await response.json();
       
-      console.log('Raw data from API:', data); // Debug: Ver datos crudos
+      console.log('Patients assigned to therapist:', data); // Debug: See assigned patients
       
       const [agenciesData, certPeriodsData] = await Promise.all([
         fetchAgenciesData(),
         fetchAllCertPeriods()
       ]);
       
-      const normalizedPatients = data.map(patient => ({
-        ...patient,
-        status: patient.is_active ? 'Active' : 'Inactive',
-        agency_name: patient.agency_name || 'Unknown Agency'
-      }));
+      console.log('Agencies data:', agenciesData);
+      console.log('Raw patient data:', JSON.stringify(data, null, 2));
+      
+      // Process patients - need to fetch individual patient data to get all fields
+      const patientsWithFullData = await Promise.all(
+        data.map(async (patient) => {
+          try {
+            // Fetch complete patient data using the /patients/{id} endpoint
+            // which includes agency_name properly populated
+            const patientResponse = await fetch(`${API_BASE_URL}/patients/${patient.id}`);
+            if (patientResponse.ok) {
+              const fullPatientData = await patientResponse.json();
+              console.log(`Full patient data for ID ${patient.id}:`, fullPatientData);
+              return fullPatientData;
+            }
+          } catch (err) {
+            console.error(`Error fetching full data for patient ${patient.id}:`, err);
+          }
+          // If fetch fails, return original data
+          return patient;
+        })
+      );
+      
+      // Now normalize the patients with complete data
+      const normalizedPatients = patientsWithFullData.map((patient) => {
+        return {
+          ...patient,
+          status: patient.is_active ? 'Active' : 'Inactive',
+          agency_name: patient.agency_name || 'Agency Not Found'
+        };
+      });
       
       console.log('Normalized patients:', normalizedPatients);
       console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));
@@ -449,29 +471,23 @@ const TPPatientsPage = () => {
       setLastFetchTime(new Date());
       
     } catch (err) {
-      console.error('Error fetching patients:', err);
+      console.error('Error fetching assigned patients:', err);
       setError(err.message);
     } finally {
       setIsLoadingPatients(false);
     }
-  }, [API_BASE_URL, fetchAgenciesData, fetchAllCertPeriods]);
+  }, [API_BASE_URL, currentUser, fetchAgenciesData, fetchAllCertPeriods]);
   
   // Filter functions
-  const uniqueAgencies = [...new Set(patients.map(patient => patient.agency_name).filter(Boolean))];
   
-  const filteredAgencies = uniqueAgencies.filter(agency => 
-    agency.toLowerCase().includes(agencySearchTerm.toLowerCase())
-  );
-  
-  // FUNCIÓN GETFILTEREDPATIENTS CORREGIDA
+  // GETFILTEREDPATIENTS FUNCTION - CORRECTED
   const getFilteredPatients = useCallback(() => {
     if (!Array.isArray(patients)) return [];
     
     console.log('Filtering patients:', {
       totalPatients: patients.length,
       selectedStatus,
-      patientSearchTerm,
-      selectedAgency
+      patientSearchTerm
     });
     
     const filtered = patients.filter(patient => {
@@ -485,10 +501,7 @@ const TPPatientsPage = () => {
       const matchesPatientSearch = patientSearchTerm === '' || 
         searchFields.includes(patientSearchTerm.toLowerCase());
       
-      const matchesAgency = selectedAgency === 'all' || 
-        patient.agency_name === selectedAgency;
-      
-      // CORRECCIÓN: Filtro de estado que maneja tanto 'all' como estados específicos
+      // Status filter handles both 'all' and specific statuses
       const matchesStatus = selectedStatus === 'all' || patient.status === selectedStatus;
       
       console.log(`Patient ${patient.id} filter check:`, {
@@ -497,11 +510,10 @@ const TPPatientsPage = () => {
         selectedStatus,
         matchesStatus,
         matchesPatientSearch,
-        matchesAgency,
-        finalMatch: matchesPatientSearch && matchesAgency && matchesStatus
+        finalMatch: matchesPatientSearch && matchesStatus
       });
       
-      return matchesPatientSearch && matchesAgency && matchesStatus;
+      return matchesPatientSearch && matchesStatus;
     });
     
     console.log('Filtered results:', {
@@ -510,7 +522,7 @@ const TPPatientsPage = () => {
     });
     
     return filtered;
-  }, [patientSearchTerm, selectedAgency, selectedStatus, patients]);
+  }, [patientSearchTerm, selectedStatus, patients]);
   
   const filteredPatients = getFilteredPatients();
   
@@ -552,13 +564,6 @@ const TPPatientsPage = () => {
     }
   }, [currentUser, navigate, isLoggingOut]);
   
-  const handleAgencySelect = useCallback((agency) => {
-    if (isLoggingOut) return;
-    
-    setSelectedAgency(agency);
-    setAgencySearchTerm('');
-    setActivePage(1);
-  }, [isLoggingOut]);
   
   const handleStatusSelect = useCallback((status) => {
     if (isLoggingOut) return;
@@ -571,9 +576,7 @@ const TPPatientsPage = () => {
     if (isLoggingOut) return;
     
     setPatientSearchTerm('');
-    setAgencySearchTerm('');
-    setSelectedAgency('all');
-    setSelectedStatus('Active'); // CAMBIO: Resetear a 'Active' en lugar de 'all'
+    setSelectedStatus('Active'); // Reset to 'Active' instead of 'all'
     setActivePage(1);
   }, [isLoggingOut]);
   
@@ -663,34 +666,6 @@ const TPPatientsPage = () => {
     fetchPatients();
   }, [fetchPatients, isLoggingOut]);
 
-  const handleStatusChange = useCallback(async (patientId, action) => {
-    if (isLoggingOut) return;
-    
-    try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const isActive = action === 'activate';
-      
-      const params = new URLSearchParams();
-      params.append('is_active', isActive.toString());
-      
-      const response = await fetch(`${API_BASE_URL}/patients/${patientId}?${params.toString()}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${action} patient`);
-      }
-
-      // Refresh the patients list to show updated status
-      await fetchPatients();
-      
-    } catch (error) {
-      console.error(`Error ${action}ing patient:`, error);
-    }
-  }, [isLoggingOut, fetchPatients]);
 
   const formatCertPeriodForTable = useCallback((patientId) => {
     try {
@@ -732,16 +707,19 @@ const TPPatientsPage = () => {
   }, [patients]);
   
   useEffect(() => {
-    fetchPatients();
-    
-    const interval = setInterval(() => {
-      if (!isLoggingOut) {
-        fetchPatients();
-      }
-    }, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [fetchPatients, isLoggingOut]);
+    // Only fetch patients if we have a current user
+    if (currentUser && (currentUser.id || currentUser.user_id)) {
+      fetchPatients();
+      
+      const interval = setInterval(() => {
+        if (!isLoggingOut) {
+          fetchPatients();
+        }
+      }, 5 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentUser, fetchPatients, isLoggingOut]);
   
   useEffect(() => {
     const handleResize = () => {
@@ -939,13 +917,21 @@ const TPPatientsPage = () => {
       
       <main className={`patients-content ${isLoggingOut ? 'fade-out' : ''}`}>
         <div className="patients-container">
-         
+          {error && (
+            <div className="error-banner">
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>{error}</span>
+              {error.includes('No se pudo obtener el ID del usuario') && (
+                <span className="error-hint"> - Please sign in again.</span>
+              )}
+            </div>
+          )}
           
           <div className="patients-header">
             <div className="patients-title-container">
-              <h1 className="patients-title">Patient Management Center</h1>
+              <h1 className="patients-title">My Assigned Patients</h1>
               <p className="patients-subtitle">
-                Streamline your therapy workflow with complete patient information at your fingertips
+                Manage your therapy workflow with complete information of your assigned patients
               </p>
               <div className="header-actions">
                 <button 
@@ -956,13 +942,6 @@ const TPPatientsPage = () => {
                 >
                   <i className={`fas fa-sync-alt ${isLoadingPatients ? 'fa-spin' : ''}`}></i>
                   {isLoadingPatients ? 'Refreshing...' : 'Refresh'}
-                </button>
-                <button 
-                  className="header-action-btn" 
-                  onClick={handleNavigateToCreatePatient}
-                  disabled={isLoggingOut}
-                >
-                  <i className="fas fa-plus"></i> New Patient
                 </button>
               </div>
             </div>
@@ -981,70 +960,22 @@ const TPPatientsPage = () => {
             ))}
           </div>
           
-          <div className={`filter-container ${showFilters ? 'expanded' : 'collapsed'}`}>
+          <div className="filter-container expanded">
             <div className="filter-card">
-              <div className="filter-header" onClick={toggleFilters} style={{ cursor: 'pointer' }}>
+              <div className="filter-header">
                 <h3>
-                  <i className="fas fa-filter"></i> Advanced Filters
+                  <i className="fas fa-filter"></i> Patient Filters
                 </h3>
                 <div className="filter-header-actions">
                   <span className="filter-count">
                     Showing <strong>{filteredPatients.length}</strong> of <strong>{patients.length}</strong> patients
                   </span>
-                  <button 
-                    className="toggle-filters-btn" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFilters();
-                    }}
-                    title={showFilters ? "Collapse filters" : "Expand filters"}
-                    disabled={isLoggingOut}
-                  >
-                    <i className={`fas fa-chevron-${showFilters ? 'up' : 'down'}`}></i>
-                  </button>
                 </div>
               </div>
               
-              {showFilters && (
+              {true && (
                 <>
                   <div className="filter-section">
-                    <div className="agency-filter">
-                      <h4>Healthcare Agencies</h4>
-                      <div className="search-box">
-                        <i className="fas fa-search"></i>
-                        <input 
-                          type="text" 
-                          placeholder="Search agencies..." 
-                          value={agencySearchTerm}
-                          onChange={(e) => setAgencySearchTerm(e.target.value)}
-                          disabled={isLoggingOut}
-                        />
-                      </div>
-                      
-                      <div className="agency-list">
-                        <div 
-                          className={`agency-item ${selectedAgency === 'all' ? 'active' : ''}`}
-                          onClick={() => !isLoggingOut && handleAgencySelect('all')}
-                        >
-                          <i className="fas fa-hospital-alt"></i> All Agencies
-                        </div>
-                        {filteredAgencies.map((agency, index) => (
-                          <div 
-                            key={index} 
-                            className={`agency-item ${selectedAgency === agency ? 'active' : ''}`}
-                            onClick={() => !isLoggingOut && handleAgencySelect(agency)}
-                          >
-                            <i className="fas fa-building"></i> {agency}
-                          </div>
-                        ))}
-                        {filteredAgencies.length === 0 && agencySearchTerm && (
-                          <div className="agency-item disabled">
-                            <i className="fas fa-search"></i> No agencies found
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
                     <div className="status-filter">
                       <h4>Patient Status</h4>
                       <div className="status-buttons">
@@ -1055,7 +986,7 @@ const TPPatientsPage = () => {
                             onClick={() => !isLoggingOut && handleStatusSelect(status)}
                             disabled={isLoggingOut}
                           >
-                            {status === 'all' ? 'All Statuses' : status}
+                            {status === 'all' ? 'All Patients' : status}
                             {status !== 'all' && (
                               <span className="status-count">
                                 {patients.filter(p => p.status === status).length}
@@ -1064,23 +995,6 @@ const TPPatientsPage = () => {
                           </button>
                         ))}
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="filter-footer">
-                    <button 
-                      className="clear-filters" 
-                      onClick={handleClearFilters}
-                      disabled={isLoggingOut}
-                    >
-                      <i className="fas fa-times-circle"></i> Clear Filters
-                    </button>
-                    
-                    <div className="filter-tips">
-                      <div className="tip-icon">
-                        <i className="fas fa-lightbulb"></i>
-                      </div>
-                      <p>Tip: Press <kbd>Ctrl</kbd> + <kbd>F</kbd> to quickly search patients</p>
                     </div>
                   </div>
                 </>
@@ -1232,7 +1146,6 @@ const TPPatientsPage = () => {
                         patient={patient}
                         certPeriods={certPeriods}
                         onView={() => !isLoggingOut && handleActionClick('view', patient)}
-                        onStatusChange={handleStatusChange}
                       />
                     ))}
                   </div>
