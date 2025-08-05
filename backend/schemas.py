@@ -101,7 +101,7 @@ class PatientResponse(BaseModel):
     gender: str
     address: str
     contact_info: Optional[Dict[str, str]]
-    primary_phone: Optional[str] = None  # Formatted primary phone from backend
+    primary_phone: Optional[str] = None 
     insurance: Optional[str] = None
     physician: Optional[str]
     nurse: Optional[str] = None
