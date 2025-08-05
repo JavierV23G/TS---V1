@@ -19,7 +19,8 @@ import DevAccounting from './components/developer/accounting/ClinicalAccounting'
 import DevUserProfile from './components/developer/profile/UserProfile';
 import DevSettingsPage from './components/developer/settings/SettingsPage.jsx';
 import DevSupportDashboard from './components/developer/support/SupportDashboard';
-import DevSecurityDashboard from './components/developer/security/SecurityDashboard'; 
+import DevSecurityDashboard from './components/developer/security/SecurityDashboard';
+import PrintableVisitNote from './components/developer/patients/Patients/InfoPaciente/NotesAndSign/PrintableVisitNote'; 
 
 // Import administrator components
 import AdminHomePage from './components/admin/welcome/Welcome';
@@ -222,6 +223,9 @@ function App() {
 
             <Route path="/homePage" element={<RoleRedirect />} />
           </Route>
+
+          {/* Printable note route - public access for new window printing */}
+          <Route path="/printable-note/:visitId" element={<PrintableVisitNote />} />
 
           {/* Default route */}
           <Route path="*" element={<Navigate to="/" replace />} />
