@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../header/Header';
 import { useAuth } from '../../login/AuthContext';
 import failedAttemptsService from '../../login/FailedAttemptsService';
 import SecurityNotifications from './SecurityNotifications';
 import SecurityMonitor from './SecurityMonitor';
 import SecurityLiveMonitor from './SecurityLiveMonitor';
+import logoImg from '../../../assets/LogoMHC.jpeg';
+import LogoutAnimation from '../../../components/LogOut/LogOut';
 import '../../../styles/developer/Security/SecurityDashboard.scss';
 import '../../../styles/developer/Security/ClinicalStyles.scss';
 // 🧪 IMPORT TEST UTILITIES FOR DEVELOPMENT
@@ -34,6 +35,57 @@ const SecurityDashboard = () => {
   const [terminating, setTerminating] = useState({});
   const [userDevices, setUserDevices] = useState(null);
   const [devicesSummary, setDevicesSummary] = useState(null);
+  
+  // Estados adicionales para el nuevo layout
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuTransitioning, setMenuTransitioning] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Refs
+  const userMenuRef = useRef(null);
+  
+  // 🌐 NUEVOS ESTADOS PARA IP MONITORING
+  const [ipAnalytics, setIpAnalytics] = useState(null);
+  const [blockedIps, setBlockedIps] = useState([]);
+  const [revokingIp, setRevokingIp] = useState({});
+  const [selectedIpDetails, setSelectedIpDetails] = useState(null);
+  const [showIpDetailsModal, setShowIpDetailsModal] = useState(false);
+
+  // Funciones de utilidad
+  const getInitials = useCallback((name) => {
+    if (!name) return "U";
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }, []);
+
+  // User data
+  const userData = {
+    name: currentUser?.fullname || currentUser?.username || 'Usuario',
+    avatar: getInitials(currentUser?.fullname || currentUser?.username || 'Usuario'),
+    email: currentUser?.email || 'user@example.com',
+    role: currentUser?.role || 'Usuario',
+    status: 'online'
+  };
+
+  // Funciones de navegación
+  const handleMainMenuTransition = useCallback(() => {
+    if (isLoggingOut) return;
+    
+    setMenuTransitioning(true);
+    const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+    
+    setTimeout(() => {
+      navigate(`/${baseRole}/homePage`);
+    }, 300);
+  }, [currentUser, navigate, isLoggingOut]);
+
+  const handleLogoutAnimationComplete = useCallback(() => {
+    logout();
+    navigate('/');
+  }, [logout, navigate]);
 
   // Remove inline styles - using SCSS instead
 
@@ -47,7 +99,13 @@ const SecurityDashboard = () => {
   const fetchData = async () => {
     try {
       if (!refreshing) setLoading(true);
-      await Promise.all([fetchSecurityData(), fetchUsers(), fetchActiveSessions(), fetchUserDevices()]);
+      await Promise.all([
+        fetchSecurityData(), 
+        fetchUsers(), 
+        fetchActiveSessions(), 
+        fetchUserDevices(),
+        fetchIpAnalytics() // 🌐 NUEVO: Obtener datos de IP
+      ]);
       setError(null);
     } catch (err) {
       console.error('[FRONTEND] Error fetching data:', err);
@@ -141,6 +199,104 @@ const SecurityDashboard = () => {
       }
     } catch (err) {
       console.error('[FRONTEND] Error fetching user devices:', err);
+    }
+  };
+
+  // 🌐 NUEVAS FUNCIONES PARA IP MONITORING
+  const fetchIpAnalytics = async () => {
+    try {
+      console.log('[IP-ANALYTICS] Fetching IP analytics...');
+      const response = await fetch('http://localhost:8000/auth/ip-analytics');
+      console.log('[IP-ANALYTICS] Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[IP-ANALYTICS] Full response:', data);
+        
+        const analyticsData = data['📊 DATA'] || {};
+        setIpAnalytics(analyticsData);
+        setBlockedIps(analyticsData.blocked_ips || []);
+        
+        console.log('[IP-ANALYTICS] Analytics loaded:', {
+          summary: analyticsData.summary,
+          blocked_ips_count: analyticsData.blocked_ips?.length || 0,
+          top_ips_count: analyticsData.top_ips?.length || 0
+        });
+      } else {
+        console.error('[IP-ANALYTICS] Error response:', response.status, response.statusText);
+        // No es crítico si falla - es una feature nueva
+        setIpAnalytics({ summary: {}, top_ips: [], blocked_ips: [], configuration: {} });
+        setBlockedIps([]);
+      }
+    } catch (err) {
+      console.error('[FRONTEND] Error fetching IP analytics:', err);
+      // Fallback para que no crashee el dashboard
+      setIpAnalytics({ summary: {}, top_ips: [], blocked_ips: [], configuration: {} });
+      setBlockedIps([]);
+    }
+  };
+
+  const fetchIpDetails = async (ip) => {
+    try {
+      console.log(`[IP-DETAILS] Fetching details for IP: ${ip}`);
+      const encodedIp = encodeURIComponent(ip);
+      const response = await fetch(`http://localhost:8000/auth/ip-details/${encodedIp}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[IP-DETAILS] Details received:', data);
+        
+        setSelectedIpDetails(data['📋 DETAILS'] || {});
+        setShowIpDetailsModal(true);
+      } else {
+        console.error('[IP-DETAILS] Error fetching details for IP:', ip);
+        setError(`Failed to get details for IP ${ip}`);
+      }
+    } catch (err) {
+      console.error('[FRONTEND] Error fetching IP details:', err);
+      setError(`Error getting IP details: ${err.message}`);
+    }
+  };
+
+  const revokeIpBlock = async (ip, reason = "Manual unblock from dashboard") => {
+    try {
+      console.log(`[IP-REVOKE] Revoking block for IP: ${ip}`);
+      setRevokingIp(prev => ({ ...prev, [ip]: true }));
+      
+      const response = await fetch('http://localhost:8000/auth/revoke-ip-block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ip: ip,
+          revoked_by: currentUser?.username || 'developer',
+          reason: reason
+        })
+      });
+
+      const data = await response.json();
+      console.log(`[IP-REVOKE] Backend response:`, data);
+      
+      if (response.ok && data['⚡ RESULT']?.success) {
+        console.log(`[IP-REVOKE] ✅ IP ${ip} successfully unblocked`);
+        
+        // Actualizar datos inmediatamente
+        await fetchIpAnalytics();
+        setError(null);
+        
+        // Mostrar mensaje de éxito
+        setTimeout(() => {
+          alert(`IP ${ip} successfully unblocked!`);
+        }, 100);
+        
+      } else {
+        console.error(`[IP-REVOKE] ❌ Error from backend:`, data);
+        setError(data['⚡ RESULT']?.message || data.message || 'Failed to revoke IP block');
+      }
+    } catch (err) {
+      console.error(`[IP-REVOKE] ❌ Error revoking IP block:`, err);
+      setError(`Error revoking IP block: ${err.message}`);
+    } finally {
+      setRevokingIp(prev => ({ ...prev, [ip]: false }));
     }
   };
 
@@ -345,11 +501,6 @@ const SecurityDashboard = () => {
       setTerminating(prev => ({ ...prev, [username]: false }));
       setRefreshing(false);
     }
-  };
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   // Render functions for each section
@@ -806,18 +957,40 @@ const SecurityDashboard = () => {
 
   const handleLogout = () => {
     setIsLoggingOut(true);
-    setTimeout(() => {
-      logout();
-      navigate('/login');
-    }, 1000);
+    setShowUserMenu(false);
+    document.body.classList.add('logging-out');
   };
+
+  // useEffects adicionales para el nuevo layout
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const stats = securityData?.['📊 ENTERPRISE_METRICS'] || {};
 
   if (loading && !securityData) {
     return (
       <div className="security-dashboard">
-        <Header onLogout={handleLogout} />
         <div className="security-dashboard__container">
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px', color: '#64748b'}}>
             <div>Loading Security Dashboard...</div>
@@ -1015,44 +1188,444 @@ const SecurityDashboard = () => {
     );
   };
 
-  return (
-    <div className="security-dashboard">
-      <Header onLogout={handleLogout} />
-      
-      <div className="security-dashboard__container">
-        {error && (
-          <div className="error-alert">
-            <strong>Error:</strong> {error}
+  // 🌐 RENDERIZAR IP MONITORING TAB
+  const renderIpMonitoring = () => {
+    if (!ipAnalytics) {
+      return (
+        <div className="clinical-section">
+          <div className="clinical-card">
+            <div className="clinical-card__header">
+              <h3>🌐 IP Monitoring</h3>
+            </div>
+            <div className="clinical-card__content">
+              <div className="loading-state">
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading IP analytics...</p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+      );
+    }
 
-        <div className="dashboard-header">
-          <div className="dashboard-header__content">
-            <div className="dashboard-header__title-section">
-              <h1 className="dashboard-header__title">
-                <i className="fas fa-shield-alt icon"></i>
-                Security Dashboard
-              </h1>
-              <span className="dashboard-header__badge">Enterprise</span>
+    const summary = ipAnalytics.summary || {};
+    const configuration = ipAnalytics.configuration || {};
+
+    return (
+      <div className="clinical-section">
+        {/* Summary Cards */}
+        <div className="clinical-grid clinical-grid--4">
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--info">
+                <i className="fas fa-globe"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{summary.total_unique_ips || 0}</div>
+                <div className="clinical-metric__label">Unique IPs Tracked</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--danger">
+                <i className="fas fa-ban"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{summary.currently_blocked || 0}</div>
+                <div className="clinical-metric__label">Currently Blocked</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--warning">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{summary.suspicious_ips_count || 0}</div>
+                <div className="clinical-metric__label">Suspicious IPs</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="clinical-card clinical-card--metric">
+            <div className="clinical-metric">
+              <div className="clinical-metric__icon clinical-metric__icon--primary">
+                <i className="fas fa-robot"></i>
+              </div>
+              <div className="clinical-metric__content">
+                <div className="clinical-metric__value">{summary.bot_ips_count || 0}</div>
+                <div className="clinical-metric__label">Bot IPs Detected</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Configuration Info */}
+        <div className="clinical-card">
+          <div className="clinical-card__header">
+            <h3>
+              <i className="fas fa-cog"></i>
+              Rate Limiting Configuration
+            </h3>
+          </div>
+          <div className="clinical-card__content">
+            <div className="clinical-grid clinical-grid--4">
+              <div className="config-item">
+                <span className="config-label">Single User Limit:</span>
+                <span className="config-value">12 attempts</span>
+                <small className="config-description">Tolerant for forgotten passwords</small>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Multiple Users Limit:</span>
+                <span className="config-value">8 attempts</span>
+                <small className="config-description">Suspicious activity detection</small>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Time Window:</span>
+                <span className="config-value">{configuration.time_window_minutes || 10} minutes</span>
+                <small className="config-description">Rolling window</small>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Block Duration:</span>
+                <span className="config-value">{configuration.block_duration_minutes || 30} minutes</span>
+                <small className="config-description">Auto-unblock after</small>
+              </div>
             </div>
             
-            <div className="dashboard-header__actions">
-              <SecurityMonitor />
-              <SecurityNotifications />
-              <button
-                className={`refresh-button ${refreshing ? 'disabled' : ''}`}
-                onClick={() => !refreshing && fetchData()}
-                disabled={refreshing}
-              >
-                <i className={`fas fa-sync icon ${refreshing ? 'spinning' : ''}`}></i>
-                {refreshing ? 'Refreshing...' : 'Refresh'}
-              </button>
+            {/* Intelligent Detection Info */}
+            <div className="intelligent-detection-info">
+              <h5>🧠 Intelligent Detection Rules:</h5>
+              <ul className="detection-rules">
+                <li>👤 <strong>Single User:</strong> Up to 12 attempts (for forgotten passwords)</li>
+                <li>👥 <strong>Multiple Users:</strong> Max 8 attempts (attack detection)</li>
+                <li>🤖 <strong>Bot Detection:</strong> Immediate block on automated patterns</li>
+                <li>⚡ <strong>Rapid Fire:</strong> Block if 3+ attempts within 3 seconds</li>
+                <li>📱 <strong>Device Risk:</strong> Block high-risk fingerprints</li>
+              </ul>
             </div>
           </div>
-          <p className="dashboard-header__subtitle">
-            Comprehensive security management and user administration
-          </p>
         </div>
+
+        {/* Blocked IPs List */}
+        <div className="clinical-card">
+          <div className="clinical-card__header">
+            <h3>
+              <i className="fas fa-ban"></i>
+              Currently Blocked IPs ({blockedIps.length})
+            </h3>
+          </div>
+          <div className="clinical-card__content">
+            {blockedIps.length === 0 ? (
+              <div className="empty-state">
+                <i className="fas fa-check-circle"></i>
+                <p>No IPs currently blocked</p>
+                <small>IPs will appear here when blocked by rate limiting</small>
+              </div>
+            ) : (
+              <div className="blocked-ips-list">
+                {blockedIps.map((blockedIp, index) => (
+                  <div key={index} className="blocked-ip-item">
+                    <div className="blocked-ip-header">
+                      <div className="ip-info">
+                        <h4>🌐 {blockedIp.ip}</h4>
+                        <span className="block-reason">{blockedIp.reason}</span>
+                      </div>
+                      <div className="block-status">
+                        <span className="time-remaining">
+                          {blockedIp.remaining_minutes} min remaining
+                        </span>
+                        <span className={`risk-badge risk-${blockedIp.device_risk > 70 ? 'high' : blockedIp.device_risk > 40 ? 'medium' : 'low'}`}>
+                          Risk: {blockedIp.device_risk || 0}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="blocked-ip-details">
+                      <div className="detail-row">
+                        <span className="label">Blocked At:</span>
+                        <span className="value">{new Date(blockedIp.blocked_at).toLocaleString()}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">Attempts:</span>
+                        <span className="value">{blockedIp.attempts}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">Last User:</span>
+                        <span className="value">{blockedIp.last_username || 'unknown'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span className="label">Unique Users:</span>
+                        <span className="value">{blockedIp.unique_users || 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="blocked-ip-actions">
+                      <button
+                        className="clinical-btn clinical-btn--info"
+                        onClick={() => fetchIpDetails(blockedIp.ip)}
+                        title="View detailed IP information"
+                      >
+                        <i className="fas fa-info-circle"></i>
+                        Details
+                      </button>
+                      
+                      <button
+                        className="clinical-btn clinical-btn--success"
+                        onClick={() => revokeIpBlock(blockedIp.ip)}
+                        disabled={revokingIp[blockedIp.ip]}
+                        title="Unblock this IP immediately"
+                      >
+                        {revokingIp[blockedIp.ip] ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin"></i>
+                            Unblocking...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-unlock"></i>
+                            Unblock IP
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Top Active IPs */}
+        <div className="clinical-card">
+          <div className="clinical-card__header">
+            <h3>
+              <i className="fas fa-chart-bar"></i>
+              Top Active IPs
+            </h3>
+          </div>
+          <div className="clinical-card__content">
+            {!ipAnalytics.top_ips || ipAnalytics.top_ips.length === 0 ? (
+              <div className="empty-state">
+                <i className="fas fa-chart-bar"></i>
+                <p>No IP activity data available</p>
+              </div>
+            ) : (
+              <div className="top-ips-list">
+                {ipAnalytics.top_ips.slice(0, 10).map((ipData, index) => (
+                  <div key={index} className="top-ip-item">
+                    <div className="ip-rank">#{index + 1}</div>
+                    <div className="ip-details">
+                      <div className="ip-address">
+                        🌐 {ipData.ip}
+                        {ipData.is_currently_blocked && <span className="blocked-indicator">🚫 BLOCKED</span>}
+                        {ipData.is_suspicious && <span className="suspicious-indicator">⚠️ SUSPICIOUS</span>}
+                        {ipData.is_bot && <span className="bot-indicator">🤖 BOT</span>}
+                      </div>
+                      <div className="ip-stats">
+                        <span>Attempts: {ipData.total_attempts}</span>
+                        <span>Success: {ipData.successful_logins}</span>
+                        <span>Users: {ipData.unique_users}</span>
+                        <span>Risk: {ipData.risk_score}</span>
+                      </div>
+                      <div className="ip-times">
+                        <span>First: {new Date(ipData.first_seen).toLocaleDateString()}</span>
+                        <span>Last: {new Date(ipData.last_seen).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="ip-actions">
+                      <button
+                        className="action-btn"
+                        onClick={() => fetchIpDetails(ipData.ip)}
+                        title="View IP details"
+                      >
+                        <i className="fas fa-info-circle"></i>
+                      </button>
+                      {ipData.is_currently_blocked && (
+                        <button
+                          className="action-btn unlock-btn"
+                          onClick={() => revokeIpBlock(ipData.ip)}
+                          disabled={revokingIp[ipData.ip]}
+                          title="Unblock IP"
+                        >
+                          <i className="fas fa-unlock"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`security-dashboard ${menuTransitioning ? 'transitioning' : ''} ${isLoggingOut ? 'logging-out' : ''}`}>
+      {isLoggingOut && (
+        <LogoutAnimation 
+          isMobile={isMobile} 
+          onAnimationComplete={handleLogoutAnimationComplete} 
+        />
+      )}
+      
+      <div className="parallax-background">
+        <div className="gradient-overlay"></div>
+        <div className="animated-particles"></div>
+      </div>
+      
+      <header className={`main-header ${isLoggingOut ? 'logging-out' : ''}`}>
+        <div className="header-container">
+          <div className="logo-container">
+            <div className="logo-wrapper">
+              <img src={logoImg} alt="TherapySync Logo" className="logo" />
+              <div className="logo-glow"></div>
+            </div>
+          </div>
+          
+          <div className="menu-navigation">
+            <button 
+              className="nav-button main-menu" 
+              onClick={handleMainMenuTransition}
+              title="Back to main menu"
+              disabled={isLoggingOut}
+            >
+              <i className="fas fa-th-large"></i>
+              <span>Main Menu</span>
+              <div className="button-effect"></div>
+            </button>
+            
+            <button 
+              className="nav-button security-menu active" 
+              title="Security Dashboard"
+              disabled={isLoggingOut}
+            >
+              <i className="fas fa-shield-alt"></i>
+              <span>Security</span>
+              <div className="button-effect"></div>
+            </button>
+          </div>
+
+          <div className="support-user-profile" ref={userMenuRef}>
+            <div 
+              className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
+              onClick={() => !isLoggingOut && setShowUserMenu(!showUserMenu)}
+              data-tooltip="Your profile and settings"
+            >
+              <div className="support-avatar">
+                <div className="support-avatar-text">{userData.avatar}</div>
+                <div className={`support-avatar-status ${userData.status}`}></div>
+              </div>
+              
+              <div className="support-profile-info">
+                <span className="support-user-name">{userData.name}</span>
+                <span className="support-user-role">{userData.role}</span>
+              </div>
+              
+              <i className={`fas fa-chevron-${showUserMenu ? 'up' : 'down'}`}></i>
+            </div>
+            
+            {showUserMenu && !isLoggingOut && (
+              <div className="support-user-menu">
+                <div className="support-menu-header">
+                  <div className="support-user-info">
+                    <div className="support-user-avatar">
+                      <span>{userData.avatar}</span>
+                      <div className={`avatar-status ${userData.status}`}></div>
+                    </div>
+                    <div className="support-user-details">
+                      <h4>{userData.name}</h4>
+                      <span className="support-user-email">{userData.email}</span>
+                      <span className={`support-user-status ${userData.status}`}>
+                        <i className="fas fa-circle"></i> 
+                        {userData.status.charAt(0).toUpperCase() + userData.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-section">
+                  <div className="section-title">Account</div>
+                  <div className="support-menu-items">
+                    <div 
+                      className="support-menu-item"
+                      onClick={() => {
+                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                        navigate(`/${baseRole}/profile`);
+                      }}
+                    >
+                      <i className="fas fa-user-circle"></i>
+                      <span>My Profile</span>
+                    </div>
+                    <div 
+                      className="support-menu-item"
+                      onClick={() => {
+                        const baseRole = currentUser?.role?.split(' - ')[0].toLowerCase() || 'developer';
+                        navigate(`/${baseRole}/settings`);
+                      }}
+                    >
+                      <i className="fas fa-cog"></i>
+                      <span>Settings</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="support-menu-footer">
+                  <div className="support-menu-item logout" onClick={handleLogout}>
+                    <i className="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                  </div>
+                  <div className="version-info">
+                    <span>TherapySync™</span>
+                    <span>v2.7.0</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+      
+      <main className={`main-content ${isLoggingOut ? 'fade-out' : ''}`}>
+        <div className="security-dashboard__container">
+          {error && (
+            <div className="error-alert">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          <div className="dashboard-header">
+            <div className="dashboard-header__content">
+              <div className="dashboard-header__title-section">
+                <h1 className="dashboard-header__title">
+                  <i className="fas fa-shield-alt icon"></i>
+                  Security Dashboard
+                </h1>
+                <span className="dashboard-header__badge">Enterprise</span>
+              </div>
+              
+              <div className="dashboard-header__actions">
+                <SecurityMonitor />
+                <SecurityNotifications />
+                <button
+                  className={`refresh-button ${refreshing ? 'disabled' : ''}`}
+                  onClick={() => !refreshing && fetchData()}
+                  disabled={refreshing}
+                >
+                  <i className={`fas fa-sync icon ${refreshing ? 'spinning' : ''}`}></i>
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+            <p className="dashboard-header__subtitle">
+              Comprehensive security management and user administration
+            </p>
+          </div>
 
         <div className="clinical-navigation">
           <div className="clinical-nav-tabs">
@@ -1098,18 +1671,27 @@ const SecurityDashboard = () => {
               <i className="fas fa-fingerprint"></i>
               <span>Live Monitor</span>
             </button>
+            <button
+              className={`clinical-nav-tab ${activeTab === 'ip-monitoring' ? 'clinical-nav-tab--active' : ''}`}
+              onClick={() => {setActiveTab('ip-monitoring'); setActiveSubSection(null);}}
+            >
+              <i className="fas fa-globe"></i>
+              <span>IP Monitoring</span>
+            </button>
           </div>
         </div>
 
-        <div className="clinical-content">
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'users' && renderUsersSection()}
-          {activeTab === 'blocked' && renderBlockedUsers()}
-          {activeTab === 'sessions' && renderSessionsByRole()}
-          {activeTab === 'devices' && renderUserDevices()}
-          {activeTab === 'monitoring' && <SecurityLiveMonitor />}
+          <div className="clinical-content">
+            {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'users' && renderUsersSection()}
+            {activeTab === 'blocked' && renderBlockedUsers()}
+            {activeTab === 'sessions' && renderSessionsByRole()}
+            {activeTab === 'devices' && renderUserDevices()}
+            {activeTab === 'monitoring' && <SecurityLiveMonitor />}
+            {activeTab === 'ip-monitoring' && renderIpMonitoring()}
+          </div>
         </div>
-      </div>
+      </main>
 
       {showBlockModal && (
         <div className="modal-overlay">
@@ -1131,6 +1713,181 @@ const SecurityDashboard = () => {
                 disabled={blocking[selectedUser?.username]}
               >
                 {blocking[selectedUser?.username] ? 'Blocking...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌐 MODAL DE DETALLES DE IP */}
+      {showIpDetailsModal && selectedIpDetails && (
+        <div className="modal-overlay">
+          <div className="modal modal--large">
+            <div className="modal__header">
+              <h3 className="modal__title">
+                🌐 IP Details: {selectedIpDetails.ip}
+              </h3>
+              <button 
+                className="modal__close"
+                onClick={() => setShowIpDetailsModal(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal__content">
+              {/* Estado actual */}
+              <div className="ip-detail-section">
+                <h4>📊 Current Status</h4>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">Status:</span>
+                    <span className={`value ${selectedIpDetails.current_status?.is_blocked ? 'blocked' : 'active'}`}>
+                      {selectedIpDetails.current_status?.is_blocked ? '🚫 BLOCKED' : '✅ Active'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Current Attempts:</span>
+                    <span className="value">{selectedIpDetails.current_status?.current_attempts_in_window || 0}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Risk Level:</span>
+                    <span className={`value risk-${selectedIpDetails.risk_assessment?.is_suspicious ? 'high' : 'low'}`}>
+                      {selectedIpDetails.risk_assessment?.is_suspicious ? '⚠️ Suspicious' : '✅ Normal'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Bot Detection:</span>
+                    <span className={`value ${selectedIpDetails.risk_assessment?.is_bot ? 'bot' : 'human'}`}>
+                      {selectedIpDetails.risk_assessment?.is_bot ? '🤖 Bot' : '👤 Human'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Metadata histórica */}
+              <div className="ip-detail-section">
+                <h4>📈 Historical Data</h4>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">First Seen:</span>
+                    <span className="value">
+                      {selectedIpDetails.metadata?.first_seen ? 
+                        new Date(selectedIpDetails.metadata.first_seen).toLocaleString() : 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Last Seen:</span>
+                    <span className="value">
+                      {selectedIpDetails.metadata?.last_seen ? 
+                        new Date(selectedIpDetails.metadata.last_seen).toLocaleString() : 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Total Attempts:</span>
+                    <span className="value">{selectedIpDetails.metadata?.total_attempts || 0}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">Successful Logins:</span>
+                    <span className="value">{selectedIpDetails.metadata?.successful_logins || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Usuarios */}
+              <div className="ip-detail-section">
+                <h4>👥 Users from this IP</h4>
+                {selectedIpDetails.metadata?.unique_users && selectedIpDetails.metadata.unique_users.length > 0 ? (
+                  <div className="users-list">
+                    {selectedIpDetails.metadata.unique_users.map((username, index) => (
+                      <span key={index} className="user-tag">{username}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="no-data">No users recorded</p>
+                )}
+              </div>
+
+              {/* Factores de riesgo */}
+              {selectedIpDetails.risk_assessment?.risk_factors && selectedIpDetails.risk_assessment.risk_factors.length > 0 && (
+                <div className="ip-detail-section">
+                  <h4>⚠️ Risk Factors</h4>
+                  <div className="risk-factors-list">
+                    {selectedIpDetails.risk_assessment.risk_factors.map((factor, index) => (
+                      <div key={index} className="risk-factor">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        {factor}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Device History (últimos 5 dispositivos) */}
+              {selectedIpDetails.device_history && selectedIpDetails.device_history.length > 0 && (
+                <div className="ip-detail-section">
+                  <h4>📱 Recent Device History</h4>
+                  <div className="device-history-list">
+                    {selectedIpDetails.device_history.slice(-5).map((device, index) => (
+                      <div key={index} className="device-history-item">
+                        <div className="device-header">
+                          <span className="device-time">
+                            {new Date(device.timestamp * 1000).toLocaleString()}
+                          </span>
+                          <span className="device-user">👤 {device.username}</span>
+                          <span className={`device-status ${device.success ? 'success' : 'failed'}`}>
+                            {device.success ? '✅ Success' : '❌ Failed'}
+                          </span>
+                        </div>
+                        <div className="device-details">
+                          <span>Hash: {device.hash.substring(0, 16)}...</span>
+                          <span>Risk: {device.risk_score}</span>
+                          {device.is_bot && <span className="bot-tag">🤖 Bot</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Información de bloqueo si existe */}
+              {selectedIpDetails.current_status?.block_info && (
+                <div className="ip-detail-section">
+                  <h4>🚫 Block Information</h4>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <span className="label">Reason:</span>
+                      <span className="value">{selectedIpDetails.current_status.block_info.reason}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Blocked Until:</span>
+                      <span className="value">
+                        {new Date(selectedIpDetails.current_status.block_info.blocked_until * 1000).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal__actions">
+              {selectedIpDetails.current_status?.is_blocked && (
+                <button
+                  className="modal__button modal__button--warning"
+                  onClick={() => {
+                    revokeIpBlock(selectedIpDetails.ip);
+                    setShowIpDetailsModal(false);
+                  }}
+                  disabled={revokingIp[selectedIpDetails.ip]}
+                >
+                  {revokingIp[selectedIpDetails.ip] ? 'Unblocking...' : 'Unblock IP'}
+                </button>
+              )}
+              <button
+                className="modal__button modal__button--cancel"
+                onClick={() => setShowIpDetailsModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>

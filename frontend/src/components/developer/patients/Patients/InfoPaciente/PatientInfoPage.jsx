@@ -132,7 +132,10 @@ const PersonalInfoCard = ({ patient, onUpdatePatient }) => {
 
   const handlePhoneInputChange = (e) => {
     const cleaned = e.target.value.replace(/\D/g, '');
-    setPrimaryContactPhone(cleaned);
+    // Limitar a 10 dígitos
+    if (cleaned.length <= 10) {
+      setPrimaryContactPhone(cleaned);
+    }
   };
 
   const handleSave = async () => {
