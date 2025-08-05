@@ -1075,6 +1075,34 @@
               &:active {
                 transform: scale(0.95);
               }
+              
+            }
+            
+            .remove-x-btn {
+              width: 24px;
+              height: 24px;
+              border: none;
+              background: none;
+              color: #dc2626;
+              font-size: 18px;
+              font-weight: bold;
+              cursor: pointer;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s ease;
+              line-height: 1;
+              
+              &:hover {
+                background: rgba(220, 38, 38, 0.1);
+                color: #b91c1c;
+                transform: scale(1.2);
+              }
+              
+              &:active {
+                transform: scale(0.9);
+              }
             }
           }
           
@@ -1381,7 +1409,7 @@
             }
           }
           
-          .edit-button {
+          .edit-button, .remove-btn {
             width: 30px;
             height: 30px;
             border-radius: 8px;
@@ -1439,6 +1467,34 @@
             
             &:active {
               transform: scale(0.95);
+            }
+            
+          }
+          
+          .remove-x-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: none;
+            color: #dc2626;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            line-height: 1;
+            
+            &:hover {
+              background: rgba(220, 38, 38, 0.1);
+              color: #b91c1c;
+              transform: scale(1.2);
+            }
+            
+            &:active {
+              transform: scale(0.9);
             }
           }
         }
@@ -2229,19 +2285,40 @@
             }
           }
           
-          .discipline-toggle {
-            .toggle-button {
-              .toggle-track {
-                width: 44px;
-                height: 24px;
+          .discipline-status {
+            .status-indicator {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.6);
+              border-radius: 12px;
+              border: 1px solid rgba(226, 232, 240, 0.7);
+              font-size: 12px;
+              font-weight: 600;
+              
+              .status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                transition: all 0.3s ease;
+              }
+              
+              &.active {
+                color: #059669;
                 
-                .toggle-indicator {
-                  width: 20px;
-                  height: 20px;
+                .status-dot {
+                  background: #10b981;
+                  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
                 }
+              }
+              
+              &.inactive {
+                color: #64748b;
                 
-                &.active .toggle-indicator {
-                  left: calc(100% - 22px);
+                .status-dot {
+                  background: #94a3b8;
+                  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.2);
                 }
               }
             }

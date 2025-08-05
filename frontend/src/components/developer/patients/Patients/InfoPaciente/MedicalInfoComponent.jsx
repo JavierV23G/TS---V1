@@ -4,133 +4,203 @@ import '../../../../../styles/developer/Patients/InfoPaciente/MedicalInfoCompone
 const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0); // Para forzar re-render
+  
+  // Estados para información médica
   const [medicalData, setMedicalData] = useState({
     weight: '',
     height: '',
     feet: '',
     inches: '',
-    nursingDiagnosis: '',
-    pmh: '',
-    wbs: '',
-    clinicalGrouping: '',
-    homebound: '',
+    nursing_diagnosis: '',
+    past_medical_history: '',
+    weight_bearing_status: '',
+    clinical_grouping: '',
+    homebound_status: '',
     physician: '',
     nurse: '',
-    urgencyLevel: ''
+    urgency_level: '',
+    prior_level_of_function: ''
   });
   
+  // Estado para mantener una copia de los datos originales
+  const [originalData, setOriginalData] = useState({});
+  
+  // Estados para visitas aprobadas
   const [approvedVisits, setApprovedVisits] = useState({
     pt: 0,
     ot: 0,
     st: 0
   });
 
-  // Cargar datos médicos del paciente
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // Estado para controlar si hemos actualizado los datos localmente
+  const [hasLocalUpdates, setHasLocalUpdates] = useState(false);
+
+  // Cargar datos médicos del paciente SOLO si no tenemos actualizaciones locales
   useEffect(() => {
-    if (patient) {
+    if (patient && !hasLocalUpdates) {
+      // Convertir altura total a pies y pulgadas para display
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
       const inches = totalInches > 0 ? Math.round((totalInches % 12) * 10) / 10 : '';
       
-      setMedicalData({
+      const patientData = {
         weight: patient.weight || '',
         height: totalInches.toString() || '',
         feet: feet,
         inches: inches,
-        nursingDiagnosis: patient.nursing_diagnosis || '',
-        pmh: patient.past_medical_history || '',
-        wbs: patient.weight_bearing_status || '',
-        clinicalGrouping: patient.clinical_grouping || '',
-        homebound: patient.homebound_status || '',
+        nursing_diagnosis: patient.nursing_diagnosis || '',
+        past_medical_history: patient.past_medical_history || '',
+        weight_bearing_status: patient.weight_bearing_status || '',
+        clinical_grouping: patient.clinical_grouping || '',
+        homebound_status: patient.homebound_status || '',
         physician: patient.physician || '',
         nurse: patient.nurse || '',
-        urgencyLevel: patient.urgency_level || ''
-      });
+        urgency_level: patient.urgency_level || '',
+        prior_level_of_function: patient.prior_level_of_function || ''
+      };
+      
+      setMedicalData(patientData);
+      setOriginalData(patientData); // Guardar copia de los datos originales
     }
-  }, [patient]);
+  }, [patient, hasLocalUpdates]);
 
-  // Cargar approved visits del cert period
+  // Cargar approved visits del certification period
   useEffect(() => {
-    fetchApprovedVisits();
+    if (certPeriodId) {
+      fetchApprovedVisits();
+    }
   }, [certPeriodId]);
 
   const fetchApprovedVisits = async () => {
-    if (!certPeriodId) return;
-    
     try {
-      const response = await fetch(`http://localhost:8000/cert-periods/${certPeriodId}`);
-      const certData = await response.json();
-      
-      setApprovedVisits({
-        pt: certData.pt_approved_visits || 0,
-        ot: certData.ot_approved_visits || 0,
-        st: certData.st_approved_visits || 0
-      });
+      const response = await fetch(`${API_BASE_URL}/cert-periods/${certPeriodId}`);
+      if (response.ok) {
+        const certData = await response.json();
+        setApprovedVisits({
+          pt: certData.pt_approved_visits || 0,
+          ot: certData.ot_approved_visits || 0,
+          st: certData.st_approved_visits || 0
+        });
+      }
     } catch (error) {
       console.error('Error fetching approved visits:', error);
     }
   };
 
-  // Actualizar información médica
+  // Actualizar información médica del paciente
   const saveMedicalInfo = async () => {
     setLoading(true);
+    setError('');
+    setSaveSuccess(false);
+    
     try {
+      // Calcular altura total en pulgadas
       const heightInInches = medicalData.feet && medicalData.inches 
         ? (parseInt(medicalData.feet) * 12) + parseFloat(medicalData.inches)
         : parseFloat(medicalData.height) || 0;
 
-      const updateData = {
-        weight: medicalData.weight,
-        height: heightInInches.toString(),
-        nursing_diagnosis: medicalData.nursingDiagnosis,
-        past_medical_history: medicalData.pmh,
-        weight_bearing_status: medicalData.wbs,
-        clinical_grouping: medicalData.clinicalGrouping,
-        homebound_status: medicalData.homebound,
-        physician: medicalData.physician,
-        nurse: medicalData.nurse,
-        urgency_level: medicalData.urgencyLevel
-      };
-
+      // Preparar parámetros para la URL
       const params = new URLSearchParams();
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key]) params.append(key, updateData[key]);
-      });
+      
+      if (medicalData.weight) params.append('weight', medicalData.weight);
+      if (heightInInches > 0) params.append('height', heightInInches.toString());
+      if (medicalData.nursing_diagnosis) params.append('nursing_diagnosis', medicalData.nursing_diagnosis);
+      if (medicalData.past_medical_history) params.append('past_medical_history', medicalData.past_medical_history);
+      if (medicalData.weight_bearing_status) params.append('weight_bearing_status', medicalData.weight_bearing_status);
+      if (medicalData.clinical_grouping) params.append('clinical_grouping', medicalData.clinical_grouping);
+      if (medicalData.homebound_status) params.append('homebound_status', medicalData.homebound_status);
+      if (medicalData.physician) params.append('physician', medicalData.physician);
+      if (medicalData.nurse) params.append('nurse', medicalData.nurse);
+      if (medicalData.urgency_level) params.append('urgency_level', medicalData.urgency_level);
+      if (medicalData.prior_level_of_function) params.append('prior_level_of_function', medicalData.prior_level_of_function);
 
-      const response = await fetch(`http://localhost:8000/patients/${patient.id}?${params.toString()}`, {
+      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
+        // Marcar que tenemos actualizaciones locales para prevenir que useEffect sobreescriba
+        setHasLocalUpdates(true);
+        
+        // Los datos ya están en medicalData desde el formulario, 
+        // solo necesitamos actualizar el estado original y cambiar a modo vista
+        setOriginalData({...medicalData});
+        
+        console.log('Medical data saved successfully. Current data:', medicalData);
+        
+        // Cambiar a modo vista inmediatamente para mostrar los cambios
         setIsEditing(false);
-        onUpdateMedicalInfo?.();
+        setSaveSuccess(true);
+        
+        // Forzar re-renderización del componente completo
+        setRefreshKey(prev => prev + 1);
+        
+        // Forzar re-renderización del componente padre si existe la función
+        if (onUpdateMedicalInfo) {
+          onUpdateMedicalInfo();
+        }
+        
+        // Auto-hide success message
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        throw new Error(`Failed to update medical info: ${response.status}`);
       }
     } catch (error) {
       console.error('Error updating medical info:', error);
+      setError('Error saving medical information. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar approved visits
+  // Actualizar visitas aprobadas
   const updateApprovedVisits = async (discipline, value) => {
     try {
       const field = `${discipline}_approved_visits`;
-      const response = await fetch(`http://localhost:8000/cert-periods/${certPeriodId}`, {
+      const parsedValue = parseInt(value) || 0;
+      
+      // Actualizar el estado local inmediatamente para una respuesta instantánea
+      setApprovedVisits(prev => ({
+        ...prev,
+        [discipline]: parsedValue
+      }));
+      
+      const response = await fetch(`${API_BASE_URL}/cert-periods/${certPeriodId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: parseInt(value) || 0 })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          [field]: parsedValue
+        })
       });
 
-      if (response.ok) {
-        setApprovedVisits(prev => ({
-          ...prev,
-          [discipline]: parseInt(value) || 0
-        }));
+      if (!response.ok) {
+        // Si falla la actualización, revertir el cambio local
+        const certResponse = await fetch(`${API_BASE_URL}/cert-periods/${certPeriodId}`);
+        if (certResponse.ok) {
+          const certData = await certResponse.json();
+          setApprovedVisits({
+            pt: certData.pt_approved_visits || 0,
+            ot: certData.ot_approved_visits || 0,
+            st: certData.st_approved_visits || 0
+          });
+        }
+        throw new Error(`Failed to update approved visits: ${response.status}`);
       }
     } catch (error) {
       console.error('Error updating approved visits:', error);
+      // Mostrar mensaje de error opcional
+      setError('Error updating approved visits. Please try again.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -140,478 +210,653 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
       ...prev,
       [name]: value
     }));
+    setError(''); // Clear error on input change
   };
 
   const formatHeight = (totalInches) => {
-    if (!totalInches) return 'Not set';
+    if (!totalInches || totalInches === 0) return 'Not recorded';
     const feet = Math.floor(totalInches / 12);
     const inches = Math.round((totalInches % 12) * 10) / 10;
-    return `${feet}'${inches}"`;
+    return `${feet}' ${inches}"`;
   };
 
-  if (loading) return <div>Loading medical info...</div>;
+  const getUrgencyColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'critical': return '#dc2626';
+      case 'high': return '#ea580c';
+      case 'medium': return '#ca8a04';
+      case 'low': return '#16a34a';
+      default: return '#6b7280';
+    }
+  };
+
+  const getUrgencyBgColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'critical': return '#fef2f2';
+      case 'high': return '#fff7ed';
+      case 'medium': return '#fefce8';
+      case 'low': return '#f0f9ff';
+      default: return '#f9fafb';
+    }
+  };
 
   return (
-    <div className="medical-info-component">
-      <div className="component-decoration">
-        <div className="glass-orb top-left"></div>
-        <div className="glass-orb bottom-right"></div>
-      </div>
-      
-      <div className="card-header">
-        <div className="header-title">
-          <div className="header-icon-wrapper">
-            <i className="fas fa-heartbeat"></i>
-            <div className="icon-glow"></div>
-          </div>
-          <h3>Medical Information</h3>
-        </div>
-        <div className="header-actions">
-          <button 
-            className="edit-button"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <i className={isEditing ? 'fas fa-times' : 'fas fa-edit'}></i>
-          </button>
-        </div>
-        <div className="header-decoration"></div>
-      </div>
-      
-      <div className="card-body">
-
-      {isEditing ? (
-        <div className="edit-form glass-form">
-          <div className="edit-form-decoration"></div>
-          {loading && (
-            <div className="saving-overlay">
-              <div className="backdrop-blur"></div>
-              <div className="saving-animation">
-                <div className="loader">
-                  <svg className="circular" viewBox="25 25 50 50">
-                    <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#8b5cf6" />
-                      </linearGradient>
-                    </defs>
-                    <circle className="path" cx="50" cy="50" r="20" fill="none" strokeWidth="2" strokeMiterlimit="10"/>
-                  </svg>
-                </div>
-                <div className="saving-text">
-                  Saving
-                  <div className="dots">
-                    <span>.</span>
-                    <span>.</span>
-                    <span>.</span>
-                  </div>
-                </div>
-              </div>
+    <div className="medical-info-component" key={refreshKey}>
+      {/* Header Section */}
+      <div className="medical-header">
+        <div className="header-content">
+          <div className="title-section">
+            <div className="medical-icon">
+              <i className="fas fa-stethoscope"></i>
             </div>
-          )}
-          
-          <h4><i className="fas fa-weight"></i>Physical Information</h4>
-          <div className="form-group weight-input">
-            <label><i className="fas fa-weight"></i>Weight</label>
-            <div className="input-with-icon">
-              <input
-                name="weight"
-                value={medicalData.weight}
-                onChange={handleInputChange}
-                placeholder="Enter weight"
-                className="glass-input"
-              />
-              <span className="unit-indicator">lbs</span>
+            <div className="title-text">
+              <h2>Medical Information</h2>
+              <p>Clinical data and patient status</p>
             </div>
           </div>
           
-          <div className="form-group height-input">
-            <label><i className="fas fa-ruler-vertical"></i>Height</label>
-            <div className="form-row">
-              <div className="form-group">
-                <input
-                  name="feet"
-                  value={medicalData.feet}
-                  onChange={handleInputChange}
-                  placeholder="Feet"
-                  className="glass-input"
-                  style={{ width: '80px' }}
-                />
+          <div className="header-actions">
+            {saveSuccess && (
+              <div className="success-indicator">
+                <i className="fas fa-check-circle"></i>
+                <span>Successfully saved</span>
               </div>
-              <span style={{ alignSelf: 'flex-end', marginBottom:'10px', fontSize:'18px', fontWeight:'600' }}>'</span>
-              <div className="form-group">
-                <input
-                  name="inches"
-                  value={medicalData.inches}
-                  onChange={handleInputChange}
-                  placeholder="Inches"
-                  className="glass-input"
-                  style={{ width: '80px' }}
-                />
-              </div>
-              <span style={{ alignSelf: 'flex-end', marginBottom:'10px', fontSize:'18px', fontWeight:'600' }}>"</span>
-            </div>
-          </div>
-
-          <h4><i className="fas fa-user-md"></i>Medical Details</h4>
-          
-          <div className="form-group physician-input">
-            <label><i className="fas fa-user-md"></i>Physician</label>
-            <input
-              name="physician"
-              value={medicalData.physician}
-              onChange={handleInputChange}
-              placeholder="Physician name"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group nurse-input">
-            <label><i className="fas fa-user-nurse"></i>Nurse</label>
-            <input
-              name="nurse"
-              value={medicalData.nurse}
-              onChange={handleInputChange}
-              placeholder="Nurse name"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label><i className="fas fa-heartbeat"></i>Nursing Diagnosis</label>
-            <textarea
-              name="nursingDiagnosis"
-              value={medicalData.nursingDiagnosis}
-              onChange={handleInputChange}
-              placeholder="Nursing diagnosis"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label><i className="fas fa-history"></i>Past Medical History</label>
-            <textarea
-              name="pmh"
-              value={medicalData.pmh}
-              onChange={handleInputChange}
-              placeholder="Past medical history"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label><i className="fas fa-band-aid"></i>Weight Bearing Status</label>
-            <input
-              name="wbs"
-              value={medicalData.wbs}
-              onChange={handleInputChange}
-              placeholder="Weight bearing status"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group clinical-group-select">
-            <label><i className="fas fa-clipboard-list"></i>Clinical Grouping</label>
-            <input
-              name="clinicalGrouping"
-              value={medicalData.clinicalGrouping}
-              onChange={handleInputChange}
-              placeholder="Clinical grouping"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label><i className="fas fa-home"></i>Homebound Status</label>
-            <input
-              name="homebound"
-              value={medicalData.homebound}
-              onChange={handleInputChange}
-              placeholder="Homebound status"
-              className="glass-input"
-            />
-          </div>
-          
-          <div className="form-group urgency-level-select">
-            <label><i className="fas fa-exclamation-triangle"></i>Urgency Level</label>
-            <select
-              name="urgencyLevel"
-              value={medicalData.urgencyLevel}
-              onChange={handleInputChange}
-              className="glass-input"
-            >
-              <option value="">Select urgency level</option>
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-              <option value="Critical">Critical</option>
-            </select>
-          </div>
-
-          <div className="form-actions">
+            )}
+            
             <button 
-              className="cancel-btn glass-btn" 
-              onClick={() => setIsEditing(false)}
-            >
-              <i className="fas fa-times"></i>
-              Cancel
-            </button>
-            <button 
-              className="save-btn glass-btn" 
-              onClick={saveMedicalInfo} 
+              className={`edit-toggle-btn ${isEditing ? 'cancel' : 'edit'}`}
+              onClick={() => {
+                if (isEditing) {
+                  // Restaurar datos originales al cancelar
+                  setMedicalData(originalData);
+                  console.log('Cancelled editing, restored original data:', originalData);
+                }
+                setIsEditing(!isEditing);
+                setError('');
+              }}
               disabled={loading}
             >
-              <div className="btn-shine"></div>
-              <i className="fas fa-save"></i>
-              {loading ? 'Saving...' : 'Save'}
+              <i className={isEditing ? 'fas fa-times' : 'fas fa-edit'}></i>
+              <span>{isEditing ? 'Cancel' : 'Edit'}</span>
             </button>
           </div>
         </div>
-      ) : (
-        <div className="medical-info-display">
-          <div className="info-section weight-section">
-            <div className="info-icon">
-              <i className="fas fa-weight"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Weight</div>
-              <div className="info-value">
-                {medicalData.weight ? (
-                  <div className="data-display weight-value">
-                    <span className="primary-data">{medicalData.weight}</span>
-                    <span className="secondary-data">lbs</span>
+        
+        {error && (
+          <div className="error-message">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>{error}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="medical-content">
+        {isEditing ? (
+          /* EDIT MODE */
+          <div className="edit-mode">
+            {loading && (
+              <div className="loading-overlay">
+                <div className="loading-spinner">
+                  <div className="spinner"></div>
+                  <p>Saving medical information...</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Physical Information Section */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-weight"></i>
+                  Physical Information
+                </h3>
+              </div>
+              
+              <div className="form-grid">
+                {/* Weight */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-weight-scale"></i>
+                    Weight
+                  </label>
+                  <div className="input-wrapper">
+                    <input
+                      type="text"
+                      name="weight"
+                      value={medicalData.weight}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 150"
+                      className="medical-input"
+                    />
+                    <span className="input-unit">lbs</span>
                   </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
+                </div>
+                
+                {/* Height */}
+                <div className="form-group height-group">
+                  <label>
+                    <i className="fas fa-ruler-vertical"></i>
+                    Height
+                  </label>
+                  <div className="height-inputs">
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        name="feet"
+                        value={medicalData.feet}
+                        onChange={handleInputChange}
+                        placeholder="5"
+                        className="medical-input height-input"
+                        min="0"
+                        max="8"
+                      />
+                      <span className="input-unit">ft</span>
+                    </div>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        name="inches"
+                        value={medicalData.inches}
+                        onChange={handleInputChange}
+                        placeholder="8"
+                        className="medical-input height-input"
+                        min="0"
+                        max="11"
+                        step="0.1"
+                      />
+                      <span className="input-unit">in</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="info-section height-section">
-            <div className="info-icon">
-              <i className="fas fa-ruler-vertical"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Height</div>
-              <div className="info-value">
-                {medicalData.height ? (
-                  <div className="data-display">
-                    <span className="primary-data">{formatHeight(parseFloat(medicalData.height))}</span>
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
+            {/* Clinical Information Section */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-user-md"></i>
+                  Clinical Information
+                </h3>
               </div>
-            </div>
-          </div>
-
-          <div className="info-section physician-section">
-            <div className="info-icon">
-              <i className="fas fa-user-md"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Physician</div>
-              <div className="info-value">
-                {medicalData.physician ? (
-                  <div className="data-box physician-data">
-                    {medicalData.physician}
-                  </div>
-                ) : (
-                  <span className="no-data">Not assigned</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section nurse-section">
-            <div className="info-icon">
-              <i className="fas fa-user-nurse"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Nurse</div>
-              <div className="info-value">
-                {medicalData.nurse ? (
-                  <div className="data-box nurse-data">
-                    {medicalData.nurse}
-                  </div>
-                ) : (
-                  <span className="no-data">Not assigned</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <div className="info-icon">
-              <i className="fas fa-heartbeat"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Nursing Diagnosis</div>
-              <div className="info-value">
-                {medicalData.nursingDiagnosis ? (
-                  <div className="data-box nursing-diagnosis">
-                    {medicalData.nursingDiagnosis}
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <div className="info-icon">
-              <i className="fas fa-history"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Past Medical History</div>
-              <div className="info-value">
-                {medicalData.pmh ? (
-                  <div className="data-box pmh-data">
-                    {medicalData.pmh}
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <div className="info-icon">
-              <i className="fas fa-band-aid"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Weight Bearing Status</div>
-              <div className="info-value">
-                {medicalData.wbs ? (
-                  <div className="data-box wbs-data">
-                    {medicalData.wbs}
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section clinical-section">
-            <div className="info-icon">
-              <i className="fas fa-clipboard-list"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Clinical Grouping</div>
-              <div className="info-value">
-                {medicalData.clinicalGrouping ? (
-                  <div className="clinical-grouping-badge">
+              
+              <div className="form-grid">
+                {/* Physician */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-user-doctor"></i>
+                    Physician
+                  </label>
+                  <input
+                    type="text"
+                    name="physician"
+                    value={medicalData.physician}
+                    onChange={handleInputChange}
+                    placeholder="Physician name"
+                    className="medical-input"
+                  />
+                </div>
+                
+                {/* Nurse */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-user-nurse"></i>
+                    Nurse
+                  </label>
+                  <input
+                    type="text"
+                    name="nurse"
+                    value={medicalData.nurse}
+                    onChange={handleInputChange}
+                    placeholder="Nurse name"
+                    className="medical-input"
+                  />
+                </div>
+                
+                {/* Urgency Level */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-exclamation-triangle"></i>
+                    Urgency Level
+                  </label>
+                  <select
+                    name="urgency_level"
+                    value={medicalData.urgency_level}
+                    onChange={handleInputChange}
+                    className="medical-select"
+                  >
+                    <option value="">Select level</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+                
+                {/* Clinical Grouping */}
+                <div className="form-group">
+                  <label>
                     <i className="fas fa-clipboard-list"></i>
-                    <span>{medicalData.clinicalGrouping}</span>
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <div className="info-icon">
-              <i className="fas fa-home"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Homebound Status</div>
-              <div className="info-value">
-                {medicalData.homebound ? (
-                  <div className="data-box homebound-data">
-                    {medicalData.homebound}
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section urgency-section">
-            <div className="info-icon">
-              <i className="fas fa-exclamation-triangle"></i>
-            </div>
-            <div className="info-content">
-              <div className="info-label">Urgency Level</div>
-              <div className="info-value">
-                {medicalData.urgencyLevel ? (
-                  <div className={`urgency-level-badge urgency-${medicalData.urgencyLevel.toLowerCase()}`} style={{
-                    backgroundColor: medicalData.urgencyLevel === 'Critical' ? '#fef2f2' : 
-                                   medicalData.urgencyLevel === 'High' ? '#fef3c7' :
-                                   medicalData.urgencyLevel === 'Medium' ? '#ecfdf5' : '#f0f9ff',
-                    color: medicalData.urgencyLevel === 'Critical' ? '#dc2626' : 
-                           medicalData.urgencyLevel === 'High' ? '#d97706' :
-                           medicalData.urgencyLevel === 'Medium' ? '#059669' : '#0ea5e9',
-                    borderColor: medicalData.urgencyLevel === 'Critical' ? '#fecaca' : 
-                                medicalData.urgencyLevel === 'High' ? '#fed7aa' :
-                                medicalData.urgencyLevel === 'Medium' ? '#a7f3d0' : '#bae6fd'
-                  }}>
-                    <i className={
-                      medicalData.urgencyLevel === 'Critical' ? 'fas fa-exclamation-triangle' :
-                      medicalData.urgencyLevel === 'High' ? 'fas fa-exclamation' :
-                      medicalData.urgencyLevel === 'Medium' ? 'fas fa-info-circle' : 'fas fa-check-circle'
-                    }></i>
-                    <span>{medicalData.urgencyLevel}</span>
-                  </div>
-                ) : (
-                  <span className="no-data">Not set</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Approved Visits Section */}
-      <div className="approved-visits-section">
-        <h5>
-          <i className="fas fa-calendar-check"></i>
-          Approved Visits (Visit Limits)
-        </h5>
-        <div className="visits-grid">
-          {[
-            { key: 'pt', name: 'Physical Therapy', icon: 'fas fa-walking', color: '#3b82f6' },
-            { key: 'ot', name: 'Occupational Therapy', icon: 'fas fa-hand-paper', color: '#10b981' },
-            { key: 'st', name: 'Speech Therapy', icon: 'fas fa-comments', color: '#f59e0b' }
-          ].map(discipline => (
-            <div key={discipline.key} className="visit-card">
-              <div className="visit-header">
-                <div className="discipline-icon" style={{ color: discipline.color }}>
-                  <i className={discipline.icon}></i>
-                </div>
-                <div className="discipline-info">
-                  <h6>{discipline.name}</h6>
-                  <div className="discipline-code">{discipline.key.toUpperCase()}</div>
+                    Clinical Grouping
+                  </label>
+                  <input
+                    type="text"
+                    name="clinical_grouping"
+                    value={medicalData.clinical_grouping}
+                    onChange={handleInputChange}
+                    placeholder="Clinical grouping"
+                    className="medical-input"
+                  />
                 </div>
               </div>
-              <div className="visit-inputs">
-                <div className="input-row">
-                  <div className="input-group">
-                    <label>Approved Visits</label>
+            </div>
+
+            {/* Medical History Section */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-notes-medical"></i>
+                  Medical History
+                </h3>
+              </div>
+              
+              <div className="form-grid full-width">
+                {/* Nursing Diagnosis */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-stethoscope"></i>
+                    Nursing Diagnosis
+                  </label>
+                  <textarea
+                    name="nursing_diagnosis"
+                    value={medicalData.nursing_diagnosis}
+                    onChange={handleInputChange}
+                    placeholder="Detailed nursing diagnosis..."
+                    className="medical-textarea"
+                    rows="3"
+                  />
+                </div>
+                
+                {/* Past Medical History */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-history"></i>
+                    Past Medical History
+                  </label>
+                  <textarea
+                    name="past_medical_history"
+                    value={medicalData.past_medical_history}
+                    onChange={handleInputChange}
+                    placeholder="Patient's past medical history..."
+                    className="medical-textarea"
+                    rows="3"
+                  />
+                </div>
+                
+                {/* Prior Level of Function */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-chart-line"></i>
+                    Prior Level of Function
+                  </label>
+                  <textarea
+                    name="prior_level_of_function"
+                    value={medicalData.prior_level_of_function}
+                    onChange={handleInputChange}
+                    placeholder="Description of previous functional level..."
+                    className="medical-textarea"
+                    rows="2"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Status Information Section */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-clipboard-check"></i>
+                  Patient Status
+                </h3>
+              </div>
+              
+              <div className="form-grid">
+                {/* Weight Bearing Status */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-walking"></i>
+                    Weight Bearing Status
+                  </label>
+                  <input
+                    type="text"
+                    name="weight_bearing_status"
+                    value={medicalData.weight_bearing_status}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Full weight bearing"
+                    className="medical-input"
+                  />
+                </div>
+                
+                {/* Homebound Status */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-home"></i>
+                    Homebound Status
+                  </label>
+                  <input
+                    type="text"
+                    name="homebound_status"
+                    value={medicalData.homebound_status}
+                    onChange={handleInputChange}
+                    placeholder="Homebound status"
+                    className="medical-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="form-actions">
+              <button 
+                className="cancel-btn"
+                onClick={() => {
+                  // Restaurar datos originales al cancelar
+                  setMedicalData(originalData);
+                  console.log('Cancelled editing from form actions, restored original data:', originalData);
+                  setIsEditing(false);
+                  setError('');
+                }}
+                disabled={loading}
+              >
+                <i className="fas fa-times"></i>
+                Cancel
+              </button>
+              
+              <button 
+                className="save-btn"
+                onClick={saveMedicalInfo}
+                disabled={loading}
+              >
+                <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-save'}></i>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* VIEW MODE */
+          <div className="view-mode">{console.log('Rendering VIEW MODE with medicalData:', medicalData)}
+            {/* Physical Information Display */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-weight"></i>
+                  Physical Information
+                </h3>
+              </div>
+              
+              <div className="info-grid">
+                <div className="info-card">
+                  <div className="info-icon icon-weight">
+                    <i className="fas fa-weight-scale"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Weight</span>
+                    <span className="info-value">
+                      {medicalData.weight ? `${medicalData.weight} lbs` : 'Not recorded'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon icon-height">
+                    <i className="fas fa-ruler-vertical"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Height</span>
+                    <span className="info-value">
+                      {formatHeight(parseFloat(medicalData.height))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Clinical Information Display */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-user-md"></i>
+                  Clinical Information
+                </h3>
+              </div>
+              
+              <div className="info-grid">
+                <div className="info-card">
+                  <div className="info-icon icon-physician">
+                    <i className="fas fa-user-doctor"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Physician</span>
+                    <span className="info-value">
+                      {medicalData.physician || 'Not assigned'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon icon-nurse">
+                    <i className="fas fa-user-nurse"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Nurse</span>
+                    <span className="info-value">
+                      {medicalData.nurse || 'Not assigned'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon icon-clinical">
+                    <i className="fas fa-clipboard-list"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Clinical Grouping</span>
+                    <span className="info-value">
+                      {medicalData.clinical_grouping || 'Not specified'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card urgency-card">
+                  <div className="info-icon icon-urgency">
+                    <i className="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Urgency Level</span>
+                    <span className="info-value">
+                      {medicalData.urgency_level ? (
+                        <span 
+                          className="urgency-badge"
+                          style={{
+                            backgroundColor: getUrgencyBgColor(medicalData.urgency_level),
+                            color: getUrgencyColor(medicalData.urgency_level)
+                          }}
+                        >
+                          {medicalData.urgency_level}
+                        </span>
+                      ) : (
+                        'Not specified'
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Medical History Display */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-notes-medical"></i>
+                  Medical History
+                </h3>
+              </div>
+              
+              <div className="text-info-grid">
+                <div className="text-info-card">
+                  <div className="text-info-header">
+                    <i className="fas fa-stethoscope"></i>
+                    <span>Nursing Diagnosis</span>
+                  </div>
+                  <div className="text-info-content">
+                    {medicalData.nursing_diagnosis || 'Not recorded'}
+                  </div>
+                </div>
+                
+                <div className="text-info-card">
+                  <div className="text-info-header">
+                    <i className="fas fa-history"></i>
+                    <span>Past Medical History</span>
+                  </div>
+                  <div className="text-info-content">
+                    {medicalData.past_medical_history || 'Not recorded'}
+                  </div>
+                </div>
+                
+                <div className="text-info-card">
+                  <div className="text-info-header">
+                    <i className="fas fa-chart-line"></i>
+                    <span>Prior Level of Function</span>
+                  </div>
+                  <div className="text-info-content">
+                    {medicalData.prior_level_of_function || 'Not recorded'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Information Display */}
+            <div className="medical-section">
+              <div className="section-header">
+                <h3>
+                  <i className="fas fa-clipboard-check"></i>
+                  Patient Status
+                </h3>
+              </div>
+              
+              <div className="info-grid">
+                <div className="info-card">
+                  <div className="info-icon icon-weight-bearing">
+                    <i className="fas fa-walking"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Weight Bearing</span>
+                    <span className="info-value">
+                      {medicalData.weight_bearing_status || 'Not specified'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="info-card">
+                  <div className="info-icon icon-homebound">
+                    <i className="fas fa-home"></i>
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">Homebound Status</span>
+                    <span className="info-value">
+                      {medicalData.homebound_status || 'Not specified'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Approved Visits Section */}
+        <div className="approved-visits-section">
+          <div className="section-header">
+            <h3>
+              <i className="fas fa-calendar-check"></i>
+              Approved Visits (Discipline Limits)
+            </h3>
+          </div>
+          
+          <div className="visits-grid">
+            {[
+              { 
+                key: 'pt', 
+                name: 'Physical Therapy', 
+                icon: 'fas fa-walking', 
+                color: '#60a5fa',
+                bgColor: '#dbeafe',
+                shadowColor: 'rgba(96, 165, 250, 0.3)' 
+              },
+              { 
+                key: 'ot', 
+                name: 'Occupational Therapy', 
+                icon: 'fas fa-hand-paper', 
+                color: '#a78bfa',
+                bgColor: '#e9d5ff',
+                shadowColor: 'rgba(167, 139, 250, 0.3)' 
+              },
+              { 
+                key: 'st', 
+                name: 'Speech Therapy', 
+                icon: 'fas fa-comments', 
+                color: '#34d399',
+                bgColor: '#d1fae5',
+                shadowColor: 'rgba(52, 211, 153, 0.3)' 
+              }
+            ].map(discipline => (
+              <div 
+                key={discipline.key} 
+                className="visit-card"
+                style={{ backgroundColor: discipline.bgColor }}
+              >
+                <div className="visit-header">
+                  <div 
+                    className="discipline-icon"
+                    style={{ color: discipline.color }}
+                  >
+                    <i className={discipline.icon}></i>
+                  </div>
+                  <div className="discipline-info">
+                    <h4>{discipline.name}</h4>
+                    <span className="discipline-code">
+                      {discipline.key.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="visit-input-section">
+                  <label>Approved Visits</label>
+                  <div className="visit-input-wrapper">
                     <input
                       type="number"
                       min="0"
+                      max="999"
                       value={approvedVisits[discipline.key]}
                       onChange={(e) => updateApprovedVisits(discipline.key, e.target.value)}
-                      placeholder="0"
-                      className="visit-input approved-input"
+                      className="visit-input"
+                      style={{ borderColor: discipline.color }}
                     />
+                    <span className="visit-unit">visits</span>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          
+          <div className="visits-note">
+            <i className="fas fa-info-circle"></i>
+            <p>
+              These limits control the maximum number of visits that can be 
+              scheduled for each discipline during the certification period.
+            </p>
+          </div>
         </div>
-        <p className="visits-note">
-          <i className="fas fa-info-circle"></i>
-          These limits prevent scheduling more visits than approved for each discipline.
-        </p>
-      </div>
       </div>
     </div>
   );

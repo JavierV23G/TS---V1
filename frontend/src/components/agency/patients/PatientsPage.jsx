@@ -26,7 +26,7 @@ const PremiumTabs = ({ activeTab, onChangeTab }) => {
 };
 
 // Patient Card component
-const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
+const PatientCard = ({ patient, onView, certPeriods = [] }) => {
   const getStatusClass = (status) => {
     switch(status?.toLowerCase()) {
       case 'active': 
@@ -111,23 +111,6 @@ const PatientCard = ({ patient, onView, certPeriods = [], onStatusChange }) => {
           <i className="fas fa-eye"></i> View Profile
           <span className="btn-highlight"></span>
         </button>
-        {patient.status === 'Active' ? (
-          <button 
-            className="card-btn deactivate-btn" 
-            title="Deactivate Patient" 
-            onClick={() => onStatusChange(patient.id, 'deactivate')}
-          >
-            <i className="fas fa-user-times"></i> Deactivate
-          </button>
-        ) : (
-          <button 
-            className="card-btn activate-btn" 
-            title="Activate Patient" 
-            onClick={() => onStatusChange(patient.id, 'activate')}
-          >
-            <i className="fas fa-user-check"></i> Activate
-          </button>
-        )}
       </div>
     </div>
   );
@@ -181,11 +164,11 @@ const PatientCardSkeleton = () => (
 
 // Calculate statistics - CORREGIDO
 const calculateStats = (patients) => {
-  console.log('Calculating stats for patients:', patients);
+  console.log('Calculating stats for agency patients:', patients);
   
   if (!patients || !Array.isArray(patients)) {
     return [
-      { title: "Total Patients", value: 0, icon: "fa-users", color: "blue" },
+      { title: "Total Agency Patients", value: 0, icon: "fa-users", color: "blue" },
       { title: "Active Patients", value: 0, icon: "fa-user-check", color: "green" },
       { title: "Inactive Patients", value: 0, icon: "fa-user-times", color: "red" },
     ];
@@ -218,7 +201,7 @@ const calculateStats = (patients) => {
   });
   
   return [
-    { title: "Total Patients", value: total, icon: "fa-users", color: "blue" },
+    { title: "Total Agency Patients", value: total, icon: "fa-users", color: "blue" },
     { title: "Active Patients", value: active, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: inactive, icon: "fa-user-times", color: "red" },
   ];
@@ -312,23 +295,21 @@ const DevPatientsPage = () => {
   
   // Stats state
   const [stats, setStats] = useState([
-    { title: "Total Patients", value: 0, icon: "fa-users", color: "blue" },
+    { title: "Total Agency Patients", value: 0, icon: "fa-users", color: "blue" },
     { title: "Active Patients", value: 0, icon: "fa-user-check", color: "green" },
     { title: "Inactive Patients", value: 0, icon: "fa-user-times", color: "red" },
   ]);
   
-  // Search and filter states - Inicializar con 'Active'
+  // Search and filter states - Initialize with 'Active'
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
-  const [agencySearchTerm, setAgencySearchTerm] = useState('');
-  const [selectedAgency, setSelectedAgency] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('Active'); // Cambio: Inicializar con 'Active'
+  const [selectedStatus, setSelectedStatus] = useState('Active'); // Initialize with 'Active'
   
   // Refs
   const userMenuRef = useRef(null);
   const searchInputRef = useRef(null);
   
   // Constants
-  const statusOptions = ['all', 'Active', 'Inactive'];
+  const statusOptions = ['Active', 'Inactive', 'all'];
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   
   // Helper functions
@@ -409,12 +390,30 @@ const DevPatientsPage = () => {
     }
   }, [API_BASE_URL]);
   
-  // FUNCIÓN FETCHPATIENTS CORREGIDA
+  // FETCHPATIENTS FUNCTION - Modified to filter by current agency
   const fetchPatients = useCallback(async () => {
     try {
       setIsLoadingPatients(true);
       setError(null);
       
+      // Verify if we have current user ID
+      console.log('Current user object:', currentUser);
+      console.log('Current user keys:', Object.keys(currentUser || {}));
+      
+      if (!currentUser?.id && !currentUser?.user_id) {
+        console.error('No user ID found in currentUser:', currentUser);
+        throw new Error('Could not get current user ID');
+      }
+      
+      // Use either id or user_id field
+      const userId = currentUser.id || currentUser.user_id;
+      console.log('Using user ID:', userId);
+      
+      // Check if user has a name field
+      console.log('User name field:', currentUser?.name);
+      console.log('User fullname field:', currentUser?.fullname);
+      
+      // First get all patients
       const response = await fetch(`${API_BASE_URL}/patients/`, {
         method: 'GET',
         headers: {
@@ -426,22 +425,72 @@ const DevPatientsPage = () => {
         throw new Error(`Failed to fetch patients: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
+      const allPatients = await response.json();
+      console.log('All patients:', allPatients);
       
-      console.log('Raw data from API:', data); // Debug: Ver datos crudos
+      if (allPatients && allPatients.length > 0) {
+        const firstPatient = allPatients[0];
+        console.log('First patient details:');
+        console.log('- ID:', firstPatient.id);
+        console.log('- Name:', firstPatient.full_name);
+        console.log('- agency_id:', firstPatient.agency_id);
+        console.log('- All keys:', Object.keys(firstPatient));
+        console.log('- Full object:', firstPatient);
+      }
       
+      // Get agencies and cert periods data
       const [agenciesData, certPeriodsData] = await Promise.all([
         fetchAgenciesData(),
         fetchAllCertPeriods()
       ]);
       
-      const normalizedPatients = data.map(patient => ({
+      // Find the current agency user in the staff list to get their full name
+      const currentAgencyInfo = agenciesData.find(agency => agency.id === userId);
+      console.log('Current agency user info:', currentAgencyInfo);
+      console.log('Current user info:', currentUser);
+      
+      // Filter patients that belong to the current agency
+      // Match patients whose agency_name corresponds to the current agency user
+      const agencyPatients = allPatients.filter(patient => {
+        // If we found the agency info, match by agency name
+        if (currentAgencyInfo && patient.agency_name) {
+          const nameMatch = patient.agency_name === currentAgencyInfo.name;
+          console.log(`Patient ${patient.id} agency_name "${patient.agency_name}" === agency user name "${currentAgencyInfo.name}"? ${nameMatch}`);
+          return nameMatch;
+        }
+        
+        // If no agency info found, check if patient agency matches current user
+        if (patient.agency_name && currentUser) {
+          // Check multiple possible matches
+          const usernameMatch = patient.agency_name === currentUser.username;
+          const nameMatch = patient.agency_name === currentUser.name;
+          const fullnameMatch = patient.agency_name === currentUser.fullname;
+          
+          console.log(`Patient ${patient.id} agency matching attempts:`, {
+            patient_agency: patient.agency_name,
+            vs_username: currentUser.username,
+            vs_name: currentUser.name,
+            vs_fullname: currentUser.fullname,
+            username_match: usernameMatch,
+            name_match: nameMatch,
+            fullname_match: fullnameMatch
+          });
+          
+          return usernameMatch || nameMatch || fullnameMatch;
+        }
+        
+        return false;
+      });
+      
+      console.log(`Patients for agency user ${userId} (${currentUser?.username}):`, agencyPatients);
+      
+      const normalizedPatients = agencyPatients.map(patient => ({
         ...patient,
         status: patient.is_active ? 'Active' : 'Inactive',
-        agency_name: patient.agency_name || 'Unknown Agency'
+        agency_name: patient.agency_name || currentAgencyInfo?.name || currentUser?.name || 'My Agency'
       }));
       
-      console.log('Normalized patients:', normalizedPatients);
+      console.log('Normalized patients for agency:', normalizedPatients);
       console.log('Active patients:', normalizedPatients.filter(p => p.status === 'Active'));
       console.log('Inactive patients:', normalizedPatients.filter(p => p.status === 'Inactive'));
       
@@ -450,29 +499,23 @@ const DevPatientsPage = () => {
       setLastFetchTime(new Date());
       
     } catch (err) {
-      console.error('Error fetching patients:', err);
+      console.error('Error fetching agency patients:', err);
       setError(err.message);
     } finally {
       setIsLoadingPatients(false);
     }
-  }, [API_BASE_URL, fetchAgenciesData, fetchAllCertPeriods]);
+  }, [API_BASE_URL, currentUser, fetchAgenciesData, fetchAllCertPeriods]);
   
   // Filter functions
-  const uniqueAgencies = [...new Set(patients.map(patient => patient.agency_name).filter(Boolean))];
   
-  const filteredAgencies = uniqueAgencies.filter(agency => 
-    agency.toLowerCase().includes(agencySearchTerm.toLowerCase())
-  );
-  
-  // FUNCIÓN GETFILTEREDPATIENTS CORREGIDA
+  // GETFILTEREDPATIENTS FUNCTION - CORRECTED
   const getFilteredPatients = useCallback(() => {
     if (!Array.isArray(patients)) return [];
     
-    console.log('Filtering patients:', {
+    console.log('Filtering agency patients:', {
       totalPatients: patients.length,
       selectedStatus,
-      patientSearchTerm,
-      selectedAgency
+      patientSearchTerm
     });
     
     const filtered = patients.filter(patient => {
@@ -486,10 +529,7 @@ const DevPatientsPage = () => {
       const matchesPatientSearch = patientSearchTerm === '' || 
         searchFields.includes(patientSearchTerm.toLowerCase());
       
-      const matchesAgency = selectedAgency === 'all' || 
-        patient.agency_name === selectedAgency;
-      
-      // CORRECCIÓN: Filtro de estado que maneja tanto 'all' como estados específicos
+      // Status filter handles both 'all' and specific statuses
       const matchesStatus = selectedStatus === 'all' || patient.status === selectedStatus;
       
       console.log(`Patient ${patient.id} filter check:`, {
@@ -498,11 +538,10 @@ const DevPatientsPage = () => {
         selectedStatus,
         matchesStatus,
         matchesPatientSearch,
-        matchesAgency,
-        finalMatch: matchesPatientSearch && matchesAgency && matchesStatus
+        finalMatch: matchesPatientSearch && matchesStatus
       });
       
-      return matchesPatientSearch && matchesAgency && matchesStatus;
+      return matchesPatientSearch && matchesStatus;
     });
     
     console.log('Filtered results:', {
@@ -511,7 +550,7 @@ const DevPatientsPage = () => {
     });
     
     return filtered;
-  }, [patientSearchTerm, selectedAgency, selectedStatus, patients]);
+  }, [patientSearchTerm, selectedStatus, patients]);
   
   const filteredPatients = getFilteredPatients();
   
@@ -553,13 +592,6 @@ const DevPatientsPage = () => {
     }
   }, [currentUser, navigate, isLoggingOut]);
   
-  const handleAgencySelect = useCallback((agency) => {
-    if (isLoggingOut) return;
-    
-    setSelectedAgency(agency);
-    setAgencySearchTerm('');
-    setActivePage(1);
-  }, [isLoggingOut]);
   
   const handleStatusSelect = useCallback((status) => {
     if (isLoggingOut) return;
@@ -572,9 +604,7 @@ const DevPatientsPage = () => {
     if (isLoggingOut) return;
     
     setPatientSearchTerm('');
-    setAgencySearchTerm('');
-    setSelectedAgency('all');
-    setSelectedStatus('Active'); // CAMBIO: Resetear a 'Active' en lugar de 'all'
+    setSelectedStatus('Active'); // Reset to 'Active' instead of 'all'
     setActivePage(1);
   }, [isLoggingOut]);
   
@@ -733,16 +763,19 @@ const DevPatientsPage = () => {
   }, [patients]);
   
   useEffect(() => {
-    fetchPatients();
-    
-    const interval = setInterval(() => {
-      if (!isLoggingOut) {
-        fetchPatients();
-      }
-    }, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [fetchPatients, isLoggingOut]);
+    // Only fetch patients if we have a current user
+    if (currentUser && (currentUser.id || currentUser.user_id)) {
+      fetchPatients();
+      
+      const interval = setInterval(() => {
+        if (!isLoggingOut) {
+          fetchPatients();
+        }
+      }, 5 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentUser, fetchPatients, isLoggingOut]);
   
   useEffect(() => {
     const handleResize = () => {
@@ -940,13 +973,21 @@ const DevPatientsPage = () => {
       
       <main className={`patients-content ${isLoggingOut ? 'fade-out' : ''}`}>
         <div className="patients-container">
-         
+          {error && (
+            <div className="error-banner">
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>{error}</span>
+              {error.includes('Could not get current user ID') && (
+                <span className="error-hint"> - Please sign in again.</span>
+              )}
+            </div>
+          )}
           
           <div className="patients-header">
             <div className="patients-title-container">
-              <h1 className="patients-title">Patient Management Center</h1>
+              <h1 className="patients-title">My Agency Patients</h1>
               <p className="patients-subtitle">
-                Streamline your therapy workflow with complete patient information at your fingertips
+                Manage your agency's patient information and track their therapy progress
               </p>
               <div className="header-actions">
                 <button 
@@ -957,13 +998,6 @@ const DevPatientsPage = () => {
                 >
                   <i className={`fas fa-sync-alt ${isLoadingPatients ? 'fa-spin' : ''}`}></i>
                   {isLoadingPatients ? 'Refreshing...' : 'Refresh'}
-                </button>
-                <button 
-                  className="header-action-btn" 
-                  onClick={handleNavigateToCreatePatient}
-                  disabled={isLoggingOut}
-                >
-                  <i className="fas fa-plus"></i> New Patient
                 </button>
               </div>
             </div>
@@ -1006,46 +1040,9 @@ const DevPatientsPage = () => {
                 </div>
               </div>
               
-              {showFilters && (
+              {true && (
                 <>
                   <div className="filter-section">
-                    <div className="agency-filter">
-                      <h4>Healthcare Agencies</h4>
-                      <div className="search-box">
-                        <i className="fas fa-search"></i>
-                        <input 
-                          type="text" 
-                          placeholder="Search agencies..." 
-                          value={agencySearchTerm}
-                          onChange={(e) => setAgencySearchTerm(e.target.value)}
-                          disabled={isLoggingOut}
-                        />
-                      </div>
-                      
-                      <div className="agency-list">
-                        <div 
-                          className={`agency-item ${selectedAgency === 'all' ? 'active' : ''}`}
-                          onClick={() => !isLoggingOut && handleAgencySelect('all')}
-                        >
-                          <i className="fas fa-hospital-alt"></i> All Agencies
-                        </div>
-                        {filteredAgencies.map((agency, index) => (
-                          <div 
-                            key={index} 
-                            className={`agency-item ${selectedAgency === agency ? 'active' : ''}`}
-                            onClick={() => !isLoggingOut && handleAgencySelect(agency)}
-                          >
-                            <i className="fas fa-building"></i> {agency}
-                          </div>
-                        ))}
-                        {filteredAgencies.length === 0 && agencySearchTerm && (
-                          <div className="agency-item disabled">
-                            <i className="fas fa-search"></i> No agencies found
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
                     <div className="status-filter">
                       <h4>Patient Status</h4>
                       <div className="status-buttons">
@@ -1233,7 +1230,6 @@ const DevPatientsPage = () => {
                         patient={patient}
                         certPeriods={certPeriods}
                         onView={() => !isLoggingOut && handleActionClick('view', patient)}
-                        onStatusChange={handleStatusChange}
                       />
                     ))}
                   </div>
