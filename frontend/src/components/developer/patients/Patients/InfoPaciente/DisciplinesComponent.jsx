@@ -4,6 +4,7 @@ import '../../../../../styles/developer/Patients/InfoPaciente/DisciplinesCompone
 const DisciplinesComponent = ({ patient, patientId, certPeriodId, onDisciplineChange, onUpdateDisciplines }) => {
   const [disciplines, setDisciplines] = useState({});
   const [loading, setLoading] = useState(false);
+  const [staffDetails, setStaffDetails] = useState({});
 
   // Extract patientId from patient prop if not provided directly
   const actualPatientId = patientId || patient?.id;
@@ -11,6 +12,7 @@ const DisciplinesComponent = ({ patient, patientId, certPeriodId, onDisciplineCh
 
   useEffect(() => {
     fetchDisciplines();
+    fetchStaffDetails();
   }, [actualPatientId, actualCertPeriodId]);
 
   const fetchDisciplines = async () => {
@@ -45,6 +47,28 @@ const DisciplinesComponent = ({ patient, patientId, certPeriodId, onDisciplineCh
       console.error('DEBUG: Error fetching disciplines:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStaffDetails = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/staff/');
+      if (response.ok) {
+        const staffList = await response.json();
+        const staffMap = {};
+        staffList.forEach(staff => {
+          staffMap[staff.id] = {
+            name: staff.name,
+            email: staff.email,
+            phone: staff.phone,
+            role: staff.role
+          };
+        });
+        setStaffDetails(staffMap);
+        console.log('DEBUG: Staff details fetched:', staffMap);
+      }
+    } catch (error) {
+      console.error('Error fetching staff details:', error);
     }
   };
 
@@ -159,6 +183,7 @@ const DisciplinesComponent = ({ patient, patientId, certPeriodId, onDisciplineCh
                 key={discipline}
                 discipline={discipline}
                 data={data}
+                staffDetails={staffDetails}
                 onAssignStaff={assignStaff}
                 onUnassignStaff={unassignStaff}
                 onUpdateFrequency={updateFrequency}
@@ -171,12 +196,15 @@ const DisciplinesComponent = ({ patient, patientId, certPeriodId, onDisciplineCh
   );
 };
 
-const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUpdateFrequency }) => {
+const DisciplineCard = ({ discipline, data, staffDetails, onAssignStaff, onUnassignStaff, onUpdateFrequency }) => {
   const [isEditingStaff, setIsEditingStaff] = useState(false);
   const [editingRole, setEditingRole] = useState(null); // 'main' for PT/OT/ST, 'assistant' for PTA/COTA/STA
   const [isEditingFreq, setIsEditingFreq] = useState(false);
   const [newFrequency, setNewFrequency] = useState(data.frequency || '');
-  const [isActive, setIsActive] = useState(data.is_active || false);
+  // Auto-determine if discipline is active based on staff assignments
+  const hasMainStaff = !!data[`assigned_${discipline.toLowerCase()}`];
+  const hasAssistantStaff = !!data[`assigned_${discipline.toLowerCase()}a`];
+  const isActive = hasMainStaff || hasAssistantStaff;
 
   const disciplineConfig = {
     PT: { 
@@ -192,22 +220,22 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
     OT: { 
       name: 'Occupational Therapy', 
       icon: 'fas fa-hand-paper', 
+      color: '#8b5cf6',
+      colorLight: 'rgba(139, 92, 246, 0.1)',
+      colorMedium: 'rgba(139, 92, 246, 0.2)',
+      colorBorder: 'rgba(139, 92, 246, 0.3)',
+      colorShadow: 'rgba(139, 92, 246, 0.2)',
+      colorGradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+    },
+    ST: { 
+      name: 'Speech Therapy', 
+      icon: 'fas fa-comments', 
       color: '#10b981',
       colorLight: 'rgba(16, 185, 129, 0.1)',
       colorMedium: 'rgba(16, 185, 129, 0.2)',
       colorBorder: 'rgba(16, 185, 129, 0.3)',
       colorShadow: 'rgba(16, 185, 129, 0.2)',
       colorGradient: 'linear-gradient(135deg, #10b981, #059669)'
-    },
-    ST: { 
-      name: 'Speech Therapy', 
-      icon: 'fas fa-comments', 
-      color: '#f59e0b',
-      colorLight: 'rgba(245, 158, 11, 0.1)',
-      colorMedium: 'rgba(245, 158, 11, 0.2)',
-      colorBorder: 'rgba(245, 158, 11, 0.3)',
-      colorShadow: 'rgba(245, 158, 11, 0.2)',
-      colorGradient: 'linear-gradient(135deg, #f59e0b, #d97706)'
     }
   };
 
@@ -231,23 +259,14 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
     '--card-color-gradient': config.colorGradient
   };
 
+  const getStaffInfo = (staffId) => {
+    return staffDetails[staffId] || { name: 'Unknown', email: 'No email', phone: 'No phone', role: '' };
+  };
+
   return (
     <div className={`discipline-card glass-card hover-effect ${!isActive ? 'inactive' : ''}`} style={cardStyle}>
       <div className="card-bg-decoration"></div>
       
-      {!isActive && (
-        <div className="inactive-overlay glass-effect">
-          <span>This discipline is currently inactive</span>
-          <button 
-            className="activate-btn glass-effect"
-            onClick={() => setIsActive(true)}
-          >
-            <i className="fas fa-play"></i>
-            Activate
-            <div className="btn-shine"></div>
-          </button>
-        </div>
-      )}
 
       <div className="discipline-header">
         <div className="discipline-icon">
@@ -264,14 +283,11 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
           <div className="title-decoration"></div>
         </div>
         
-        <div className="discipline-toggle">
-          <button className={`toggle-button glass-effect ${isActive ? 'active' : ''}`}>
-            <div className="toggle-track">
-              <div className="toggle-indicator">
-                <div className="toggle-glow"></div>
-              </div>
-            </div>
-          </button>
+        <div className="discipline-status">
+          <div className={`status-indicator ${isActive ? 'active' : 'inactive'}`}>
+            <div className="status-dot"></div>
+            <span>{isActive ? 'Active' : 'Inactive'}</span>
+          </div>
         </div>
       </div>
 
@@ -354,19 +370,11 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                     </button>
                     {data[`assigned_${discipline.toLowerCase()}`] && (
                       <button 
-                        className="unassign-btn glass-btn-sm"
+                        className="remove-x-btn"
                         onClick={() => onUnassignStaff(discipline, 'main')}
-                        style={{ 
-                          background: '#fee2e2', 
-                          color: '#dc2626', 
-                          border: '1px solid #fecaca',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
+                        title="Remove therapist"
                       >
-                        <i className="fas fa-times"></i>
-                        Remove
+                        ×
                       </button>
                     )}
                   </div>
@@ -384,12 +392,12 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                       </div>
                       <div className="staff-info">
                         <div className="info-item glass-item">
-                          <i className="fas fa-id-badge"></i>
-                          <span>Role: {data[`assigned_${discipline.toLowerCase()}`].role}</span>
+                          <i className="fas fa-envelope"></i>
+                          <span>{getStaffInfo(data[`assigned_${discipline.toLowerCase()}`].id).email}</span>
                         </div>
                         <div className="info-item glass-item">
-                          <i className="fas fa-calendar"></i>
-                          <span>Assigned: {new Date().toLocaleDateString()}</span>
+                          <i className="fas fa-phone"></i>
+                          <span>{getStaffInfo(data[`assigned_${discipline.toLowerCase()}`].id).phone}</span>
                         </div>
                       </div>
                     </>
@@ -428,19 +436,11 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                     </button>
                     {data[`assigned_${discipline.toLowerCase()}a`] && (
                       <button 
-                        className="unassign-btn glass-btn-sm"
+                        className="remove-x-btn"
                         onClick={() => onUnassignStaff(discipline, 'assistant')}
-                        style={{ 
-                          background: '#fee2e2', 
-                          color: '#dc2626', 
-                          border: '1px solid #fecaca',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
+                        title="Remove assistant"
                       >
-                        <i className="fas fa-times"></i>
-                        Remove
+                        ×
                       </button>
                     )}
                   </div>
@@ -458,12 +458,12 @@ const DisciplineCard = ({ discipline, data, onAssignStaff, onUnassignStaff, onUp
                       </div>
                       <div className="staff-info">
                         <div className="info-item glass-item">
-                          <i className="fas fa-id-badge"></i>
-                          <span>Role: {data[`assigned_${discipline.toLowerCase()}a`].role}</span>
+                          <i className="fas fa-envelope"></i>
+                          <span>{getStaffInfo(data[`assigned_${discipline.toLowerCase()}a`].id).email}</span>
                         </div>
                         <div className="info-item glass-item">
-                          <i className="fas fa-calendar"></i>
-                          <span>Assigned: {new Date().toLocaleDateString()}</span>
+                          <i className="fas fa-phone"></i>
+                          <span>{getStaffInfo(data[`assigned_${discipline.toLowerCase()}a`].id).phone}</span>
                         </div>
                       </div>
                     </>
