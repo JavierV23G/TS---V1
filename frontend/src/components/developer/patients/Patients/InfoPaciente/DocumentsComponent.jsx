@@ -62,8 +62,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
     { id: 'Discharge Forms', name: 'Discharge Forms', icon: faFileSignature, color: '#06b6d4' },
     { id: 'Lab Results', name: 'Lab Results', icon: faFile, color: '#f97316' },
     { id: 'Imaging', name: 'Imaging', icon: faFileImage, color: '#ec4899' },
-    { id: 'Therapy Plans', name: 'Therapy Plans', icon: faFileAlt, color: '#84cc16' },
-    { id: 'Other', name: 'Other', icon: faFile, color: '#6b7280' }
+    { id: 'Therapy Plans', name: 'Therapy Plans', icon: faFileAlt, color: '#84cc16' }
   ];
 
   // OPTIMIZACIÓN: Eliminamos validaciones del frontend - ahora las maneja el backend
@@ -82,6 +81,18 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       };
     }
     return currentUser;
+  }, [currentUser]);
+
+  const getUploadedByName = useCallback(() => {
+    if (!currentUser) {
+      return 'Unknown User';
+    }
+    // Usar el nombre completo si está disponible, sino first_name + last_name, sino username
+    return currentUser.fullname || 
+           (currentUser.first_name && currentUser.last_name ? 
+            `${currentUser.first_name} ${currentUser.last_name}` : 
+            currentUser.username) || 
+           'Unknown User';
   }, [currentUser]);
 
   const getFileIcon = useCallback((fileType) => {
@@ -127,26 +138,14 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
   const formatDate = useCallback((dateString) => {
     try {
       const date = new Date(dateString);
-      const now = new Date();
-      const diffInHours = Math.abs(now - date) / 36e5;
       
-      if (diffInHours < 1) {
-        const diffInMinutes = Math.floor(diffInHours * 60);
-        return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
-      } else if (diffInHours < 24) {
-        const hours = Math.floor(diffInHours);
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-      } else if (diffInHours < 48) {
-        return 'Yesterday';
-      } else {
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
+      // Solo mostrar la fecha - formato MM/DD/YYYY
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      
+      return `${month}/${day}/${year}`;
+      
     } catch (e) {
       console.error("Error formatting date:", e);
       return dateString;
@@ -178,8 +177,10 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       const category = doc.category || 'Other';
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
       
-      // Total size - ahora usa el tamaño real del backend
-      stats.totalSize += doc.file_size || (1024 * 1024); // Usar tamaño real o 1MB como fallback
+      // Total size - solo usar tamaño real si está disponible
+      if (doc.file_size && doc.file_size > 0) {
+        stats.totalSize += doc.file_size;
+      }
       
       // Recent uploads
       if (new Date(doc.uploaded_at) > oneWeekAgo) {
@@ -228,8 +229,46 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
             return;
           }
           
-          // Como ya filtramos por patient_id en la URL, no necesitamos filtrar aquí
-          setDocuments(documentsData);
+          // Obtener tamaño real de archivos existentes
+          const documentsWithRealSize = await Promise.all(
+            documentsData.map(async (doc) => {
+              if (!doc.file_size && doc.file_path) {
+                try {
+                  // Usar el endpoint de preview con GET para obtener el tamaño
+                  const previewUrl = `${API_BASE_URL}/documents/${doc.id}/preview`;
+                  
+                  // Usar GET en el endpoint de preview
+                  const response = await fetch(previewUrl, { 
+                    method: 'GET',
+                    headers: { 'Range': 'bytes=0-0' }
+                  });
+                  
+                  if (response.ok || response.status === 206) {
+                    // Si es 206 (Partial Content), usar Content-Range
+                    if (response.status === 206) {
+                      const contentRange = response.headers.get('content-range');
+                      if (contentRange) {
+                        const match = contentRange.match(/\/*(\d+)$/);
+                        if (match) {
+                          doc.file_size = parseInt(match[1]);
+                        }
+                      }
+                    } else {
+                      // Si es 200, usar Content-Length
+                      const contentLength = response.headers.get('content-length');
+                      if (contentLength) {
+                        doc.file_size = parseInt(contentLength);
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error getting file size for ${doc.file_name}:`, error);
+                }
+              }
+              return doc;
+            })
+          );
+          setDocuments(documentsWithRealSize);
           
         } else if (response.status === 404) {
           setDocuments([]);
@@ -250,7 +289,46 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
               const allDocuments = await fallbackResponse.json();
               if (Array.isArray(allDocuments)) {
                 const patientDocuments = allDocuments.filter(doc => doc.patient_id === patient.id);
-                setDocuments(patientDocuments);
+                // Obtener tamaño real de archivos existentes
+                const documentsWithRealSize = await Promise.all(
+                  patientDocuments.map(async (doc) => {
+                    if (!doc.file_size && doc.file_path) {
+                      try {
+                        // Usar el endpoint de preview con GET para obtener el tamaño
+                        const previewUrl = `${API_BASE_URL}/documents/${doc.id}/preview`;
+                        
+                        // Usar GET en el endpoint de preview
+                        const response = await fetch(previewUrl, { 
+                          method: 'GET',
+                          headers: { 'Range': 'bytes=0-0' }
+                        });
+                        
+                        if (response.ok || response.status === 206) {
+                          // Si es 206 (Partial Content), usar Content-Range
+                          if (response.status === 206) {
+                            const contentRange = response.headers.get('content-range');
+                            if (contentRange) {
+                              const match = contentRange.match(/\/*(\d+)$/);
+                              if (match) {
+                                doc.file_size = parseInt(match[1]);
+                              }
+                            }
+                          } else {
+                            // Si es 200, usar Content-Length
+                            const contentLength = response.headers.get('content-length');
+                            if (contentLength) {
+                              doc.file_size = parseInt(contentLength);
+                            }
+                          }
+                        }
+                      } catch (error) {
+                        console.error(`Fallback - Error getting file size for ${doc.file_name}:`, error);
+                      }
+                    }
+                    return doc;
+                  })
+                );
+                setDocuments(documentsWithRealSize);
               } else {
                 setDocuments([]);
               }
@@ -296,13 +374,18 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       throw new Error('Patient ID is required');
     }
 
+    // Verificar que sea un archivo PDF
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.pdf')) {
+      throw new Error('Only PDF files are allowed');
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('patient_id', patient.id.toString());
-
-    // Debug FormData content
-    for (let [key, value] of formData.entries()) {
-    }
+    
+    // Guardar el tamaño del archivo para usarlo después
+    const fileSize = file.size;
 
     try {
       const response = await fetch(`${API_BASE_URL}/documents/upload`, {
@@ -340,6 +423,8 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       }
 
       const result = await response.json();
+      // Agregar el tamaño del archivo al resultado ya que el backend no lo devuelve
+      result.file_size = fileSize;
       return result;
       
     } catch (error) {
@@ -444,6 +529,11 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       
       // Make the actual upload
       const uploadResult = await uploadDocumentToAPI(file);
+      
+      // Agregar el tamaño del archivo al documento local
+      if (uploadResult && !uploadResult.file_size) {
+        uploadResult.file_size = file.size;
+      }
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -710,7 +800,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
       document.file_name.split('.').pop()?.toLowerCase() || 'unknown' : 
       'unknown';
     const category = document.category || 'Other';
-    const uploadedBy = getCurrentUser().name; // Desde el contexto actual
+    const uploadedBy = getUploadedByName(); // Nombre real del usuario actual
     
     const fileIconInfo = getFileIcon(fileType);
     const categoryInfo = getCategoryInfo(category);
@@ -779,18 +869,6 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
               <span className="meta-label">Date:</span>
               <span className="meta-value">{formatDate(uploadDate)}</span>
             </div>
-            <div className="meta-item">
-              <FontAwesomeIcon icon={faFile} className="meta-icon" />
-              <span className="meta-label">Document ID:</span>
-              <span className="meta-value">#{document.id}</span>
-            </div>
-            {document.patient_id && (
-              <div className="meta-item">
-                <FontAwesomeIcon icon={faTag} className="meta-icon" />
-                <span className="meta-label">Patient ID:</span>
-                <span className="meta-value">{document.patient_id}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1014,12 +1092,10 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
               <div className="stat-label">Total Files</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{formatFileSize(documentStats.totalSize)}</div>
+              <div className="stat-value">
+                {formatFileSize(documentStats.totalSize)}
+              </div>
               <div className="stat-label">Storage Used</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{documentStats.recentUploads}</div>
-              <div className="stat-label">This Week</div>
             </div>
           </div>
         </div>
@@ -1046,7 +1122,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
             ref={fileInputRef} 
             style={{ display: 'none' }} 
             onChange={handleFileSelected}
-            accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,video/mp4,video/quicktime,audio/mpeg,audio/wav"
+            accept="application/pdf"
           />
         </div>
       </div>
@@ -1309,9 +1385,7 @@ const DocumentsComponent = ({ patient, onUpdateDocuments }) => {
               <div className="file-preview-details">
                 <div className="file-name">{selectedDocument.file_name}</div>
                 <div className="file-meta">
-                  <span>Document ID: #{selectedDocument.id}</span>
-                  <span>•</span>
-                  <span>Patient: {selectedDocument.patient_id || 'N/A'}</span>
+                  <span>Size: {formatFileSize(selectedDocument.file_size || 0)}</span>
                 </div>
               </div>
             </div>

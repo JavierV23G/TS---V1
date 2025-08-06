@@ -1,0 +1,1085 @@
+// =====================================================
+// CLINICAL LOADING SYSTEM - MEDICAL PROFESSIONAL
+// =====================================================
+
+// Clinical Medical Color Palette
+$clinical-white: #FFFFFF;
+$clinical-light-blue: #F0F9FF;
+$clinical-soft-blue: #E0F2FE;
+$clinical-primary: #2563EB;
+$clinical-secondary: #0891B2;
+$clinical-success: #059669;
+$clinical-purple: #7C3AED;
+$clinical-dark: #1E293B;
+$clinical-medium: #475569;
+$clinical-light: #64748B;
+$clinical-muted: #94A3B8;
+
+// Medical Gradients
+$clinical-bg-gradient: linear-gradient(135deg, 
+  rgba(255, 255, 255, 1) 0%, 
+  rgba(240, 249, 255, 0.8) 25%, 
+  rgba(224, 242, 254, 0.6) 50%, 
+  rgba(240, 249, 255, 0.8) 75%, 
+  rgba(255, 255, 255, 1) 100%);
+
+// Professional Typography
+$font-primary: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+$font-secondary: 'Inter', sans-serif;
+
+.clinical-loading-medical {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: $clinical-bg-gradient;
+  font-family: $font-primary;
+  color: $clinical-dark;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: medicalFadeIn 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+
+  // =====================================================
+  // MEDICAL BACKGROUND ELEMENTS
+  // =====================================================
+  .neural-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    opacity: 0.4;
+
+    // Subtle Medical Grid
+    .neural-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(rgba(37, 99, 235, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: medicalGridPulse 12s ease-in-out infinite;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          linear-gradient(rgba(8, 145, 178, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(8, 145, 178, 0.03) 1px, transparent 1px);
+        background-size: 120px 120px;
+        animation: medicalGridPulse 16s ease-in-out infinite reverse;
+      }
+    }
+
+    // Medical Data Streams (Subtle)
+    .data-streams {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+
+      .data-stream {
+        position: absolute;
+        width: 1px;
+        height: 80px;
+        background: linear-gradient(
+          180deg, 
+          transparent 0%, 
+          rgba(37, 99, 235, 0.2) 30%, 
+          rgba(37, 99, 235, 0.4) 70%, 
+          transparent 100%
+        );
+        border-radius: 1px;
+        animation: medicalDataFlow 8s linear infinite;
+        opacity: 0.6;
+
+        &.stream-0 { left: 15%; animation-delay: 0s; }
+        &.stream-1 { left: 30%; animation-delay: 1s; background: linear-gradient(180deg, transparent 0%, rgba(8, 145, 178, 0.2) 30%, rgba(8, 145, 178, 0.4) 70%, transparent 100%); }
+        &.stream-2 { left: 45%; animation-delay: 2s; background: linear-gradient(180deg, transparent 0%, rgba(5, 150, 105, 0.2) 30%, rgba(5, 150, 105, 0.4) 70%, transparent 100%); }
+        &.stream-3 { left: 60%; animation-delay: 3s; background: linear-gradient(180deg, transparent 0%, rgba(124, 58, 237, 0.2) 30%, rgba(124, 58, 237, 0.4) 70%, transparent 100%); }
+        &.stream-4 { left: 75%; animation-delay: 4s; }
+        &.stream-5 { left: 85%; animation-delay: 5s; background: linear-gradient(180deg, transparent 0%, rgba(8, 145, 178, 0.2) 30%, rgba(8, 145, 178, 0.4) 70%, transparent 100%); }
+        &.stream-6 { left: 90%; animation-delay: 6s; background: linear-gradient(180deg, transparent 0%, rgba(5, 150, 105, 0.2) 30%, rgba(5, 150, 105, 0.4) 70%, transparent 100%); }
+        &.stream-7 { left: 95%; animation-delay: 7s; }
+      }
+    }
+
+    // Medical Particles (Floating Elements)
+    .medical-particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+
+      .medical-particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: var(--particle-color);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--glow-color);
+        animation: medicalFloat 8s ease-in-out infinite;
+        opacity: 0.7;
+        
+        &:nth-child(odd) {
+          animation-duration: 10s;
+          animation-direction: reverse;
+        }
+        
+        &:nth-child(3n) {
+          animation-duration: 12s;
+          transform: scale(1.2);
+        }
+
+        // Random positions for medical particles
+        &:nth-child(1) { top: 15%; left: 20%; }
+        &:nth-child(2) { top: 25%; left: 75%; }
+        &:nth-child(3) { top: 35%; left: 30%; }
+        &:nth-child(4) { top: 45%; left: 65%; }
+        &:nth-child(5) { top: 55%; left: 40%; }
+        &:nth-child(6) { top: 65%; left: 80%; }
+        &:nth-child(7) { top: 75%; left: 25%; }
+        &:nth-child(8) { top: 85%; left: 70%; }
+        &:nth-child(9) { top: 20%; left: 50%; }
+        &:nth-child(10) { top: 40%; left: 85%; }
+        &:nth-child(11) { top: 60%; left: 15%; }
+        &:nth-child(12) { top: 80%; left: 55%; }
+      }
+    }
+  }
+
+  // =====================================================
+  // MAIN CLINICAL INTERFACE
+  // =====================================================
+  .loading-interface {
+    position: relative;
+    z-index: 10;
+    width: 90%;
+    max-width: 800px;
+    padding: 3rem 2.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(120%);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    border-radius: 20px;
+    box-shadow: 
+      0 20px 40px rgba(37, 99, 235, 0.08),
+      0 8px 20px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    animation: medicalInterfaceGlow 6s ease-in-out infinite;
+
+    // Medical System Header
+    .system-header {
+      margin-bottom: 2.5rem;
+      text-align: center;
+      animation: medicalHeaderSlideIn 1s cubic-bezier(0.23, 1, 0.32, 1);
+
+      .brand-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+
+        .logo-hologram {
+          position: relative;
+          width: 70px;
+          height: 70px;
+
+          .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 2px solid rgba(37, 99, 235, 0.2);
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.1);
+            animation: medicalLogoGlow 4s ease-in-out infinite;
+          }
+
+          .hologram-effect {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            border: 2px solid transparent;
+            border-radius: 18px;
+            background: linear-gradient(135deg, 
+              rgba(37, 99, 235, 0.3), 
+              transparent, 
+              rgba(8, 145, 178, 0.3), 
+              transparent,
+              rgba(37, 99, 235, 0.3)
+            ) border-box;
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            animation: medicalHologramScan 6s linear infinite;
+            opacity: 0.8;
+          }
+        }
+
+        .brand-text {
+          .brand-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, 
+              $clinical-primary, 
+              $clinical-secondary, 
+              $clinical-success
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: medicalTitleGlow 4s ease-in-out infinite;
+          }
+
+          .brand-subtitle {
+            font-family: $font-secondary;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: $clinical-medium;
+            letter-spacing: 0.5px;
+            margin: 0;
+            opacity: 0.8;
+          }
+        }
+      }
+    }
+
+    // Current Medical Stage Display
+    .stage-display {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+      padding: 2rem;
+      background: rgba(240, 249, 255, 0.7);
+      border-radius: 16px;
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      animation: medicalStageSlideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.3s both;
+
+      .stage-icon-container {
+        position: relative;
+        flex-shrink: 0;
+
+        .stage-icon-bg {
+          width: 70px;
+          height: 70px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          animation: medicalIconPulse 3s ease-in-out infinite;
+          border: 1px solid rgba(255, 255, 255, 0.8);
+
+          i {
+            font-size: 1.8rem;
+            z-index: 2;
+            filter: drop-shadow(0 0 8px currentColor);
+          }
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+              transparent, 
+              rgba(255, 255, 255, 0.3), 
+              transparent
+            );
+            animation: medicalIconShimmer 4s linear infinite;
+          }
+        }
+
+        .stage-pulse {
+          position: absolute;
+          top: -8px;
+          left: -8px;
+          right: -8px;
+          bottom: -8px;
+          border: 2px solid;
+          border-radius: 20px;
+          opacity: 0;
+          animation: medicalStagePulse 3s ease-in-out infinite;
+        }
+      }
+
+      .stage-info {
+        flex: 1;
+
+        .stage-title {
+          font-size: 1.4rem;
+          font-weight: 700;
+          margin: 0 0 0.5rem 0;
+          letter-spacing: -0.2px;
+          animation: medicalTitleFlicker 6s ease-in-out infinite;
+        }
+
+        .stage-subtitle {
+          font-size: 1rem;
+          color: $clinical-medium;
+          margin: 0;
+          font-weight: 400;
+          opacity: 0.85;
+          animation: medicalSubtitleFloat 4s ease-in-out infinite;
+        }
+      }
+    }
+
+    // Medical Progress System
+    .progress-system {
+      margin-bottom: 2.5rem;
+      animation: medicalProgressSlideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.6s both;
+
+      // Global Medical Progress
+      .global-progress {
+        margin-bottom: 2rem;
+
+        .progress-labels {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+
+          .progress-label {
+            font-family: $font-secondary;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: $clinical-medium;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+          }
+
+          .progress-value {
+            font-family: $font-secondary;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: $clinical-primary;
+            animation: medicalValueGlow 3s ease-in-out infinite;
+          }
+        }
+
+        .progress-container {
+          .progress-track {
+            width: 100%;
+            height: 10px;
+            background: rgba(226, 232, 240, 0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+            .progress-fill {
+              height: 100%;
+              border-radius: 12px;
+              position: relative;
+              transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+              overflow: hidden;
+              box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+
+              .progress-glow {
+                position: absolute;
+                top: -2px;
+                left: 0;
+                width: 100%;
+                height: 14px;
+                background: inherit;
+                border-radius: 12px;
+                filter: blur(2px);
+                opacity: 0.6;
+              }
+
+              .progress-scanner {
+                position: absolute;
+                top: 0;
+                right: -15px;
+                width: 15px;
+                height: 100%;
+                background: linear-gradient(90deg, 
+                  transparent, 
+                  rgba(255, 255, 255, 0.9), 
+                  transparent
+                );
+                animation: medicalScannerMove 2.5s ease-in-out infinite;
+              }
+
+              &::before {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                right: 2px;
+                height: 3px;
+                background: linear-gradient(90deg, 
+                  rgba(255, 255, 255, 0.8), 
+                  rgba(255, 255, 255, 0.4)
+                );
+                border-radius: 12px;
+                filter: blur(0.5px);
+              }
+            }
+          }
+        }
+      }
+
+      // Medical Stage Indicators
+      .stage-indicators {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(240, 249, 255, 0.5);
+        border-radius: 12px;
+        border: 1px solid rgba(37, 99, 235, 0.06);
+
+        .stage-indicator {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          position: relative;
+
+          .indicator-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(226, 232, 240, 0.8);
+            background: white;
+
+            i {
+              font-size: 0.7rem;
+              color: white;
+            }
+
+            .scanning-ring {
+              position: absolute;
+              width: 32px;
+              height: 32px;
+              border: 2px solid;
+              border-radius: 50%;
+              border-top-color: transparent;
+              border-right-color: transparent;
+              animation: medicalScanningRotate 2s linear infinite;
+            }
+          }
+
+          .indicator-label {
+            font-family: $font-secondary;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: $clinical-medium;
+            opacity: 0.7;
+          }
+
+          &.active .indicator-dot {
+            transform: scale(1.15);
+            animation: medicalIndicatorPulse 2s ease-in-out infinite;
+            border-color: currentColor;
+          }
+
+          &.completed .indicator-dot {
+            transform: scale(1.05);
+            animation: medicalCompletedGlow 3s ease-in-out infinite;
+            border-color: currentColor;
+          }
+        }
+      }
+
+      // Medical Stage Progress Detail
+      .stage-progress-detail {
+        .detail-label {
+          font-family: $font-secondary;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: $clinical-medium;
+          margin-bottom: 0.5rem;
+          letter-spacing: 0.3px;
+          text-transform: uppercase;
+          opacity: 0.8;
+        }
+
+        .detail-bar {
+          width: 100%;
+          height: 5px;
+          background: rgba(226, 232, 240, 0.5);
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid rgba(37, 99, 235, 0.08);
+
+          .detail-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.4s ease;
+            position: relative;
+            box-shadow: 0 0 8px rgba(37, 99, 235, 0.2);
+
+            &::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              right: -8px;
+              width: 8px;
+              height: 100%;
+              background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.8)
+              );
+              animation: medicalDetailShine 3s ease-in-out infinite;
+            }
+          }
+        }
+      }
+    }
+
+    // Medical Neural Activity Monitor
+    .neural-monitor {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: rgba(240, 249, 255, 0.4);
+      border-radius: 12px;
+      border: 1px solid rgba(37, 99, 235, 0.06);
+      animation: medicalMonitorSlideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.9s both;
+
+      .monitor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        .monitor-label {
+          font-family: $font-secondary;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: $clinical-medium;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+
+        .monitor-status {
+          font-family: $font-secondary;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: $clinical-success;
+          padding: 0.3rem 0.8rem;
+          background: rgba(5, 150, 105, 0.1);
+          border-radius: 10px;
+          border: 1px solid rgba(5, 150, 105, 0.2);
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          animation: medicalStatusBlink 3s ease-in-out infinite;
+        }
+      }
+
+      .neural-waves {
+        display: flex;
+        align-items: end;
+        gap: 3px;
+        height: 50px;
+
+        .neural-wave {
+          width: 5px;
+          background: currentColor;
+          border-radius: 2px;
+          opacity: 0.8;
+          animation: medicalWaveHeight 2s ease-in-out infinite;
+
+          &:nth-child(1) { height: 25%; }
+          &:nth-child(2) { height: 65%; animation-delay: 0.2s; }
+          &:nth-child(3) { height: 100%; animation-delay: 0.4s; }
+          &:nth-child(4) { height: 45%; animation-delay: 0.6s; }
+          &:nth-child(5) { height: 85%; animation-delay: 0.8s; }
+        }
+      }
+    }
+
+    // Medical System Status
+    .system-status {
+      animation: medicalStatusSlideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) 1.2s both;
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+
+        .status-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 1rem 0.8rem;
+          background: rgba(240, 249, 255, 0.6);
+          border-radius: 10px;
+          border: 1px solid rgba(37, 99, 235, 0.08);
+          transition: all 0.3s ease;
+          animation: medicalStatusItemGlow 4s ease-in-out infinite;
+
+          i {
+            font-size: 1.1rem;
+            color: $clinical-success;
+            margin-bottom: 0.2rem;
+          }
+
+          span {
+            font-family: $font-secondary;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: $clinical-medium;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.08);
+          }
+
+          &:nth-child(2) {
+            animation-delay: 0.3s;
+            i { color: $clinical-purple; }
+          }
+          &:nth-child(3) {
+            animation-delay: 0.6s;
+            i { color: $clinical-secondary; }
+          }
+          &:nth-child(4) {
+            animation-delay: 0.9s;
+            i { color: $clinical-primary; }
+          }
+        }
+      }
+    }
+  }
+
+  // Medical Completion Animation
+  .completion-animation {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    pointer-events: none;
+
+    .success-burst {
+      position: relative;
+      width: 150px;
+      height: 150px;
+
+      .burst-ray {
+        position: absolute;
+        width: 3px;
+        height: 40px;
+        background: linear-gradient(180deg, $clinical-success, transparent);
+        border-radius: 2px;
+        transform-origin: center bottom;
+        animation: medicalBurstExplosion 0.8s ease-out forwards;
+
+        &.ray-0 { transform: rotate(0deg) translateY(-75px); }
+        &.ray-1 { transform: rotate(45deg) translateY(-75px); animation-delay: 0.1s; }
+        &.ray-2 { transform: rotate(90deg) translateY(-75px); animation-delay: 0.15s; }
+        &.ray-3 { transform: rotate(135deg) translateY(-75px); animation-delay: 0.2s; }
+        &.ray-4 { transform: rotate(180deg) translateY(-75px); animation-delay: 0.25s; }
+        &.ray-5 { transform: rotate(225deg) translateY(-75px); animation-delay: 0.3s; }
+        &.ray-6 { transform: rotate(270deg) translateY(-75px); animation-delay: 0.35s; }
+        &.ray-7 { transform: rotate(315deg) translateY(-75px); animation-delay: 0.4s; }
+      }
+    }
+  }
+}
+
+// =====================================================
+// MEDICAL ANIMATIONS
+// =====================================================
+
+@keyframes medicalFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
+}
+
+@keyframes medicalGridPulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes medicalDataFlow {
+  0% {
+    transform: translateY(-80vh);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(80vh);
+    opacity: 0;
+  }
+}
+
+@keyframes medicalFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateY(-15px) translateX(8px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-8px) translateX(-5px);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(-20px) translateX(3px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes medicalInterfaceGlow {
+  0%, 100% {
+    box-shadow: 
+      0 20px 40px rgba(37, 99, 235, 0.08),
+      0 8px 20px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  50% {
+    box-shadow: 
+      0 20px 40px rgba(37, 99, 235, 0.12),
+      0 8px 20px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+@keyframes medicalHeaderSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes medicalLogoGlow {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes medicalHologramScan {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.6;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.6;
+  }
+}
+
+@keyframes medicalTitleGlow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes medicalStageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes medicalIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes medicalIconShimmer {
+  0% {
+    transform: translateX(-200%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+@keyframes medicalStagePulse {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes medicalTitleFlicker {
+  0%, 100% { opacity: 1; }
+  98% { opacity: 0.95; }
+}
+
+@keyframes medicalSubtitleFloat {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+@keyframes medicalProgressSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes medicalValueGlow {
+  0%, 100% {
+    transform: scale(1);
+    color: $clinical-primary;
+  }
+  50% {
+    transform: scale(1.02);
+    color: lighten($clinical-primary, 10%);
+  }
+}
+
+@keyframes medicalScannerMove {
+  0% {
+    right: 100%;
+  }
+  100% {
+    right: -15px;
+  }
+}
+
+@keyframes medicalScanningRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes medicalIndicatorPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+  }
+}
+
+@keyframes medicalCompletedGlow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes medicalDetailShine {
+  0% {
+    width: 0px;
+  }
+  50% {
+    width: 15px;
+  }
+  100% {
+    width: 0px;
+  }
+}
+
+@keyframes medicalMonitorSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes medicalStatusBlink {
+  0%, 70% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes medicalWaveHeight {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.6);
+  }
+}
+
+@keyframes medicalStatusSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes medicalStatusItemGlow {
+  0%, 100% {
+    border-color: rgba(37, 99, 235, 0.08);
+  }
+  50% {
+    border-color: rgba(37, 99, 235, 0.15);
+  }
+}
+
+@keyframes medicalBurstExplosion {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--rotation)) translateY(-75px) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: rotate(var(--rotation)) translateY(-75px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--rotation)) translateY(-100px) scale(1.3);
+  }
+}
+
+// =====================================================
+// RESPONSIVE MEDICAL DESIGN
+// =====================================================
+
+@media (max-width: 768px) {
+  .clinical-loading-medical {
+    .loading-interface {
+      width: 95%;
+      padding: 2rem 1.5rem;
+
+      .system-header .brand-container {
+        flex-direction: column;
+        gap: 1.5rem;
+
+        .brand-text .brand-title {
+          font-size: 1.8rem;
+        }
+      }
+
+      .stage-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+
+        .stage-info .stage-title {
+          font-size: 1.2rem;
+        }
+      }
+
+      .system-status .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .clinical-loading-medical {
+    .loading-interface {
+      padding: 1.5rem 1rem;
+
+      .system-header .brand-text .brand-title {
+        font-size: 1.5rem;
+      }
+
+      .progress-system .stage-indicators {
+        flex-wrap: wrap;
+        gap: 0.8rem;
+      }
+
+      .system-status .status-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+    }
+  }
+}
