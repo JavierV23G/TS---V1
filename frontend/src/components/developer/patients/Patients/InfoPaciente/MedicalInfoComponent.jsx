@@ -22,7 +22,9 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
     physician: '',
     nurse: '',
     urgency_level: '',
-    prior_level_of_function: ''
+    prior_level_of_function: '',
+    insurance: '',
+    referral_reason: ''
   });
   
   // Estado para mantener una copia de los datos originales
@@ -43,6 +45,9 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
   // Cargar datos médicos del paciente SOLO si no tenemos actualizaciones locales
   useEffect(() => {
     if (patient && !hasLocalUpdates) {
+      console.log('🏥 MedicalInfoComponent - Patient data received:', patient);
+      console.log('👩‍⚕️ MedicalInfoComponent - Nurse field:', patient.nurse);
+      console.log('💳 MedicalInfoComponent - Insurance field:', patient.insurance);
       // Convertir altura total a pies y pulgadas para display
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
@@ -61,7 +66,9 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
         physician: patient.physician || '',
         nurse: patient.nurse || '',
         urgency_level: patient.urgency_level || '',
-        prior_level_of_function: patient.prior_level_of_function || ''
+        prior_level_of_function: patient.prior_level_of_function || '',
+        insurance: patient.insurance || '',
+        referral_reason: patient.referral_reason || ''
       };
       
       setMedicalData(patientData);
@@ -118,6 +125,8 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
       if (medicalData.nurse) params.append('nurse', medicalData.nurse);
       if (medicalData.urgency_level) params.append('urgency_level', medicalData.urgency_level);
       if (medicalData.prior_level_of_function) params.append('prior_level_of_function', medicalData.prior_level_of_function);
+      if (medicalData.insurance) params.append('insurance', medicalData.insurance);
+      if (medicalData.referral_reason) params.append('referral_reason', medicalData.referral_reason);
 
       const response = await fetch(`${API_BASE_URL}/patients/${patient.id}?${params.toString()}`, {
         method: 'PUT',
@@ -238,6 +247,80 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
       case 'low': return '#f0f9ff';
       default: return '#f9fafb';
     }
+  };
+
+  // Función para formatear homebound status de JSON a texto
+  const formatHomeboundStatus = (homeboundStatus) => {
+    if (!homeboundStatus) return 'Not specified';
+    
+    // Si es JSON string, parsearlo
+    let homeboundData;
+    try {
+      homeboundData = typeof homeboundStatus === 'string' 
+        ? JSON.parse(homeboundStatus) 
+        : homeboundStatus;
+    } catch (error) {
+      // Si no es JSON válido, retornar tal como está
+      return homeboundStatus;
+    }
+
+    // Si es objeto con propiedades booleanas, formatear
+    if (typeof homeboundData === 'object') {
+      const trueReasons = [];
+      
+      if (homeboundData.na) trueReasons.push('N/A');
+      if (homeboundData.needs_assistance) trueReasons.push('Needs assistance for all activities');
+      if (homeboundData.residual_weakness) trueReasons.push('Residual Weakness');
+      if (homeboundData.requires_assistance_ambulate) trueReasons.push('Requires assistance to ambulate');
+      if (homeboundData.confusion) trueReasons.push('Confusion, unable to go out of home alone');
+      if (homeboundData.safely_leave) trueReasons.push('Unable to safely leave home unassisted');
+      if (homeboundData.sob) trueReasons.push('Severe SOB, SOB upon exertion');
+      if (homeboundData.adaptive_devices) trueReasons.push('Dependent upon adaptive device(s)');
+      if (homeboundData.medical_restrictions) trueReasons.push('Medical restrictions');
+      if (homeboundData.taxing_effort) trueReasons.push('Requires taxing effort to leave home');
+      if (homeboundData.bedbound) trueReasons.push('Bedbound');
+      if (homeboundData.transfers) trueReasons.push('Requires assistance with transfers');
+      if (homeboundData.other) trueReasons.push('Other (Explain)');
+      
+      return trueReasons.length > 0 ? trueReasons.join(', ') : 'Not homebound';
+    }
+
+    // Si no es objeto, retornar tal como está
+    return homeboundStatus;
+  };
+
+  // Función para formatear referral reason de JSON a texto
+  const formatReferralReason = (referralReason) => {
+    if (!referralReason) return 'Not specified';
+    
+    // Si es JSON string, parsearlo
+    let referralData;
+    try {
+      referralData = typeof referralReason === 'string' 
+        ? JSON.parse(referralReason) 
+        : referralReason;
+    } catch (error) {
+      // Si no es JSON válido, retornar tal como está
+      return referralReason;
+    }
+
+    // Si es objeto con propiedades booleanas, formatear
+    if (typeof referralData === 'object') {
+      const trueReasons = [];
+      
+      if (referralData.strength_balance) trueReasons.push('Strength & Balance');
+      if (referralData.gait) trueReasons.push('Gait Training');
+      if (referralData.adls) trueReasons.push('ADLs');
+      if (referralData.orthopedic) trueReasons.push('Orthopedic');
+      if (referralData.neurological) trueReasons.push('Neurological');
+      if (referralData.wheelchair) trueReasons.push('Wheelchair');
+      if (referralData.additional) trueReasons.push(`Additional: ${referralData.additional}`);
+      
+      return trueReasons.length > 0 ? trueReasons.join(', ') : 'Not specified';
+    }
+
+    // Si no es objeto, retornar tal como está
+    return referralReason;
   };
 
   return (
@@ -509,6 +592,45 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                     rows="2"
                   />
                 </div>
+                
+                {/* Insurance (Payor Type) */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-credit-card"></i>
+                    Insurance / Payor Type
+                  </label>
+                  <input
+                    type="text"
+                    name="insurance"
+                    value={medicalData.insurance}
+                    onChange={handleInputChange}
+                    placeholder="Insurance or payor type..."
+                    className="medical-input"
+                  />
+                </div>
+                
+                {/* Referral Reason */}
+                <div className="form-group">
+                  <label>
+                    <i className="fas fa-clipboard-list"></i>
+                    Referral Reasons
+                  </label>
+                  <textarea
+                    name="referral_reason"
+                    value={formatReferralReason(medicalData.referral_reason)}
+                    onChange={(e) => {
+                      // Al editar, mantener como texto plano
+                      setMedicalData(prev => ({
+                        ...prev,
+                        referral_reason: e.target.value
+                      }));
+                    }}
+                    placeholder="Reasons for referral..."
+                    className="medical-textarea"
+                    rows="2"
+                  />
+                </div>
+                
               </div>
             </div>
 
@@ -733,6 +855,27 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                     {medicalData.prior_level_of_function || 'Not recorded'}
                   </div>
                 </div>
+                
+                <div className="text-info-card">
+                  <div className="text-info-header">
+                    <i className="fas fa-credit-card"></i>
+                    <span>Insurance / Payor Type</span>
+                  </div>
+                  <div className="text-info-content">
+                    {medicalData.insurance || 'Not recorded'}
+                  </div>
+                </div>
+                
+                <div className="text-info-card">
+                  <div className="text-info-header">
+                    <i className="fas fa-clipboard-list"></i>
+                    <span>Referral Reasons</span>
+                  </div>
+                  <div className="text-info-content">
+                    {formatReferralReason(medicalData.referral_reason)}
+                  </div>
+                </div>
+                
               </div>
             </div>
 
@@ -765,7 +908,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                   <div className="info-content">
                     <span className="info-label">Homebound Status</span>
                     <span className="info-value">
-                      {medicalData.homebound_status || 'Not specified'}
+                      {formatHomeboundStatus(medicalData.homebound_status)}
                     </span>
                   </div>
                 </div>

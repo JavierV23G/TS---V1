@@ -668,6 +668,11 @@ const PatientInfoPage = () => {
         
         const patientData = await response.json();
         
+        console.log('🔍 Patient data received from backend:', patientData);
+        console.log('📋 Patient nurse field:', patientData.nurse);
+        console.log('📋 Patient insurance field:', patientData.insurance);
+        console.log('📋 Patient referral_reason field:', patientData.referral_reason);
+        
         setPatient(patientData);
         
       } catch (err) {

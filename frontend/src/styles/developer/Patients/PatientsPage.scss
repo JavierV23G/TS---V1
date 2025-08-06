@@ -218,107 +218,15 @@
 // Estilos principales mejorados
 .patients-dashboard {
   min-height: 100vh;
+  height: 100vh;
   position: relative;
   font-family: 'Plus Jakarta Sans', sans-serif;
   color: #344054;
   overflow-x: hidden;
   background-color: #0a1e3c;
+  margin: 0;
+  padding: 0;
   
-  // Efecto avanzado de parallax con partículas
-  .parallax-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://images.unsplash.com/photo-1560264280-88b68371db39?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-    background-size: cover;
-    background-position: center;
-    z-index: -2;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: radial-gradient(circle at 100% 0%, rgba(10, 30, 60, 0.8) 0%, rgba(10, 30, 60, 0.95) 100%);
-    }
-    
-    // Efecto de partículas flotantes
-    .animated-particles {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      
-      &::before, &::after {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background-image: 
-          radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 0.5%),
-          radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 0.5%),
-          radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 0.5%),
-          radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 0.5%),
-          radial-gradient(circle at 10% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 0.5%);
-        background-size: 
-          100px 100px,
-          150px 150px,
-          200px 200px,
-          250px 250px,
-          300px 300px;
-        background-position: 
-          0 0,
-          40px 70px,
-          130px 270px,
-          70px 150px,
-          300px 300px;
-        opacity: 0.5;
-        animation: floatingParticles 60s linear infinite;
-      }
-      
-      &::after {
-        background-size: 
-          200px 200px,
-          250px 250px,
-          150px 150px,
-          300px 300px,
-          100px 100px;
-        background-position: 
-          30px 30px,
-          130px 150px,
-          200px 220px,
-          350px 350px,
-          400px 100px;
-        animation-direction: reverse;
-        animation-duration: 45s;
-      }
-    }
-    
-    @keyframes floatingParticles {
-      0% {
-        background-position: 
-          0 0,
-          40px 70px,
-          130px 270px,
-          70px 150px,
-          300px 300px;
-      }
-      100% {
-        background-position: 
-          100px 100px,
-          140px 170px,
-          230px 370px,
-          170px 250px,
-          400px 400px;
-      }
-    }
-  }
   
   // Main header con efecto de cristal avanzado
   .main-header {

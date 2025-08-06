@@ -1,989 +1,501 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
+import '../../../../../styles/developer/Patients/InfoPaciente/NotesComponent.scss';
 
-// Note types con iconos y colores
-const NOTE_TYPES = [
-  { value: 'text', label: 'Text Note', icon: 'fa-file-alt', color: '#3b82f6' },
-  { value: 'communication-report', label: 'Communication Report', icon: 'fa-comment-dots', color: '#8b5cf6' },
-  { value: 'incident-report', label: 'Incident Report', icon: 'fa-exclamation-triangle', color: '#ef4444' },
-  { value: 'therapy-order', label: 'Therapy Order', icon: 'fa-clipboard-list', color: '#10b981' },
-  { value: 'face-to-face', label: 'Face to Face', icon: 'fa-users', color: '#f59e0b' },
-  { value: 'case-conference', label: 'Case Conference', icon: 'fa-briefcase', color: '#6366f1' },
-  { value: 'oasis-care-summary', label: 'OASIS Care Summary', icon: 'fa-heartbeat', color: '#ec4899' },
-  { value: 'nomnc', label: 'NOMNC', icon: 'fa-file-contract', color: '#64748b' },
-  { value: 'kaiser-form', label: 'Kaiser Form', icon: 'fa-file-medical', color: '#0ea5e9' },
-  { value: 'maintenance-assessment-form', label: 'Maintenance Assessment Form', icon: 'fa-tasks', color: '#14b8a6' },
-  { value: 'signature', label: 'Signature', icon: 'fa-signature', color: '#6b7280' },
-  { value: 'file', label: 'File Upload', icon: 'fa-file-upload', color: '#9333ea' },
-];
-
-// Categorías con colores
-const CATEGORIES = [
-  { value: 'Clinical', color: 'rgb(44, 123, 229)' },
-  { value: 'Follow-up', color: 'rgb(76, 175, 80)' },
-  { value: 'Therapy Session', color: 'rgb(156, 39, 176)' },
-  { value: 'Assessment', color: 'rgb(255, 152, 0)' },
-  { value: 'Education', color: 'rgb(0, 188, 212)' },
-  { value: 'Administrative', color: 'rgb(96, 125, 139)' },
-  { value: 'Media', color: 'rgb(244, 67, 54)' },
-];
-
-// Colores por rol
-const ROLE_COLORS = {
-  PT: '#3b82f6',
-  OT: '#8b5cf6',
-  ST: '#ec4899',
-  PTA: '#60a5fa',
-  COTA: '#a78bfa',
-  ADMIN: '#64748b',
-};
-
-const NotesComponent = ({ patient, onUpdateNotes }) => {
-  const [notes, setNotes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddingNote, setIsAddingNote] = useState(false);
-  const [activeNoteId, setActiveNoteId] = useState(null);
-  const [newNoteType, setNewNoteType] = useState('text');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredNotes, setFilteredNotes] = useState([]);
-  const [sortBy, setSortBy] = useState('date-desc');
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState(null);
+const NotesComponent = ({ patient }) => {
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedComment, setSelectedComment] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [commentCategory, setCommentCategory] = useState('general');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   
   const { currentUser } = useAuth();
-  
-  const textareaRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const canvasRef = useRef(null);
-  const signatureCanvasCtx = useRef(null);
-  const isDrawing = useRef(false);
-
-  // API Configuration
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  // Fetch notes from API
+  // Comment categories for clinical notes
+  const commentCategories = [
+    { value: 'general', label: 'General Comments', color: '#3b82f6', icon: 'fa-comment' },
+    { value: 'progress', label: 'Progress Notes', color: '#10b981', icon: 'fa-chart-line' },
+    { value: 'concerns', label: 'Clinical Concerns', color: '#f59e0b', icon: 'fa-exclamation-circle' },
+    { value: 'family', label: 'Family Communication', color: '#8b5cf6', icon: 'fa-users' },
+    { value: 'medication', label: 'Medication Notes', color: '#ef4444', icon: 'fa-pills' },
+    { value: 'discharge', label: 'Discharge Planning', color: '#6b7280', icon: 'fa-sign-out-alt' }
+  ];
+
+  // Mock data - replace with actual API calls
   useEffect(() => {
-    const fetchNotes = async () => {
+    const fetchComments = async () => {
       if (!patient?.id) {
-        setNotes([]);
-        setFilteredNotes([]);
-        setCategories(['all']);
-        setIsLoading(false);
+        setComments([]);
+        setLoading(false);
         return;
       }
 
       try {
-        setIsLoading(true);
+        setLoading(true);
         setError(null);
         
-        const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            // Agregar headers de autorización si es necesario
-            // 'Authorization': `Bearer ${token}`,
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Mock comments data - replace with actual API endpoint
+        const mockComments = [
+          {
+            id: 1,
+            content: "Patient shows significant improvement in mobility and balance. Continues to be motivated and engaged during therapy sessions.",
+            category: 'progress',
+            author: 'Sarah Johnson',
+            userRole: 'PT',
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+            priority: 'normal'
           },
-        });
+          {
+            id: 2,
+            content: "Family expressed concerns about patient's pain levels during evening hours. Recommend reviewing current pain management protocol.",
+            category: 'family',
+            author: 'Michael Chen',
+            userRole: 'OT',
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+            priority: 'high'
+          },
+          {
+            id: 3,
+            content: "Patient completed all exercises today with minimal assistance. Ready to progress to next level of difficulty.",
+            category: 'general',
+            author: 'Lisa Rodriguez',
+            userRole: 'PTA',
+            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+            priority: 'normal'
+          }
+        ];
         
-        if (!response.ok) {
-          throw new Error(`Failed to fetch notes: ${response.status} ${response.statusText}`);
-        }
-        
-        const notesData = await response.json();
-        
-        // Extraer categorías únicas
-        const uniqueCategories = [...new Set(notesData.map(note => note.category || 'Clinical'))];
-        setCategories(['all', ...uniqueCategories]);
-        
-        setNotes(notesData);
-        setFilteredNotes(notesData);
+        setComments(mockComments);
         
       } catch (err) {
-        console.error('Error fetching notes:', err);
-        setError(err.message);
-        setNotes([]);
-        setFilteredNotes([]);
-        setCategories(['all']);
+        console.error('Error fetching comments:', err);
+        setError('Failed to load clinical comments');
+        setComments([]);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    fetchNotes();
+    fetchComments();
   }, [patient?.id, API_BASE_URL]);
 
-  // Filter and sort notes
-  useEffect(() => {
-    let result = [...notes];
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        note => note.title?.toLowerCase().includes(query) || 
-                note.content?.toLowerCase().includes(query) ||
-                note.author?.toLowerCase().includes(query) ||
-                note.note_type?.toLowerCase().includes(query)
-      );
-    }
-    
-    // Filter by category
-    if (selectedCategory && selectedCategory !== 'all') {
-      result = result.filter(note => note.category === selectedCategory);
-    }
-    
-    // Sort notes
-    result = sortNotes(result, sortBy);
-    
-    setFilteredNotes(result);
-  }, [notes, searchQuery, sortBy, selectedCategory]);
-
-  // Sort notes based on criteria
-  const sortNotes = (notesToSort, sortCriteria) => {
-    const sortedNotes = [...notesToSort];
-    
-    switch (sortCriteria) {
-      case 'date-desc':
-        return sortedNotes.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
-      case 'date-asc':
-        return sortedNotes.sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
-      case 'title-asc':
-        return sortedNotes.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-      case 'title-desc':
-        return sortedNotes.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
-      case 'author':
-        return sortedNotes.sort((a, b) => (a.author || '').localeCompare(b.author || ''));
-      case 'category':
-        return sortedNotes.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
-      default:
-        return sortedNotes;
-    }
-  };
-
-  // Create new note via API
-  const createNote = async (noteData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Agregar headers de autorización si es necesario
-        },
-        body: JSON.stringify(noteData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to create note: ${response.status} ${response.statusText}`);
-      }
-      
-      const newNote = await response.json();
-      
-      // Actualizar la lista de notas
-      setNotes(prevNotes => [newNote, ...prevNotes]);
-      
-      return newNote;
-    } catch (err) {
-      console.error('Error creating note:', err);
-      throw err;
-    }
-  };
-
-  // Delete note via API
-  const deleteNote = async (noteId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/${noteId}/`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          // Agregar headers de autorización si es necesario
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to delete note: ${response.status} ${response.statusText}`);
-      }
-      
-      
-      // Actualizar la lista de notas
-      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
-      
-    } catch (err) {
-      console.error('Error deleting note:', err);
-      throw err;
-    }
-  };
-
-  // Update note via API
-  const updateNote = async (noteId, updateData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/notes/${noteId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          // Agregar headers de autorización si es necesario
-        },
-        body: JSON.stringify(updateData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update note: ${response.status} ${response.statusText}`);
-      }
-      
-      const updatedNote = await response.json();
-      
-      // Actualizar la lista de notas
-      setNotes(prevNotes => 
-        prevNotes.map(note => note.id === noteId ? updatedNote : note)
-      );
-      
-      return updatedNote;
-    } catch (err) {
-      console.error('Error updating note:', err);
-      throw err;
-    }
-  };
-
-  // Toggle note pinned status
-  const togglePinNote = async (noteId) => {
-    try {
-      const note = notes.find(n => n.id === noteId);
-      if (!note) return;
-      
-      await updateNote(noteId, { is_pinned: !note.is_pinned });
-    } catch (err) {
-      console.error('Error toggling pin status:', err);
-      setError('Failed to update note pin status');
-    }
-  };
-
-  // Handle deleting a note
-  const handleDeleteClick = (note) => {
-    setNoteToDelete(note);
-    setShowDeleteConfirm(true);
-  };
-
-  // Confirm note deletion
-  const confirmDelete = async () => {
-    if (!noteToDelete) return;
-    
-    try {
-      await deleteNote(noteToDelete.id);
-      setShowDeleteConfirm(false);
-      setNoteToDelete(null);
-      
-      if (activeNoteId === noteToDelete.id) {
-        setActiveNoteId(null);
-      }
-    } catch (err) {
-      console.error('Error deleting note:', err);
-      setError('Failed to delete note');
-    }
-  };
-
-  // Cancel deletion
-  const cancelDelete = () => {
-    setShowDeleteConfirm(false);
-    setNoteToDelete(null);
-  };
-
-  // Initialize new note form
-  const handleAddNote = (type = 'text') => {
-    setNewNoteType(type);
-    setIsAddingNote(true);
-    setError(null);
-  };
-
-  // Show note details
-  const handleViewNote = (noteId) => {
-    setActiveNoteId(noteId);
-  };
-
-  // Handle saving a new note - CORREGIDO
-  const handleSaveNote = async (event) => {
-    // IMPORTANTE: Prevenir el comportamiento por defecto
+  // Add new comment
+  const handleAddComment = async (event) => {
     event.preventDefault();
     
-    if (isSaving) return; // Prevenir múltiples envíos
+    if (saving || !newComment.trim()) return;
     
     try {
-      setIsSaving(true);
+      setSaving(true);
       setError(null);
       
-      // Obtener los datos del formulario
-      const formData = new FormData(event.target);
-      const title = formData.get('title')?.trim();
-      const category = formData.get('category') || 'Clinical';
-      const tags = formData.get('tags')?.split(',').map(tag => tag.trim()).filter(Boolean) || [];
-      const noteType = formData.get('noteType') || 'text';
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      let content = '';
-      
-      if (noteType === 'signature') {
-        if (canvasRef.current) {
-          content = canvasRef.current.toDataURL();
-        }
-      } else {
-        content = formData.get('content')?.trim();
-      }
-      
-      if (!title || !content) {
-        setError('Please provide both a title and content for the note.');
-        return;
-      }
-      
-      const authorName = currentUser?.fullname || currentUser?.username || 'Current User';
-      const userRole = currentUser?.role || 'Staff';
-      
-      const noteData = {
-        title,
-        content,
-        note_type: noteType,
-        category,
-        author: authorName,
-        user_role: userRole,
-        tags: tags.join(','), // O enviar como array dependiendo de tu API
-        is_pinned: false,
-        patient_id: patient.id
+      const newCommentObj = {
+        id: Date.now(), // Mock ID
+        content: newComment.trim(),
+        category: commentCategory,
+        author: currentUser?.fullname || currentUser?.username || 'Current User',
+        userRole: currentUser?.role || 'Staff',
+        createdAt: new Date().toISOString(),
+        priority: 'normal'
       };
       
-      
-      await createNote(noteData);
-      setIsAddingNote(false);
-      
-      // Limpiar el formulario
-      event.target.reset();
+      setComments(prevComments => [newCommentObj, ...prevComments]);
+      setNewComment('');
+      setCommentCategory('general');
+      setShowCommentModal(false);
       
     } catch (err) {
-      console.error('Error saving note:', err);
-      setError('Failed to save note: ' + err.message);
+      console.error('Error adding comment:', err);
+      setError('Failed to add comment: ' + err.message);
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  // Handle file upload
-  const handleFileUpload = async (e) => {
-    const files = e.target.files;
-    if (files.length === 0) return;
-    
-    const file = files[0];
-    const fileType = file.type.split('/')[0];
-    
-    // Aquí deberías subir el archivo a tu servidor y obtener la URL
-    // Por ahora, usaremos URL.createObjectURL como placeholder
-    const fileUrl = URL.createObjectURL(file);
-    
-    const authorName = currentUser?.fullname || currentUser?.username || 'Current User';
-    const userRole = currentUser?.role || 'Staff';
-    
-    const noteData = {
-      title: file.name,
-      content: fileUrl, // En producción, esta debería ser la URL del archivo subido
-      note_type: 'file',
-      category: 'Media',
-      author: authorName,
-      user_role: userRole,
-      tags: fileType + ',uploaded',
-      is_pinned: false,
-      patient_id: patient.id,
-      file_type: fileType
-    };
+  // Handle delete comment - show confirmation modal
+  const handleDeleteComment = (comment) => {
+    setCommentToDelete(comment);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete comment
+  const confirmDeleteComment = async () => {
+    if (!commentToDelete) return;
     
     try {
-      await createNote(noteData);
+      setDeleting(true);
+      setError(null);
       
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setComments(prevComments => prevComments.filter(comment => comment.id !== commentToDelete.id));
+      setSelectedComment(null); // Close view modal if open
+      setShowDeleteModal(false);
+      setCommentToDelete(null);
+      
     } catch (err) {
-      console.error('Error uploading file:', err);
-      setError('Failed to upload file');
+      console.error('Error deleting comment:', err);
+      setError('Failed to delete comment: ' + err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
-  // Signature drawing functions
-  const startDrawing = (e) => {
-    if (!signatureCanvasCtx.current) return;
-    
-    isDrawing.current = true;
-    const ctx = signatureCanvasCtx.current;
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
-  
-  const draw = (e) => {
-    if (!isDrawing.current || !signatureCanvasCtx.current) return;
-    
-    const ctx = signatureCanvasCtx.current;
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
-  
-  const stopDrawing = () => {
-    isDrawing.current = false;
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setCommentToDelete(null);
   };
 
-  // Clear signature canvas
-  const clearSignature = () => {
-    if (!signatureCanvasCtx.current || !canvasRef.current) return;
-    
-    const ctx = signatureCanvasCtx.current;
-    const canvas = canvasRef.current;
-    
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Handle reply to comment
+  const handleReplyToComment = (comment) => {
+    // Close view modal and open new comment modal with reply context
+    setSelectedComment(null);
+    setCommentCategory('general'); // Default for replies
+    setNewComment(`@${comment.author}: `); // Pre-fill with mention
+    setShowCommentModal(true);
   };
 
-  // Initialize canvas for signature
-  useEffect(() => {
-    if (isAddingNote && newNoteType === 'signature' && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      signatureCanvasCtx.current = ctx;
-      
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = 'black';
-      
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-  }, [isAddingNote, newNoteType]);
-
-  // Format date helper function
+  // Format date for display
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-  
-  // Format short date helper
-  const formatShortDate = (dateString) => {
     const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'short' });
-    const year = date.getFullYear();
-    
-    const hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
-    const hours12 = hours % 12 || 12;
-    
-    return {
-      day,
-      month,
-      year,
-      time: `${hours12}:${minutes} ${ampm}`
-    };
+    if (diffDays === 0) {
+      return {
+        relative: 'Today',
+        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+    } else if (diffDays === 1) {
+      return {
+        relative: 'Yesterday',
+        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+    } else if (diffDays <= 7) {
+      return {
+        relative: `${diffDays} days ago`,
+        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+    } else {
+      return {
+        relative: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+    }
   };
 
-  // Get user role color
+  // Get category info
+  const getCategoryInfo = (category) => {
+    return commentCategories.find(cat => cat.value === category) || commentCategories[0];
+  };
+
+  // Get role color
   const getRoleColor = (role) => {
-    return ROLE_COLORS[role?.toUpperCase()] || '#64748b';
+    const colors = {
+      PT: '#3b82f6',
+      PTA: '#60a5fa',
+      OT: '#8b5cf6',
+      COTA: '#a78bfa',
+      ST: '#ec4899',
+      STA: '#f472b6',
+      ADMIN: '#6b7280',
+      DEVELOPER: '#10b981'
+    };
+    return colors[role?.toUpperCase()] || '#6b7280';
   };
 
-  // Get category color
-  const getCategoryColor = (category) => {
-    const foundCategory = CATEGORIES.find(cat => 
-      cat.value.toLowerCase() === category?.toLowerCase()
-    );
-    return foundCategory?.color || 'rgb(100, 116, 139)';
-  };
-
-  // Get note type info
-  const getNoteTypeInfo = (noteType) => {
-    return NOTE_TYPES.find(type => type.value === noteType) || NOTE_TYPES[0];
-  };
-
-  // Note card component
-  const NoteCard = ({ note, index }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    
-    const dateFormatted = formatShortDate(note.created_at || note.date || new Date().toISOString());
-    const noteTypeInfo = getNoteTypeInfo(note.note_type || note.noteType);
-    
-    return (
-      <div
-        className={`note-card ${note.is_pinned || note.isPinned ? 'pinned' : ''}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="note-header">
-          <div className="note-category">
-            <span 
-              className="category-indicator" 
-              style={{ backgroundColor: getCategoryColor(note.category) }}
-            ></span>
-            <span className="category-name">{note.category || 'Clinical'}</span>
-          </div>
-          <div className="note-actions">
-            {isHovered && (
-              <div className="action-buttons">
-                <button 
-                  className="action-btn view-btn" 
-                  onClick={() => handleViewNote(note.id)}
-                  title="View Note"
-                >
-                  <i className="fas fa-eye"></i>
-                </button>
-                <button 
-                  className="action-btn pin-btn" 
-                  onClick={() => togglePinNote(note.id)}
-                  title={(note.is_pinned || note.isPinned) ? "Unpin Note" : "Pin Note"}
-                >
-                  <i className="fas fa-thumbtack"></i>
-                </button>
-                <button 
-                  className="action-btn delete-btn" 
-                  onClick={() => handleDeleteClick(note)}
-                  title="Delete Note"
-                >
-                  <i className="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="note-content" onClick={() => handleViewNote(note.id)}>
-          <h3 className="note-title">
-            {(note.is_pinned || note.isPinned) && <i className="fas fa-thumbtack pin-icon"></i>}
-            {note.title}
-          </h3>
-          <div className="note-type-label">
-            <span className="note-type-badge" style={{backgroundColor: `${noteTypeInfo.color}20`, color: noteTypeInfo.color}}>
-              <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
-            </span>
-          </div>
-          
-          <div className="note-text">
-            <p>{note.content && note.content.length > 120 ? `${note.content.substring(0, 120)}...` : note.content}</p>
-          </div>
-        </div>
-        
-        <div className="note-footer">
-          <div className="note-date-block">
-            <div className="date-box">
-              <span className="date-day">{dateFormatted.day}</span>
-              <span className="date-month">{dateFormatted.month}</span>
-            </div>
-            <div className="date-year-time">
-              <span className="date-year">{dateFormatted.year}</span>
-              <span className="date-time">{dateFormatted.time}</span>
-            </div>
-          </div>
-          
-          <div className="note-meta">
-            <div className="note-author">
-              <div 
-                className="author-icon" 
-                style={{
-                  backgroundColor: getRoleColor(note.user_role || note.userRole)
-                }}
-              >
-                {note.author ? note.author.charAt(0) : 'U'}
-              </div>
-              <div className="author-info">
-                <span className="author-name">{note.author || 'Unknown'}</span>
-                <span className="author-role">{note.user_role || note.userRole || 'Staff'}</span>
-              </div>
-            </div>
-            
-            {note.tags && (
-              <div className="note-tags">
-                {(typeof note.tags === 'string' ? note.tags.split(',') : note.tags)
-                  .slice(0, 3)
-                  .map((tag, idx) => (
-                    <span key={idx} className="tag">
-                      {tag.trim()}
-                    </span>
-                  ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+  // Get priority color
+  const getPriorityColor = (priority) => {
+    const colors = {
+      high: '#ef4444',
+      normal: '#10b981',
+      low: '#6b7280'
+    };
+    return colors[priority] || colors.normal;
   };
 
   return (
-    <div className="notes-component">
-      {/* Error display */}
+    <div className="clinical-comments">
+      {/* Error banner */}
       {error && (
-        <div className="error-banner" style={{
-          backgroundColor: '#fee2e2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '12px',
-          borderRadius: '6px',
-          margin: '16px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+        <div className="error-banner">
           <i className="fas fa-exclamation-triangle"></i>
           <span>{error}</span>
-          <button 
-            onClick={() => setError(null)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#dc2626',
-              cursor: 'pointer',
-              marginLeft: 'auto'
-            }}
-          >
+          <button onClick={() => setError(null)}>
             <i className="fas fa-times"></i>
           </button>
         </div>
       )}
 
-      <div className="notes-header">
-        <div className="header-left">
-          <div className="icon-wrapper">
-            <i className="fas fa-sticky-note"></i>
-          </div>
-          <h2>Patient Notes</h2>
-          <div className="note-count">{filteredNotes.length} notes</div>
-        </div>
-        
-        <div className="header-actions">
-          <div className="search-container">
-            <i className="fas fa-search search-icon"></i>
-            <input 
-              type="text" 
-              placeholder="Search notes..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button 
-                className="clear-search"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            )}
-          </div>
-          
-          <div className="filter-group">
-            <div className="category-filter">
-              <select 
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="category-select"
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
-                  </option>
-                ))}
-              </select>
+      {/* Header */}
+      <div className="comments-header">
+        <div className="header-content">
+          <div className="title-info">
+            <div className="clinical-icon">
+              <i className="fas fa-comments"></i>
             </div>
-            
-            <div className="sort-filter">
-              <select 
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="sort-select"
-              >
-                <option value="date-desc">Newest First</option>
-                <option value="date-asc">Oldest First</option>
-                <option value="title-asc">Title (A-Z)</option>
-                <option value="title-desc">Title (Z-A)</option>
-                <option value="author">Author</option>
-                <option value="category">Category</option>
-              </select>
+            <div className="title-text">
+              <h1>Clinical Notes</h1>
+              <p>Patient clinical comments and observations</p>
             </div>
           </div>
           
-          <div className="view-actions">
-            <div className="add-note-container">
-              <button 
-                className="add-note-btn"
-                onClick={() => setShowQuickActions(!showQuickActions)}
-                title="Add Note"
-              >
-                <i className="fas fa-plus"></i>
-                <span>Add Note</span>
-              </button>
-              
-              {showQuickActions && (
-                <div className="quick-actions">
-                  {NOTE_TYPES.map((type) => (
-                    <button 
-                      key={type.value}
-                      onClick={() => {
-                        if (type.value === 'file') {
-                          fileInputRef.current?.click();
-                        } else {
-                          handleAddNote(type.value);
-                        }
-                        setShowQuickActions(false);
-                      }}
-                    >
-                      <i className={`fas ${type.icon}`} style={{color: type.color}}></i>
-                      <span>{type.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              
-              <input 
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleFileUpload}
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-              />
+          <div className="header-actions">
+            <div className="comments-counter">
+              <span className="number">{comments.length}</span>
+              <span className="label">Comments</span>
             </div>
+            <button 
+              className="new-comment-btn"
+              onClick={() => setShowCommentModal(true)}
+            >
+              <i className="fas fa-plus"></i>
+              <span>Add Comment</span>
+            </button>
           </div>
         </div>
       </div>
-      
-      {isLoading ? (
-        <div className="notes-loading">
-          <div className="loading-spinner">
-            <div className="spinner-icon">
-              <i className="fas fa-circle-notch fa-spin"></i>
+
+      {/* Main content */}
+      <div className="main-content">
+        {loading ? (
+          <div className="loading">
+            <div className="spinner">
+              <div className="circle"></div>
+              <div className="circle"></div>
+              <div className="circle"></div>
             </div>
-            <div className="loading-text">
-              <span>Loading notes</span>
-              <div className="loading-dots">
-                <span>.</span>
-                <span>.</span>
-                <span>.</span>
-              </div>
-            </div>
+            <p>Loading clinical comments...</p>
           </div>
-        </div>
-      ) : (
-        <>
-          {filteredNotes.length === 0 ? (
-            <div className="no-notes">
-              <div className="empty-state">
-                <i className="fas fa-sticky-note empty-icon"></i>
-                <h3>No notes found</h3>
-                <p>{searchQuery ? 'Try adjusting your search criteria' : 'Start by adding your first note for this patient'}</p>
-                {!searchQuery && (
-                  <button className="add-first-note" onClick={() => handleAddNote()}>
-                    <i className="fas fa-plus"></i>
-                    Add First Note
-                  </button>
-                )}
-              </div>
+        ) : comments.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <i className="fas fa-comment-medical"></i>
             </div>
-          ) : (
-            <div className="notes-grid">
-              {filteredNotes.map((note, index) => (
-                <div key={note.id} className="note-wrapper">
-                  <NoteCard note={note} index={index} />
+            <h2>No comments available</h2>
+            <p>Start by adding the first clinical comment for this patient</p>
+            <button 
+              className="first-comment-btn"
+              onClick={() => setShowCommentModal(true)}
+            >
+              <i className="fas fa-plus"></i>
+              <span>Add First Comment</span>
+            </button>
+          </div>
+        ) : (
+          <div className="comments-timeline">
+            {comments.map((comment) => {
+              const date = formatDate(comment.createdAt);
+              const categoryInfo = getCategoryInfo(comment.category);
+              const roleColor = getRoleColor(comment.userRole);
+              const priorityColor = getPriorityColor(comment.priority);
+              
+              return (
+                <div 
+                  key={comment.id} 
+                  className="comment-card"
+                  onClick={() => setSelectedComment(comment)}
+                >
+                  {/* Timeline connector */}
+                  <div className="timeline-connector">
+                    <div 
+                      className="timeline-dot"
+                      style={{ backgroundColor: categoryInfo.color }}
+                    >
+                      <i className={`fas ${categoryInfo.icon}`}></i>
+                    </div>
+                    <div className="timeline-line"></div>
+                  </div>
+                  
+                  {/* Comment content */}
+                  <div className="comment-content">
+                    <div className="comment-header">
+                      <div className="comment-meta">
+                        <div className="author-info">
+                          <div 
+                            className="author-avatar"
+                            style={{ backgroundColor: roleColor }}
+                          >
+                            {comment.author ? comment.author.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <div className="author-details">
+                            <span className="author-name">{comment.author}</span>
+                            <span className="author-role">{comment.userRole}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="comment-badges">
+                          <div 
+                            className="category-badge"
+                            style={{ 
+                              backgroundColor: `${categoryInfo.color}20`,
+                              color: categoryInfo.color 
+                            }}
+                          >
+                            <i className={`fas ${categoryInfo.icon}`}></i>
+                            <span>{categoryInfo.label}</span>
+                          </div>
+                          {comment.priority === 'high' && (
+                            <div 
+                              className="priority-badge"
+                              style={{ 
+                                backgroundColor: `${priorityColor}20`,
+                                color: priorityColor 
+                              }}
+                            >
+                              <i className="fas fa-exclamation"></i>
+                              <span>High Priority</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="comment-date">
+                        <span className="relative-date">{date.relative}</span>
+                        <span className="exact-time">{date.time}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="comment-body">
+                      <p>{comment.content}</p>
+                    </div>
+                    
+                    <div className="comment-footer">
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn reply-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReplyToComment(comment);
+                          }}
+                        >
+                          <i className="fas fa-reply"></i>
+                          <span>Reply</span>
+                        </button>
+                        <button 
+                          className="action-btn delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteComment(comment);
+                          }}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                      <span className="comment-timestamp">{date.full}</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-      
-      {/* Add Note Modal - FORMULARIO CORREGIDO */}
-      {isAddingNote && (
-        <div className="modal-overlay" onClick={() => setIsAddingNote(false)}>
-          <div className="note-modal add-note-modal" onClick={(e) => e.stopPropagation()}>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add comment modal */}
+      {showCommentModal && (
+        <div className="modal-overlay" onClick={() => setShowCommentModal(false)}>
+          <div className="clinical-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>
-                {(() => {
-                  const typeInfo = getNoteTypeInfo(newNoteType);
-                  return (
-                    <>
-                      <i className={`fas ${typeInfo.icon}`} style={{color: typeInfo.color, marginRight: '8px'}}></i>
-                      Add {typeInfo.label}
-                    </>
-                  );
-                })()}
-              </h3>
-              <button className="close-modal" onClick={() => setIsAddingNote(false)}>
+              <div className="modal-title">
+                <div className="modal-icon">
+                  <i className="fas fa-comment-plus"></i>
+                </div>
+                <h3>Add Clinical Comment</h3>
+              </div>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCommentModal(false)}
+              >
                 <i className="fas fa-times"></i>
               </button>
             </div>
             
-            {/* FORMULARIO CORREGIDO - onSubmit en lugar de button onClick */}
-            <form onSubmit={handleSaveNote}>
+            <form onSubmit={handleAddComment} className="comment-form">
               <div className="modal-body">
-                <div className="form-group">
-                  <label htmlFor="noteType">Note Type</label>
+                <div className="field-group">
+                  <label htmlFor="category">Comment Category</label>
                   <select 
-                    id="noteType" 
-                    name="noteType" 
-                    value={newNoteType}
-                    onChange={(e) => setNewNoteType(e.target.value)}
-                    className="note-type-select"
+                    id="category" 
+                    value={commentCategory}
+                    onChange={(e) => setCommentCategory(e.target.value)}
+                    className="clinical-select"
                   >
-                    {NOTE_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
+                    {commentCategories.map(category => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                <div className="form-group">
-                  <label htmlFor="title">Title</label>
-                  <input 
-                    type="text" 
-                    id="title" 
-                    name="title" 
-                    placeholder="Enter note title"
+                
+                <div className="field-group">
+                  <label htmlFor="comment">Clinical Comment</label>
+                  <textarea
+                    id="comment"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    rows={6}
+                    placeholder="Enter your clinical observation, progress note, or comment here..."
+                    className="clinical-textarea"
                     required
-                  />
+                  ></textarea>
+                  <div className="character-count">
+                    {newComment.length}/500 characters
+                  </div>
                 </div>
-                
-                {newNoteType !== 'signature' ? (
-                  <div className="form-group">
-                    <label htmlFor="content">Content</label>
-                    <textarea
-                      id="content"
-                      name="content"
-                      ref={textareaRef}
-                      rows={10}
-                      placeholder="Enter note content..."
-                      className="custom-textarea"
-                      required
-                    ></textarea>
-                    <div className="text-editor-toolbar">
-                      <button type="button" onClick={() => {
-                        if (textareaRef.current) {
-                          const textarea = textareaRef.current;
-                          const start = textarea.selectionStart;
-                          const end = textarea.selectionEnd;
-                          const text = textarea.value;
-                          const before = text.substring(0, start);
-                          const after = text.substring(end);
-                          textarea.value = before + '**Bold text**' + after;
-                          textarea.focus();
-                        }
-                      }}>
-                        <i className="fas fa-bold"></i>
-                      </button>
-                      <button type="button" onClick={() => {
-                        if (textareaRef.current) {
-                          const textarea = textareaRef.current;
-                          const start = textarea.selectionStart;
-                          const end = textarea.selectionEnd;
-                          const text = textarea.value;
-                          const before = text.substring(0, start);
-                          const after = text.substring(end);
-                          textarea.value = before + '*Italic text*' + after;
-                          textarea.focus();
-                        }
-                      }}>
-                        <i className="fas fa-italic"></i>
-                      </button>
-                      <button type="button" onClick={() => {
-                        if (textareaRef.current) {
-                          const textarea = textareaRef.current;
-                          const start = textarea.selectionStart;
-                          const text = textarea.value;
-                          const before = text.substring(0, start);
-                          const after = text.substring(start);
-                          textarea.value = before + '# Heading\n' + after;
-                          textarea.focus();
-                        }
-                      }}>
-                        <i className="fas fa-heading"></i>
-                      </button>
-                      <button type="button" onClick={() => {
-                        if (textareaRef.current) {
-                          const textarea = textareaRef.current;
-                          const start = textarea.selectionStart;
-                          const text = textarea.value;
-                          const before = text.substring(0, start);
-                          const after = text.substring(start);
-                          textarea.value = before + '\n- List item\n- List item\n- List item\n' + after;
-                          textarea.focus();
-                        }
-                      }}>
-                        <i className="fas fa-list-ul"></i>
-                      </button>
-                      <button type="button" onClick={() => {
-                        if (textareaRef.current) {
-                          const textarea = textareaRef.current;
-                          const start = textarea.selectionStart;
-                          const text = textarea.value;
-                          const before = text.substring(0, start);
-                          const after = text.substring(start);
-                          textarea.value = before + '\n1. Numbered item\n2. Numbered item\n3. Numbered item\n' + after;
-                          textarea.focus();
-                        }
-                      }}>
-                        <i className="fas fa-list-ol"></i>
-                      </button>
+
+                <div className="comment-preview">
+                  <h4>Preview</h4>
+                  <div className="preview-card">
+                    <div className="preview-meta">
+                      <div className="preview-author">
+                        <div 
+                          className="preview-avatar"
+                          style={{ backgroundColor: getRoleColor(currentUser?.role) }}
+                        >
+                          {currentUser?.username ? currentUser.username.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="preview-details">
+                          <span>{currentUser?.fullname || currentUser?.username || 'Current User'}</span>
+                          <span>{currentUser?.role || 'Staff'}</span>
+                        </div>
+                      </div>
+                      <div 
+                        className="preview-category"
+                        style={{ 
+                          backgroundColor: `${getCategoryInfo(commentCategory).color}20`,
+                          color: getCategoryInfo(commentCategory).color 
+                        }}
+                      >
+                        <i className={`fas ${getCategoryInfo(commentCategory).icon}`}></i>
+                        <span>{getCategoryInfo(commentCategory).label}</span>
+                      </div>
                     </div>
-                    <div className="textarea-note">
-                      <small>Tip: You can use Markdown for formatting (*italic*, **bold**, # heading, etc.)</small>
+                    <div className="preview-content">
+                      {newComment || 'Your comment will appear here...'}
                     </div>
-                  </div>
-                ) : (
-                  <div className="form-group signature-group">
-                    <label>Signature</label>
-                    <div className="signature-container">
-                      <canvas
-                        ref={canvasRef}
-                        width={500}
-                        height={200}
-                        className="signature-canvas"
-                        onMouseDown={startDrawing}
-                        onMouseMove={draw}
-                        onMouseUp={stopDrawing}
-                        onMouseOut={stopDrawing}
-                      />
-                    </div>
-                    <button type="button" className="clear-signature" onClick={clearSignature}>
-                      <i className="fas fa-eraser"></i> Clear
-                    </button>
-                    <div className="signature-instruction">
-                      <small>Sign using your mouse or touchpad in the box above</small>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="category">Category</label>
-                    <select id="category" name="category" defaultValue="Clinical">
-                      {CATEGORIES.map(category => (
-                        <option key={category.value} value={category.value}>
-                          {category.value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="tags">Tags (comma separated)</label>
-                    <input 
-                      type="text" 
-                      id="tags" 
-                      name="tags" 
-                      placeholder="e.g. important, follow-up, review"
-                    />
                   </div>
                 </div>
               </div>
@@ -992,23 +504,26 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
                 <button 
                   type="button" 
                   className="cancel-btn" 
-                  onClick={() => setIsAddingNote(false)}
-                  disabled={isSaving}
+                  onClick={() => setShowCommentModal(false)}
+                  disabled={saving}
                 >
-                  <i className="fas fa-times"></i> Cancel
+                  <i className="fas fa-times"></i>
+                  <span>Cancel</span>
                 </button>
                 <button 
                   type="submit" 
                   className="save-btn"
-                  disabled={isSaving}
+                  disabled={saving || !newComment.trim()}
                 >
-                  {isSaving ? (
+                  {saving ? (
                     <>
-                      <i className="fas fa-spinner fa-spin"></i> Saving...
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Adding...</span>
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-save"></i> Save Note
+                      <i className="fas fa-plus"></i>
+                      <span>Add Comment</span>
                     </>
                   )}
                 </button>
@@ -1017,204 +532,190 @@ const NotesComponent = ({ patient, onUpdateNotes }) => {
           </div>
         </div>
       )}
-      
-      {/* View Note Modal */}
-      {activeNoteId && (
-        <div className="modal-overlay" onClick={() => setActiveNoteId(null)}>
-          <div className="note-modal view-note-modal" onClick={(e) => e.stopPropagation()}>
-            {(() => {
-              const activeNote = notes.find(note => note.id === activeNoteId);
-              if (!activeNote) return null;
-              
-              const dateFormatted = formatShortDate(activeNote.created_at || activeNote.date || new Date().toISOString());
-              const noteTypeInfo = getNoteTypeInfo(activeNote.note_type || activeNote.noteType);
-              
-              return (
-                <>
-                  <div className="modal-header">
-                    <div className="modal-title">
-                      <div 
-                        className="category-indicator" 
-                        style={{ backgroundColor: getCategoryColor(activeNote.category) }}
-                      ></div>
-                      <h3>{activeNote.title}</h3>
-                    </div>
-                    <div className="modal-actions">
-                      <button 
-                        className="action-btn pin-btn" 
-                        onClick={() => togglePinNote(activeNote.id)}
-                        title={(activeNote.is_pinned || activeNote.isPinned) ? "Unpin Note" : "Pin Note"}
-                      >
-                        <i className="fas fa-thumbtack"></i>
-                      </button>
-                      <button className="close-modal" onClick={() => setActiveNoteId(null)}>
-                        <i className="fas fa-times"></i>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="modal-body">
-                    <div className="view-note-info">
-                      <div 
-                        className="view-author-avatar"
-                        style={{ backgroundColor: getRoleColor(activeNote.user_role || activeNote.userRole) }}
-                      >
-                        {activeNote.author ? activeNote.author.charAt(0) : 'U'}
-                      </div>
-                      <div className="view-note-metadata">
-                        <div className="view-note-author">
-                          <span className="view-author-name">{activeNote.author || 'Unknown'}</span>
-                          <span 
-                            className="view-author-role"
-                            style={{ color: getRoleColor(activeNote.user_role || activeNote.userRole) }}
-                          >
-                            {activeNote.user_role || activeNote.userRole || 'Staff'}
-                          </span>
-                        </div>
-                        <div className="view-note-date">
-                          <span className="date-display">
-                            <i className="far fa-calendar-alt"></i>
-                            {dateFormatted.month} {dateFormatted.day}, {dateFormatted.year} at {dateFormatted.time}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="note-type-label">
-                      <span className="note-type-badge" style={{
-                        backgroundColor: `${noteTypeInfo.color}20`, 
-                        color: noteTypeInfo.color
-                      }}>
-                        <i className={`fas ${noteTypeInfo.icon}`}></i> {noteTypeInfo.label}
-                      </span>
-                    </div>
-                    
-                    {(activeNote.note_type || activeNote.noteType) === 'signature' ? (
-                      <div className="note-full-signature">
-                        <img src={activeNote.content} alt="Signature" style={{maxWidth: '100%', height: 'auto'}} />
-                      </div>
-                    ) : (
-                      <div className="note-full-text">
-                        <p style={{whiteSpace: 'pre-wrap'}}>{activeNote.content}</p>
-                      </div>
-                    )}
-                    
-                    {activeNote.tags && (
-                      <div className="view-note-tags">
-                        <div className="tags-header">
-                          <i className="fas fa-tags"></i> Tags
-                        </div>
-                        <div className="tags-list">
-                          {(typeof activeNote.tags === 'string' ? activeNote.tags.split(',') : activeNote.tags).map((tag, idx) => (
-                            <span key={idx} className="tag">
-                              {tag.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="modal-footer">
-                    <div className="note-details">
-                      <div className="category-info">
-                        <span className="category-label">Category:</span>
-                        <span 
-                          className="category-badge"
-                          style={{ 
-                            backgroundColor: getCategoryColor(activeNote.category),
-                            color: 'white',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px'
-                          }}
-                        >
-                          {activeNote.category || 'Clinical'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="modal-actions">
-                      <button 
-                        className="delete-btn" 
-                        onClick={() => { 
-                          handleDeleteClick(activeNote); 
-                          setActiveNoteId(null); 
-                        }}
-                      >
-                        <i className="fas fa-trash-alt"></i> Delete
-                      </button>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-      
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && noteToDelete && (
-        <div className="modal-overlay">
-          <div className="note-modal delete-confirm-modal">
-            <div className="modal-header delete-header">
-              <h3>Delete Note</h3>
-              <button className="close-modal" onClick={cancelDelete}>
+
+      {/* View comment modal */}
+      {selectedComment && (
+        <div className="modal-overlay" onClick={() => setSelectedComment(null)}>
+          <div className="clinical-modal view-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">
+                <div className="modal-icon">
+                  <i className={`fas ${getCategoryInfo(selectedComment.category).icon}`}></i>
+                </div>
+                <h3>{getCategoryInfo(selectedComment.category).label}</h3>
+              </div>
+              <button 
+                className="close-btn"
+                onClick={() => setSelectedComment(null)}
+              >
                 <i className="fas fa-times"></i>
               </button>
             </div>
             
-            <div className="modal-body delete-body">
-              <div className="delete-warning-icon">
-                <i className="fas fa-exclamation-triangle"></i>
-              </div>
-              
-              <h4 className="delete-title">Are you sure you want to delete this note?</h4>
-              
-              <div className="delete-note-preview">
-                <div className="preview-title">
-                  <i className={`fas ${getNoteTypeInfo(noteToDelete.note_type || noteToDelete.noteType).icon}`}></i>
-                  {noteToDelete.title}
+            <div className="modal-body">
+              <div className="comment-details">
+                <div className="comment-author-full">
+                  <div 
+                    className="large-avatar"
+                    style={{ backgroundColor: getRoleColor(selectedComment.userRole) }}
+                  >
+                    {selectedComment.author ? selectedComment.author.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="author-info-complete">
+                    <h4>{selectedComment.author}</h4>
+                    <p>{selectedComment.userRole}</p>
+                    <span className="full-date">
+                      {formatDate(selectedComment.createdAt).full} at {formatDate(selectedComment.createdAt).time}
+                    </span>
+                  </div>
                 </div>
                 
-                <div className="preview-details">
-                  <span className="preview-author">
-                    <i className="fas fa-user-md"></i> {noteToDelete.author || 'Unknown'}
-                  </span>
-                  <span className="preview-date">
-                    <i className="fas fa-calendar-alt"></i> {formatDate(noteToDelete.created_at || noteToDelete.date || new Date().toISOString())}
-                  </span>
+                <div className="comment-content-full">
+                  <h4>Comment</h4>
+                  <div className="comment-text">
+                    <p>{selectedComment.content}</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="delete-warning">
-                <i className="fas fa-exclamation-circle"></i>
-                <span>This action cannot be undone.</span>
+                
+                <div className="comment-metadata">
+                  <div className="metadata-item">
+                    <span className="label">Category:</span>
+                    <span 
+                      className="value category-value"
+                      style={{ color: getCategoryInfo(selectedComment.category).color }}
+                    >
+                      <i className={`fas ${getCategoryInfo(selectedComment.category).icon}`}></i>
+                      {getCategoryInfo(selectedComment.category).label}
+                    </span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="label">Priority:</span>
+                    <span 
+                      className="value priority-value"
+                      style={{ color: getPriorityColor(selectedComment.priority) }}
+                    >
+                      <i className="fas fa-flag"></i>
+                      {selectedComment.priority.charAt(0).toUpperCase() + selectedComment.priority.slice(1)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="modal-footer delete-footer">
-              <button className="cancel-btn" onClick={cancelDelete}>
-                <i className="fas fa-times"></i> Cancel
+            <div className="modal-footer">
+              <button 
+                className="action-btn-modal reply-btn-modal"
+                onClick={() => handleReplyToComment(selectedComment)}
+              >
+                <i className="fas fa-reply"></i>
+                <span>Reply</span>
               </button>
-              <button className="delete-confirm-btn" onClick={confirmDelete}>
-                <i className="fas fa-trash-alt"></i> Delete Note
+              <button 
+                className="action-btn-modal delete-btn-modal"
+                onClick={() => handleDeleteComment(selectedComment)}
+              >
+                <i className="fas fa-trash-alt"></i>
+                <span>Delete</span>
+              </button>
+              <button 
+                className="close-modal-btn"
+                onClick={() => setSelectedComment(null)}
+              >
+                <i className="fas fa-check"></i>
+                <span>Close</span>
               </button>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Floating Action Button */}
-      <div className="floating-action-button">
-        <button 
-          className="fab-button"
-          onClick={() => handleAddNote()}
-        >
-          <i className="fas fa-plus"></i>
-          <span className="fab-tooltip">Add Note</span>
-        </button>
-      </div>
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal && commentToDelete && (
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="clinical-modal delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">
+                <div className="modal-icon delete-icon">
+                  <i className="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Confirm Delete</h3>
+              </div>
+              <button className="close-btn" onClick={cancelDelete}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="delete-confirmation">
+                <p className="warning-text">
+                  Are you sure you want to delete this clinical comment? This action cannot be undone.
+                </p>
+                
+                <div className="comment-preview-delete">
+                  <div className="preview-header">
+                    <div className="preview-author">
+                      <div 
+                        className="preview-avatar"
+                        style={{ backgroundColor: getRoleColor(commentToDelete.userRole) }}
+                      >
+                        {commentToDelete.author ? commentToDelete.author.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="preview-details">
+                        <span className="author-name">{commentToDelete.author}</span>
+                        <span className="author-role">{commentToDelete.userRole}</span>
+                      </div>
+                    </div>
+                    <div 
+                      className="preview-category"
+                      style={{ 
+                        backgroundColor: `${getCategoryInfo(commentToDelete.category).color}20`,
+                        color: getCategoryInfo(commentToDelete.category).color 
+                      }}
+                    >
+                      <i className={`fas ${getCategoryInfo(commentToDelete.category).icon}`}></i>
+                      <span>{getCategoryInfo(commentToDelete.category).label}</span>
+                    </div>
+                  </div>
+                  <div className="preview-content">
+                    <p>{commentToDelete.content}</p>
+                  </div>
+                  <div className="preview-date">
+                    {formatDate(commentToDelete.createdAt).full}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="cancel-btn" 
+                onClick={cancelDelete}
+                disabled={deleting}
+              >
+                <i className="fas fa-times"></i>
+                <span>Cancel</span>
+              </button>
+              <button 
+                className="delete-confirm-btn" 
+                onClick={confirmDeleteComment}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-trash-alt"></i>
+                    <span>Delete Comment</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
