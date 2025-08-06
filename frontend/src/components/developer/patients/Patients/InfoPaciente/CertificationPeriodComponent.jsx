@@ -107,43 +107,20 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
     }
   };
   
-  // Cargar seguros desde la API
-  const fetchInsurances = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/insurances/`);
-      if (!response.ok) {
-        // Si no existe el endpoint de seguros, usar lista básica
-        console.warn('Insurance endpoint not available, using basic list');
-        return [
-          { id: 1, name: 'Medicare' },
-          { id: 2, name: 'Medicaid' },
-          { id: 3, name: 'Blue Cross Blue Shield' },
-          { id: 4, name: 'Aetna' },
-          { id: 5, name: 'Cigna' },
-          { id: 6, name: 'UnitedHealth' },
-          { id: 7, name: 'Humana' },
-          { id: 8, name: 'Kaiser Permanente' },
-          { id: 9, name: 'Anthem' },
-          { id: 10, name: 'Other' }
-        ];
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching insurances:', error);
-      // Lista de seguros básica como fallback
-      return [
-        { id: 1, name: 'Medicare' },
-        { id: 2, name: 'Medicaid' },
-        { id: 3, name: 'Blue Cross Blue Shield' },
-        { id: 4, name: 'Aetna' },
-        { id: 5, name: 'Cigna' },
-        { id: 6, name: 'UnitedHealth' },
-        { id: 7, name: 'Humana' },
-        { id: 8, name: 'Kaiser Permanente' },
-        { id: 9, name: 'Anthem' },
-        { id: 10, name: 'Other' }
-      ];
-    }
+  // Lista estática de seguros - no requiere API
+  const getInsurancesList = () => {
+    return [
+      { id: 1, name: 'Medicare' },
+      { id: 2, name: 'Medicaid' },
+      { id: 3, name: 'Blue Cross Blue Shield' },
+      { id: 4, name: 'Aetna' },
+      { id: 5, name: 'Cigna' },
+      { id: 6, name: 'UnitedHealth' },
+      { id: 7, name: 'Humana' },
+      { id: 8, name: 'Kaiser Permanente' },
+      { id: 9, name: 'Anthem' },
+      { id: 10, name: 'Other' }
+    ];
   };
   
   // Función para controlar el período activo localmente
@@ -291,14 +268,13 @@ const CertificationPeriodComponent = ({ patient, onUpdateCertPeriod }) => {
         setError(null);
 
         // Cargar todo en paralelo
-        const [agenciesData, insurancesData, certPeriodsData] = await Promise.all([
+        const [agenciesData, certPeriodsData] = await Promise.all([
           fetchAgencies(),
-          fetchInsurances(),
           fetchCertPeriods()
         ]);
 
         setAgencies(agenciesData);
-        setInsurances(insurancesData);
+        setInsurances(getInsurancesList());
 
         // El nombre de la agencia ahora viene resuelto en el objeto patient
         const agencyName = patient.agency_name || 'Unknown Agency';
