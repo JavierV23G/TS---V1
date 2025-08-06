@@ -19,6 +19,7 @@ import AnkleInversionStrengthening from '../../../../../assets/exercises/Ankle-I
 import AnkleInversionStretching from '../../../../../assets/exercises/Ankle-Inversion-Stretching.png';
 import AnklePlantarflexionCoordination from '../../../../../assets/exercises/Ankle-Plantarflexion-Coordination.png';
 import AnklePlantarflexionStrengthening from '../../../../../assets/exercises/Ankle-Plantarflexion-Strengthening.png';
+import AnklePlantarflexionStretching from '../../../../../assets/exercises/Ankle-Plantarflexion-Stretching.png';
 
 // Arm exercises
 import ArmChairPush from '../../../../../assets/exercises/Arm-Chair-Push.png';
@@ -107,6 +108,7 @@ import ForwardLunge from '../../../../../assets/exercises/Forward-Lunge-in-Stand
 
 // Full Body exercises
 import FullBodyCoordinationCoordination from '../../../../../assets/exercises/Full-Body-Coordination-Coordination.png';
+import FullBodyCoordinationFunctional from '../../../../../assets/exercises/Full-Body-Coordination-Functional.png';
 import FullBodyFunctionalCoordination from '../../../../../assets/exercises/Full-Body-Functional-Coordination.png';
 
 // Hand exercises
@@ -122,6 +124,7 @@ import HandGripStretching from '../../../../../assets/exercises/Hand-Grip-Stretc
 import HandOppositionBalance from '../../../../../assets/exercises/Hand-Opposition-Balance.png';
 import HandOppositionCoordination from '../../../../../assets/exercises/Hand-Opposition-Coordination.png';
 import HandOppositionStrengthening from '../../../../../assets/exercises/Hand-Opposition-Strengthening.png';
+import HandOppositionStretching from '../../../../../assets/exercises/Hand-Opposition-Stretching.png';
 import HandPinchBalance from '../../../../../assets/exercises/Hand-Pinch-Balance.png';
 import HandPinchCoordination from '../../../../../assets/exercises/Hand-Pinch-Coordination.png';
 import HandPinchFunctional from '../../../../../assets/exercises/Hand-Pinch-Functional.png';
@@ -143,6 +146,7 @@ import HipFlexionBalance from '../../../../../assets/exercises/Hip-Flexion-Balan
 import HipFlexionCoordination from '../../../../../assets/exercises/Hip-Flexion-Coordination.png';
 import HipFlexionFunctional from '../../../../../assets/exercises/Hip-Flexion-Functional.png';
 import HipRotationBalance from '../../../../../assets/exercises/Hip-Rotation-Balance.png';
+import HipRotationCoordination from '../../../../../assets/exercises/Hi- Rotation-Coordination.png';
 import HipRotationStrengthening from '../../../../../assets/exercises/Hip-Rotation-Strengthening.png';
 import HipRotationStretching from '../../../../../assets/exercises/Hip-Rotation-Stretching.png';
 
@@ -185,6 +189,7 @@ import ShoulderAbductionCoordination from '../../../../../assets/exercises/Shoul
 import ShoulderAbductionFunctional from '../../../../../assets/exercises/Shoulder-Abduction-Functional.png';
 import ShoulderAbductionRangeOfMotion from '../../../../../assets/exercises/Shoulder-Abduction-Range-of-Motion.png';
 import ShoulderAbductionStretching from '../../../../../assets/exercises/Shoulder-Abduction-Stretching.png';
+import ShoulderAdductionBalance from '../../../../../assets/exercises/Shoulder-Adduction-Balance.png';
 import ShoulderAdductionCoordination from '../../../../../assets/exercises/Shoulder-Adduction-Coordination.png';
 import ShoulderAdductionStrengthening from '../../../../../assets/exercises/Shoulder-Adduction-Strengthening.png';
 import ShoulderAdductionStretching from '../../../../../assets/exercises/Shoulder-Adduction-Stretching.png';
@@ -234,13 +239,15 @@ const ExercisesComponent = () => {
   const [showLibrary, setShowLibrary] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // Nueva confirmación de borrado
-  const [exerciseToDelete, setExerciseToDelete] = useState(null); // Ejercicio a borrar
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [exerciseToDelete, setExerciseToDelete] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [editingExercise, setEditingExercise] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeBodyPart, setActiveBodyPart] = useState('All');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [activeDiscipline, setActiveDiscipline] = useState('All'); // New discipline filter
+  const [libraryDisciplineFilter, setLibraryDisciplineFilter] = useState('All'); // Library discipline filter
   const [notification, setNotification] = useState(null);
   
   // Refs
@@ -263,6 +270,7 @@ const ExercisesComponent = () => {
     'Ankle-Inversion-Stretching': AnkleInversionStretching,
     'Ankle-Plantarflexion-Coordination': AnklePlantarflexionCoordination,
     'Ankle-Plantarflexion-Strengthening': AnklePlantarflexionStrengthening,
+    'Ankle-Plantarflexion-Stretching': AnklePlantarflexionStretching,
     'Arm-Chair-Push': ArmChairPush,
     'Back-Lower-Balance': BackLowerBalance,
     'Back-Lower-Coordination': BackLowerCoordination,
@@ -333,6 +341,7 @@ const ExercisesComponent = () => {
     'Foot-Toe-Flexion-Stretching': FootToeFlexionStretching,
     'Forward-Lunge-in-Standing': ForwardLunge,
     'Full-Body-Coordination-Coordination': FullBodyCoordinationCoordination,
+    'Full-Body-Coordination-Functional': FullBodyCoordinationFunctional,
     'Full-Body-Functional-Coordination': FullBodyFunctionalCoordination,
     'Hand-Finger-Extension-Balance': HandFingerExtensionBalance,
     'Hand-Finger-Extension-Coordination': HandFingerExtensionCoordination,
@@ -346,6 +355,7 @@ const ExercisesComponent = () => {
     'Hand-Opposition-Balance': HandOppositionBalance,
     'Hand-Opposition-Coordination': HandOppositionCoordination,
     'Hand-Opposition-Strengthening': HandOppositionStrengthening,
+    'Hand-Opposition-Stretching': HandOppositionStretching,
     'Hand-Pinch-Balance': HandPinchBalance,
     'Hand-Pinch-Coordination': HandPinchCoordination,
     'Hand-Pinch-Functional': HandPinchFunctional,
@@ -365,6 +375,7 @@ const ExercisesComponent = () => {
     'Hip-Flexion-Coordination': HipFlexionCoordination,
     'Hip-Flexion-Functional': HipFlexionFunctional,
     'Hip-Rotation-Balance': HipRotationBalance,
+    'Hi- Rotation-Coordination': HipRotationCoordination,
     'Hip-Rotation-Strengthening': HipRotationStrengthening,
     'Hip-Rotation-Stretching': HipRotationStretching,
     'Knee-Extension-Balance': KneeExtensionBalance,
@@ -401,6 +412,7 @@ const ExercisesComponent = () => {
     'Shoulder-Abduction-Functional': ShoulderAbductionFunctional,
     'Shoulder-Abduction-Range-of-Motion': ShoulderAbductionRangeOfMotion,
     'Shoulder-Abduction-Stretching': ShoulderAbductionStretching,
+    'Shoulder-Adduction-Balance': ShoulderAdductionBalance,
     'Shoulder-Adduction-Coordination': ShoulderAdductionCoordination,
     'Shoulder-Adduction-Strengthening': ShoulderAdductionStrengthening,
     'Shoulder-Adduction-Stretching': ShoulderAdductionStretching,
@@ -519,6 +531,7 @@ const ExercisesComponent = () => {
   // Filter options
   const bodyParts = ['All', 'Shoulder', 'Elbow', 'Wrist', 'Hand', 'Hip', 'Knee', 'Ankle', 'Foot', 'Neck', 'Back', 'Core', 'Full Body'];
   const categories = ['All', 'Strengthening', 'Stretching', 'Balance', 'Coordination', 'Endurance', 'Functional', 'Range of Motion'];
+  const disciplines = ['All', 'PT', 'OT', 'ST'];
 
   // Get user's allowed disciplines based on role
   const getUserDisciplines = () => {
@@ -573,15 +586,11 @@ const ExercisesComponent = () => {
     }
   };
 
-  // Filter exercises for library based on user role
+  // Filter exercises for library - SHOW ALL EXERCISES with optional discipline filter
   const getFilteredLibraryExercises = () => {
     const allExercises = generateExerciseLibrary();
-    const userDisciplines = getUserDisciplines();
     
     return allExercises.filter(exercise => {
-      // Filter by user's allowed disciplines
-      if (!userDisciplines.includes(exercise.discipline)) return false;
-      
       // Filter by search query
       const matchesSearch = searchQuery === '' || 
         exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -593,7 +602,18 @@ const ExercisesComponent = () => {
       // Filter by category
       const matchesCategory = activeCategory === 'All' || exercise.category === activeCategory;
       
-      return matchesSearch && matchesBodyPart && matchesCategory;
+      // Filter by discipline (NEW - shows all by default)
+      const matchesDiscipline = libraryDisciplineFilter === 'All' || exercise.discipline === libraryDisciplineFilter;
+      
+      return matchesSearch && matchesBodyPart && matchesCategory && matchesDiscipline;
+    });
+  };
+
+  // Filter patient's assigned exercises by discipline
+  const getFilteredPatientExercises = () => {
+    return exercises.filter(exercise => {
+      const matchesDiscipline = activeDiscipline === 'All' || exercise.discipline === activeDiscipline;
+      return matchesDiscipline;
     });
   };
 
@@ -708,421 +728,20 @@ const ExercisesComponent = () => {
     setShowEditModal(true);
   };
 
-  // Print exercises
-  const handlePrintExercises = () => {
-    const hepExercises = exercises.filter(ex => ex.isHEP);
-    if (hepExercises.length === 0) {
-      showNotification('No exercises marked for HEP to print', 'warning');
-      return;
-    }
-    
-    // Crear el contenido HTML para imprimir
-    const printWindow = window.open('', '_blank');
-    const printContent = generatePrintContent(hepExercises);
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+  // Removed print functionality as requested
+  // Print button and generateProfessionalTherapyDocument function have been removed
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery('');
+    setActiveBodyPart('All');
+    setActiveCategory('All');
+    setLibraryDisciplineFilter('All');
   };
 
-  // Generar contenido HTML para imprimir
-  const generatePrintContent = (hepExercises) => {
-    // Obtener datos del paciente (simulado)
-    const patientData = {
-      name: 'John Doe',
-      dateOfBirth: '01/15/1980',
-      diagnosis: 'Lower back pain, muscle weakness',
-      therapist: currentUser?.name || 'Physical Therapist',
-      clinic: 'Physical Therapy Clinic',
-      date: new Date().toLocaleDateString()
-    };
-
-    return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Home Exercise Program - ${patientData.name}</title>
-      <style>
-        @page {
-          margin: 0.75in;
-          size: letter;
-        }
-        
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Arial', sans-serif;
-          line-height: 1.4;
-          color: #333;
-          background: white;
-        }
-        
-        .header {
-          border-bottom: 3px solid #4f46e5;
-          padding-bottom: 20px;
-          margin-bottom: 30px;
-        }
-        
-        .clinic-info {
-          text-align: center;
-          margin-bottom: 20px;
-        }
-        
-        .clinic-name {
-          font-size: 24px;
-          font-weight: bold;
-          color: #4f46e5;
-          margin-bottom: 5px;
-        }
-        
-        .clinic-subtitle {
-          font-size: 16px;
-          color: #666;
-          margin-bottom: 15px;
-        }
-        
-        .document-title {
-          text-align: center;
-          font-size: 22px;
-          font-weight: bold;
-          color: #1e293b;
-          margin-bottom: 25px;
-          padding: 10px;
-          background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-          border: 1px solid #cbd5e1;
-          border-radius: 8px;
-        }
-        
-        .patient-info {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-bottom: 30px;
-          padding: 20px;
-          background: #f8fafc;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-        }
-        
-        .patient-info h3 {
-          color: #4f46e5;
-          font-size: 18px;
-          margin-bottom: 15px;
-          border-bottom: 2px solid #4f46e5;
-          padding-bottom: 5px;
-        }
-        
-        .info-row {
-          display: flex;
-          margin-bottom: 8px;
-        }
-        
-        .info-label {
-          font-weight: 600;
-          min-width: 100px;
-          color: #64748b;
-        }
-        
-        .info-value {
-          color: #1e293b;
-        }
-        
-        .instructions {
-          background: #fef3c7;
-          border: 1px solid #f59e0b;
-          border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 25px;
-        }
-        
-        .instructions h3 {
-          color: #92400e;
-          margin-bottom: 10px;
-          font-size: 16px;
-        }
-        
-        .instructions ul {
-          margin-left: 20px;
-          color: #92400e;
-        }
-        
-        .instructions li {
-          margin-bottom: 5px;
-        }
-        
-        .exercises-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 25px;
-        }
-        
-        .exercise-card {
-          border: 2px solid #e2e8f0;
-          border-radius: 12px;
-          overflow: hidden;
-          background: white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-        
-        .exercise-header {
-          background: linear-gradient(135deg, #4f46e5, #6366f1);
-          color: white;
-          padding: 15px;
-          text-align: center;
-        }
-        
-        .exercise-name {
-          font-size: 16px;
-          font-weight: bold;
-          margin-bottom: 5px;
-        }
-        
-        .exercise-category {
-          font-size: 12px;
-          opacity: 0.9;
-          background: rgba(255,255,255,0.2);
-          padding: 4px 8px;
-          border-radius: 12px;
-          display: inline-block;
-        }
-        
-        .exercise-image {
-          height: 180px;
-          overflow: hidden;
-          background: #f8fafc;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .exercise-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        
-        .exercise-placeholder {
-          color: #94a3b8;
-          font-size: 14px;
-          text-align: center;
-        }
-        
-        .exercise-details {
-          padding: 15px;
-        }
-        
-        .parameters {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-bottom: 15px;
-        }
-        
-        .parameter {
-          text-align: center;
-          padding: 8px;
-          background: #f1f5f9;
-          border-radius: 6px;
-          border: 1px solid #e2e8f0;
-        }
-        
-        .parameter-label {
-          font-size: 11px;
-          color: #64748b;
-          margin-bottom: 2px;
-          font-weight: 600;
-        }
-        
-        .parameter-value {
-          font-size: 16px;
-          font-weight: bold;
-          color: #1e293b;
-        }
-        
-        .exercise-notes {
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
-          border-radius: 6px;
-          padding: 10px;
-          margin-top: 10px;
-        }
-        
-        .notes-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #0369a1;
-          margin-bottom: 5px;
-        }
-        
-        .notes-content {
-          font-size: 13px;
-          color: #1e40af;
-          line-height: 1.4;
-        }
-        
-        .footer {
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 2px solid #e2e8f0;
-          text-align: center;
-          font-size: 12px;
-          color: #64748b;
-        }
-        
-        .footer-info {
-          margin-bottom: 10px;
-        }
-        
-        .contact-info {
-          font-weight: 600;
-          color: #4f46e5;
-        }
-        
-        /* Single column for smaller exercises */
-        @media print {
-          .exercises-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-          
-          .exercise-card {
-            margin-bottom: 20px;
-          }
-        }
-        
-        /* If many exercises, use single column */
-        ${hepExercises.length > 6 ? `
-          .exercises-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .exercise-card {
-            max-width: 600px;
-            margin: 0 auto 20px auto;
-          }
-          
-          .exercise-image {
-            height: 140px;
-          }
-        ` : ''}
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="clinic-info">
-          <div class="clinic-name">${patientData.clinic}</div>
-          <div class="clinic-subtitle">Physical Therapy & Rehabilitation Services</div>
-        </div>
-        
-        <div class="document-title">
-          Home Exercise Program (HEP)
-        </div>
-        
-        <div class="patient-info">
-          <div>
-            <h3>Patient Information</h3>
-            <div class="info-row">
-              <span class="info-label">Name:</span>
-              <span class="info-value">${patientData.name}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">DOB:</span>
-              <span class="info-value">${patientData.dateOfBirth}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Diagnosis:</span>
-              <span class="info-value">${patientData.diagnosis}</span>
-            </div>
-          </div>
-          <div>
-            <h3>Program Details</h3>
-            <div class="info-row">
-              <span class="info-label">Therapist:</span>
-              <span class="info-value">${patientData.therapist}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Date:</span>
-              <span class="info-value">${patientData.date}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Exercises:</span>
-              <span class="info-value">${hepExercises.length} prescribed</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="instructions">
-        <h3>Important Instructions</h3>
-        <ul>
-          <li>Perform exercises as prescribed by your therapist</li>
-          <li>Stop if you experience increased pain or discomfort</li>
-          <li>Maintain proper form and breathing throughout each exercise</li>
-          <li>Progress gradually and listen to your body</li>
-          <li>Contact your therapist if you have any questions or concerns</li>
-        </ul>
-      </div>
-      
-      <div class="exercises-grid">
-        ${hepExercises.map(exercise => `
-          <div class="exercise-card">
-            <div class="exercise-header">
-              <div class="exercise-name">${exercise.name}</div>
-              <div class="exercise-category">${exercise.category} • ${exercise.bodyPart}</div>
-            </div>
-            
-            <div class="exercise-image">
-              ${exercise.imageKey && exerciseImages[exercise.imageKey] ? 
-                `<img src="${exerciseImages[exercise.imageKey]}" alt="${exercise.name}" />` :
-                `<div class="exercise-placeholder">Exercise Illustration</div>`
-              }
-            </div>
-            
-            <div class="exercise-details">
-              <div class="parameters">
-                <div class="parameter">
-                  <div class="parameter-label">SETS</div>
-                  <div class="parameter-value">${exercise.sets}</div>
-                </div>
-                <div class="parameter">
-                  <div class="parameter-label">REPS</div>
-                  <div class="parameter-value">${exercise.reps}</div>
-                </div>
-                <div class="parameter">
-                  <div class="parameter-label">DAILY</div>
-                  <div class="parameter-value">${exercise.sessions}x</div>
-                </div>
-              </div>
-              
-              ${exercise.notes ? `
-                <div class="exercise-notes">
-                  <div class="notes-label">Special Instructions:</div>
-                  <div class="notes-content">${exercise.notes}</div>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      
-      <div class="footer">
-        <div class="footer-info">
-          This exercise program has been specifically designed for you by your physical therapist.
-        </div>
-        <div class="contact-info">
-          Questions? Contact us at: (555) 123-4567 | info@ptclinic.com
-        </div>
-      </div>
-    </body>
-    </html>
-    `;
+  // Reset patient exercise filters
+  const resetPatientFilters = () => {
+    setActiveDiscipline('All');
   };
 
   // Show notification
@@ -1221,7 +840,7 @@ const ExercisesComponent = () => {
             <div className="exercises-header">
               <div className="header-info">
                 <h3>Assigned Exercises</h3>
-                <span className="exercise-count">{exercises.length} exercises</span>
+                <span className="exercise-count">{getFilteredPatientExercises().length} of {exercises.length} exercises</span>
               </div>
               <div className="header-actions">
                 <button 
@@ -1231,19 +850,48 @@ const ExercisesComponent = () => {
                   <i className="fas fa-plus"></i>
                   <span>Add Exercise</span>
                 </button>
-                <button 
-                  className="print-btn"
-                  onClick={handlePrintExercises}
-                  disabled={exercises.filter(ex => ex.isHEP).length === 0}
-                >
-                  <i className="fas fa-print"></i>
-                  <span>Print HEP</span>
-                </button>
+              </div>
+            </div>
+
+            {/* Discipline Filter for Patient Exercises */}
+            <div className="exercises-filters">
+              <div className="filter-group">
+                <div className="filter-header">
+                  <label>Filter by Discipline:</label>
+                  {activeDiscipline !== 'All' && (
+                    <button 
+                      className="reset-filter-btn" 
+                      onClick={resetPatientFilters}
+                      title="Reset filters"
+                    >
+                      <i className="fas fa-undo"></i>
+                      <span>Reset</span>
+                    </button>
+                  )}
+                </div>
+                <div className="discipline-filter-options">
+                  {disciplines.map(discipline => (
+                    <button
+                      key={discipline}
+                      className={`discipline-filter-btn ${activeDiscipline === discipline ? 'active' : ''}`}
+                      onClick={() => setActiveDiscipline(discipline)}
+                    >
+                      <span className={`discipline-indicator ${discipline.toLowerCase()}`}>
+                        {discipline}
+                      </span>
+                      {discipline !== 'All' && (
+                        <span className="count">
+                          ({exercises.filter(ex => ex.discipline === discipline).length})
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="exercises-grid" ref={exercisesGridRef}>
-              {exercises.map((exercise) => (
+              {getFilteredPatientExercises().map((exercise) => (
                 <div key={exercise.id} className="exercise-card">
                   <div className="exercise-header">
                     <h4>{exercise.name}</h4>
@@ -1349,12 +997,7 @@ const ExercisesComponent = () => {
             <div className="library-header">
               <h3>Exercise Library</h3>
               <div className="library-subtitle">
-                {/* Show role-based access info */}
-                {getUserDisciplines().length < 3 && (
-                  <span className="role-info">
-                    Showing {getUserDisciplines().join(', ')} exercises only
-                  </span>
-                )}
+                <span>All exercises available - Filter by discipline to narrow down</span>
               </div>
               <button 
                 className="close-btn"
@@ -1365,17 +1008,52 @@ const ExercisesComponent = () => {
             </div>
 
             <div className="library-filters">
-              <div className="search-box">
-                <i className="fas fa-search"></i>
-                <input
-                  type="text"
-                  placeholder="Search exercises..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div className="filters-header">
+                <div className="search-box">
+                  <i className="fas fa-search"></i>
+                  <input
+                    type="text"
+                    placeholder="Search exercises..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                {(searchQuery || activeBodyPart !== 'All' || activeCategory !== 'All' || libraryDisciplineFilter !== 'All') && (
+                  <button 
+                    className="reset-all-filters-btn" 
+                    onClick={resetFilters}
+                    title="Reset all filters"
+                  >
+                    <i className="fas fa-undo"></i>
+                    <span>Reset All Filters</span>
+                  </button>
+                )}
               </div>
 
               <div className="filter-groups">
+                {/* Discipline Filter for Library */}
+                <div className="filter-group">
+                  <label>Discipline</label>
+                  <div className="filter-options">
+                    {disciplines.map(discipline => (
+                      <button
+                        key={discipline}
+                        className={`filter-option discipline-option ${libraryDisciplineFilter === discipline ? 'active' : ''}`}
+                        onClick={() => setLibraryDisciplineFilter(discipline)}
+                      >
+                        <span className={`discipline-indicator ${discipline.toLowerCase()}`}>
+                          {discipline}
+                        </span>
+                        {discipline !== 'All' && (
+                          <span className="count">
+                            ({generateExerciseLibrary().filter(ex => ex.discipline === discipline).length})
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="filter-group">
                   <label>Body Part</label>
                   <div className="filter-options">
@@ -1413,12 +1091,10 @@ const ExercisesComponent = () => {
                 <span className="results-count">
                   {getFilteredLibraryExercises().length} exercises found
                 </span>
-                <div className="discipline-filters">
-                  {getUserDisciplines().map(discipline => (
-                    <span key={discipline} className={`discipline-indicator ${discipline.toLowerCase()}`}>
-                      {discipline}
-                    </span>
-                  ))}
+                <div className="discipline-summary">
+                  <span className="total-count">
+                    Total: {generateExerciseLibrary().length} exercises
+                  </span>
                 </div>
               </div>
 
@@ -1468,11 +1144,11 @@ const ExercisesComponent = () => {
                     </div>
                     <h3>No exercises found</h3>
                     <p>Try adjusting your filters or search query.</p>
-                    {getUserDisciplines().length < 3 && (
-                      <p className="role-restriction">
-                        Note: You only have access to {getUserDisciplines().join(', ')} exercises.
-                      </p>
-                    )}
+                    <p className="filter-hint">
+                      Current filters: {libraryDisciplineFilter !== 'All' ? `${libraryDisciplineFilter} discipline` : 'All disciplines'}
+                      {activeBodyPart !== 'All' ? `, ${activeBodyPart} body part` : ''}
+                      {activeCategory !== 'All' ? `, ${activeCategory} category` : ''}
+                    </p>
                   </div>
                 )}
               </div>
