@@ -2,14 +2,19 @@
 
 // Advanced animations
 @keyframes fadeInUp {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(30px);
-    filter: blur(10px);
+    transform: translateY(60px) scale(0.8) rotateX(20deg);
+    filter: blur(20px);
   }
-  to {
+  50% {
+    opacity: 0.8;
+    transform: translateY(20px) scale(0.95) rotateX(5deg);
+    filter: blur(5px);
+  }
+  100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1) rotateX(0deg);
     filter: blur(0);
   }
 }
@@ -258,7 +263,7 @@
     backdrop-filter: blur(10px);
     padding: 12px 20px;
     border-radius: 30px;
-    color: white;
+    color: #1a202c;
     font-size: 14px;
     display: flex;
     align-items: center;
@@ -321,13 +326,20 @@
     // Enhanced dashboard card with better mobile height
     .dashboard-card {
       position: relative;
-      background: rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 1.5rem;
+      background: linear-gradient(145deg, 
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(248, 250, 252, 0.98) 50%,
+        rgba(255, 255, 255, 0.92) 100%);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-radius: 24px;
+      padding: 2rem;
       transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 2px solid;
+      border-image: linear-gradient(145deg, 
+        rgba(0, 169, 224, 0.3) 0%, 
+        rgba(76, 201, 240, 0.2) 50%, 
+        rgba(0, 86, 166, 0.25) 100%) 1;
       // height: 650px;
       overflow: visible;
       animation: fadeInUp 0.7s ease-out forwards;
@@ -336,8 +348,10 @@
       transform-style: preserve-3d;
       transform: translateZ(0);
       box-shadow: 
-        0 10px 30px rgba(0, 0, 0, 0.2),
-        0 0 10px rgba(255, 255, 255, 0.05) inset;
+        0 20px 60px rgba(0, 86, 166, 0.12),
+        0 8px 30px rgba(0, 169, 224, 0.08),
+        0 0 40px rgba(76, 201, 240, 0.06) inset,
+        0 2px 0 rgba(255, 255, 255, 0.9) inset;
       
       @media (max-width: 768px) {
         height: auto;
@@ -402,12 +416,21 @@
       
       // Premium hover effect
       &.active {
-        transform: translateY(-15px) scale(1.02) rotateX(2deg) rotateY(-2deg);
+        transform: translateY(-20px) scale(1.03) rotateX(3deg) rotateY(-3deg);
         z-index: 10;
+        background: linear-gradient(145deg, 
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(248, 250, 252, 1) 50%,
+          rgba(255, 255, 255, 0.95) 100%);
+        border-image: linear-gradient(145deg, 
+          rgba(0, 169, 224, 0.5) 0%, 
+          rgba(76, 201, 240, 0.4) 50%, 
+          rgba(0, 86, 166, 0.45) 100%) 1;
         box-shadow: 
-          0 30px 60px rgba(0, 0, 0, 0.3),
-          0 0 30px rgba(255, 255, 255, 0.05),
-          0 0 0 1px rgba(255, 255, 255, 0.2);
+          0 40px 100px rgba(0, 86, 166, 0.3),
+          0 20px 60px rgba(0, 169, 224, 0.2),
+          0 0 60px rgba(76, 201, 240, 0.15) inset,
+          0 2px 0 rgba(255, 255, 255, 1) inset;
         
         @media (max-width: 768px) {
           transform: translateY(-10px) scale(1.01) rotateX(1deg) rotateY(-1deg);
@@ -475,9 +498,9 @@
         transform: translateY(-20px) scale(1.05);
         z-index: 20;
         box-shadow: 
-          0 40px 80px rgba(0, 0, 0, 0.4),
-          0 0 50px rgba(255, 255, 255, 0.1),
-          0 0 0 1px rgba(255, 255, 255, 0.25);
+          0 40px 80px rgba(0, 86, 166, 0.3),
+          0 0 60px rgba(0, 169, 224, 0.2),
+          0 0 0 1px rgba(0, 86, 166, 0.35);
         
         @media (max-width: 768px) {
           transform: translateY(-15px) scale(1.03);
@@ -496,11 +519,11 @@
         right: 0;
         bottom: 0;
         background-image: 
-          linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+          linear-gradient(to right, rgba(0, 86, 166, 0.08) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0, 86, 166, 0.08) 1px, transparent 1px);
         background-size: 20px 20px;
         z-index: 0;
-        opacity: 0.08;
+        opacity: 0.5;
         pointer-events: none;
         transition: opacity 0.5s ease;
       }
@@ -524,7 +547,7 @@
           width: 30px;
           height: 30px;
           border-radius: 50%;
-          border: 2px solid rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(0, 86, 166, 0.15);
           transition: all 0.5s ease;
         }
         
@@ -534,7 +557,7 @@
           left: 15%;
           width: 20px;
           height: 20px;
-          border: 2px solid rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(0, 86, 166, 0.15);
           transform: rotate(45deg);
           transition: all 0.5s ease;
         }
@@ -547,7 +570,7 @@
           height: 0;
           border-left: 15px solid transparent;
           border-right: 15px solid transparent;
-          border-bottom: 25px solid rgba(255, 255, 255, 0.05);
+          border-bottom: 25px solid rgba(0, 86, 166, 0.1);
           transition: all 0.5s ease;
         }
       }
@@ -558,13 +581,41 @@
         top: 0;
         right: 0;
         bottom: 0;
-        width: 45%;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 100%);
-        opacity: 0.1;
+        width: 50%;
+        background: linear-gradient(135deg, 
+          rgba(0, 169, 224, 0.06) 0%,
+          rgba(76, 201, 240, 0.08) 30%, 
+          rgba(0, 86, 166, 0.04) 60%,
+          rgba(255, 255, 255, 0.02) 100%);
+        opacity: 0.8;
         transition: all 0.6s ease;
         transform: scale(1) translateX(0);
         z-index: 0;
-        border-radius: 0 20px 20px 0;
+        border-radius: 0 24px 24px 0;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          top: 20%;
+          right: 15%;
+          width: 120px;
+          height: 120px;
+          background: radial-gradient(circle, rgba(0, 169, 224, 0.1) 0%, transparent 70%);
+          border-radius: 50%;
+          filter: blur(20px);
+        }
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 20%;
+          right: 25%;
+          width: 80px;
+          height: 80px;
+          background: radial-gradient(circle, rgba(76, 201, 240, 0.08) 0%, transparent 70%);
+          border-radius: 50%;
+          filter: blur(15px);
+        }
       }
       
       .card-content {
@@ -592,7 +643,7 @@
         h3 {
           font-size: 1.4rem;
           font-weight: 600;
-          color: white;
+          color: #1a202c;
           margin: 0;
           position: relative;
           
@@ -619,15 +670,34 @@
         
         // Premium icon container
         .icon-container {
-          width: 56px;
-          height: 56px;
-          border-radius: 15px;
+          width: 64px;
+          height: 64px;
+          border-radius: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           margin-right: 1.2rem;
           transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           position: relative;
+          overflow: hidden;
+          
+          &::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+          }
+          
+          &:hover::before {
+            opacity: 1;
+            transform: rotate(45deg) translate(50%, 50%);
+          }
           
           @media (max-width: 768px) {
             width: 48px;
@@ -658,7 +728,7 @@
           }
           
           i {
-            color: white;
+            color: #1a202c;
             font-size: 1.5rem;
             position: relative;
             z-index: 1;
@@ -675,8 +745,8 @@
           
           // Color variants for each icon
           &.patients-icon, &.clients-icon {
-            background: linear-gradient(135deg, #4CAF50, #81C784);
-            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+            background: linear-gradient(145deg, #4CAF50, #66BB6A, #81C784);
+            box-shadow: 0 15px 35px rgba(76, 175, 80, 0.35), 0 5px 15px rgba(76, 175, 80, 0.2);
             
             .icon-background {
               background: radial-gradient(circle, #4CAF50 0%, transparent 70%);
@@ -684,8 +754,8 @@
           }
           
           &.finance-icon {
-            background: linear-gradient(135deg, #56ab2f, #a8e063);
-            box-shadow: 0 10px 20px rgba(168, 224, 99, 0.3);
+            background: linear-gradient(145deg, #56ab2f, #8bc34a, #a8e063);
+            box-shadow: 0 15px 35px rgba(168, 224, 99, 0.35), 0 5px 15px rgba(86, 171, 47, 0.2);
             
             .icon-background {
               background: radial-gradient(circle, #a8e063 0%, transparent 70%);
@@ -693,8 +763,8 @@
           }
           
           &.learning-icon, &.control-icon {
-            background: linear-gradient(135deg, #FF9966, #FF5E62);
-            box-shadow: 0 10px 20px rgba(255, 94, 98, 0.3);
+            background: linear-gradient(145deg, #FF9966, #FF7043, #FF5E62);
+            box-shadow: 0 15px 35px rgba(255, 94, 98, 0.35), 0 5px 15px rgba(255, 112, 67, 0.2);
             
             .icon-background {
               background: radial-gradient(circle, #FF9966 0%, transparent 70%);
@@ -737,15 +807,14 @@
         
         .counter {
           font-size: 2.8rem;
-          font-weight: 700;
-          color: white;
+          font-weight: 900;
+          color: #0f172a !important;
           line-height: 1;
-          background: linear-gradient(90deg, #ffffff, #e1e1e1);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
           font-family: 'Montserrat', sans-serif;
           letter-spacing: -1px;
+          position: relative;
+          z-index: 10;
           
           @media (max-width: 768px) {
             font-size: 2.4rem;
@@ -758,17 +827,19 @@
         
         .currency {
           font-size: 2.4rem;
-          font-weight: 600;
-          color: white;
+          font-weight: 800;
+          color: #0f172a !important;
           margin-right: 5px;
           margin-top: 8px;
-          opacity: 0.9;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+          position: relative;
+          z-index: 10;
         }
         
         .counter-unit {
           font-size: 1.2rem;
           font-weight: 500;
-          color: rgba(255, 255, 255, 0.8);
+          color: #4a5568;
           margin-left: 8px;
           line-height: 1;
           font-family: 'Montserrat', sans-serif;
@@ -848,13 +919,13 @@
           }
           
           .stat-label {
-            color: rgba(255, 255, 255, 0.5);
+            color: #718096;
             font-size: 0.85rem;
             margin-bottom: 5px;
           }
           
           .stat-value {
-            color: white;
+            color: #1a202c;
             font-size: 1.1rem;
             font-weight: 600;
           }
@@ -902,13 +973,13 @@
             flex: 1;
             
             .metric-label {
-              color: rgba(255, 255, 255, 0.6);
+              color: #64748b;
               font-size: 0.75rem;
               margin-bottom: 1px;
             }
             
             .metric-value {
-              color: white;
+              color: #1a202c;
               font-size: 0.9rem;
               font-weight: 600;
             }
@@ -944,7 +1015,7 @@
           margin-right: 15px;
           
           i {
-            color: white;
+            color: #1a202c;
             font-size: 18px;
           }
         }
@@ -953,14 +1024,14 @@
           flex: 1;
           
           .sessions-value {
-            color: white;
+            color: #1a202c;
             font-size: 1.4rem;
             font-weight: 600;
             line-height: 1.2;
           }
           
           .sessions-label {
-            color: rgba(255, 255, 255, 0.6);
+            color: #64748b;
             font-size: 0.85rem;
           }
         }
@@ -971,7 +1042,7 @@
         
         
         p {
-          color: rgba(255, 255, 255, 0.9);
+          color: #2d3748;
           font-size: 1rem;
           line-height: 1.5;
           margin-bottom: 1rem;
@@ -1005,7 +1076,7 @@
           }
           
           span {
-            color: rgba(255, 255, 255, 0.8);
+            color: #4a5568;
             font-size: 0.95rem;
           }
         }
@@ -1041,7 +1112,7 @@
           }
           
           span {
-            color: rgba(255, 255, 255, 0.8);
+            color: #4a5568;
             font-size: 0.9rem;
           }
         }
@@ -1058,11 +1129,11 @@
           margin-bottom: 8px;
           
           span {
-            color: rgba(255, 255, 255, 0.7);
+            color: #64748b;
             font-size: 0.9rem;
             
             &.progress-percent {
-              color: white;
+              color: #1a202c;
               font-weight: 600;
             }
           }
@@ -1111,7 +1182,7 @@
           background: rgba(255, 255, 255, 0.1);
           border: none;
           border-radius: 12px;
-          color: white;
+          color: #1a202c;
           padding: 0.8rem 1.5rem;
           font-size: 0.95rem;
           cursor: pointer;
@@ -1218,7 +1289,7 @@
             background: rgba(255, 255, 255, 0.1);
             border: none;
             border-radius: 12px;
-            color: white;
+            color: #1a202c;
             padding: 0.8rem 0.6rem;
             font-size: 0.9rem;
             cursor: pointer;
@@ -1369,12 +1440,12 @@
       }
       
       .metric-label {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.8rem;
       }
       
       .metric-value {
-        color: white;
+        color: #1a202c;
         font-size: 0.8rem;
         font-weight: 600;
       }
@@ -1414,7 +1485,7 @@
       text-align: center;
       
       .stat-value {
-        color: white;
+        color: #1a202c;
         font-size: 1.1rem;
         font-weight: 600;
         line-height: 1;
@@ -1422,7 +1493,7 @@
       }
       
       .stat-label {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.75rem;
         line-height: 1;
       }
@@ -1438,10 +1509,10 @@
   .platform-button {
     position: relative;
     flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 86, 166, 0.2);
     border-radius: 12px;
-    color: white;
+    color: #1a202c;
     padding: 0.8rem 0.5rem;
     font-size: 0.85rem;
     cursor: pointer;
@@ -1450,7 +1521,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 86, 166, 0.1);
     
     .button-content {
       position: relative;
@@ -1463,14 +1534,17 @@
       i {
         font-size: 1.1rem;
         transition: transform 0.3s ease;
+        color: #0f172a !important;
       }
       
       span {
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.8rem;
         white-space: nowrap;
         transition: all 0.3s ease;
         text-align: center;
+        color: #0f172a !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     }
     
@@ -1566,7 +1640,7 @@
       min-width: 0;
       
       .agency-name {
-        color: white;
+        color: #1a202c;
         font-size: 0.8rem;
         font-weight: 600;
         display: block;
@@ -1577,7 +1651,7 @@
       }
       
       .agency-status-text {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.7rem;
         white-space: nowrap;
         overflow: hidden;
@@ -1636,7 +1710,7 @@
       }
       
       .calc-label {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.65rem;
         margin-bottom: 2px;
         text-align: center;
@@ -1644,7 +1718,7 @@
       }
       
       .calc-value {
-        color: white;
+        color: #1a202c;
         font-size: 0.8rem;
         font-weight: 600;
         line-height: 1;
@@ -1652,7 +1726,7 @@
     }
     
     .calc-operator {
-      color: rgba(255, 255, 255, 0.5);
+      color: #718096;
       font-size: 1rem;
       font-weight: bold;
     }
@@ -1707,12 +1781,12 @@
       }
       
       .metric-label {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.7rem;
       }
       
       .metric-value {
-        color: white;
+        color: #1a202c;
         font-size: 0.7rem;
         font-weight: 600;
       }
@@ -1752,7 +1826,7 @@
       text-align: center;
       
       .stat-value {
-        color: white;
+        color: #1a202c;
         font-size: 0.8rem;
         font-weight: 600;
         line-height: 1;
@@ -1760,7 +1834,7 @@
       }
       
       .stat-label {
-        color: rgba(255, 255, 255, 0.6);
+        color: #64748b;
         font-size: 0.6rem;
         line-height: 1;
       }
@@ -1776,10 +1850,10 @@
   .platform-button {
     position: relative;
     flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 86, 166, 0.2);
     border-radius: 10px;
-    color: white;
+    color: #1a202c;
     padding: 0.5rem 0.3rem;
     font-size: 0.75rem;
     cursor: pointer;
@@ -1788,7 +1862,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 86, 166, 0.1);
     
     .button-content {
       position: relative;
@@ -1801,15 +1875,18 @@
       i {
         font-size: 0.8rem;
         transition: transform 0.3s ease;
+        color: #0f172a !important;
       }
       
       span {
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.65rem;
         white-space: nowrap;
         transition: all 0.3s ease;
         text-align: center;
         line-height: 1;
+        color: #0f172a !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     }
     

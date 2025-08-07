@@ -1,6 +1,18 @@
 // Enhanced responsive styles for TherapySync - Sin variables ni mixins
 
 // Enhanced animations for premium feel
+@keyframes clinical-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 @keyframes floatElement {
   0% {
     transform: translateY(0);
@@ -237,9 +249,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('../../../assets/golden-gate-bridge-4271360_1920.jpg');
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(circle at 20% 20%, rgb(0 139 184 / 28%) 0%, #28cb8b14 50%), radial-gradient(circle at 80% 80%, rgba(76, 201, 240, 0.025) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgb(255 0 237 / 9%) 0%, transparent 70%), linear-gradient(135deg, #f9fafb 0%, #f4f6f8 20%, #f8f9fa 40%, #f1f5f9 60%, #f3f4f6 80%, #f0f4f8 100%);
+    background-size: 100%, 100%, 200% 200%;
+    animation: clinical-gradient-flow 30s ease infinite;
     z-index: -2;
     transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform;
@@ -280,21 +292,14 @@
       }
     }
     
-    // Premium gradient overlay
+    // Clinical gradient overlay - transparent for white background
     .gradient-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(
-        180deg,
-        rgba(8, 15, 40, 0.8) 0%,
-        rgba(17, 23, 64, 0.6) 30%,
-        rgba(23, 42, 88, 0.5) 60%,
-        rgba(8, 15, 40, 0.7) 100%
-      );
-      background-size: 200% 200%;
+      background: transparent;
       z-index: -1;
     }
   }
@@ -302,10 +307,10 @@
   // Enhanced header with better mobile layout
   .main-header {
     width: 100%;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
     z-index: 100;

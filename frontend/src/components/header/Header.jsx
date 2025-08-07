@@ -314,17 +314,19 @@ const Header = ({ onLogout }) => {
                   className="nav-button main-menu" 
                   onClick={handleMainMenuTransition}
                   title="Volver al menú principal"
+                  style={{ '--nav-color': '#36D1DC', '--nav-glow': '#36D1DC60' }}
                 >
                   <i className="fas fa-th-large"></i>
-                  <span>Main Menu</span>
+                  <span className="nav-text">Main Menu</span>
                 </button>
                 
                 <button 
                   className="nav-button referrals-menu active" 
                   title="Menú de Referrals"
+                  style={{ '--nav-color': '#FF9966', '--nav-glow': '#FF996660' }}
                 >
                   <i className="fas fa-file-medical"></i>
-                  <span>Referrals</span>
+                  <span className="nav-text active-nav-text">Referrals</span>
                 </button>
               </div>
             )}
@@ -358,7 +360,15 @@ const Header = ({ onLogout }) => {
                     >
                       <i className={`fas ${item.icon}`}></i>
                     </div>
-                    <span>{item.name}</span>
+                    <span 
+                      className={`option-text ${item.position === 'center' ? 'active-center-text' : ''}`}
+                      style={{ 
+                        '--active-color': item.color,
+                        '--glow-color': `${item.color}60`
+                      }}
+                    >
+                      {item.name}
+                    </span>
                     {item.position === 'center' && (
                       <div className="active-underline"></div>
                     )}
@@ -430,21 +440,26 @@ const Header = ({ onLogout }) => {
                     <div 
                       className="support-menu-item"
                       onClick={handleNavigateToProfile}
+                      style={{ '--menu-color': '#36D1DC', '--menu-glow': '#36D1DC60' }}
                     >
                       <i className="fas fa-user-circle"></i>
-                      <span>My Profile</span>
+                      <span className="menu-item-text">My Profile</span>
                     </div>
                     <div 
                       className="support-menu-item"
                       onClick={handleNavigateToSettings}
+                      style={{ '--menu-color': '#4CAF50', '--menu-glow': '#4CAF5060' }}
                     >
                       <i className="fas fa-cog"></i>
-                      <span>Settings</span>
+                      <span className="menu-item-text">Settings</span>
                     </div>
                     {isTherapist && (
-                      <div className="support-menu-item">
+                      <div 
+                        className="support-menu-item"
+                        style={{ '--menu-color': '#FF9966', '--menu-glow': '#FF996660' }}
+                      >
                         <i className="fas fa-calendar-alt"></i>
-                        <span>My Schedule</span>
+                        <span className="menu-item-text">My Schedule</span>
                       </div>
                     )}
                   </div>
@@ -454,22 +469,32 @@ const Header = ({ onLogout }) => {
                   <div className="support-menu-section">
                     <div className="section-title">Support</div>
                     <div className="support-menu-items">
-                      <div className="support-menu-item">
+                      <div 
+                        className="support-menu-item"
+                        style={{ '--menu-color': '#ff4757', '--menu-glow': '#ff475760' }}
+                      >
                         <i className="fas fa-headset"></i>
-                        <span>Contact Support</span>
+                        <span className="menu-item-text">Contact Support</span>
                       </div>
-                      <div className="support-menu-item">
+                      <div 
+                        className="support-menu-item"
+                        style={{ '--menu-color': '#8c54ff', '--menu-glow': '#8c54ff60' }}
+                      >
                         <i className="fas fa-bug"></i>
-                        <span>Report Issue</span>
+                        <span className="menu-item-text">Report Issue</span>
                       </div>
                     </div>
                   </div>
                 )}
                 
                 <div className="support-menu-footer">
-                  <div className="support-menu-item logout" onClick={handleLogout}>
+                  <div 
+                    className="support-menu-item logout" 
+                    onClick={handleLogout}
+                    style={{ '--menu-color': '#ff4757', '--menu-glow': '#ff475760' }}
+                  >
                     <i className="fas fa-sign-out-alt"></i>
-                    <span>Log Out</span>
+                    <span className="menu-item-text">Log Out</span>
                   </div>
                   <div className="version-info">
                     <span>TherapySync™</span>
