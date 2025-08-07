@@ -1,0 +1,260 @@
+// CLINIFY AI - WELCOME COMPONENT NUEVO
+// Diseño clínico profesional desde cero
+// Version: 1.0.0 - Clean Medical Interface
+
+// ========================================
+// ANIMACIONES CLÍNICAS
+// ========================================
+
+@keyframes clinify-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes clinify-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes clinify-title-glow {
+  0%, 100% {
+    text-shadow: 
+      0 3px 6px rgba(0, 0, 0, 0.15),
+      0 0 20px rgba(0, 86, 166, 0.1);
+  }
+  50% {
+    text-shadow: 
+      0 3px 6px rgba(0, 0, 0, 0.15),
+      0 0 30px rgba(0, 86, 166, 0.2);
+  }
+}
+
+// ========================================
+// CONTENEDOR PRINCIPAL
+// ========================================
+
+.clinify-welcome-container {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  // ========================================
+  // FONDO CLÍNICO PROFESIONAL
+  // ========================================
+  .clinify-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: radial-gradient(circle at 20% 20%, rgb(0 139 184 / 28%) 0%, #28cb8b14 50%), radial-gradient(circle at 80% 80%, rgba(76, 201, 240, 0.025) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgb(255 0 237 / 9%) 0%, transparent 70%), linear-gradient(135deg, #f9fafb 0%, #f4f6f8 20%, #f8f9fa 40%, #f1f5f9 60%, #f3f4f6 80%, #f0f4f8 100%);
+    background-size: 100%, 100%, 100%, 200% 200%;
+    animation: clinify-gradient-flow 35s ease infinite;
+
+    // Decoración clínica sutil
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(0, 86, 166, 0.003) 1px, transparent 1px),
+        radial-gradient(circle at 75% 75%, rgba(76, 201, 240, 0.003) 1px, transparent 1px);
+      background-size: 80px 80px, 120px 120px;
+    }
+  }
+
+  // ========================================
+  // CONTENIDO PRINCIPAL
+  // ========================================
+  .clinify-main-content {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+
+    @media (max-width: 768px) {
+      padding: 1rem;
+    }
+  }
+
+  // ========================================
+  // HEADER DE BIENVENIDA
+  // ========================================
+  .clinify-welcome-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: clinify-fadeIn 1s ease-out;
+
+    @media (max-width: 768px) {
+      margin-bottom: 2rem;
+    }
+  }
+
+  .clinify-title-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .clinify-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin: 0 0 1rem 0;
+    color: #0a0f1c !important;
+    line-height: 1.2;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    animation: clinify-title-glow 3s ease-in-out infinite;
+    position: relative;
+    z-index: 100;
+
+    @media (max-width: 1024px) {
+      font-size: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      font-size: 2.5rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 2rem;
+    }
+
+    .clinify-highlight {
+      background: linear-gradient(135deg, #0056a6, #00a9e0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      font-weight: 900;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #0056a6, #00a9e0);
+        border-radius: 3px;
+        box-shadow: 0 2px 6px rgba(0, 86, 166, 0.3);
+      }
+    }
+  }
+
+  .clinify-subtitle {
+    font-size: 1.25rem;
+    color: #0f172a !important;
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.5;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 100;
+
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 1rem;
+    }
+  }
+
+  // ========================================
+  // SECCIÓN DEL DASHBOARD
+  // ========================================
+  .clinify-dashboard-section {
+    animation: clinify-fadeIn 1.2s ease-out 0.3s both;
+  }
+
+  // ========================================
+  // RESPONSIVE DESIGN
+  // ========================================
+  &.mobile {
+    .clinify-main-content {
+      padding: 1rem 0.5rem;
+    }
+
+    .clinify-welcome-header {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &.tablet {
+    .clinify-main-content {
+      padding: 1.5rem;
+    }
+
+    .clinify-welcome-header {
+      margin-bottom: 2.5rem;
+    }
+  }
+}
+
+// ========================================
+// OPTIMIZACIONES DE RENDIMIENTO
+// ========================================
+
+.clinify-background {
+  will-change: background-position;
+  transform: translateZ(0);
+}
+
+.clinify-title {
+  will-change: text-shadow;
+}
+
+// ========================================
+// MODO OSCURO (OPCIONAL)
+// ========================================
+
+@media (prefers-color-scheme: dark) {
+  .clinify-welcome-container {
+    .clinify-title {
+      color: #e2e8f0;
+    }
+    
+    .clinify-subtitle {
+      color: #94a3b8;
+    }
+  }
+}
+
+// ========================================
+// REDUCCIÓN DE MOVIMIENTO
+// ========================================
+
+@media (prefers-reduced-motion: reduce) {
+  .clinify-background {
+    animation: none;
+  }
+  
+  .clinify-title {
+    animation: none;
+  }
+  
+  .clinify-welcome-header,
+  .clinify-dashboard-section {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -9,7 +9,7 @@ import LoginCard from './components/login/LoginCard';
 // Removed SessionTimeoutContainer import
 
 // Import developer components
-import DevHomePage from './components/developer/welcome/Welcome';
+import DevHomePage from './components/developer/welcome/WelcomeNew';
 import DevReferralsPage from './components/developer/referrals/ReferralsPage';
 import DevCreateNF from './components/developer/referrals/CreateNF/CreateNF';
 import DevPatientsPage from './components/developer/patients/PatientsPage';
