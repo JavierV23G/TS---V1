@@ -56,12 +56,6 @@ const NoteTemplateModal = ({
 
   // Handle modal close
   const handleClose = () => {
-    if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to close without saving?'
-      );
-      if (!confirmed) return;
-    }
     onClose();
   };
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../../components/login/AuthContext';
 import '../../../styles/developer/Referrals/ReferralsPage.scss';
 import '../../../styles/developer/Referrals/ClinicalLoading.scss';
 import '../../../styles/developer/Referrals/ClinicalReferralForm.scss';
+import '../../../styles/developer/Referrals/PatientCreationAnimation.scss';
 import logoImg from '../../../assets/LogoMHC.jpeg';
 import LogoutAnimation from '../../../components/LogOut/LogOut';
 import ReferralStats from './ReferralStats';
@@ -16,6 +17,8 @@ const ReferralsPage = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [createdPatientData, setCreatedPatientData] = useState(null);
   
   // Form data state - matching exactly admin version
   const [formData, setFormData] = useState({
@@ -295,19 +298,32 @@ const ReferralsPage = () => {
     fetchTherapists();
   }, []);
 
-  // Auto-calculate cert period end date
+  // Auto-calculate cert period end date (only if end date is empty)
   useEffect(() => {
-    if (formData.certPeriodStart) {
+    if (formData.certPeriodStart && !formData.certPeriodEnd) {
       const startDate = new Date(formData.certPeriodStart);
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 60);
       
       const formattedEndDate = endDate.toISOString().split('T')[0];
       
+      console.log('🔄 Auto-calculating end date:', {
+        startDate: formData.certPeriodStart,
+        calculatedEndDate: formattedEndDate,
+        currentEndDate: formData.certPeriodEnd
+      });
+      
       setFormData(prev => ({
         ...prev,
         certPeriodEnd: formattedEndDate
       }));
+    } else {
+      console.log('⏭️ Skipping auto-calculation:', {
+        hasStartDate: !!formData.certPeriodStart,
+        hasEndDate: !!formData.certPeriodEnd,
+        startDate: formData.certPeriodStart,
+        endDate: formData.certPeriodEnd
+      });
     }
   }, [formData.certPeriodStart]);
 
@@ -366,9 +382,6 @@ const ReferralsPage = () => {
       city: formData.city,
       zipCode: formData.zipCode,
       primaryPhone: formData.primaryPhone,
-      emergencyContactName: formData.emergencyContact.name,
-      emergencyContactPhone: formData.emergencyContact.phone,
-      emergencyContactRelationship: formData.emergencyContact.relationship,
       payorType: formData.payorType,
       certPeriodStart: formData.certPeriodStart,
       physician: formData.physician,
@@ -441,8 +454,10 @@ const ReferralsPage = () => {
         contact_info: {
           'primary#': formData.primaryPhone,
           ...(formData.secondaryPhone ? { 'secondary': formData.secondaryPhone } : {}),
-          // Convertir emergency contact al formato esperado por EmergencyContactsComponent
-          [formData.emergencyContact.name || 'Emergency_Contact']: `${formData.emergencyContact.phone}|${formData.emergencyContact.relationship || 'Emergency'}`
+          // Solo incluir emergency contact si se proporcionó
+          ...(formData.emergencyContact.name && formData.emergencyContact.phone ? {
+            [formData.emergencyContact.name]: `${formData.emergencyContact.phone}|${formData.emergencyContact.relationship || 'Emergency'}`
+          } : {})
         },
         // También enviar primary_phone para compatibilidad con PatientInfoPage
         primary_phone: formData.primaryPhone,
@@ -459,10 +474,15 @@ const ReferralsPage = () => {
         weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
         height: formData.height ? `${formData.height} ${formData.heightUnit}` : '',
         past_medical_history: formData.pmh,
-        initial_cert_start_date: formData.certPeriodStart
+        initial_cert_start_date: formData.certPeriodStart,
+        initial_cert_end_date: formData.certPeriodEnd
       };
 
       console.log('🔍 Payload being sent to backend:', patientPayload);
+      console.log('📅 Cert Period Dates:', {
+        start: formData.certPeriodStart,
+        end: formData.certPeriodEnd
+      });
       console.log('📋 Required fields check:');
       console.log('  - full_name:', patientPayload.full_name);
       console.log('  - birthday:', patientPayload.birthday);
@@ -471,10 +491,6 @@ const ReferralsPage = () => {
       console.log('  - agency_id:', patientPayload.agency_id);
       console.log('  - insurance (payor type):', patientPayload.insurance);
       console.log('  - homebound_status:', patientPayload.homebound_status);
-      console.log('📋 Form data payor type check:', formData.payorType);
-      console.log('📋 Form data homebound check:', formData.homebound);
-      console.log('📋 Homebound formatted:', formatHomeboundForBackend(formData.homebound));
-      console.log('📋 Form data nurse check:', formData.nurseManager);
 
       const createRes = await fetch('http://localhost:8000/patients/', {
         method: 'POST',
@@ -493,7 +509,7 @@ const ReferralsPage = () => {
 
       const createdPatient = await createRes.json();
       const patientId = createdPatient.id;
-
+      
       // Step 2: Assign therapists
       console.log('👩‍⚕️ Assigning therapists:', selectedTherapists);
       
@@ -546,24 +562,52 @@ const ReferralsPage = () => {
       console.log("✅ 🎉 Patient created successfully!");
       console.log(`🆙 Patient ID: ${patientId}`);
       
-      // Show success message
-      alert(`Patient ${formData.firstName} ${formData.lastName} has been successfully created with ID: ${patientId}`);
+      // Mostrar notificación de éxito
+      setCreatedPatientData({
+        id: patientId,
+        name: `${formData.firstName} ${formData.lastName}`
+      });
+      setShowSuccessNotification(true);
+      
+      // Ocultar notificación después de 4 segundos
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+        setCreatedPatientData(null);
+      }, 4000);
       
       resetForm();
       setCurrentView("menu");
     } catch (error) {
       console.error('❌ 😱 Submission failed:', error);
+      
+      // Limpiar estados en caso de error
+      setShowSuccessNotification(false);
+      setCreatedPatientData(null);
+      
       alert(`Error creating patient: ${error.message}`);
     } finally {
       setFormSubmitting(false);
     }
   };
 
+
   // Form input change handler
   const handleInputChange = (e) => {
     if (isLoggingOut) return;
     
     const { name, value, type, checked } = e.target;
+    
+    // Debug logging for cert period dates
+    if (name === 'certPeriodStart' || name === 'certPeriodEnd') {
+      console.log('📋 Date field changed:', {
+        fieldName: name,
+        newValue: value,
+        currentFormData: {
+          certPeriodStart: formData.certPeriodStart,
+          certPeriodEnd: formData.certPeriodEnd
+        }
+      });
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -787,17 +831,6 @@ const ReferralsPage = () => {
 
   const handleCancelCreateReferral = () => {
     if (isLoggingOut) return;
-    
-    const hasFormData = Object.values(formData).some(value => {
-      if (typeof value === 'string') return value !== '';
-      if (Array.isArray(value)) return value.length > 0 && value[0] !== '';
-      if (typeof value === 'object') return Object.values(value).some(v => v !== false && v !== '');
-      return false;
-    });
-    
-    if (hasFormData && !window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
-      return;
-    }
     
     setCurrentView('menu');
     resetForm();
@@ -1570,7 +1603,7 @@ const ReferralsPage = () => {
                   <div className="form-field full-width emergency-contact-section">
                     <label className="field-label emergency-header">
                       <i className="fas fa-user-shield"></i>
-                      Emergency Contact Information
+                      Emergency Contact Information (Optional)
                     </label>
                     <div className="emergency-contact-grid">
                       <div className="emergency-field">
@@ -1585,7 +1618,6 @@ const ReferralsPage = () => {
                           value={formData.emergencyContact.name}
                           onChange={(e) => handleEmergencyContactChange('name', e.target.value)}
                           placeholder="Emergency contact full name"
-                          required
                           disabled={isLoggingOut}
                         />
                       </div>
@@ -1602,7 +1634,6 @@ const ReferralsPage = () => {
                           value={formData.emergencyContact.phone}
                           onChange={(e) => handleEmergencyContactChange('phone', e.target.value)}
                           placeholder="(123) 456-7890"
-                          required
                           disabled={isLoggingOut}
                         />
                       </div>
@@ -1617,7 +1648,6 @@ const ReferralsPage = () => {
                           className="clinical-select emergency-select"
                           value={formData.emergencyContact.relationship}
                           onChange={(e) => handleEmergencyContactChange('relationship', e.target.value)}
-                          required
                           disabled={isLoggingOut}
                         >
                           <option value="">Select Relationship</option>
@@ -1725,7 +1755,7 @@ const ReferralsPage = () => {
                       </div>
                       <div className="period-note">
                         <i className="fas fa-info-circle"></i>
-                        <span>End date automatically calculated as SOC + 60 days, but can be modified if needed</span>
+                        <span>End date auto-calculates as SOC + 60 days when start date is set. You can manually enter a different end date if needed.</span>
                       </div>
                     </div>
                   </div>
@@ -2596,6 +2626,23 @@ const ReferralsPage = () => {
             
             <div className="content-body">
               <ReferralStats />
+            </div>
+          </div>
+        )}
+        
+        {/* Notificación de éxito - Elegante y centrada */}
+        {showSuccessNotification && (
+          <div className="success-toast-overlay">
+            <div className="success-toast">
+              <div className="toast-icon">
+                <i className="fas fa-check"></i>
+              </div>
+              <div className="toast-content">
+                <span className="toast-title">Patient Created</span>
+                <span className="toast-details">
+                  {createdPatientData?.name} • ID #{createdPatientData?.id}
+                </span>
+              </div>
             </div>
           </div>
         )}
