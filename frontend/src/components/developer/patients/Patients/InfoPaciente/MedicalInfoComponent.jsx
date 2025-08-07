@@ -45,9 +45,6 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
   // Cargar datos médicos del paciente SOLO si no tenemos actualizaciones locales
   useEffect(() => {
     if (patient && !hasLocalUpdates) {
-      console.log('🏥 MedicalInfoComponent - Patient data received:', patient);
-      console.log('👩‍⚕️ MedicalInfoComponent - Nurse field:', patient.nurse);
-      console.log('💳 MedicalInfoComponent - Insurance field:', patient.insurance);
       // Convertir altura total a pies y pulgadas para display
       const totalInches = patient.height ? parseFloat(patient.height) : 0;
       const feet = totalInches > 0 ? Math.floor(totalInches / 12) : '';
@@ -142,8 +139,6 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
         // Los datos ya están en medicalData desde el formulario, 
         // solo necesitamos actualizar el estado original y cambiar a modo vista
         setOriginalData({...medicalData});
-        
-        console.log('Medical data saved successfully. Current data:', medicalData);
         
         // Cambiar a modo vista inmediatamente para mostrar los cambios
         setIsEditing(false);
@@ -707,7 +702,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
           </div>
         ) : (
           /* VIEW MODE */
-          <div className="view-mode">{console.log('Rendering VIEW MODE with medicalData:', medicalData)}
+          <div className="view-mode">
             {/* Physical Information Display */}
             <div className="medical-section">
               <div className="section-header">

@@ -652,26 +652,54 @@ const PatientInfoPage = () => {
         setError(null);
         
         
-        const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
-          method: 'GET',  
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        // TEMPORAL FIX: Usar /patients/ en lugar de /patients/{id} debido a bug del backend con nurse field
+        const useListEndpoint = true; // Cambiar a false cuando el backend arregle el endpoint individual
         
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Patient not found');
+        let patientData;
+        
+        if (useListEndpoint) {
+          // Solución temporal: obtener todos los pacientes y filtrar
+          const listResponse = await fetch(`${API_BASE_URL}/patients/`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            },
+          });
+          
+          if (!listResponse.ok) {
+            throw new Error(`Failed to fetch patients list: ${listResponse.status}`);
           }
-          throw new Error(`Failed to fetch patient: ${response.status} ${response.statusText}`);
+          
+          const allPatients = await listResponse.json();
+          patientData = allPatients.find(p => p.id === parseInt(patientId));
+          
+          if (!patientData) {
+            throw new Error('Patient not found in list');
+          }
+          
+        } else {
+          // Código original para cuando se arregle el backend
+          const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+            method: 'GET',  
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            },
+          });
+          
+          
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error('Patient not found');
+            }
+            throw new Error(`Failed to fetch patient: ${response.status} ${response.statusText}`);
+          }
+          
+          patientData = await response.json();
         }
-        
-        const patientData = await response.json();
-        
-        console.log('🔍 Patient data received from backend:', patientData);
-        console.log('📋 Patient nurse field:', patientData.nurse);
-        console.log('📋 Patient insurance field:', patientData.insurance);
-        console.log('📋 Patient referral_reason field:', patientData.referral_reason);
         
         setPatient(patientData);
         
