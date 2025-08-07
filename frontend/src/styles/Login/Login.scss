@@ -43,75 +43,142 @@ $clinical-warning: #f39c12;
   overflow: hidden;
 }
 
-// Contenedor principal mejorado
+// Contenedor principal con fondo clínico profesional
 .page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, 
-    #f8fbff 0%, 
-    #e8f4f8 25%, 
-    #ffffff 50%, 
-    #f0f8ff 75%, 
-    #e8f4f8 100%);
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(76, 201, 240, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(0, 169, 224, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 40% 70%, rgba(0, 86, 166, 0.02) 0%, transparent 50%),
+    linear-gradient(135deg, 
+      #f8fbff 0%, 
+      #e8f4f8 25%, 
+      #ffffff 50%, 
+      #f0f8ff 75%, 
+      #e8f4f8 100%);
   position: relative;
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  // Patrón médico sutil mejorado
-  &::before {
-    content: '';
+  // Decoraciones clínicas sutiles
+  .clinical-background {
     position: absolute;
-    width: 300%;
-    height: 300%;
-    top: -100%;
-    left: -100%;
-    background-image: 
-      radial-gradient(circle at 20% 80%, rgba(0, 169, 224, 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(0, 86, 166, 0.04) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(76, 201, 240, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 60% 60%, rgba(0, 169, 224, 0.02) 0%, transparent 50%);
-    animation: floatPattern 40s ease-in-out infinite;
-  }
-
-  // Elementos decorativos mejorados
-  &::after {
-    content: '';
-    position: absolute;
-    top: 15%;
-    right: 15%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(0, 169, 224, 0.06) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: pulse 6s ease-in-out infinite;
-    filter: blur(1px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
   }
 }
 
-// Elementos decorativos adicionales
-.page::before {
-  &,
-  & + .clinical-decoration {
-    position: absolute;
-    content: '';
-    border-radius: 50%;
-    filter: blur(2px);
-  }
-}
-
+// Elementos decorativos clínicos profesionales
 .clinical-decoration {
-  position: fixed;
-  top: 5%;
-  left: 5%;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(76, 201, 240, 0.04) 0%, transparent 70%);
-  animation: float 8s ease-in-out infinite reverse;
+  position: absolute;
+  border-radius: 50%;
   z-index: 0;
+  filter: blur(1.5px);
+  opacity: 0.4;
+  
+  &--1 {
+    top: 15%;
+    left: 8%;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, 
+      rgba(76, 201, 240, 0.06) 0%, 
+      rgba(0, 169, 224, 0.03) 50%, 
+      transparent 70%);
+    animation: gentleFloat 12s ease-in-out infinite;
+  }
+  
+  &--2 {
+    bottom: 20%;
+    right: 12%;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, 
+      rgba(0, 86, 166, 0.05) 0%, 
+      rgba(0, 169, 224, 0.02) 60%, 
+      transparent 75%);
+    animation: gentleFloat 15s ease-in-out infinite reverse;
+    animation-delay: -3s;
+  }
+  
+  &--3 {
+    top: 60%;
+    left: 5%;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, 
+      rgba(76, 201, 240, 0.04) 0%, 
+      transparent 65%);
+    animation: gentleFloat 18s ease-in-out infinite;
+    animation-delay: -6s;
+  }
 }
 
+// Patrón sutil de cuadrícula médica
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 86, 166, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 86, 166, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 0;
+  opacity: 0.3;
+  animation: gridShift 30s linear infinite;
+}
+
+// Acento decorativo superior
+.page::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    $clinical-primary 25%,
+    $clinical-secondary 50%,
+    $clinical-accent 75%,
+    transparent 100%);
+  z-index: 1;
+  opacity: 0.6;
+}
+
+// Animaciones suaves para decoraciones clínicas
+@keyframes gentleFloat {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+  }
+  33% { 
+    transform: translate(10px, -15px) scale(1.02);
+  }
+  66% { 
+    transform: translate(-8px, 10px) scale(0.98);
+  }
+}
+
+@keyframes gridShift {
+  0% { 
+    transform: translate(0, 0);
+  }
+  100% { 
+    transform: translate(60px, 60px);
+  }
+}
+
+// Animaciones originales simplificadas
 @keyframes floatPattern {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   25% { transform: translate(-30px, -20px) rotate(1deg); }
@@ -666,6 +733,53 @@ $clinical-warning: #f39c12;
   animation: form-pulse 0.6s ease;
 }
 
+// Optimizaciones de rendimiento para decoraciones
+.clinical-background {
+  // Optimización GPU
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.clinical-decoration {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+// Reducir efectos en dispositivos móviles
+@media (max-width: 768px) {
+  .clinical-decoration {
+    opacity: 0.2;
+    filter: blur(1px);
+    
+    &--1 {
+      width: 120px;
+      height: 120px;
+    }
+    
+    &--2 {
+      width: 80px;
+      height: 80px;
+    }
+    
+    &--3 {
+      display: none; // Ocultar en móviles para simplicidad
+    }
+  }
+  
+  .page::before {
+    opacity: 0.1;
+    background-size: 40px 40px;
+  }
+}
+
+// Pausar animaciones cuando el usuario prefiere menos movimiento
+@media (prefers-reduced-motion: reduce) {
+  .clinical-decoration,
+  .page::before {
+    animation: none !important;
+  }
+}
+
 // Responsive mejorado
 @media (max-width: 768px) {
   .login {
@@ -887,7 +1001,7 @@ $clinical-warning: #f39c12;
   to { width: 100%; }
 }
 
-// Remover imagen de fondo
+// Asegurar que no hay imágenes de fondo anteriores
 .page__background {
   display: none;
 }

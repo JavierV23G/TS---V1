@@ -68,6 +68,13 @@ const LoginCard = () => {
 
   return (
     <div className={`page ${orientation === 'landscape' && isMobile ? 'landscape-mode' : ''}`}>
+      {/* Elementos decorativos médicos sutiles */}
+      <div className="clinical-background">
+        <div className="clinical-decoration clinical-decoration--1"></div>
+        <div className="clinical-decoration clinical-decoration--2"></div>
+        <div className="clinical-decoration clinical-decoration--3"></div>
+      </div>
+      
       <div className="login-container">
         <div 
           className={`login-card ${isFlipped ? 'flipped' : ''}`} 
