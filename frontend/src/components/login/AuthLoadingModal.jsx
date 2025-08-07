@@ -155,162 +155,37 @@ const AuthLoadingModal = ({ isOpen, status, message, onClose, modalType = 'auth'
   };
   
   return (
-    <div className={`auth-loading-overlay ${isOpen ? 'show' : ''} ${animateBg ? 'animate-bg' : ''} ${status === 'error' ? 'error-bg' : status === 'success' ? 'success-bg' : ''}`}>
-      <div className="auth-decoration deco-1"></div>
-      <div className="auth-decoration deco-2"></div>
-      <div className="auth-decoration deco-3"></div>
-      
-      <div className="auth-loading-content">
-        <div className="glow-effect"></div>
+    <div className={`auth-loading-modal ${isOpen ? '' : 'hidden'}`}>
+      <div className="loading-container">
+        <div className="loading-spinner">
+          <div className="medical-cross"></div>
+        </div>
         
-        <div className="auth-loading-spinner">
-          {showSpinner && (
-            <>
-              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#0062ff" />
-                    <stop offset="100%" stopColor="#00c2ff" />
-                  </linearGradient>
-                </defs>
-                <circle className="circle-bg" cx="50" cy="50" r="45" />
-                <circle className="circle-progress" cx="50" cy="50" r="45" />
-              </svg>
-              
-              <div className="pulse-rings">
-                <div className="pulse-ring ring1"></div>
-                <div className="pulse-ring ring2"></div>
-                <div className="pulse-ring ring3"></div>
-              </div>
-            </>
-          )}
+        <div className={`loading-content ${status}`}>
+          <div className="loading-title">
+            {status === 'loading' ? (
+              modalType === 'auth' ? 
+                'Clinical Intelligence' : 
+                'Account Recovery'
+            ) : status === 'success' ? 
+              'Authentication Complete' : 
+              'Authentication Failed'}
+          </div>
           
-          {showStatusIcon && status === 'success' && (
-            <div className="check-icon show">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle className="icon-fill" cx="12" cy="12" r="10" />
-                <path className="icon-path" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          )}
+          <div className="loading-message">
+            {displayMessage}
+            <span className="loading-dots"></span>
+          </div>
           
-          {showStatusIcon && status === 'error' && (
-            <div className="error-icon show">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle className="icon-fill" cx="12" cy="12" r="10" />
-                <path className="icon-path" d="M18 6L6 18M6 6l12 12" />
-              </svg>
+          {status === 'loading' && (
+            <div className="loading-progress">
+              <div 
+                className="progress-bar" 
+                style={{ width: `${progress}%` }}
+              ></div>
             </div>
           )}
         </div>
-        
-        <h3 className={status !== 'loading' ? status : ''}>
-          {status === 'loading' ? (
-            modalType === 'auth' ? 
-              (isMobile ? 'Authentication' : 'Authentication in Progress') : 
-              (isMobile ? 'Recovery' : 'Recovery in Progress')
-          ) : status === 'success' ? 
-            'Authentication Successful' : 
-            'Authentication Failed'}
-        </h3>
-        
-        <div className="progress-container">
-          <div className="progress-bar">
-            <div 
-              className="progress-bar-inner" 
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          
-          <div className="progress-percentage">
-            {Math.round(progress)}%
-          </div>
-        </div>
-        
-        <div className={`status-message ${status !== 'loading' ? status : ''}`}>
-          {displayMessage}
-        </div>
-        
-        {status === 'loading' && modalType === 'auth' && (
-          <>
-            <div className="auth-loading-steps">
-              {steps.map((step, index) => (
-                <div 
-                  key={index} 
-                  className={`step-indicator ${index === currentStep ? 'current' : index < currentStep ? 'completed' : ''}`}
-                >
-                  <div className="step-dot">
-                    {index < currentStep && <i className="fas fa-check"></i>}
-                  </div>
-                  <div className="step-name">{step}</div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="security-panel">
-              <div className="security-panel-title">
-                <i className="fas fa-shield-alt"></i>
-                <span>Security Information</span>
-              </div>
-              <div className="security-item">
-                <i className="fas fa-lock"></i>
-                <span>Protocol: <span className="security-code">TLS 1.3</span></span>
-              </div>
-              <div className="security-item">
-                <i className="fas fa-fingerprint"></i>
-                <span>Auth: <span className="security-code">JWT</span></span>
-              </div>
-              {!isMobile && (
-                <div className="security-item">
-                  <i className="fas fa-server"></i>
-                  <span>Server: <span className="security-code">{generateServerId()}</span></span>
-                </div>
-              )}
-              <div className="security-item">
-                <i className="fas fa-clock"></i>
-                <span>Est. Time: <span className="security-code">{getEstimatedTime()}</span></span>
-              </div>
-            </div>
-          </>
-        )}
-        
-        {status === 'loading' && modalType === 'recovery' && (
-          <div className="security-panel">
-            <div className="security-panel-title">
-              <i className="fas fa-shield-alt"></i>
-              <span>Recovery Information</span>
-            </div>
-            <div className="security-item">
-              <i className="fas fa-lock"></i>
-              <span>Security: <span className="security-code">{isMobile ? 'Encrypted' : 'End-to-End Encrypted'}</span></span>
-            </div>
-            <div className="security-item">
-              <i className="fas fa-clock"></i>
-              <span>Expires: <span className="security-code">30 minutes</span></span>
-            </div>
-            {!isMobile && (
-              <div className="security-item">
-                <i className="fas fa-server"></i>
-                <span>Server: <span className="security-code">{generateServerId()}</span></span>
-              </div>
-            )}
-            {!isMobile && (
-              <div className="security-item">
-                <i className="fas fa-shield-alt"></i>
-                <span>Protection: <span className="security-code">Brute-Force Prevention</span></span>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {status === 'success' && modalType === 'auth' && (
-          <div className="auth-user-welcome">
-            <div className="welcome-message">
-              <i className="fas fa-user-check"></i>
-              <span>Welcome<strong>{getUserName()}</strong>. {!isMobile && 'Redirecting to your dashboard...'}</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import '../../styles/Login/Login.scss';
 import '../../styles/Login/AuthLoadingModal.scss';
 import '../../styles/Login/PremiumLoadingModal.scss'; 
 import '../../styles/Login/PasswordRecovery.scss';
-import backgroundImg from '../../assets/mountain-7704584_1920.jpg';
 
 const LoginCard = () => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -69,10 +68,6 @@ const LoginCard = () => {
 
   return (
     <div className={`page ${orientation === 'landscape' && isMobile ? 'landscape-mode' : ''}`}>
-      <div className="page__background">
-        <img src={backgroundImg} alt="Background" />
-      </div>
-      
       <div className="login-container">
         <div 
           className={`login-card ${isFlipped ? 'flipped' : ''}`} 
@@ -86,7 +81,7 @@ const LoginCard = () => {
             
             {/* Footer con términos y condiciones - simplificado en móviles */}
             <div className="terms-footer">
-              <p>© {currentYear} Motive Homecare. All rights reserved.</p>
+              <p>© {currentYear} Clinify AI. All rights reserved.</p>
               {!isMobile && (
                 <p>
                   By logging in, you agree to our{' '}
@@ -105,7 +100,7 @@ const LoginCard = () => {
               
               {/* Footer con términos y condiciones - simplificado en móviles */}
               <div className="terms-footer">
-                <p>© {currentYear} Motive Homecare. All rights reserved.</p>
+                <p>© {currentYear} Clinify AI. All rights reserved.</p>
                 {!isMobile && (
                   <p>
                     By proceeding, you agree to our{' '}
