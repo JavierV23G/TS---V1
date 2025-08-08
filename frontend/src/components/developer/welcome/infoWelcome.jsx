@@ -227,23 +227,9 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
 
       <div className="dashboard-cards">
         <div 
-          className={`dashboard-card ${activeCard === 'clients' ? 'active' : ''} ${isLoadingPatients ? 'loading' : ''}`}
-          onMouseEnter={() => handleCardMouseEnter('clients')}
-          onMouseLeave={handleCardMouseLeave}
+          className={`dashboard-card ${isLoadingPatients ? 'loading' : ''}`}
           ref={cardRefs.patients}
         >
-          {activeCard === 'clients' && (
-            <div className="neon-border-container">
-              <div 
-                className="neon-dot" 
-                style={{
-                  left: calculateNeonPosition(neonPosition).x,
-                  top: calculateNeonPosition(neonPosition).y
-                }}
-              ></div>
-              <div className="neon-glow"></div>
-            </div>
-          )}
           
           <div className="card-content">
             <div className="card-header">
@@ -342,23 +328,9 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
         </div>
         
         <div 
-          className={`dashboard-card ${activeCard === 'finance' ? 'active' : ''}`}
-          onMouseEnter={() => handleCardMouseEnter('finance')}
-          onMouseLeave={handleCardMouseLeave}
+          className="dashboard-card"
           ref={cardRefs.finance}
         >
-          {activeCard === 'finance' && (
-            <div className="neon-border-container">
-              <div 
-                className="neon-dot" 
-                style={{
-                  left: calculateNeonPosition(neonPosition).x,
-                  top: calculateNeonPosition(neonPosition).y
-                }}
-              ></div>
-              <div className="neon-glow"></div>
-            </div>
-          )}
           
           <div className="card-content">
             <div className="card-header">
@@ -444,23 +416,9 @@ const DevInfoWelcome = ({ isMobile, isTablet }) => {
         </div>
         
         <div 
-          className={`dashboard-card ${activeCard === 'learning' ? 'active' : ''}`}
-          onMouseEnter={() => handleCardMouseEnter('learning')}
-          onMouseLeave={handleCardMouseLeave}
+          className="dashboard-card"
           ref={cardRefs.learning}
         >
-          {activeCard === 'learning' && (
-            <div className="neon-border-container">
-              <div 
-                className="neon-dot" 
-                style={{
-                  left: calculateNeonPosition(neonPosition).x,
-                  top: calculateNeonPosition(neonPosition).y
-                }}
-              ></div>
-              <div className="neon-glow"></div>
-            </div>
-          )}
           
           <div className="card-content">
             <div className="card-header">
