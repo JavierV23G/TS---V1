@@ -4,7 +4,7 @@ import '../../../styles/developer/Welcome/WelcomeNew.scss';
 import LogoutAnimation from '../../LogOut/LogOut';
 import InfoWelcome from './infoWelcome';
 import { useAuth } from '../../login/AuthContext';
-import Header from '../../header/Header';
+import PremiumHeader from '../../header/Header';
 
 const DevHomePage = () => {
   const navigate = useNavigate();
@@ -40,8 +40,8 @@ const DevHomePage = () => {
       {/* Fondo clínico profesional */}
       <div className="clinify-background"></div>
       
-      {/* Header */}
-      <Header onLogout={handleLogout} />
+      {/* Header Premium Quantum */}
+      <PremiumHeader onLogout={handleLogout} />
       
       {/* Animación de logout */}
       {isLoggingOut && (

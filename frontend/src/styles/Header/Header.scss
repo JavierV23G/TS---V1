@@ -859,7 +859,6 @@ $warning-color: #FF9800;
 
     // User profile enhanced
     .support-user-profile {
-      position: relative;
       z-index: 20;
       
       @include responsive(lg) {
