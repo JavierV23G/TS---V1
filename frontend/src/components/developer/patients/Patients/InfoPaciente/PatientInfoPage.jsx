@@ -9,7 +9,7 @@ import DisciplinesComponent from './DisciplinesComponent';
 import ScheduleComponent from './ScheduleComponent';
 import ExercisesComponent from './ExercisesComponent';
 import DocumentsComponent from './DocumentsComponent';
-import NotesComponent from './NotesComponent';
+import CommunicationRecords from './CommunicationRecords';
 import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import LogoutAnimation from '../../../../../components/LogOut/LogOut';
 import '../../../../../styles/developer/Patients/InfoPaciente/PatientInfoPage.scss';
@@ -64,7 +64,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
     { id: 'schedule', label: 'Schedule', icon: 'fas fa-calendar-alt' },
     { id: 'exercises', label: 'Exercises', icon: 'fas fa-dumbbell' },
     { id: 'documents', label: 'Documents', icon: 'fas fa-file-alt' },
-    { id: 'notes', label: 'Notes', icon: 'fas fa-sticky-note' }
+    { id: 'notes', label: 'Communications', icon: 'fas fa-comments' }
   ];
 
   return (
@@ -442,13 +442,13 @@ const DocumentsSection = ({ patient }) => {
 };
 
 // Notes Section Component
-const NotesSection = ({ patient }) => {
+const NotesSection = ({ patient, currentCertPeriod }) => {
   const handleUpdateNotes = (updatedNotes) => {
   };
   
   return (
-    <div className="notes-section">
-      <NotesComponent patient={patient} onUpdateNotes={handleUpdateNotes} />
+    <div className="communication-records-section">
+      <CommunicationRecords patient={patient} currentCertPeriod={currentCertPeriod} />
     </div>
   );
 };
@@ -978,7 +978,7 @@ const PatientInfoPage = () => {
               <DocumentsSection patient={patient} />
             )}
             {activeTab === 'notes' && (
-              <NotesSection patient={patient} />
+              <NotesSection patient={patient} currentCertPeriod={currentCertPeriod} />
             )}
           </div>
         </div>

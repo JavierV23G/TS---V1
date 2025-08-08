@@ -12,7 +12,8 @@ from database.models import (
     PatientExerciseAssignment, Exercise,
     Visit,
     NoteSection, VisitNote,
-    NoteTemplate, NoteTemplateSection)
+    NoteTemplate, NoteTemplateSection,
+    CommunicationRecord)
 from schemas import (
     StaffCreate, StaffResponse, StaffAssignmentResponse,
     PatientCreate, PatientResponse,
@@ -22,7 +23,8 @@ from schemas import (
     VisitCreate, VisitResponse,
     VisitNoteCreate, VisitNoteResponse,
     NoteSectionCreate, NoteSectionResponse,
-    NoteTemplateCreate, NoteTemplateResponse)
+    NoteTemplateCreate, NoteTemplateResponse,
+    CommunicationRecordCreate, CommunicationRecordResponse)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
 
@@ -431,3 +433,23 @@ def create_section(data: NoteSectionCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(section)
     return section
+
+@router.post("/communication-records", response_model=CommunicationRecordResponse)
+def create_communication_record(data: CommunicationRecordCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    cert_period = db.query(CertificationPeriod).filter(CertificationPeriod.id == data.certification_period_id).first()
+    if not cert_period:
+        raise HTTPException(status_code=404, detail="Certification period not found")
+    
+    record_data = data.dict()
+    record_data["created_by"] = current_user["id"]
+    
+    record = CommunicationRecord(**record_data)
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    
+    staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+    response_data = record.__dict__.copy()
+    response_data["staff_name"] = staff.name if staff else None
+    
+    return response_data

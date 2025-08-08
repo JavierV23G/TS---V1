@@ -12,7 +12,8 @@ from database.models import (
     NoteSection,
     NoteTemplateSection,
     Visit,
-    VisitNote)
+    VisitNote,
+    CommunicationRecord)
 
 router = APIRouter()
 
@@ -201,3 +202,13 @@ def delete_assigned_exercise(assignment_id: int, db: Session = Depends(get_db)):
     db.delete(assignment)
     db.commit()
     return {"detail": "Exercise assignment deleted successfully."}
+
+@router.delete("/communication-records/{record_id}", status_code=204)
+def delete_communication_record(record_id: int, db: Session = Depends(get_db)):
+    record = db.query(CommunicationRecord).filter(CommunicationRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Communication record not found")
+    
+    db.delete(record)
+    db.commit()
+    return

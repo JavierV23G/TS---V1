@@ -326,3 +326,29 @@ class NoteTemplateWithSectionsResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+#========================= COMMUNICATION RECORDS =========================#
+
+class CommunicationRecordCreate(BaseModel):
+    certification_period_id: int
+    title: str
+    content: str
+
+class CommunicationRecordUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class CommunicationRecordResponse(BaseModel):
+    id: int
+    certification_period_id: int
+    title: str
+    content: str
+    created_by: int
+    created_at: datetime
+    staff_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True

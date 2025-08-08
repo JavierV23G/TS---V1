@@ -12,7 +12,8 @@ from database.models import (
     Visit, VisitNote,
     CertificationPeriod,
     Document,
-    NoteSection, NoteTemplate, NoteTemplateSection)
+    NoteSection, NoteTemplate, NoteTemplateSection,
+    CommunicationRecord)
 from schemas import (
     StaffResponse, StaffAssignmentResponse,
     PatientResponse,
@@ -22,7 +23,8 @@ from schemas import (
     NoteSectionResponse,
     CertificationPeriodResponse,
     DocumentResponse,
-    NoteTemplateWithSectionsResponse)
+    NoteTemplateWithSectionsResponse,
+    CommunicationRecordResponse)
 
 router = APIRouter()
 
@@ -451,3 +453,30 @@ def get_cert_periods_by_patient(patient_id: int, db: Session = Depends(get_db)):
     return db.query(CertificationPeriod).filter(
         CertificationPeriod.patient_id == patient_id
     ).order_by(CertificationPeriod.start_date.desc()).all()
+
+@router.get("/communication-records/cert-period/{cert_period_id}", response_model=List[CommunicationRecordResponse])
+def get_communication_records_by_cert_period(cert_period_id: int, db: Session = Depends(get_db)):
+    records = db.query(CommunicationRecord).filter(
+        CommunicationRecord.certification_period_id == cert_period_id
+    ).order_by(CommunicationRecord.created_at.desc()).all()
+    
+    results = []
+    for record in records:
+        staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+        response_data = record.__dict__.copy()
+        response_data["staff_name"] = staff.name if staff else None
+        results.append(response_data)
+    
+    return results
+
+@router.get("/communication-records/{record_id}", response_model=CommunicationRecordResponse)
+def get_communication_record(record_id: int, db: Session = Depends(get_db)):
+    record = db.query(CommunicationRecord).filter(CommunicationRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Communication record not found")
+    
+    staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+    response_data = record.__dict__.copy()
+    response_data["staff_name"] = staff.name if staff else None
+    
+    return response_data

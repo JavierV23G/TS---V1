@@ -188,3 +188,16 @@ class NoteTemplateSection(Base):
 
     template = relationship("NoteTemplate", back_populates="sections")
     section = relationship("NoteSection")
+
+class CommunicationRecord(Base):
+    __tablename__ = "communication_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certification_period_id = Column(Integer, ForeignKey("certification_periods.id"), nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    created_by = Column(Integer, ForeignKey("staff.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    certification_period = relationship("CertificationPeriod")
+    staff = relationship("Staff")

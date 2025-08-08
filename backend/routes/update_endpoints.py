@@ -9,14 +9,16 @@ from database.models import (
     CertificationPeriod, 
     Exercise, 
     NoteSection, NoteTemplate, NoteTemplateSection,
-    Visit, VisitNote)
+    Visit, VisitNote,
+    CommunicationRecord)
 from schemas import (
     VisitCreate, VisitResponse, VisitUpdate,
     CertificationPeriodUpdate, CertificationPeriodResponse,
     ExerciseResponse, PatientUpdate,
     NoteSectionResponse, NoteSectionUpdate,
     NoteTemplateUpdate, NoteTemplateResponse,
-    VisitNoteResponse, VisitNoteUpdate)
+    VisitNoteResponse, VisitNoteUpdate,
+    CommunicationRecordUpdate, CommunicationRecordResponse)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
 from .create_endpoints import determine_note_status
@@ -469,3 +471,23 @@ def update_exercise(
     db.commit()
     db.refresh(exercise)
     return exercise
+
+@router.put("/communication-records/{record_id}", response_model=CommunicationRecordResponse)
+def update_communication_record(record_id: int, data: CommunicationRecordUpdate, db: Session = Depends(get_db)):
+    record = db.query(CommunicationRecord).filter(CommunicationRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Communication record not found")
+    
+    if data.title is not None:
+        record.title = data.title
+    if data.content is not None:
+        record.content = data.content
+    
+    db.commit()
+    db.refresh(record)
+    
+    staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+    response_data = record.__dict__.copy()
+    response_data["staff_name"] = staff.name if staff else None
+    
+    return response_data
