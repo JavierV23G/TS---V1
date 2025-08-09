@@ -1,4 +1,4 @@
-import os, shutil, re
+import os, shutil, re, json
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
@@ -13,7 +13,7 @@ from database.models import (
     Visit,
     NoteSection, VisitNote,
     NoteTemplate, NoteTemplateSection,
-    CommunicationRecord)
+    CommunicationRecord, Signature)
 from schemas import (
     StaffCreate, StaffResponse, StaffAssignmentResponse,
     PatientCreate, PatientResponse,
@@ -24,7 +24,8 @@ from schemas import (
     VisitNoteCreate, VisitNoteResponse,
     NoteSectionCreate, NoteSectionResponse,
     NoteTemplateCreate, NoteTemplateResponse,
-    CommunicationRecordCreate, CommunicationRecordResponse)
+    CommunicationRecordCreate, CommunicationRecordResponse,
+    SignatureCreate, SignatureResponse)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
 
@@ -76,7 +77,66 @@ def determine_note_status(sections_data, template, db):
     else:
         return "Pending"
 
+def ensure_signature_directory(patient_id: int) -> str:
+    """Ensure patient signature directory exists and return path"""
+    patient_dir = os.path.join(SIGNATURES_BASE_PATH, str(patient_id))
+    os.makedirs(patient_dir, exist_ok=True)
+    return patient_dir
+
+def generate_signature_filename(signature_id: int, file_type: str) -> str:
+    """Generate filename for signature files"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"signature_{signature_id}_{timestamp}.{file_type}"
+
+def generate_svg_from_strokes(signature_metadata: dict) -> str:
+    """Generate SVG from JSON strokes data"""
+    strokes = signature_metadata.get('strokes', [])
+    dimensions = signature_metadata.get('dimensions', {'width': 400, 'height': 200})
+    
+    if not strokes:
+        return ''
+    
+    width = dimensions.get('width', 400)
+    height = dimensions.get('height', 200)
+    
+    # Build SVG path data
+    path_data = ''
+    for stroke in strokes:
+        if stroke and len(stroke) > 0:
+            # Move to first point
+            first_point = stroke[0]
+            path_data += f"M{first_point['x']},{first_point['y']}"
+            
+            # Line to subsequent points
+            for point in stroke[1:]:
+                path_data += f"L{point['x']},{point['y']}"
+    
+    # Generate SVG string
+    svg_content = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">
+    <path d="{path_data}" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>'''
+    
+    return svg_content
+
+def save_signature_files(signature_metadata: dict, file_path_base: str) -> tuple:
+    """Save JSON and SVG files, return (json_path, svg_path)"""
+    json_path = f"{file_path_base}.json"
+    svg_path = f"{file_path_base}.svg"
+    
+    # Save JSON metadata
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(signature_metadata, f, indent=2, ensure_ascii=False)
+    
+    # Generate and save SVG
+    svg_content = generate_svg_from_strokes(signature_metadata)
+    if svg_content:
+        with open(svg_path, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+    
+    return json_path, svg_path
+
 BASE_STORAGE_PATH = "/app/storage/docs"
+SIGNATURES_BASE_PATH = "/app/storage/signatures"
 
 #====================== STAFF ======================#
 
@@ -450,3 +510,74 @@ def create_communication_record(data: CommunicationRecordCreate, db: Session = D
     response_data["staff_name"] = staff.name if staff else None
     
     return response_data
+
+#====================== SIGNATURES ======================#
+
+@router.post("/signatures/", response_model=SignatureResponse)
+def create_signature(
+    signature_data: SignatureCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new signature"""
+    
+    # Verify patient exists
+    patient = db.query(Patient).filter(Patient.id == signature_data.patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Verify signable entity exists
+    if signature_data.signable_type == "visit_note":
+        signable = db.query(VisitNote).filter(VisitNote.id == signature_data.signable_id).first()
+    elif signature_data.signable_type == "communication_record":
+        signable = db.query(CommunicationRecord).filter(CommunicationRecord.id == signature_data.signable_id).first()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid signable_type")
+    
+    if not signable:
+        raise HTTPException(status_code=404, detail=f"{signature_data.signable_type.replace('_', ' ').title()} not found")
+    
+    try:
+        # Generate SVG preview from strokes
+        svg_preview = generate_svg_from_strokes(signature_data.signature_metadata)
+        
+        # Create signature record first to get ID
+        db_signature = Signature(
+            patient_id=signature_data.patient_id,
+            entity_type=signature_data.entity_type,
+            entity_name=signature_data.entity_name,
+            entity_id=signature_data.entity_id,
+            signable_type=signature_data.signable_type,
+            signable_id=signature_data.signable_id,
+            signature_metadata=signature_data.signature_metadata,
+            svg_preview=svg_preview,
+            file_path=""  # Will be updated after file creation
+        )
+        
+        db.add(db_signature)
+        db.flush()  # Get the ID without committing
+        
+        # Create patient signature directory
+        patient_dir = ensure_signature_directory(signature_data.patient_id)
+        
+        # Generate file paths
+        filename_base = generate_signature_filename(db_signature.id, "")[:-1]  # Remove the dot
+        file_path_base = os.path.join(patient_dir, filename_base)
+        
+        # Save signature files
+        json_path, svg_path = save_signature_files(
+            signature_data.signature_metadata,
+            file_path_base
+        )
+        
+        # Update file path in database
+        db_signature.file_path = file_path_base
+        
+        db.commit()
+        db.refresh(db_signature)
+        
+        return db_signature
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating signature: {str(e)}")

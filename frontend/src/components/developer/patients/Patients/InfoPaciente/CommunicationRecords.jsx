@@ -231,6 +231,7 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
     }
   };
 
+
   // Handle saving a new record
   const handleSaveRecord = async (event) => {
     event.preventDefault();

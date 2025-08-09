@@ -353,3 +353,49 @@ class CommunicationRecordResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+#========================= SIGNATURES =========================#
+
+class SignatureCreate(BaseModel):
+    patient_id: int
+    entity_type: str 
+    entity_name: str
+    entity_id: int  
+    signable_type: str  
+    signable_id: int  
+    signature_metadata: Dict 
+
+class SignatureUpdate(BaseModel):
+    entity_name: Optional[str] = None
+    signature_metadata: Optional[Dict] = None
+    svg_preview: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class SignatureResponse(BaseModel):
+    id: int
+    patient_id: int
+    entity_type: str
+    entity_name: str
+    entity_id: int
+    signable_type: str
+    signable_id: int
+    signature_metadata: Dict
+    file_path: str
+    svg_preview: Optional[str] = None
+    created_at: datetime
+    signed_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SignatureSearchParams(BaseModel):
+    patient_id: Optional[int] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[int] = None
+    signable_type: Optional[str] = None
+    signable_id: Optional[int] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None

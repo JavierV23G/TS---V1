@@ -13,7 +13,7 @@ from database.models import (
     CertificationPeriod,
     Document,
     NoteSection, NoteTemplate, NoteTemplateSection,
-    CommunicationRecord)
+    CommunicationRecord, Signature)
 from schemas import (
     StaffResponse, StaffAssignmentResponse,
     PatientResponse,
@@ -24,7 +24,7 @@ from schemas import (
     CertificationPeriodResponse,
     DocumentResponse,
     NoteTemplateWithSectionsResponse,
-    CommunicationRecordResponse)
+    CommunicationRecordResponse, SignatureResponse)
 
 router = APIRouter()
 
@@ -480,3 +480,109 @@ def get_communication_record(record_id: int, db: Session = Depends(get_db)):
     response_data["staff_name"] = staff.name if staff else None
     
     return response_data
+
+#====================== SIGNATURES ======================#
+
+@router.get("/signatures/search", response_model=List[SignatureResponse])
+def search_signatures(
+    patient_id: Optional[int] = Query(None),
+    entity_type: Optional[str] = Query(None),
+    entity_id: Optional[int] = Query(None),
+    signable_type: Optional[str] = Query(None),
+    signable_id: Optional[int] = Query(None),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Search signatures with filters"""
+    
+    query = db.query(Signature)
+    
+    # Apply filters
+    if patient_id:
+        query = query.filter(Signature.patient_id == patient_id)
+    
+    if entity_type:
+        query = query.filter(Signature.entity_type == entity_type)
+    
+    if entity_id:
+        query = query.filter(Signature.entity_id == entity_id)
+    
+    if signable_type:
+        query = query.filter(Signature.signable_type == signable_type)
+    
+    if signable_id:
+        query = query.filter(Signature.signable_id == signable_id)
+    
+    # Order by creation date (most recent first)
+    query = query.order_by(Signature.created_at.desc())
+    
+    # Apply pagination
+    signatures = query.offset(offset).limit(limit).all()
+    
+    return signatures
+
+@router.get("/signatures/{signature_id}", response_model=SignatureResponse)
+def get_signature(signature_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """Get signature by ID"""
+    
+    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+    
+    return signature
+
+@router.get("/patients/{patient_id}/signatures", response_model=List[SignatureResponse])
+def get_patient_signatures(
+    patient_id: int,
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all signatures for a specific patient"""
+    
+    # Verify patient exists
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    signatures = (db.query(Signature)
+                 .filter(Signature.patient_id == patient_id)
+                 .order_by(Signature.created_at.desc())
+                 .offset(offset)
+                 .limit(limit)
+                 .all())
+    
+    return signatures
+
+@router.get("/signatures/{signature_id}/files")
+def get_signature_files(
+    signature_id: int,
+    file_type: str = Query(..., regex="^(json|svg)$"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get signature file content (JSON or SVG)"""
+    
+    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+    
+    file_path = f"{signature.file_path}.{file_type}"
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"{file_type.upper()} file not found")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if file_type == "json":
+            return {"content": json.loads(content)}
+        else:  # svg
+            return {"content": content, "content_type": "image/svg+xml"}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading {file_type} file: {str(e)}")

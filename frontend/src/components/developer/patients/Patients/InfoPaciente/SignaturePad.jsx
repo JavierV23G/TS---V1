@@ -6,6 +6,8 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
   const [isDrawing, setIsDrawing] = useState(false);
   const [ctx, setCtx] = useState(null);
   const [isEmpty, setIsEmpty] = useState(true);
+  const [strokes, setStrokes] = useState([]);
+  const [currentStroke, setCurrentStroke] = useState([]);
 
   // Initialize canvas
   useEffect(() => {
@@ -25,14 +27,9 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
     context.lineJoin = 'round';
     context.strokeStyle = '#333';
     
-    // If there's an initial signature, draw it
-    if (initialSignature) {
-      const img = new Image();
-      img.onload = () => {
-        context.drawImage(img, 0, 0);
-        setIsEmpty(false);
-      };
-      img.src = initialSignature;
+    // If there's an initial signature, load it from strokes
+    if (initialSignature && initialSignature.strokes) {
+      setTimeout(() => loadSignatureFromStrokes(initialSignature), 100);
     }
     
     // Clean up
@@ -78,6 +75,14 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
     ctx.moveTo(offsetX, offsetY);
     setIsDrawing(true);
     setIsEmpty(false);
+    
+    // Start new stroke
+    const newStroke = [{
+      x: offsetX,
+      y: offsetY,
+      timestamp: Date.now()
+    }];
+    setCurrentStroke(newStroke);
   };
 
   // Continue drawing
@@ -88,6 +93,14 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
     
     ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
+    
+    // Add point to current stroke
+    const newPoint = {
+      x: offsetX,
+      y: offsetY,
+      timestamp: Date.now()
+    };
+    setCurrentStroke(prev => [...prev, newPoint]);
   };
 
   // Stop drawing
@@ -97,9 +110,24 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
     ctx.closePath();
     setIsDrawing(false);
     
-    // Send signature data to parent component
-    if (canvasRef.current && onSignatureChange) {
-      onSignatureChange(canvasRef.current.toDataURL());
+    // Add completed stroke to strokes array
+    if (currentStroke.length > 0) {
+      const newStrokes = [...strokes, currentStroke];
+      setStrokes(newStrokes);
+      setCurrentStroke([]);
+      
+      // Send signature data to parent component with JSON strokes
+      if (onSignatureChange) {
+        const signatureData = {
+          strokes: newStrokes,
+          dimensions: {
+            width: canvasRef.current.width,
+            height: canvasRef.current.height
+          },
+          timestamp: new Date().toISOString()
+        };
+        onSignatureChange(signatureData);
+      }
     }
   };
 
@@ -122,12 +150,35 @@ const SignaturePad = ({ label, onSignatureChange, initialSignature, disabled }) 
     }
   };
 
+  // Load signature from strokes
+  const loadSignatureFromStrokes = (signatureData) => {
+    if (!ctx || !signatureData?.strokes) return;
+    
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    
+    signatureData.strokes.forEach(stroke => {
+      if (stroke.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x, stroke[0].y);
+        stroke.slice(1).forEach(point => {
+          ctx.lineTo(point.x, point.y);
+        });
+        ctx.stroke();
+      }
+    });
+    
+    setStrokes(signatureData.strokes);
+    setIsEmpty(signatureData.strokes.length === 0);
+  };
+
   // Clear the signature
   const clearSignature = () => {
     if (!ctx || disabled) return;
     
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     setIsEmpty(true);
+    setStrokes([]);
+    setCurrentStroke([]);
     
     // Notify parent that signature was cleared
     if (onSignatureChange) {
