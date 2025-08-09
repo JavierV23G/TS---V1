@@ -166,16 +166,10 @@ const DevHomePage = () => {
           ))}
         </div>
         
-        <div className="nebula-effect nebula-1"></div>
-        <div className="nebula-effect nebula-2"></div>
-        <div className="nebula-effect nebula-3"></div>
+        {/* Nebulas temporarily disabled for white background */}
       </div>
       
-      <div className="gradient-mesh">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className={`mesh-line mesh-line-${i + 1}`}></div>
-        ))}
-      </div>
+      {/* Gradient mesh temporarily disabled for white background */}
       
       {isLoggingOut && (
         <LogoutAnimation 
@@ -190,7 +184,7 @@ const DevHomePage = () => {
         <div className="welcome-container welcome-container-top">
           <div className="title-container">
             <h1 className="welcome-title">
-              <span className="highlight">Welcome</span> to TherapySync
+              <span className="highlight">Welcome</span> to Clinify AI
               <div className="title-decoration"></div>
             </h1>
             <div className="title-glow"></div>

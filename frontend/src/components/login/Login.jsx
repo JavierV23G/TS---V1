@@ -473,12 +473,15 @@ const Login = ({ onForgotPassword }) => {
         <img src={logoImg} alt="Motive Homecare Logo" className="login__logo-img" />
       </div>
 
-      <h2 className="login__title">Welcome{!isMobile ? " " : ""}</h2>
+      <h2 className="login__title">
+        Clinical <span>Intelligence</span>
+      </h2>
+      <p className="login__subtitle">Enter your credentials to continue</p>
 
       <form className="login__form" onSubmit={handleSubmit}>
         <div className={`login__form-group ${errors.username ? 'error' : ''}`} id="usernameGroup">
           <label htmlFor="username" className="login__label">
-            <i className="fas fa-user"></i> Username
+            <i className="fas fa-user-md"></i> Username
           </label>
           <input
             type="text"
@@ -538,7 +541,7 @@ const Login = ({ onForgotPassword }) => {
         </label>
 
         <button type="submit" className="login__button">
-          <span>LOG IN</span>
+          <span>Sign In</span>
           <i className="fas fa-arrow-right login-arrow"></i>
         </button>
       </form>
