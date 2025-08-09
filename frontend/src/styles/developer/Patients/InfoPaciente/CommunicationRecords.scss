@@ -151,6 +151,9 @@ $border-color: #e2e8f0;
       // Search bar
       .search-container {
         position: relative;
+        margin: 0; // Ensure no margin on container
+        display: flex;
+        align-items: center;
         
         .search-icon {
           position: absolute;
@@ -162,19 +165,21 @@ $border-color: #e2e8f0;
         }
         
         .search-input {
-          min-width: 240px;
-          padding: 0.7rem 0.7rem 0.7rem 2.2rem;
+          width: 240px;
+          height: 42px; // Same as selects with 0.7rem padding + border
+          padding: 0.7rem 2.2rem 0.7rem 2.2rem;
+          margin: 0; // Remove any default margin
           border-radius: $border-radius-md;
           border: 1px solid $border-color;
           font-size: 0.9rem;
           transition: $transition-normal;
           background: white;
+          box-sizing: border-box;
           
           &:focus {
             outline: none;
             border-color: $success-color;
             box-shadow: 0 0 0 3px rgba($success-color, 0.15);
-            min-width: 260px;
           }
           
           &::placeholder {
@@ -212,8 +217,9 @@ $border-color: #e2e8f0;
         display: flex;
         gap: 0.8rem;
         
-        .sort-select {
+        .discipline-select, .sort-select {
           appearance: none;
+          height: 42px; // Same height as search input
           padding: 0.7rem 2.4rem 0.7rem 1rem;
           background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat;
           background-position: calc(100% - 0.6rem) center;
@@ -222,14 +228,19 @@ $border-color: #e2e8f0;
           font-size: 0.9rem;
           color: $dark-color;
           cursor: pointer;
-          min-width: 160px;
+          min-width: 140px;
           transition: $transition-normal;
+          box-sizing: border-box;
           
           &:focus {
             outline: none;
             border-color: $success-color;
             box-shadow: 0 0 0 3px rgba($success-color, 0.15);
           }
+        }
+        
+        .sort-select {
+          min-width: 160px;
         }
       }
       
@@ -404,17 +415,19 @@ $border-color: #e2e8f0;
       border-color: $success-color;
     }
 
-    .record-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
+    .record-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto 1fr;
+      gap: 1rem;
+      min-height: 100px;
 
-      .record-title-section {
+      // Top Left: Title
+      .grid-title {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        flex: 1;
+        padding-right: 1rem;
 
         .type-indicator {
           display: flex;
@@ -425,6 +438,7 @@ $border-color: #e2e8f0;
           background: rgba($success-color, 0.1);
           border-radius: $border-radius-md;
           font-size: 1rem;
+          flex-shrink: 0;
         }
 
         .record-title {
@@ -436,22 +450,88 @@ $border-color: #e2e8f0;
         }
       }
 
-      .record-actions {
+      // Top Right: Author
+      .grid-author {
         display: flex;
-        gap: 0.5rem;
-        opacity: 0;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 180px;
+
+        .author-details {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          .author-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, $success-color, lighten($success-color, 10%));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+          }
+
+          .author-text {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+
+            .author-name {
+              font-weight: 600;
+              color: $dark-color;
+              font-size: 0.875rem;
+              line-height: 1.2;
+            }
+
+            .created-date {
+              font-size: 0.75rem;
+              color: $medium-color;
+              line-height: 1.2;
+            }
+          }
+        }
+      }
+
+      // Bottom Left: Content
+      .grid-content {
+        cursor: pointer;
+        padding-right: 1rem;
+        align-self: start;
+
+        p {
+          margin: 0;
+          color: $dark-color;
+          line-height: 1.6;
+          font-size: 0.95rem;
+        }
+      }
+
+      // Bottom Right: Actions
+      .grid-actions {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0.4rem;
+        opacity: 1;
         transition: $transition-fast;
+        min-width: 180px;
+        padding-top: 0.5rem;
 
         .action-btn {
-          width: 2rem;
-          height: 2rem;
+          width: 1.75rem;
+          height: 1.75rem;
           border: none;
           border-radius: $border-radius-sm;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           transition: $transition-fast;
 
           &.view-btn {
@@ -482,63 +562,6 @@ $border-color: #e2e8f0;
               background: $danger-color;
               color: white;
             }
-          }
-        }
-      }
-    }
-
-    &:hover .record-actions {
-      opacity: 1;
-    }
-
-    .record-content {
-      margin-bottom: 1rem;
-      cursor: pointer;
-
-      p {
-        margin: 0;
-        color: $dark-color;
-        line-height: 1.6;
-        font-size: 0.95rem;
-      }
-    }
-
-    .record-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .record-author {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-
-        .author-icon {
-          width: 2.5rem;
-          height: 2.5rem;
-          border-radius: 50%;
-          background: linear-gradient(135deg, $success-color, lighten($success-color, 10%));
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-
-        .author-info {
-          display: flex;
-          flex-direction: column;
-
-          .author-name {
-            font-weight: 600;
-            color: $dark-color;
-            font-size: 0.875rem;
-          }
-
-          .created-date {
-            font-size: 0.75rem;
-            color: $medium-color;
           }
         }
       }
@@ -944,14 +967,33 @@ $border-color: #e2e8f0;
     .communication-record-card {
       padding: 1rem;
 
-      .record-header {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: flex-start;
+      .record-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+        gap: 0.75rem;
 
-        .record-actions {
+        .grid-title {
+          padding-right: 0;
+        }
+
+        .grid-author {
+          min-width: auto;
+          justify-content: flex-start;
+
+          .author-details .author-text {
+            text-align: left;
+          }
+        }
+
+        .grid-content {
+          padding-right: 0;
+        }
+
+        .grid-actions {
           opacity: 1;
-          align-self: flex-end;
+          min-width: auto;
+          justify-content: flex-start;
+          padding-top: 0;
         }
       }
     }

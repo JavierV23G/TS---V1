@@ -21,75 +21,44 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [sortBy, setSortBy] = useState('date-desc');
   const [selectedType, setSelectedType] = useState('therapy-order');
+  const [disciplineFilter, setDisciplineFilter] = useState('all');
   
-  // Local state for certification periods (similar to ScheduleComponent)
-  const [certPeriods, setCertPeriods] = useState([]);
-  const [localCurrentCertPeriod, setLocalCurrentCertPeriod] = useState(null);
-  const [isLoadingCertPeriods, setIsLoadingCertPeriods] = useState(true);
   
   const { currentUser } = useAuth();
   
   // API Configuration
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  // Fetch certification periods for patient (similar to ScheduleComponent)
-  const fetchCertificationPeriods = async () => {
-    if (!patient?.id) return;
-    
-    try {
-      setIsLoadingCertPeriods(true);
-      
-      const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/cert-periods`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch certification periods: ${response.status} ${response.statusText}`);
-      }
-      
-      const certData = await response.json();
-      setCertPeriods(certData);
-      
-      // Determine active period - use currentCertPeriod from props if available, otherwise find active one
-      let activePeriod = null;
-      
-      if (currentCertPeriod?.id) {
-        activePeriod = certData.find(period => period.id === currentCertPeriod.id);
-      }
-      
-      if (!activePeriod && certData.length > 0) {
-        // Find the active certification period
-        activePeriod = certData.find(period => period.is_active);
-        
-        // If no active period found, find the most current one
-        if (!activePeriod) {
-          const today = new Date();
-          activePeriod = certData
-            .filter(period => new Date(period.end_date) >= today)
-            .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0];
-        }
-      }
-      
-      setLocalCurrentCertPeriod(activePeriod);
-      
-    } catch (err) {
-      console.error('Error fetching certification periods:', err);
-      setCertPeriods([]);
-      setLocalCurrentCertPeriod(null);
-    } finally {
-      setIsLoadingCertPeriods(false);
-    }
-  };
+  // Local state for certification periods
+  const [localCurrentCertPeriod, setLocalCurrentCertPeriod] = useState(null);
+  const [isLoadingCertPeriods, setIsLoadingCertPeriods] = useState(false);
 
-  // Load certification periods when patient changes
+  // Fetch certification periods if not provided in props
   useEffect(() => {
-    if (patient?.id) {
-      fetchCertificationPeriods();
-    }
-  }, [patient?.id]);
+    const fetchCertificationPeriods = async () => {
+      if (currentCertPeriod?.id || !patient?.id) {
+        setLocalCurrentCertPeriod(currentCertPeriod);
+        return;
+      }
+      
+      try {
+        setIsLoadingCertPeriods(true);
+        
+        const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/cert-periods`);
+        if (response.ok) {
+          const certData = await response.json();
+          const activePeriod = certData.find(period => period.is_active) || certData[0];
+          setLocalCurrentCertPeriod(activePeriod);
+        }
+      } catch (err) {
+        console.error('Error fetching certification periods:', err);
+      } finally {
+        setIsLoadingCertPeriods(false);
+      }
+    };
+
+    fetchCertificationPeriods();
+  }, [patient?.id, currentCertPeriod, API_BASE_URL]);
 
   // Use local cert period or fallback to prop
   const effectiveCertPeriod = localCurrentCertPeriod || currentCertPeriod;
@@ -152,11 +121,21 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
       );
     }
     
+    // Filter by discipline
+    if (disciplineFilter !== 'all') {
+      result = result.filter(record => {
+        // This would need staff role data which we don't have in the record
+        // For now, we'll show all records when any discipline is selected
+        // TODO: Backend needs to include staff role in communication record response
+        return true;
+      });
+    }
+    
     // Sort records
     result = sortRecords(result, sortBy);
     
     setFilteredRecords(result);
-  }, [records, searchQuery, sortBy]);
+  }, [records, searchQuery, disciplineFilter, sortBy]);
 
   // Sort records based on criteria
   const sortRecords = (recordsToSort, sortCriteria) => {
@@ -286,7 +265,8 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
       const recordData = {
         certification_period_id: certPeriodId,
         title,
-        content
+        content,
+        created_by: currentUser?.id || 1 // Fallback to ID 1 if no current user
       };
       
       if (editingRecord) {
@@ -360,14 +340,35 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
     
     return (
       <div className="communication-record-card">
-        <div className="record-header">
-          <div className="record-title-section">
+        <div className="record-grid">
+          {/* Top Left: Title */}
+          <div className="grid-title">
             <div className="type-indicator">
               <i className={`fas ${typeInfo.icon}`} style={{color: typeInfo.color}}></i>
             </div>
             <h3 className="record-title">{record.title}</h3>
           </div>
-          <div className="record-actions">
+          
+          {/* Top Right: Author */}
+          <div className="grid-author">
+            <div className="author-details">
+              <div className="author-icon">
+                {record.staff_name ? record.staff_name.charAt(0) : 'U'}
+              </div>
+              <div className="author-text">
+                <span className="author-name">{record.staff_name || 'Unknown'}</span>
+                <span className="created-date">{formatDate(record.created_at)}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom Left: Content */}
+          <div className="grid-content" onClick={() => handleViewRecord(record.id)}>
+            <p>{record.content.length > 200 ? `${record.content.substring(0, 200)}...` : record.content}</p>
+          </div>
+          
+          {/* Bottom Right: Actions */}
+          <div className="grid-actions">
             <button 
               className="action-btn view-btn" 
               onClick={() => handleViewRecord(record.id)}
@@ -389,22 +390,6 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
             >
               <i className="fas fa-trash-alt"></i>
             </button>
-          </div>
-        </div>
-        
-        <div className="record-content" onClick={() => handleViewRecord(record.id)}>
-          <p>{record.content.length > 120 ? `${record.content.substring(0, 120)}...` : record.content}</p>
-        </div>
-        
-        <div className="record-footer">
-          <div className="record-author">
-            <div className="author-icon">
-              {record.staff_name ? record.staff_name.charAt(0) : 'U'}
-            </div>
-            <div className="author-info">
-              <span className="author-name">{record.staff_name || 'Unknown'}</span>
-              <span className="created-date">{formatDate(record.created_at)}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -455,6 +440,18 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
           </div>
           
           <div className="filter-group">
+            <div className="discipline-filter">
+              <select 
+                value={disciplineFilter}
+                onChange={(e) => setDisciplineFilter(e.target.value)}
+                className="discipline-select"
+              >
+                <option value="all">All Disciplines</option>
+                <option value="pt">PT</option>
+                <option value="ot">OT</option>
+                <option value="st">ST</option>
+              </select>
+            </div>
             <div className="sort-filter">
               <select 
                 value={sortBy}
@@ -695,22 +692,6 @@ const CommunicationRecords = ({ patient, currentCertPeriod }) => {
         </div>
       )}
       
-      {/* Floating Action Button */}
-      {effectiveCertPeriod?.id && (
-        <div className="floating-action-button">
-          <button 
-            className="fab-button"
-            onClick={() => {
-              setEditingRecord(null);
-              setSelectedType('therapy-order');
-              setIsAddingRecord(true);
-            }}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="fab-tooltip">Add Record</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

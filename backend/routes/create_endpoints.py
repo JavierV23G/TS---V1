@@ -435,15 +435,12 @@ def create_section(data: NoteSectionCreate, db: Session = Depends(get_db)):
     return section
 
 @router.post("/communication-records", response_model=CommunicationRecordResponse)
-def create_communication_record(data: CommunicationRecordCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_communication_record(data: CommunicationRecordCreate, db: Session = Depends(get_db)):
     cert_period = db.query(CertificationPeriod).filter(CertificationPeriod.id == data.certification_period_id).first()
     if not cert_period:
         raise HTTPException(status_code=404, detail="Certification period not found")
     
-    record_data = data.dict()
-    record_data["created_by"] = current_user["id"]
-    
-    record = CommunicationRecord(**record_data)
+    record = CommunicationRecord(**data.dict())
     db.add(record)
     db.commit()
     db.refresh(record)

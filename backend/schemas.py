@@ -333,6 +333,7 @@ class CommunicationRecordCreate(BaseModel):
     certification_period_id: int
     title: str
     content: str
+    created_by: int
 
 class CommunicationRecordUpdate(BaseModel):
     title: Optional[str] = None
