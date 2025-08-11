@@ -21,7 +21,6 @@ const NotesModule = () => {
 
   const [selectedDiscipline, setSelectedDiscipline] = useState('');
   const [selectedVisitType, setSelectedVisitType] = useState('');
-  const [templates, setTemplates] = useState([]);
   const [selectedSections, setSelectedSections] = useState([]);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
@@ -31,7 +30,6 @@ const NotesModule = () => {
 
   useEffect(() => {
     fetchSections();
-    fetchTemplates();
   }, []);
 
   useEffect(() => {
@@ -52,15 +50,6 @@ const NotesModule = () => {
     }
   };
 
-  const fetchTemplates = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/note-templates/full`);
-      if (!response.ok) throw new Error('Failed to fetch templates');
-      const data = await response.json();
-      setTemplates(data);
-    } catch (error) {
-    }
-  };
 
   const fetchSpecificTemplate = async (discipline, visitType) => {
     try {
@@ -190,7 +179,6 @@ const NotesModule = () => {
       }
       
       await fetchSections();
-      await fetchTemplates();
       
       const notification = document.createElement('div');
       notification.className = 'success-notification';
@@ -268,7 +256,6 @@ const NotesModule = () => {
         }
       }
       
-      await fetchTemplates();
       await fetchSpecificTemplate(selectedDiscipline, selectedVisitType);
 
       const notification = document.createElement('div');

@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 
-// Map backend section names to frontend components
+// Auto-mapeo directo: el backend envía exactamente el nombre del componente
 const mapSectionNameToComponent = (sectionName) => {
-  const sectionMap = {
-    // Solo las 3 secciones que necesitamos del backend (nombres consistentes)
-    'Vitals': 'VitalsSection',
-    'Pain': 'PainSection', 
-    'Transfers / Functional Independence': 'TransfersFunctionalSection',
-  };
-  
-  
-  return sectionMap[sectionName] || null;
+  // El backend debe enviar exactamente el nombre del componente JSX
+  // Ejemplo: "VitalsSection", "PainSection", "TransfersFunctionalSection"
+  return sectionName;
 };
 
 // Hook para manejar configuración de templates - 100% dependiente del backend
@@ -27,7 +21,8 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     setError(null);
 
     try {
-      const templateUrl = `http://localhost:8000/templates/${disciplina}/${tipoNota}`;
+      const templateUrl = `http://localhost:8000/templates/${disciplina}/${encodeURIComponent(tipoNota)}`;
+      console.log('🔍 Fetching template from:', templateUrl);
       const response = await fetch(templateUrl);
       
       if (!response.ok) {
@@ -42,6 +37,7 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
         name: `${config.discipline} ${config.note_type}`,
         sections: config.sections.map(section => {
           const component = mapSectionNameToComponent(section.section_name);
+          console.log(`🔄 Mapeo: "${section.section_name}" → "${component}"`);
           return {
             id: section.id,
             section_name: section.section_name,
@@ -55,6 +51,8 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
         note_type: config.note_type,
         is_active: config.is_active
       };
+      
+      console.log('📋 Template transformado:', transformedConfig);
       
       // Validar que el template tenga la estructura esperada
       if (!validateTemplateStructure(transformedConfig)) {
@@ -110,27 +108,27 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     return true;
   };
 
-  // Validar que el component existe en nuestras 18 sections disponibles
+  // Validar que el component existe en nuestras sections disponibles (nombres actuales del index.js)
   const isValidSectionComponent = (componentName) => {
     const validComponents = [
-      'SubjectiveSection',
-      'VitalsSection', 
-      'PainSection',
-      'MedicationSection',
-      'LivingArrangementsSection',
-      'GaitMobilitySection',
-      'MuscleStrengthSection',
-      'BalanceSection',
-      'TransfersFunctionalSection',
-      'ADLSelfCareSection',
-      'StandardizedTestsSection',
-      'ProblemListSection',
-      'AssessmentJustificationSection',
-      'RehabPotentialSection',
-      'TreatmentInterventionsSection',
-      'SkilledCareSection',
-      'GoalsSection',
-      'SignatureSection'
+      'Subjective',
+      'Vitals', 
+      'Pain',
+      'Medication',
+      'LivingArrangements',
+      'GaitMobility',
+      'MuscleStrengthSection', // Este se exporta diferente
+      'BalanceSection', // Este se exporta diferente
+      'TransfersFunctionalIndependence',
+      'ADLSelfCare',
+      'StandardizedTests',
+      'ProblemListSection', // Este se exporta diferente
+      'AssessmentJustificationSection', // Este se exporta diferente
+      'RehabPotentialSection', // Este se exporta diferente
+      'TreatmentInterventions',
+      'SkilledCareSection', // Este se exporta diferente
+      'Goals',
+      'Signature'
     ];
 
     return validComponents.includes(componentName);
@@ -155,12 +153,12 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     refreshConfig,
     isValid: templateConfig ? validateTemplateStructure(templateConfig) : false,
     availableComponents: [
-      'SubjectiveSection', 'VitalsSection', 'PainSection', 'MedicationSection',
-      'LivingArrangementsSection', 'GaitMobilitySection', 'MuscleStrengthSection',
-      'BalanceSection', 'TransfersFunctionalSection', 'ADLSelfCareSection',
-      'StandardizedTestsSection', 'ProblemListSection', 'AssessmentJustificationSection',
-      'RehabPotentialSection', 'TreatmentInterventionsSection', 'SkilledCareSection',
-      'GoalsSection', 'SignatureSection'
+      'Subjective', 'Vitals', 'Pain', 'Medication',
+      'LivingArrangements', 'GaitMobility', 'MuscleStrengthSection',
+      'BalanceSection', 'TransfersFunctionalIndependence', 'ADLSelfCare',
+      'StandardizedTests', 'ProblemListSection', 'AssessmentJustificationSection',
+      'RehabPotentialSection', 'TreatmentInterventions', 'SkilledCareSection',
+      'Goals', 'Signature'
     ]
   };
 };

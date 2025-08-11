@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Body, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List, Dict
 from datetime import date, datetime, timedelta
+import json, os
 from database.connection import get_db
 from database.models import (
     Staff, 
@@ -9,14 +10,17 @@ from database.models import (
     CertificationPeriod, 
     Exercise, 
     NoteSection, NoteTemplate, NoteTemplateSection,
-    Visit, VisitNote)
+    Visit, VisitNote,
+    CommunicationRecord, Signature)
 from schemas import (
     VisitCreate, VisitResponse, VisitUpdate,
     CertificationPeriodUpdate, CertificationPeriodResponse,
     ExerciseResponse, PatientUpdate,
     NoteSectionResponse, NoteSectionUpdate,
     NoteTemplateUpdate, NoteTemplateResponse,
-    VisitNoteResponse, VisitNoteUpdate)
+    VisitNoteResponse, VisitNoteUpdate,
+    CommunicationRecordUpdate, CommunicationRecordResponse,
+    SignatureUpdate, SignatureResponse)
 from auth.security import hash_password
 from auth.auth_middleware import role_required, get_current_user
 from .create_endpoints import determine_note_status
@@ -469,3 +473,82 @@ def update_exercise(
     db.commit()
     db.refresh(exercise)
     return exercise
+
+@router.put("/communication-records/{record_id}", response_model=CommunicationRecordResponse)
+def update_communication_record(record_id: int, data: CommunicationRecordUpdate, db: Session = Depends(get_db)):
+    record = db.query(CommunicationRecord).filter(CommunicationRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Communication record not found")
+    
+    if data.title is not None:
+        record.title = data.title
+    if data.content is not None:
+        record.content = data.content
+    
+    db.commit()
+    db.refresh(record)
+    
+    staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+    response_data = record.__dict__.copy()
+    response_data["staff_name"] = staff.name if staff else None
+    
+    return response_data
+
+#====================== SIGNATURES ======================#
+
+@router.put("/signatures/{signature_id}", response_model=SignatureResponse)
+def update_signature(
+    signature_id: int,
+    signature_update: SignatureUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Update signature (metadata and SVG preview only)"""
+    
+    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+    
+    try:
+        # Update fields
+        if signature_update.entity_name is not None:
+            signature.entity_name = signature_update.entity_name
+        
+        if signature_update.signature_metadata is not None:
+            signature.signature_metadata = signature_update.signature_metadata
+            
+            # Regenerate SVG from new strokes data
+            from .create_endpoints import generate_svg_from_strokes
+            new_svg = generate_svg_from_strokes(signature_update.signature_metadata)
+            signature.svg_preview = new_svg
+            
+            # Update JSON file
+            json_path = f"{signature.file_path}.json"
+            if os.path.exists(json_path):
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(signature_update.signature_metadata, f, indent=2, ensure_ascii=False)
+            
+            # Update SVG file
+            svg_path = f"{signature.file_path}.svg"
+            if new_svg:
+                with open(svg_path, 'w', encoding='utf-8') as f:
+                    f.write(new_svg)
+        
+        if signature_update.svg_preview is not None:
+            signature.svg_preview = signature_update.svg_preview
+            
+            # Update SVG file
+            svg_path = f"{signature.file_path}.svg"
+            with open(svg_path, 'w', encoding='utf-8') as f:
+                f.write(signature_update.svg_preview)
+        
+        signature.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(signature)
+        
+        return signature
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating signature: {str(e)}")

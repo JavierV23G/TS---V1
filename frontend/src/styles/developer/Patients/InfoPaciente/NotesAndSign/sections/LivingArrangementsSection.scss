@@ -3,4 +3,161 @@
 
 .living-arrangements-section {
   @extend .section-common;
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      
+      i {
+        color: #3498db;
+      }
+    }
+  }
+
+  .card-grid {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 25px;
+    
+    &.two-columns {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+
+    .feature-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .card-header {
+        background: #e9ecef;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #dee2e6;
+
+        h4 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #495057;
+        }
+
+        i {
+          color: #6c757d;
+          font-size: 1.2rem;
+        }
+      }
+
+      .card-content {
+        padding: 20px;
+
+        .checkbox-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 12px;
+
+          .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            input[type="checkbox"] {
+              margin: 0;
+              width: 16px;
+              height: 16px;
+              accent-color: #3498db;
+              cursor: pointer;
+            }
+
+            label {
+              font-size: 14px;
+              color: #495057;
+              cursor: pointer;
+              user-select: none;
+              
+              &:hover {
+                color: #2c3e50;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .form-row {
+    margin-top: 25px;
+    
+    .form-group {
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #495057;
+        
+        i {
+          color: #6c757d;
+        }
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        &::placeholder {
+          color: #6c757d;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .living-arrangements-section {
+    .card-grid {
+      &.two-columns {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-card {
+        .card-content {
+          padding: 15px;
+
+          .checkbox-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+        }
+      }
+    }
+  }
 }
