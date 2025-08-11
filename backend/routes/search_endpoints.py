@@ -25,6 +25,7 @@ from schemas import (
     DocumentResponse,
     NoteTemplateWithSectionsResponse,
     CommunicationRecordResponse, SignatureResponse)
+from auth.auth_middleware import get_current_user
 
 router = APIRouter()
 
