@@ -2784,23 +2784,40 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(5px);
-  @include flex-center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   z-index: var(--z-modal);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  padding: 60px 20px;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    padding: 30px 15px;
+    align-items: flex-start !important;
+    
+    .modal-content {
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+  }
   
   .modal-content {
     background: white;
     border-radius: var(--radius-2xl);
     width: 90%;
     max-width: 600px;
-    max-height: 85vh;
-    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+    margin: auto;
     box-shadow: var(--shadow-2xl);
     animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     display: flex;
     flex-direction: column;
     position: relative;
-    @include subtle-scrollbar;
+    overflow: hidden;
+    transform: translateY(0) !important;
+    top: 150px;
     
     @keyframes modalFadeIn {
       from {
@@ -2815,6 +2832,25 @@
     
     &.modal-large {
       max-width: 900px;
+      
+      @media (max-width: 768px) {
+        width: 95%;
+        max-width: none;
+        max-height: calc(100vh - 40px);
+        
+        .modal-body {
+          max-height: calc(100vh - 200px);
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      width: 95%;
+      max-height: calc(100vh - 40px);
+      
+      .modal-body {
+        max-height: calc(100vh - 200px);
+      }
     }
     
     .modal-header {
@@ -2823,8 +2859,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
+      flex-shrink: 0;
       background: white;
       z-index: var(--z-20);
       border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
@@ -2891,7 +2926,28 @@
       padding: var(--spacing-4);
       flex: 1;
       overflow-y: auto;
-      @include subtle-scrollbar;
+      overflow-x: hidden;
+      min-height: 0;
+      max-height: calc(100vh - 240px);
+      
+      // Scrollbar personalizado
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: var(--neutral-100);
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: var(--neutral-400);
+        border-radius: 4px;
+        
+        &:hover {
+          background: var(--neutral-500);
+        }
+      }
       
       .completed-visit-view {
         display: grid;
@@ -3748,8 +3804,7 @@
       gap: var(--spacing-4);
       background: var(--neutral-50);
       border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
-      position: sticky;
-      bottom: 0;
+      flex-shrink: 0;
       
       button {
         padding: var(--spacing-3) var(--spacing-6);
@@ -5294,29 +5349,7 @@
 }
 
 /* Efecto de overlay del modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  animation: fadeIn 0.2s ease;
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-}
+// Duplicado eliminado - ya está definido arriba
 
 // Animations for note status indicators
 @keyframes noteGlow {

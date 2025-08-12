@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../login/AuthContext';
 import logoImg from '../../assets/LogoMHC.jpeg';
 import '../../styles/Header/Header.scss';
+import '../../styles/Header/SimpleMobileMenu.scss';
 // 🚨 IMPORT SECURITY NOTIFICATIONS
 import SecurityNotifications from '../developer/security/SecurityNotifications';
 
@@ -10,15 +11,18 @@ const Header = ({ onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
+  
+  // Estados principales
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [activeMenuIndex, setActiveMenuIndex] = useState(0);
   const [menuTransitioning, setMenuTransitioning] = useState(false);
   const [headerGlow, setHeaderGlow] = useState(false);
   const [parallaxPosition, setParallaxPosition] = useState({ x: 0, y: 0 });
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  
+  // Estados responsive
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   
   const userMenuRef = useRef(null);
   const menuRef = useRef(null);
@@ -69,7 +73,6 @@ const Header = ({ onLogout }) => {
                      baseRole === 'agency' || 
                      (currentUser?.role && currentUser.role.toLowerCase().includes('agency'));
     
-    
     if (roleType === 'developer' || roleType === 'admin') {
       return allMenuOptions;
     } else if (isAgency) {
@@ -102,7 +105,6 @@ const Header = ({ onLogout }) => {
     ? referralsMenuOptions 
     : defaultMenuOptions;
     
-  
   const userData = currentUser ? {
     name: currentUser.fullname || currentUser.username,
     avatar: getInitials(currentUser.fullname || currentUser.username),
@@ -125,83 +127,84 @@ const Header = ({ onLogout }) => {
     }
     return name.substring(0, 2).toUpperCase();
   }
-  
+
+  // ===================================
+  // EFECTOS Y EVENT LISTENERS
+  // ===================================
+
+  // Detector de pantalla móvil
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth <= 992);
     };
     
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    
-    return () => window.removeEventListener('resize', handleResize);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Función toggle del menú
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu);
+  };
   
+
+  // Auto-navegación del carousel (solo desktop)
   useEffect(() => {
-    if (roleType === 'agency') {
-      setActiveMenuIndex(0);
-    } else if (roleType === 'therapist' || roleType === 'support') {
- 
-      setActiveMenuIndex(0);
-    } else {
-      setActiveMenuIndex(0);
-    }
-  }, [roleType]);
-  
-  useEffect(() => {
+    if (isLoggingOut || menuTransitioning || menuOptions.length <= 1) return;
+    
     const interval = setInterval(() => {
-      if (!isLoggingOut && !menuTransitioning && menuOptions.length > 1) {
-        setActiveMenuIndex((prevIndex) => 
-          prevIndex >= menuOptions.length - 1 ? 0 : prevIndex + 1
-        );
-      }
-    }, isMobile ? 8000 : 6000);
+      setActiveMenuIndex((prevIndex) => 
+        prevIndex >= menuOptions.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 6000);
     
     return () => clearInterval(interval);
-  }, [menuOptions.length, menuTransitioning, isLoggingOut, isMobile]);
-  
+  }, [menuOptions.length, menuTransitioning, isLoggingOut]);
+
+  // Efecto parallax (solo desktop)
   useEffect(() => {
+    if (isLoggingOut) return;
+    
     const handleMouseMove = (e) => {
-      if (!isMobile && !isLoggingOut) {
-        const { clientX, clientY } = e;
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        
-        const multiplier = isTablet ? 15 : 20;
-        const xPos = (clientX / width - 0.5) * multiplier;
-        const yPos = (clientY / height - 0.5) * (isTablet ? 10 : 15);
-        
-        setParallaxPosition({ x: xPos, y: yPos });
-        
-        if (clientY < 100) {
-          setHeaderGlow(true);
-        } else {
-          setHeaderGlow(false);
-        }
+      const { clientX, clientY } = e;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      const multiplier = 20;
+      const xPos = (clientX / width - 0.5) * multiplier;
+      const yPos = (clientY / height - 0.5) * 15;
+      
+      setParallaxPosition({ x: xPos, y: yPos });
+      
+      if (clientY < 100) {
+        setHeaderGlow(true);
+      } else {
+        setHeaderGlow(false);
       }
     };
     
-    if (!isMobile && !isLoggingOut) {
-      window.addEventListener('mousemove', handleMouseMove);
-    }
-    
+    window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [isMobile, isTablet, isLoggingOut]);
-  
+  }, [isLoggingOut]);
+
+  // Cerrar menús al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Menú desktop
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
+  // ===================================
+  // HANDLERS
+  // ===================================
+
   const handlePrevious = () => {
     if (isLoggingOut || menuOptions.length <= 1) return;
     
@@ -217,11 +220,10 @@ const Header = ({ onLogout }) => {
       prevIndex >= menuOptions.length - 1 ? 0 : prevIndex + 1
     );
   };
-  
+
   const handleLogout = () => {
     setIsLoggingOut(true);
     setShowUserMenu(false);
-    setShowAIAssistant(false);
     
     document.body.classList.add('logging-out');
     
@@ -229,7 +231,7 @@ const Header = ({ onLogout }) => {
       onLogout();
     }
   };
-  
+
   const handleMenuOptionClick = (option) => {
     if (isLoggingOut) return;
     
@@ -238,9 +240,9 @@ const Header = ({ onLogout }) => {
     
     setTimeout(() => {
       navigate(option.route);
-    }, isMobile ? 300 : 500);
+    }, 500);
   };
-  
+
   const handleNavigateToProfile = () => {
     if (isLoggingOut) return;
     
@@ -249,9 +251,9 @@ const Header = ({ onLogout }) => {
     
     setTimeout(() => {
       navigate(`/${baseRole}/profile`);
-    }, isMobile ? 300 : 500);
+    }, 500);
   };
-  
+
   const handleNavigateToSettings = () => {
     if (isLoggingOut) return;
     
@@ -260,18 +262,23 @@ const Header = ({ onLogout }) => {
     
     setTimeout(() => {
       navigate(`/${baseRole}/settings`);
-    }, isMobile ? 300 : 500);
+    }, 500);
   };
-  
+
   const handleMainMenuTransition = () => {
+    if (isLoggingOut) return;
     navigate(`/${baseRole}/homePage`);
   };
-  
+
+  // ===================================
+  // FUNCIONES HELPER
+  // ===================================
+
   const getCarouselPositions = () => {
+    
     const result = [];
     const totalOptions = menuOptions.length;
     
-    // Always show only 3 positions: left, center, right
     for (let i = 0; i < totalOptions; i++) {
       let position;
       const relativePos = (i - activeMenuIndex + totalOptions) % totalOptions;
@@ -283,7 +290,6 @@ const Header = ({ onLogout }) => {
       } else if (relativePos === totalOptions - 1) {
         position = "left";
       } else {
-        // Hide additional items beyond the 3 visible positions
         position = "hidden";
       }
       
@@ -297,23 +303,174 @@ const Header = ({ onLogout }) => {
   };
 
   const isTherapist = ['pt', 'ot', 'st', 'pta', 'cota', 'sta'].includes(baseRole);
-
   const showCarouselArrows = menuOptions.length > 1;
+
+  // ===================================
+  // RENDER
+  // ===================================
 
   return (
     <>
+      {/* Menú móvil premium - igual al menú de usuario */}
+      {showMobileMenu && isMobileView && (
+        <>
+          <div className="mobile-menu-overlay" onClick={() => setShowMobileMenu(false)} />
+          <div className="support-user-menu mobile-version">
+            <div className="support-menu-header">
+              <div className="mobile-close-button" onClick={() => setShowMobileMenu(false)}>
+                <i className="fas fa-times"></i>
+              </div>
+              <div className="support-user-info">
+                <div className="support-user-avatar">
+                  <span>{userData.avatar}</span>
+                  <div className={`avatar-status ${userData.status}`}></div>
+                </div>
+                <div className="support-user-details">
+                  <h4>{userData.name}</h4>
+                  <span className="support-user-email">{userData.email}</span>
+                  <span className={`support-user-status ${userData.status}`}>
+                    <i className="fas fa-circle"></i> 
+                    {userData.status.charAt(0).toUpperCase() + userData.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="support-menu-section">
+              <div className="section-title">Navigation</div>
+              <div className="support-menu-items">
+                {menuOptions.map((option) => (
+                  <div 
+                    key={option.id}
+                    className="support-menu-item"
+                    onClick={() => {
+                      handleMenuOptionClick(option);
+                      setShowMobileMenu(false);
+                    }}
+                    style={{ '--menu-color': option.color, '--menu-glow': `${option.color}60` }}
+                  >
+                    <i className={`fas ${option.icon}`}></i>
+                    <span className="menu-item-text">{option.name}</span>
+                  </div>
+                ))}
+                
+                {/* Navegación adicional para referrals en móvil */}
+                {isReferralsPage && (roleType === 'developer' || roleType === 'admin') && (
+                  <div 
+                    className="support-menu-item"
+                    onClick={() => {
+                      handleMainMenuTransition();
+                      setShowMobileMenu(false);
+                    }}
+                    style={{ '--menu-color': '#36D1DC', '--menu-glow': '#36D1DC60' }}
+                  >
+                    <i className="fas fa-th-large"></i>
+                    <span className="menu-item-text">Main Menu</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="support-menu-section">
+              <div className="section-title">Account</div>
+              <div className="support-menu-items">
+                <div 
+                  className="support-menu-item"
+                  onClick={() => {
+                    handleNavigateToProfile();
+                    setShowMobileMenu(false);
+                  }}
+                  style={{ '--menu-color': '#36D1DC', '--menu-glow': '#36D1DC60' }}
+                >
+                  <i className="fas fa-user-circle"></i>
+                  <span className="menu-item-text">My Profile</span>
+                </div>
+                <div 
+                  className="support-menu-item"
+                  onClick={() => {
+                    handleNavigateToSettings();
+                    setShowMobileMenu(false);
+                  }}
+                  style={{ '--menu-color': '#4CAF50', '--menu-glow': '#4CAF5060' }}
+                >
+                  <i className="fas fa-cog"></i>
+                  <span className="menu-item-text">Settings</span>
+                </div>
+                {isTherapist && (
+                  <div 
+                    className="support-menu-item"
+                    style={{ '--menu-color': '#FF9966', '--menu-glow': '#FF996660' }}
+                  >
+                    <i className="fas fa-calendar-alt"></i>
+                    <span className="menu-item-text">My Schedule</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {roleType !== 'developer' && (
+              <div className="support-menu-section">
+                <div className="section-title">Support</div>
+                <div className="support-menu-items">
+                  <div 
+                    className="support-menu-item"
+                    style={{ '--menu-color': '#ff4757', '--menu-glow': '#ff475760' }}
+                  >
+                    <i className="fas fa-headset"></i>
+                    <span className="menu-item-text">Contact Support</span>
+                  </div>
+                  <div 
+                    className="support-menu-item"
+                    style={{ '--menu-color': '#8c54ff', '--menu-glow': '#8c54ff60' }}
+                  >
+                    <i className="fas fa-bug"></i>
+                    <span className="menu-item-text">Report Issue</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="support-menu-footer">
+              <div 
+                className="support-menu-item logout" 
+                onClick={() => {
+                  handleLogout();
+                  setShowMobileMenu(false);
+                }}
+                style={{ '--menu-color': '#ff4757', '--menu-glow': '#ff475760' }}
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                <span className="menu-item-text">Sign Out</span>
+              </div>
+              <div className="version-info">
+                <span>Clinify AI™</span>
+                <span>v2.7.0</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Header principal */}
       <header className={`main-header ${headerGlow ? 'glow-effect' : ''} ${menuTransitioning ? 'transitioning' : ''} ${isLoggingOut ? 'logging-out' : ''}`}>
         <div className="header-container">
+          {/* Logo y navegación */}
           <div className="logo-container">
             <div className="logo-glow"></div>
-            <img src={logoImg} alt="TherapySync Logo" className="logo" onClick={() => !isLoggingOut && handleMainMenuTransition()} />
+            <img 
+              src={logoImg} 
+              alt="Clinify AI Logo" 
+              className="logo" 
+              onClick={() => !isLoggingOut && handleMainMenuTransition()} 
+            />
             
+            {/* Navegación para referrals (solo desktop) */}
             {isReferralsPage && (roleType === 'developer' || roleType === 'admin') && (
               <div className="menu-navigation">
                 <button 
                   className="nav-button main-menu" 
                   onClick={handleMainMenuTransition}
-                  title="Volver al menú principal"
+                  title="Back to main menu"
                   style={{ '--nav-color': '#36D1DC', '--nav-glow': '#36D1DC60' }}
                 >
                   <i className="fas fa-th-large"></i>
@@ -322,7 +479,7 @@ const Header = ({ onLogout }) => {
                 
                 <button 
                   className="nav-button referrals-menu active" 
-                  title="Menú de Referrals"
+                  title="Referrals Menu"
                   style={{ '--nav-color': '#FF9966', '--nav-glow': '#FF996660' }}
                 >
                   <i className="fas fa-file-medical"></i>
@@ -332,9 +489,15 @@ const Header = ({ onLogout }) => {
             )}
           </div>
           
+          {/* Carousel 3D (solo desktop) */}
           <div className="top-carousel" ref={menuRef}>
             {showCarouselArrows && (
-              <button className="carousel-arrow left" onClick={handlePrevious} aria-label="Previous" disabled={isLoggingOut}>
+              <button 
+                className="carousel-arrow left" 
+                onClick={handlePrevious} 
+                aria-label="Previous" 
+                disabled={isLoggingOut}
+              >
                 <div className="arrow-icon">
                   <i className="fas fa-chevron-left"></i>
                 </div>
@@ -381,7 +544,12 @@ const Header = ({ onLogout }) => {
             </div>
             
             {showCarouselArrows && (
-              <button className="carousel-arrow right" onClick={handleNext} aria-label="Next" disabled={isLoggingOut}>
+              <button 
+                className="carousel-arrow right" 
+                onClick={handleNext} 
+                aria-label="Next" 
+                disabled={isLoggingOut}
+              >
                 <div className="arrow-icon">
                   <i className="fas fa-chevron-right"></i>
                 </div>
@@ -389,13 +557,28 @@ const Header = ({ onLogout }) => {
             )}
           </div>
           
-          {/* 🚨 SECURITY NOTIFICATIONS - Only for developers/admins */}
+          {/* Notificaciones de seguridad (solo desktop) */}
           {(currentUser?.role === 'developer' || currentUser?.role === 'admin') && (
             <div className="security-notifications-container">
               <SecurityNotifications />
             </div>
           )}
           
+          {/* Botón hamburguesa premium */}
+          {isMobileView && (
+            <button 
+              className="simple-hamburger"
+              onClick={toggleMobileMenu}
+            >
+              <div className="hamburger-lines">
+                <span className={showMobileMenu ? 'active' : ''}></span>
+                <span className={showMobileMenu ? 'active' : ''}></span>
+                <span className={showMobileMenu ? 'active' : ''}></span>
+              </div>
+            </button>
+          )}
+          
+          {/* Perfil de usuario (solo desktop) */}
           <div className="support-user-profile" ref={userMenuRef}>
             <div 
               className={`support-profile-button ${showUserMenu ? 'active' : ''}`} 
@@ -494,10 +677,10 @@ const Header = ({ onLogout }) => {
                     style={{ '--menu-color': '#ff4757', '--menu-glow': '#ff475760' }}
                   >
                     <i className="fas fa-sign-out-alt"></i>
-                    <span className="menu-item-text">Log Out</span>
+                    <span className="menu-item-text">Sign Out</span>
                   </div>
                   <div className="version-info">
-                    <span>TherapySync™</span>
+                    <span>Clinify AI™</span>
                     <span>v2.7.0</span>
                   </div>
                 </div>
@@ -506,8 +689,6 @@ const Header = ({ onLogout }) => {
           </div>
         </div>
       </header>
-      
-     
     </>
   );
 };

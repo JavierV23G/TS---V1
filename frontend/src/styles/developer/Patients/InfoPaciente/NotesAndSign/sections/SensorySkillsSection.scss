@@ -1,0 +1,713 @@
+// ============================================
+// Sensory Assessment Section Styles
+// Professional Medical Interface with Psychology of Color
+// ============================================
+
+// Enhanced Color Variables for Sensory & Physical Assessment
+:root {
+  // Sensory Assessment Status Colors (Clinical Psychology of Color)
+  --sensory-normal: #10b981;              // Green for Normal - positive, healthy
+  --sensory-normal-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --sensory-normal-light: #d1fae5;
+  --sensory-normal-ultra-light: #f0fdf4;
+  
+  --sensory-abnormal: #ef4444;            // Red for Abnormal - alert, requires attention
+  --sensory-abnormal-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --sensory-abnormal-light: #fecaca;
+  --sensory-abnormal-ultra-light: #fef2f2;
+  
+  --sensory-not-tested: #6b7280;          // Gray for Not Tested - neutral
+  --sensory-not-tested-gradient: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  --sensory-not-tested-light: #e5e7eb;
+  --sensory-not-tested-ultra-light: #f9fafb;
+  
+  // Hand Dominance Colors (Blue spectrum - cognitive function)
+  --sensory-hand-dominance: #3b82f6;
+  --sensory-hand-dominance-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --sensory-hand-dominance-light: #dbeafe;
+  --sensory-hand-dominance-ultra-light: #eff6ff;
+  
+  // Cognition Colors (Purple spectrum - mental function)
+  --sensory-cognition: #8b5cf6;
+  --sensory-cognition-gradient: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --sensory-cognition-light: #ede9fe;
+  --sensory-cognition-ultra-light: #f5f3ff;
+  
+  // Behavior/Mental Status Colors (Indigo spectrum - behavioral assessment)
+  --sensory-behavior: #6366f1;
+  --sensory-behavior-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --sensory-behavior-light: #e0e7ff;
+  --sensory-behavior-ultra-light: #f0f4ff;
+  
+  // Background and UI Colors
+  --sensory-bg-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --sensory-bg-secondary: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --sensory-card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --sensory-border: rgba(148, 163, 184, 0.15);
+  
+  // Text Colors
+  --sensory-text-primary: #1e293b;
+  --sensory-text-secondary: #64748b;
+  --sensory-text-accent: #0ea5e9;
+}
+
+.sensory-skills-section {
+  padding: 32px;
+  background: var(--sensory-bg-primary);
+  border-radius: 24px;
+  box-shadow: var(--sensory-card-shadow);
+  border: 2px solid var(--sensory-border);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Sensory-specific pattern overlay
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  // All content above the pattern
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  // Section Header
+  .section-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 3px solid transparent;
+    background: var(--sensory-bg-secondary);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    background-image: linear-gradient(90deg, transparent, var(--sensory-border), transparent);
+    background-size: 100% 3px;
+    background-repeat: no-repeat;
+    background-position: bottom;
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+
+      i {
+        font-size: 36px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-right: 20px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        animation: pulse-glow 3s ease-in-out infinite;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--sensory-text-primary);
+        letter-spacing: -0.8px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .section-description {
+      color: var(--sensory-text-secondary);
+      font-size: 17px;
+      line-height: 1.6;
+      margin: 0;
+      padding-left: 56px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+  }
+
+  // Assessment Groups
+  .assessment-group {
+    margin-bottom: 48px;
+    background: var(--sensory-bg-secondary);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--sensory-text-primary);
+      padding: 16px 0;
+      border-bottom: 2px solid rgba(148, 163, 184, 0.1);
+
+      i {
+        font-size: 24px;
+        margin-right: 16px;
+        width: 32px;
+        text-align: center;
+        background: var(--sensory-cognition-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+      }
+    }
+  }
+
+  // Sensory Assessments Grid
+  .assessments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+
+    .assessment-item {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 16px;
+      padding: 24px;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+        transform-origin: left;
+      }
+
+      &:hover {
+        border-color: var(--sensory-text-accent);
+        box-shadow: 0 8px 25px rgba(14, 165, 233, 0.15);
+        transform: translateY(-3px);
+
+        &::before {
+          transform: scaleX(1);
+        }
+      }
+
+      .assessment-label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        font-weight: 700;
+        color: var(--sensory-text-primary);
+        font-size: 16px;
+
+        i {
+          font-size: 20px;
+          margin-right: 12px;
+          width: 24px;
+          text-align: center;
+          background: var(--sensory-text-accent);
+          color: white;
+          border-radius: 8px;
+          padding: 4px;
+          box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+        }
+
+        span {
+          font-size: 16px;
+        }
+      }
+
+      .assessment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .option-label {
+          display: flex;
+          align-items: center;
+          padding: 16px 18px;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: #f8fafc;
+          border: 2px solid transparent;
+          font-weight: 600;
+
+          &:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateX(4px);
+          }
+
+          &.normal:has(input:checked) {
+            background: var(--sensory-normal-gradient);
+            color: white;
+            border-color: var(--sensory-normal);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+            transform: scale(1.02);
+          }
+
+          &.abnormal:has(input:checked) {
+            background: var(--sensory-abnormal-gradient);
+            color: white;
+            border-color: var(--sensory-abnormal);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+            transform: scale(1.02);
+          }
+
+          &.not-tested:has(input:checked) {
+            background: var(--sensory-not-tested-gradient);
+            color: white;
+            border-color: var(--sensory-not-tested);
+            box-shadow: 0 6px 20px rgba(107, 114, 128, 0.3);
+            transform: scale(1.02);
+          }
+
+          input[type="radio"] {
+            margin-right: 14px;
+            accent-color: currentColor;
+            transform: scale(1.3);
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+          }
+
+          .option-text {
+            font-size: 15px;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
+
+  // Hand Dominance Options
+  .hand-dominance-options {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    .hand-dominance-label {
+      display: flex;
+      align-items: center;
+      padding: 18px 28px;
+      background: var(--sensory-hand-dominance-ultra-light);
+      border: 3px solid var(--sensory-hand-dominance-light);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 700;
+      color: var(--sensory-text-primary);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: var(--sensory-hand-dominance-gradient);
+        transition: left 0.4s ease;
+        z-index: 0;
+      }
+
+      &:hover {
+        border-color: var(--sensory-hand-dominance);
+        background: var(--sensory-hand-dominance-light);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+      }
+
+      &:has(input:checked) {
+        background: var(--sensory-hand-dominance-gradient);
+        color: white;
+        border-color: var(--sensory-hand-dominance);
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+
+        &::before {
+          left: 0;
+        }
+      }
+
+      input[type="radio"] {
+        margin-right: 16px;
+        accent-color: currentColor;
+        transform: scale(1.4);
+        position: relative;
+        z-index: 1;
+      }
+
+      .option-text {
+        font-size: 16px;
+        position: relative;
+        z-index: 1;
+      }
+    }
+  }
+
+  // Checkbox Grids
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid transparent;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      font-weight: 600;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--sensory-cognition-gradient);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+        transform-origin: left;
+      }
+
+      &:hover {
+        border-color: var(--sensory-cognition);
+        background: var(--sensory-cognition-ultra-light);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.15);
+
+        &::before {
+          transform: scaleX(1);
+        }
+      }
+
+      &:has(input:checked) {
+        background: var(--sensory-cognition-gradient);
+        color: white;
+        border-color: var(--sensory-cognition);
+        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        transform: translateY(-3px) scale(1.02);
+
+        &::before {
+          transform: scaleX(1);
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+
+      // Behavior section styling
+      .assessment-group:nth-child(4) & {
+        &:hover {
+          border-color: var(--sensory-behavior);
+          background: var(--sensory-behavior-ultra-light);
+
+          &::before {
+            background: var(--sensory-behavior-gradient);
+          }
+        }
+
+        &:has(input:checked) {
+          background: var(--sensory-behavior-gradient);
+          border-color: var(--sensory-behavior);
+          box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+      }
+
+      input[type="checkbox"] {
+        display: none;
+      }
+
+      .checkbox-custom {
+        width: 24px;
+        height: 24px;
+        border: 3px solid currentColor;
+        border-radius: 8px;
+        margin-right: 16px;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: transparent;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        &::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0);
+          color: currentColor;
+          font-size: 16px;
+          font-weight: 900;
+          transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+      }
+
+      &:has(input:checked) .checkbox-custom {
+        background: currentColor;
+        border-color: currentColor;
+        transform: rotate(10deg) scale(1.1);
+
+        &::after {
+          transform: translate(-50%, -50%) scale(1) rotate(-10deg);
+          color: white;
+        }
+      }
+
+      .option-text {
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.4;
+        color: inherit;
+      }
+    }
+  }
+
+  // Comments Section
+  .comments-section {
+    position: relative;
+
+    .comments-textarea {
+      width: 100%;
+      min-height: 160px;
+      padding: 24px;
+      border: 3px solid var(--sensory-border);
+      border-radius: 16px;
+      font-size: 16px;
+      font-family: inherit;
+      line-height: 1.7;
+      resize: vertical;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      color: var(--sensory-text-primary);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+
+      &:focus {
+        outline: none;
+        border-color: var(--sensory-text-accent);
+        box-shadow: 
+          0 0 0 4px rgba(14, 165, 233, 0.1),
+          inset 0 2px 8px rgba(0, 0, 0, 0.05),
+          0 8px 25px rgba(14, 165, 233, 0.1);
+        background: #ffffff;
+        transform: translateY(-2px);
+      }
+
+      &::placeholder {
+        color: var(--sensory-text-secondary);
+        font-style: italic;
+        line-height: 1.6;
+        opacity: 0.8;
+      }
+    }
+
+    .character-count {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 13px;
+      color: var(--sensory-text-secondary);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 6px 12px;
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+  }
+
+  // Animations
+  @keyframes pulse-glow {
+    0%, 100% {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+    50% {
+      filter: drop-shadow(0 4px 12px rgba(14, 165, 233, 0.3));
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 24px;
+    margin-bottom: 20px;
+
+    .section-header {
+      padding: 20px;
+      margin-bottom: 32px;
+
+      .section-title {
+        h3 {
+          font-size: 26px;
+        }
+
+        i {
+          font-size: 30px;
+          margin-right: 16px;
+        }
+      }
+
+      .section-description {
+        font-size: 15px;
+        padding-left: 46px;
+      }
+    }
+
+    .assessment-group {
+      padding: 24px;
+      margin-bottom: 32px;
+
+      .group-title {
+        font-size: 20px;
+        margin-bottom: 24px;
+      }
+    }
+
+    .assessments-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+
+      .assessment-item {
+        padding: 20px;
+      }
+    }
+
+    .checkbox-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+
+      .checkbox-label {
+        padding: 16px;
+      }
+    }
+
+    .hand-dominance-options {
+      flex-direction: column;
+      gap: 16px;
+
+      .hand-dominance-label {
+        padding: 16px 24px;
+      }
+    }
+
+    .comments-section {
+      .comments-textarea {
+        min-height: 140px;
+        padding: 20px;
+        font-size: 15px;
+      }
+
+      .character-count {
+        position: static;
+        text-align: right;
+        margin-top: 12px;
+        background: transparent;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+      }
+    }
+  }
+
+  // Print Styles
+  @media print {
+    box-shadow: none;
+    border: 2px solid #333;
+    padding: 20px;
+    background: white !important;
+
+    &::before {
+      display: none;
+    }
+
+    .assessment-group {
+      background: white !important;
+      border: 1px solid #666;
+      page-break-inside: avoid;
+      box-shadow: none;
+    }
+
+    .assessment-item,
+    .checkbox-label,
+    .hand-dominance-label {
+      background: white !important;
+      color: black !important;
+      border: 1px solid #333 !important;
+      box-shadow: none !important;
+    }
+
+    .comments-textarea {
+      background: white !important;
+      border: 2px solid #333 !important;
+      color: black !important;
+      box-shadow: none !important;
+    }
+  }
+
+  // Accessibility Enhancements
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  // High Contrast Mode
+  @media (prefers-contrast: high) {
+    border: 3px solid #000;
+    background: white !important;
+
+    .assessment-group {
+      border: 2px solid #000;
+      background: white !important;
+    }
+
+    .assessment-item,
+    .checkbox-label,
+    .hand-dominance-label {
+      border: 2px solid #000 !important;
+      background: white !important;
+    }
+
+    .comments-textarea {
+      border: 3px solid #000 !important;
+      background: white !important;
+    }
+  }
+}

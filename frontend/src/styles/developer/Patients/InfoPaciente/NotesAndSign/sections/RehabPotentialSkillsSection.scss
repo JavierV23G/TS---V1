@@ -1,0 +1,663 @@
+// ============================================
+// Rehab Potential Section Styles
+// Professional assessment interface with color-coded potential levels
+// ============================================
+
+.rehab-potential-skills-section {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+
+  // Section Header
+  .section-header {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+
+      i {
+        font-size: 28px;
+        color: #059669;
+        margin-right: 12px;
+        padding: 8px;
+        background: rgba(5, 150, 105, 0.1);
+        border-radius: 8px;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+    }
+
+    .section-description {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 0 0 20px 52px;
+    }
+
+    .current-assessment {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+
+      .assessment-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 14px;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+        i {
+          font-size: 16px;
+        }
+
+        &.excellent {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        &.good {
+          background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+          box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        &.fair {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        &.not-candidate {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+      }
+    }
+  }
+
+  // Assessment Groups
+  .assessment-group {
+    margin-bottom: 32px;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+
+    .group-header {
+      margin-bottom: 24px;
+      text-align: center;
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+
+        i {
+          font-size: 20px;
+          color: #059669;
+        }
+      }
+
+      .group-description {
+        color: #64748b;
+        font-size: 14px;
+        margin: 0;
+      }
+    }
+  }
+
+  // Rehab Options Section
+  .rehab-options-section {
+    .rehab-options-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+
+      .rehab-option {
+        display: block;
+        cursor: pointer;
+
+        input[type="radio"] {
+          display: none;
+        }
+
+        .rehab-option-card {
+          display: flex;
+          align-items: center;
+          padding: 20px;
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+          position: relative;
+          min-height: 100px;
+
+          .option-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 20px;
+            background: #f1f5f9;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+          }
+
+          .option-content {
+            flex-grow: 1;
+
+            .option-label {
+              margin: 0 0 6px 0;
+              font-size: 16px;
+              font-weight: 700;
+              color: #1e293b;
+              line-height: 1.3;
+            }
+
+            .option-description {
+              margin: 0;
+              font-size: 13px;
+              color: #64748b;
+              line-height: 1.4;
+            }
+          }
+
+          .selection-indicator {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+
+            .radio-dot {
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: transparent;
+              transition: all 0.3s ease;
+            }
+          }
+
+          // Hover effects
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        // Excellent Potential - Green
+        .rehab-option-card.excellent {
+          &:hover {
+            border-color: #059669;
+            box-shadow: 0 8px 25px rgba(5, 150, 105, 0.15);
+          }
+        }
+
+        input:checked + .rehab-option-card.excellent {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          border-color: #047857;
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(5, 150, 105, 0.25);
+
+          .option-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .option-content .option-label,
+          .option-content .option-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            .radio-dot {
+              background: #059669;
+            }
+          }
+        }
+
+        // Good Potential - Blue
+        .rehab-option-card.good {
+          &:hover {
+            border-color: #0ea5e9;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.15);
+          }
+        }
+
+        input:checked + .rehab-option-card.good {
+          background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+          border-color: #0284c7;
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(14, 165, 233, 0.25);
+
+          .option-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .option-content .option-label,
+          .option-content .option-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            .radio-dot {
+              background: #0ea5e9;
+            }
+          }
+        }
+
+        // Fair Potential - Amber
+        .rehab-option-card.fair {
+          &:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+          }
+        }
+
+        input:checked + .rehab-option-card.fair {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          border-color: #d97706;
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+
+          .option-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .option-content .option-label,
+          .option-content .option-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            .radio-dot {
+              background: #f59e0b;
+            }
+          }
+        }
+
+        // Not Candidate - Red
+        .rehab-option-card.not-candidate {
+          &:hover {
+            border-color: #ef4444;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.15);
+          }
+        }
+
+        input:checked + .rehab-option-card.not-candidate {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          border-color: #dc2626;
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+
+          .option-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .option-content .option-label,
+          .option-content .option-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            .radio-dot {
+              background: #ef4444;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Comments Section
+  .comments-section {
+    .comments-container {
+      position: relative;
+
+      .comments-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        line-height: 1.5;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: white;
+        color: #1e293b;
+
+        &:focus {
+          outline: none;
+          border-color: #059669;
+          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+          font-style: italic;
+          line-height: 1.4;
+        }
+      }
+
+      .character-count {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 11px;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    }
+  }
+
+  // Clinical Rationale
+  .clinical-rationale {
+    margin-top: 32px;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+
+    .rationale-header {
+      margin-bottom: 20px;
+      text-align: center;
+
+      .rationale-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+
+        i {
+          font-size: 20px;
+          color: #059669;
+        }
+      }
+    }
+
+    .rationale-content {
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+
+      &.excellent {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-color: rgba(5, 150, 105, 0.2);
+      }
+
+      &.good {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: rgba(14, 165, 233, 0.2);
+      }
+
+      &.fair {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-color: rgba(245, 158, 11, 0.2);
+      }
+
+      &.not-candidate {
+        background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .rationale-explanation {
+        padding: 20px;
+
+        .explanation-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          font-size: 18px;
+          margin-bottom: 12px;
+        }
+
+        .explanation-text {
+          .explanation-title {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+          }
+
+          .explanation-details {
+            .implication-items {
+              .implication-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 8px;
+                font-size: 13px;
+                line-height: 1.4;
+
+                &:last-child {
+                  margin-bottom: 0;
+                }
+
+                i {
+                  font-size: 12px;
+                  margin-top: 2px;
+                  flex-shrink: 0;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      &.excellent {
+        .explanation-icon {
+          background: rgba(5, 150, 105, 0.1);
+          color: #059669;
+        }
+
+        .explanation-details {
+          color: #166534;
+
+          .implication-item i {
+            color: #059669;
+          }
+        }
+      }
+
+      &.good {
+        .explanation-icon {
+          background: rgba(14, 165, 233, 0.1);
+          color: #0ea5e9;
+        }
+
+        .explanation-details {
+          color: #1e40af;
+
+          .implication-item i {
+            color: #0ea5e9;
+          }
+        }
+      }
+
+      &.fair {
+        .explanation-icon {
+          background: rgba(245, 158, 11, 0.1);
+          color: #f59e0b;
+        }
+
+        .explanation-details {
+          color: #92400e;
+
+          .implication-item i {
+            color: #f59e0b;
+          }
+        }
+      }
+
+      &.not-candidate {
+        .explanation-icon {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+        }
+
+        .explanation-details {
+          color: #991b1b;
+
+          .implication-item i {
+            color: #ef4444;
+          }
+        }
+      }
+
+      .documentation-tips {
+        padding: 16px 20px;
+        background: rgba(255, 255, 255, 0.7);
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+
+        .tips-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 10px;
+          font-size: 14px;
+          font-weight: 700;
+          color: #374151;
+
+          i {
+            color: #6b7280;
+          }
+        }
+
+        .tips-content {
+          .tip-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.3;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            i {
+              color: #059669;
+              flex-shrink: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .section-header {
+      padding: 16px;
+
+      .section-title {
+        h3 {
+          font-size: 20px;
+        }
+
+        i {
+          font-size: 24px;
+        }
+      }
+
+      .section-description {
+        font-size: 14px;
+        margin-left: 36px;
+      }
+
+      .current-assessment .assessment-badge {
+        font-size: 12px;
+        padding: 8px 16px;
+      }
+    }
+
+    .rehab-options-container {
+      grid-template-columns: 1fr;
+
+      .rehab-option-card {
+        flex-direction: column;
+        text-align: center;
+        min-height: auto;
+
+        .option-icon {
+          margin-right: 0;
+          margin-bottom: 12px;
+        }
+
+        .selection-indicator {
+          margin-top: 12px;
+        }
+      }
+    }
+
+    .rationale-explanation {
+      .explanation-text .explanation-details .implication-items .implication-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
+  }
+}

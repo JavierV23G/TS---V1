@@ -3,11 +3,23 @@
 
 .subjective-section {
   @extend .section-common;
+  background: #ffffff;
+  border: 1px solid #e1f5fe;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 168, 232, 0.08),
+              0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  animation: slideInUp 0.4s ease-out;
 
-  .form-section {
-    margin-bottom: 20px;
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 168, 232, 0.12),
+                0 2px 4px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
   }
 
+  // Section Title (from main)
   .section-title {
     display: flex;
     align-items: center;
@@ -31,12 +43,39 @@
     }
   }
 
+  // Form Row (from main)
   .form-row {
     margin-bottom: 20px;
   }
 
-  .form-group {
-    margin-bottom: 20px;
+  // Header (merged from Luis and main)
+  .section-header {
+    background: linear-gradient(135deg, #00a8e8 0%, #0077b6 100%);
+    padding: 16px 20px;
+    border-bottom: none;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -50px;
+      width: 100px;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: skewX(-15deg);
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
 
     label {
       display: flex;
@@ -44,20 +83,69 @@
       gap: 8px;
       font-weight: 500;
       margin-bottom: 8px;
-      color: #495057;
+      color: #ffffff; // Adjusted to match header's white text
+      position: relative;
+      z-index: 1;
       
       i {
-        color: #6c757d;
+        color: rgba(255, 255, 255, 0.8); // Slightly lighter for contrast
       }
     }
+  }
 
-    textarea, input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-family: inherit;
+  // Quick Templates (merged from Luis and main)
+  .quick-templates {
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+
+    .templates-label {
       font-size: 14px;
+      color: #495057;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .template-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border: 1px solid #00a8e8;
+      border-radius: 20px;
+      color: #0077b6;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 4px rgba(0, 168, 232, 0.1);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s ease;
+      }
+
+      &:hover {
+        background: linear-gradient(135deg, #00a8e8 0%, #0077b6 100%);
+        color: #ffffff;
+        border-color: #0077b6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 168, 232, 0.3);
+
+        &::before {
+          left: 100%;
+        }
+      }
 
       &:focus {
         outline: none;
@@ -65,82 +153,137 @@
         box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
       }
 
-      &::placeholder {
-        color: #6c757d;
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 168, 232, 0.2);
       }
     }
+  }
 
-    textarea {
-      min-height: 150px;
+  // Content (from Luis, with main's textarea styles)
+  .section-content {
+    padding: 20px;
+    background: linear-gradient(to bottom, #fcfcfc, #fefefe);
+
+    .subjective-textarea {
+      width: 100%;
+      min-height: 320px;
+      padding: 16px;
+      border: 2px solid #e1f5fe;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #000000;
+      background: #fefefe;
       resize: vertical;
-    }
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02),
+                  0 1px 2px rgba(0, 0, 0, 0.05);
 
-    .form-text {
-      font-size: 0.875rem;
-      color: #6c757d;
-      margin-top: 5px;
-    }
-  }
-
-  .pain-scale {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0;
-
-    .scale-numbers {
-      display: flex;
-      gap: 5px;
-
-      .scale-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        
-        input[type="radio"] {
-          margin-bottom: 5px;
-        }
-
-        label {
-          font-size: 0.8rem;
-          margin: 0;
-        }
-      }
-    }
-  }
-
-  .checkbox-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 10px;
-    margin: 15px 0;
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-
-      input[type="checkbox"] {
-        margin-right: 8px;
-        width: auto;
+      &::placeholder {
+        color: #90a4ae; // From Luis, overriding main's #6c757d for consistency
+        font-style: italic;
       }
 
-      label {
-        margin: 0;
-        cursor: pointer;
+      &:hover {
+        border-color: #81d4fa;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02),
+                    0 2px 4px rgba(0, 168, 232, 0.08);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #00a8e8;
+        background: #ffffff;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02),
+                    0 0 0 3px rgba(0, 168, 232, 0.15),
+                    0 4px 8px rgba(0, 168, 232, 0.1);
+      }
+
+      // Scrollbar
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #c0c0c0;
+        border-radius: 3px;
+
+        &:hover {
+          background: #a0a0a0;
+        }
       }
     }
   }
 }
 
+// Animations (from Luis)
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+// Responsive (from Luis)
 @media (max-width: 768px) {
   .subjective-section {
-    .checkbox-group {
-      grid-template-columns: 1fr;
+    margin-bottom: 20px;
+    
+    .section-header {
+      padding: 14px 16px;
+      
+      h3 {
+        font-size: 16px;
+      }
+
+      label {
+        font-size: 14px;
+      }
+    }
+    
+    .quick-templates {
+      padding: 12px 16px;
+
+      .templates-label {
+        font-size: 13px;
+        margin-bottom: 8px;
+        width: 100%;
+      }
+
+      .template-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
     }
 
-    .pain-scale .scale-numbers {
-      flex-wrap: wrap;
-      justify-content: center;
+    .section-content {
+      padding: 16px;
+
+      .subjective-textarea {
+        min-height: 250px;
+        padding: 14px;
+        font-size: 13px;
+      }
     }
   }
 }

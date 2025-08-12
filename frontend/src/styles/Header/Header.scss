@@ -1,4 +1,4 @@
-// Variables
+// Variables y mixins para el header responsive
 $breakpoints: (
   xs: 375px,
   sm: 576px,
@@ -8,7 +8,7 @@ $breakpoints: (
   xxl: 1400px
 );
 
-// Branding colors
+// Colores del tema
 $primary-gradient-start: #36D1DC;
 $primary-gradient-end: #5B86E5;
 $accent-color: #00e5ff;
@@ -17,20 +17,7 @@ $error-color: #FF5E62;
 $success-color: #4CAF50;
 $warning-color: #FF9800;
 
-// ===================================
-// 🚨 SECURITY NOTIFICATIONS IN HEADER
-// ===================================
-
-.security-notifications-container {
-  position: relative;
-  margin-right: 1rem;
-  
-  // Ensure proper z-index for dropdowns
-  .security-notifications-panel {
-    z-index: 9999;
-  }
-}
-
+// Mixin responsive mejorado
 @mixin responsive($breakpoint) {
   @if map-has-key($breakpoints, $breakpoint) {
     @media (max-width: map-get($breakpoints, $breakpoint)) {
@@ -43,7 +30,7 @@ $warning-color: #FF9800;
   }
 }
 
-// Premium glassmorphism mixins
+// Mixin para glassmorphism
 @mixin glassmorphism($bg-opacity: 0.1, $blur: 15px, $border-opacity: 0.1) {
   background: rgba(255, 255, 255, $bg-opacity);
   backdrop-filter: blur($blur);
@@ -52,7 +39,10 @@ $warning-color: #FF9800;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-// Premium animations
+// ===================================
+// ANIMACIONES PREMIUM
+// ===================================
+
 @keyframes gradientPulse {
   0% {
     background-position: 0% 50%;
@@ -83,29 +73,6 @@ $warning-color: #FF9800;
   }
 }
 
-@keyframes arrowPulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes iconFadeIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes highlightGlow {
   0% {
     text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
@@ -115,29 +82,6 @@ $warning-color: #FF9800;
   }
   100% {
     text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
-  }
-}
-
-@keyframes pulseWidth {
-  0% {
-    width: 60px;
-  }
-  50% {
-    width: 80px;
-  }
-  100% {
-    width: 60px;
-  }
-}
-
-@keyframes dropdownReveal {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -153,793 +97,1102 @@ $warning-color: #FF9800;
   }
 }
 
-// Header Styles
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes hamburgerRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+
+@keyframes menuSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseWidth {
+  0% {
+    width: 60px;
+  }
+  50% {
+    width: 80px;
+  }
+  100% {
+    width: 60px;
+  }
+}
+
+// ===================================
+// HEADER PRINCIPAL RESPONSIVE
+// ===================================
+
 .main-header {
+  position: sticky;
+  top: 0;
   width: 100%;
-  background: linear-gradient(180deg, rgba(10, 15, 30, 0.9) 0%, rgba(0, 5, 20, 0.85) 100%);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background: linear-gradient(180deg, rgba(10, 15, 30, 0.95) 0%, rgba(0, 5, 20, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: relative;
-  z-index: 100;
-  transition: all 0.5s ease;
-  
-  @include responsive(md) {
-    position: sticky;
-    top: 0;
-  }
+  z-index: 1000;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   
   &.glow-effect {
-    background: linear-gradient(180deg, rgba(10, 20, 40, 0.9) 0%, rgba(5, 15, 35, 0.85) 100%);
+    background: linear-gradient(180deg, rgba(10, 20, 40, 0.95) 0%, rgba(5, 15, 35, 0.9) 100%);
     box-shadow: 
       0 4px 30px rgba(0, 0, 0, 0.2),
       0 0 40px rgba(0, 140, 255, 0.15);
     border-bottom: 1px solid rgba(0, 140, 255, 0.2);
   }
   
-  // Transición del header
   &.transitioning {
     opacity: 0.8;
     transform: translateY(-10px);
-    transition: all 0.4s ease;
   }
   
-  // Estilo durante el cierre de sesión
   &.logging-out {
     opacity: 0;
     transform: scale(0.95);
     transition: all 0.5s ease;
   }
+}
+
+// ===================================
+// CONTENEDOR PRINCIPAL DEL HEADER
+// ===================================
+
+.header-container {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0.8rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
   
-  .header-container {
-    max-width: 1800px;
-    margin: 0 auto;
-    padding: 0.9rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  @include responsive(xl) {
+    padding: 0.8rem 1.5rem;
+  }
+  
+  @include responsive(lg) {
+    padding: 0.7rem 1rem;
+  }
+  
+  @include responsive(md) {
+    padding: 0.6rem 0.75rem;
+  }
+  
+  @include responsive(sm) {
+    padding: 0.5rem;
+  }
+}
+
+// ===================================
+// LOGO CONTAINER
+// ===================================
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 10;
+  
+  .logo-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(54, 209, 220, 0.6) 0%, transparent 70%);
+    border-radius: 8px;
+    filter: blur(10px);
+    animation: logoGlow 3s infinite;
+    z-index: 0;
+  }
+  
+  .logo {
+    height: 50px;
+    width: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
     
     @include responsive(lg) {
-      padding: 0.75rem 1rem;
+      height: 45px;
     }
     
     @include responsive(md) {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      padding: 0.5rem;
+      height: 42px;
     }
     
-    // Logo
-    .logo-container {
-      flex: 0 0 auto;
-      position: relative;
-      cursor: pointer;
+    @include responsive(sm) {
+      height: 38px;
+    }
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 30px rgba(54, 209, 220, 0.4);
+    }
+  }
+  
+  // Navegación para referrals (solo desktop)
+  .menu-navigation {
+    display: flex;
+    gap: 1rem;
+    margin-left: 1.5rem;
+    
+    @include responsive(lg) {
+      margin-left: 1rem;
+      gap: 0.7rem;
+    }
+    
+    @include responsive(md) {
+      display: none; // Ocultar en móvil
+    }
+    
+    .nav-button {
+      background: rgba(10, 20, 40, 0.7);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 10px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 0.5rem 1rem;
       display: flex;
       align-items: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       
-      @include responsive(md) {
-        margin-right: auto;
-      }
-
-      .logo-glow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(54, 209, 220, 0.6) 0%, transparent 70%);
-        border-radius: 8px;
-        filter: blur(10px);
-        animation: logoGlow 3s infinite;
-        z-index: 0;
+      @include responsive(lg) {
+        padding: 0.4rem 0.8rem;
       }
       
-      .logo {
-        height: 50px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative;
-        z-index: 1;
+      i {
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
         
-        @include responsive(md) {
-          height: 42px;
+        @include responsive(lg) {
+          font-size: 0.85rem;
+        }
+      }
+      
+      .nav-text {
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        @include responsive(lg) {
+          font-size: 0.8rem;
         }
         
+        &.active-nav-text {
+          color: var(--nav-color) !important;
+          font-weight: 800 !important;
+          text-shadow: 
+            0 0 15px var(--nav-glow),
+            0 2px 4px rgba(0,0,0,0.3) !important;
+          filter: drop-shadow(0 0 8px var(--nav-glow));
+        }
+      }
+      
+      &:hover {
+        background: rgba(0, 212, 255, 0.1);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+      }
+      
+      &.active {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(91, 134, 229, 0.15));
+        color: $accent-color;
+        border-color: rgba(0, 212, 255, 0.3);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+      }
+    }
+  }
+}
+
+// ===================================
+// MENÚ HAMBURGUESA (Solo móvil)
+// ===================================
+
+.mobile-menu-toggle {
+  background: rgba(10, 20, 40, 0.9);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  
+  &:hover {
+    background: rgba(10, 20, 40, 1);
+    border-color: rgba(0, 212, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  @include responsive(sm) {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.3s ease;
+    
+    span {
+      width: 20px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 1px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    
+    @include responsive(sm) {
+      gap: 3px;
+      
+      span {
+        width: 18px;
+        height: 1.5px;
+      }
+    }
+  }
+  
+  &.active {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.3);
+    
+    .hamburger {
+      span {
+        background: $accent-color;
+        
+        &:nth-child(1) {
+          transform: rotate(45deg) translate(4px, 4px);
+        }
+        
+        &:nth-child(2) {
+          opacity: 0;
+        }
+        
+        &:nth-child(3) {
+          transform: rotate(-45deg) translate(4px, -4px);
+        }
+      }
+    }
+  }
+  
+  &:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// ===================================
+// CAROUSEL 3D RESPONSIVO
+// ===================================
+
+.top-carousel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 2rem;
+  position: relative;
+  
+  @include responsive(xl) {
+    max-width: 700px;
+    margin: 0 1.5rem;
+  }
+  
+  @include responsive(lg) {
+    max-width: 500px;
+    margin: 0 1rem;
+  }
+  
+  @include responsive(md) {
+    display: none; // Ocultar en móvil
+  }
+  
+  // Flechas del carousel
+  .carousel-arrow {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(10, 20, 40, 0.8);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+    
+    @include responsive(lg) {
+      width: 38px;
+      height: 38px;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .arrow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      position: relative;
+      transition: all 0.3s ease;
+      
+      i {
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+      }
+    }
+    
+    &:hover:not(:disabled) {
+      background: rgba(0, 212, 255, 0.15);
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    }
+    
+    &:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+  }
+  
+  // Contenedor de opciones del carousel
+  .carousel-options {
+    display: flex;
+    position: relative;
+    overflow: visible;
+    height: 70px;
+    min-width: 650px;
+    justify-content: center;
+    perspective: 1000px;
+    
+    @include responsive(xl) {
+      min-width: 500px;
+    }
+    
+    @include responsive(lg) {
+      min-width: 400px;
+      height: 65px;
+    }
+    
+    .carousel-option {
+      position: absolute;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      width: 200px;
+      text-align: center;
+      opacity: 0.7;
+      
+      @include responsive(lg) {
+        width: 160px;
+        height: 55px;
+        padding: 0.4rem 0.8rem;
+      }
+      
+      .option-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        
+        .option-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 8px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+          
+          @include responsive(lg) {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 5px;
+          }
+          
+          i {
+            color: white;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+            
+            @include responsive(lg) {
+              font-size: 15px;
+            }
+          }
+        }
+        
+        .option-text {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          font-weight: 500;
+          font-size: 1.1rem;
+          white-space: nowrap;
+          
+          @include responsive(lg) {
+            font-size: 1rem;
+          }
+          
+          &.active-center-text {
+            color: var(--active-color) !important;
+            font-weight: 800 !important;
+            text-shadow: 
+              0 0 15px var(--glow-color),
+              0 2px 4px rgba(0,0,0,0.3) !important;
+            filter: drop-shadow(0 0 8px var(--glow-color));
+            animation: textGlow 2s ease-in-out infinite alternate;
+          }
+        }
+        
+        .active-underline {
+          width: 70px;
+          height: 3px;
+          background: linear-gradient(90deg, #00e5ff, #5B86E5);
+          border-radius: 3px;
+          position: absolute;
+          bottom: -8px;
+          animation: pulseWidth 2s infinite alternate;
+          box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+          
+          @include responsive(lg) {
+            width: 50px;
+            height: 2px;
+            bottom: -6px;
+          }
+        }
+      }
+      
+      // Estados del carousel
+      &.center {
+        transform: translateX(0) translateZ(50px) scale(1.1);
+        z-index: 3;
+        opacity: 1;
+        color: $accent-color;
+        text-shadow: 0 0 12px rgba(0, 229, 255, 0.7);
+        font-weight: 600;
+        
+        .option-icon {
+          opacity: 1;
+          transform: scale(1.1);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+        
+        .option-glow {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
+          filter: blur(8px);
+          z-index: -1;
+        }
+      }
+      
+      &.left {
+        transform: translateX(-220px) translateZ(-20px) rotateY(10deg) scale(0.9);
+        
+        @include responsive(lg) {
+          transform: translateX(-180px) translateZ(-20px) rotateY(10deg) scale(0.85);
+        }
+      }
+      
+      &.right {
+        transform: translateX(220px) translateZ(-20px) rotateY(-10deg) scale(0.9);
+        
+        @include responsive(lg) {
+          transform: translateX(180px) translateZ(-20px) rotateY(-10deg) scale(0.85);
+        }
+      }
+      
+      &.hidden {
+        display: none;
+      }
+      
+      // Efectos hover
+      &:hover:not(.center) {
+        opacity: 0.9;
+        
+        &.left {
+          transform: translateX(-220px) translateZ(-15px) rotateY(5deg) scale(0.92) translateY(-5px);
+          
+          @include responsive(lg) {
+            transform: translateX(-180px) translateZ(-15px) rotateY(5deg) scale(0.87) translateY(-3px);
+          }
+        }
+        
+        &.right {
+          transform: translateX(220px) translateZ(-15px) rotateY(-5deg) scale(0.92) translateY(-5px);
+          
+          @include responsive(lg) {
+            transform: translateX(180px) translateZ(-15px) rotateY(-5deg) scale(0.87) translateY(-3px);
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes textGlow {
+  0% {
+    text-shadow: 
+      0 0 15px var(--glow-color),
+      0 2px 4px rgba(0,0,0,0.3);
+  }
+  100% {
+    text-shadow: 
+      0 0 25px var(--glow-color),
+      0 2px 6px rgba(0,0,0,0.4);
+  }
+}
+
+// ===================================
+// MENÚ MÓVIL (Overlay completo)
+// ===================================
+
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.3s ease;
+  
+  @include responsive(lg) {
+    display: block;
+  }
+  
+  &.active {
+    opacity: 1;
+  }
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 320px;
+  height: 100vh;
+  background: linear-gradient(135deg, rgba(10, 15, 30, 0.98) 0%, rgba(5, 10, 25, 0.95) 100%);
+  backdrop-filter: blur(25px);
+  border-left: 1px solid rgba(0, 212, 255, 0.2);
+  z-index: 1001;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  
+  @include responsive(lg) {
+    display: block;
+  }
+  
+  @include responsive(sm) {
+    width: 280px;
+  }
+  
+  @include responsive(xs) {
+    width: 260px;
+  }
+  
+  &.active {
+    right: 0;
+  }
+  
+  // Header del menú móvil
+  .mobile-menu-header {
+    padding: 2rem 1.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    
+    @include responsive(sm) {
+      padding: 1.5rem 1rem 0.8rem;
+    }
+    
+    .mobile-logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      
+      img {
+        height: 40px;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+      }
+      
+      .brand-text {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        
         @include responsive(sm) {
-          height: 38px;
+          font-size: 1.1rem;
+        }
+      }
+    }
+    
+    .mobile-user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem;
+      background: rgba(0, 212, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      
+      .mobile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        
+        @include responsive(sm) {
+          width: 36px;
+          height: 36px;
+          font-size: 0.8rem;
+        }
+      }
+      
+      .mobile-user-details {
+        flex: 1;
+        min-width: 0;
+        
+        .mobile-user-name {
+          color: white;
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin-bottom: 0.2rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          
+          @include responsive(sm) {
+            font-size: 0.85rem;
+          }
+        }
+        
+        .mobile-user-role {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.75rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          
+          @include responsive(sm) {
+            font-size: 0.7rem;
+          }
+        }
+      }
+    }
+  }
+  
+  // Items del menú móvil
+  .mobile-menu-items {
+    padding: 1rem 0;
+    
+    .mobile-menu-section {
+      margin-bottom: 2rem;
+      
+      .mobile-section-title {
+        padding: 0.5rem 1.5rem;
+        color: rgba(0, 212, 255, 0.7);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        
+        @include responsive(sm) {
+          padding: 0.5rem 1rem;
+          font-size: 0.75rem;
+        }
+      }
+      
+      .mobile-menu-item {
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+        
+        @include responsive(sm) {
+          padding: 0.8rem 1rem;
+          gap: 0.8rem;
+        }
+        
+        .mobile-item-icon {
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
+          color: rgba(255, 255, 255, 0.7);
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+          
+          @include responsive(sm) {
+            font-size: 0.9rem;
+          }
+        }
+        
+        .mobile-item-text {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 0.95rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          
+          @include responsive(sm) {
+            font-size: 0.9rem;
+          }
         }
         
         &:hover {
-          transform: scale(1.1);
-          box-shadow: 0 0 30px rgba(54, 209, 220, 0.4);
-        }
-      }
-      
-      // Botones de navegación mejorados
-      .menu-navigation {
-        display: flex;
-        gap: 1rem;
-        margin-left: 1.5rem;
-        
-        @include responsive(lg) {
-          margin-left: 1rem;
-          gap: 0.7rem;
-        }
-        
-        @include responsive(md) {
-          margin-left: 0.7rem;
-          gap: 0.5rem;
-        }
-        
-        @include responsive(sm) {
-          margin-left: 0.5rem;
-          gap: 0.3rem;
-        }
-        
-        .nav-button {
-          background: rgba(10, 20, 40, 0.5);
-          border: 1px solid rgba(0, 212, 255, 0.15);
-          border-radius: 10px;
-          color: rgba(255, 255, 255, 0.8);
-          padding: 0.5rem 1rem;
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          background: linear-gradient(90deg, rgba(0, 212, 255, 0.1), transparent);
+          border-left-color: $accent-color;
           
-          @include responsive(md) {
-            padding: 0.4rem 0.8rem;
+          .mobile-item-icon {
+            color: $accent-color;
+            transform: scale(1.1);
           }
           
-          @include responsive(sm) {
-            padding: 0.4rem;
+          .mobile-item-text {
+            color: white;
+          }
+        }
+        
+        &.active {
+          background: linear-gradient(90deg, rgba(0, 212, 255, 0.15), transparent);
+          border-left-color: $accent-color;
+          
+          .mobile-item-icon {
+            color: $accent-color;
           }
           
-          i {
-            margin-right: 0.5rem;
-            font-size: 0.9rem;
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
-            
-            @include responsive(sm) {
-              margin-right: 0;
-              font-size: 0.85rem;
-            }
+          .mobile-item-text {
+            color: $accent-color;
+            font-weight: 600;
+          }
+        }
+        
+        &.logout {
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          margin-top: 1rem;
+          
+          .mobile-item-icon {
+            color: $error-color;
           }
           
-          span {
-            font-size: 0.9rem;
-            font-weight: 500;
-            
-            @include responsive(sm) {
-              display: none;
-            }
+          .mobile-item-text {
+            color: $error-color;
           }
           
           &:hover {
-            background: rgba(0, 212, 255, 0.1);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 212, 255, 0.2);
+            background: rgba(255, 94, 98, 0.1);
+            border-left-color: $error-color;
           }
-          
-          &.active {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(91, 134, 229, 0.15));
-            color: $accent-color;
-            border-color: rgba(0, 212, 255, 0.3);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 212, 255, 0.25);
-            position: relative;
-            
-            &:after {
-              content: '';
-              position: absolute;
-              bottom: -4px;
-              left: 10%;
-              width: 80%;
-              height: 3px;
-              background: linear-gradient(to right, #00e5ff, #5B86E5);
-              border-radius: 3px;
-              box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-            }
-          }
+        }
+      }
+    }
+  }
+}
+
+// ===================================
+// PERFIL DE USUARIO DESKTOP
+// ===================================
+
+.support-user-profile {
+  position: relative;
+  z-index: 20;
+  
+  .support-profile-button {
+    display: flex;
+    align-items: center;
+    background: rgba(10, 20, 40, 0.8);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    
+    @include responsive(lg) {
+      padding: 0.4rem;
+    }
+    
+    @include responsive(md) {
+      display: none; // Ocultar en móvil
+    }
+    
+    .support-avatar {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      
+      @include responsive(lg) {
+        width: 36px;
+        height: 36px;
+        margin-right: 0;
+      }
+      
+      &:before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, 
+          rgba(255, 255, 255, 0) 0%, 
+          rgba(255, 255, 255, 0.1) 50%, 
+          rgba(255, 255, 255, 0) 100%);
+        transform: rotate(45deg);
+        animation: gradientPulse 3s infinite;
+        z-index: 1;
+      }
+      
+      .support-avatar-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: white;
+        position: relative;
+        z-index: 2;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        
+        @include responsive(lg) {
+          font-size: 0.85rem;
+        }
+      }
+      
+      .support-avatar-status {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #0f172a;
+        z-index: 3;
+        
+        @include responsive(lg) {
+          width: 10px;
+          height: 10px;
+        }
+        
+        &.online {
+          background: $success-color;
+          animation: statusPulse 2s infinite;
+        }
+        
+        &.away {
+          background: $warning-color;
+        }
+        
+        &.busy {
+          background: $error-color;
+        }
+        
+        &.offline {
+          background: #9E9E9E;
         }
       }
     }
     
-    // Enhanced Carousel
-    .top-carousel {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      max-width: 900px;
-      margin: 0 2rem;
-      position: relative;
+    .support-profile-info {
+      margin-right: 0.75rem;
       
       @include responsive(xl) {
-        max-width: 700px;
-        margin: 0 1rem;
+        display: none;
       }
       
-      @include responsive(lg) {
-        max-width: 500px;
-        order: 3;
-        width: 100%;
-        margin: 0.5rem 0;
-      }
-      
-      @include responsive(md) {
-        order: 3;
-        width: 100%;
-        max-width: 100%;
-        margin: 0.5rem 0;
-      }
-      
-      // Flechas del carousel mejoradas
-      .carousel-arrow {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: rgba(10, 20, 40, 0.7);
-        border: 1px solid rgba(0, 212, 255, 0.2);
+      .support-user-name {
+        font-size: 0.95rem;
+        font-weight: 600;
         color: white;
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        margin: 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
-        z-index: 10;
-        
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          pointer-events: none;
-        }
-        
-        @include responsive(md) {
-          width: 38px;
-          height: 38px;
-        }
-        
-        @include responsive(sm) {
-          width: 34px;
-          height: 34px;
-        }
-        
-        .arrow-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          position: relative;
-          z-index: 1;
-          transition: all 0.3s ease;
-          
-          &:after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
-            border-radius: 50%;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-          
-          i {
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
-          }
-        }
-        
-        &:hover:not(:disabled) {
-          background: rgba(0, 212, 255, 0.15);
-          transform: scale(1.15);
-          animation: arrowPulse 2s infinite;
-          box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-          
-          .arrow-icon:after {
-            opacity: 1;
-          }
-        }
-        
-        &:active:not(:disabled) {
-          transform: scale(0.95);
-        }
+        margin-bottom: 0.1rem;
+        display: block;
       }
       
-      // Opciones del carousel mejoradas
-      .carousel-options {
-        display: flex;
-        position: relative;
-        overflow: visible;
-        height: 70px;
-        min-width: 650px;
-        justify-content: center;
-        perspective: 1000px;
-        
-        @include responsive(xl) {
-          min-width: 500px;
-        }
-        
-        @include responsive(lg) {
-          min-width: 400px;
-          height: 65px;
-        }
-        
-        @include responsive(md) {
-          min-width: 300px;
-          height: 60px;
-        }
-        
-        @include responsive(sm) {
-          min-width: 250px;
-          height: 55px;
-        }
-        
-        .carousel-option {
-          position: absolute;
-          height: 60px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-          cursor: pointer;
-          padding: 0.5rem 1rem;
-          width: 200px;
-          text-align: center;
-          opacity: 0.7;
-          
-          @include responsive(lg) {
-            width: 160px;
-            padding: 0.5rem;
-            height: 55px;
-          }
-          
-          @include responsive(md) {
-            width: 120px;
-            padding: 0.25rem;
-            height: 50px;
-          }
-          
-          @include responsive(sm) {
-            width: 100px;
-            padding: 0.15rem;
-            height: 45px;
-          }
-          
-          // Contenido de la opción
-          .option-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            
-            // Ícono de la opción
-            .option-icon {
-              width: 42px;
-              height: 42px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 8px;
-              box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
-              transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-              animation: iconFadeIn 0.5s ease forwards;
-              
-              @include responsive(md) {
-                width: 36px;
-                height: 36px;
-                margin-bottom: 5px;
-              }
-              
-              @include responsive(sm) {
-                width: 32px;
-                height: 32px;
-                margin-bottom: 3px;
-              }
-              
-              i {
-                color: white;
-                font-size: 18px;
-                filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
-                
-                @include responsive(md) {
-                  font-size: 15px;
-                }
-                
-                @include responsive(sm) {
-                  font-size: 14px;
-                }
-              }
-            }
-          }
-          
-          // Estado activo (elemento central)
-          &.center {
-            transform: translateX(0) translateZ(50px) scale(1.1);
-            z-index: 3;
-            opacity: 1;
-            color: $accent-color;
-            text-shadow: 0 0 12px rgba(0, 229, 255, 0.7);
-            font-weight: 600;
-            
-            .option-icon {
-              opacity: 1;
-              transform: scale(1.1);
-              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 229, 255, 0.4);
-              
-              @include responsive(md) {
-                transform: scale(1.05);
-              }
-            }
-            
-            span {
-              animation: highlightGlow 3s infinite;
-              
-              @include responsive(md) {
-                font-size: 0.95rem;
-              }
-            }
-            
-            // NUEVO: Estilos dinámicos para texto del icono activo
-            .option-text {
-              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-              font-weight: 500;
-              
-              &.active-center-text {
-                color: var(--active-color) !important;
-                font-weight: 800 !important;
-                text-shadow: 
-                  0 0 15px var(--glow-color),
-                  0 2px 4px rgba(0,0,0,0.3) !important;
-                filter: drop-shadow(0 0 8px var(--glow-color));
-                animation: textGlow 2s ease-in-out infinite alternate;
-              }
-            }
-            
-            @keyframes textGlow {
-              0% {
-                text-shadow: 
-                  0 0 15px var(--glow-color),
-                  0 2px 4px rgba(0,0,0,0.3);
-              }
-              100% {
-                text-shadow: 
-                  0 0 25px var(--glow-color),
-                  0 2px 6px rgba(0,0,0,0.4);
-              }
-            }
-            
-            // NUEVO: Estilos para botones de navegación
-            .nav-text {
-              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-              font-weight: 500;
-              
-              &.active-nav-text {
-                color: var(--nav-color) !important;
-                font-weight: 800 !important;
-                text-shadow: 
-                  0 0 15px var(--nav-glow),
-                  0 2px 4px rgba(0,0,0,0.3) !important;
-                filter: drop-shadow(0 0 8px var(--nav-glow));
-                animation: navTextGlow 2s ease-in-out infinite alternate;
-              }
-            }
-            
-            @keyframes navTextGlow {
-              0% {
-                text-shadow: 
-                  0 0 15px var(--nav-glow),
-                  0 2px 4px rgba(0,0,0,0.3);
-              }
-              100% {
-                text-shadow: 
-                  0 0 25px var(--nav-glow),
-                  0 2px 6px rgba(0,0,0,0.4);
-              }
-            }
-            
-            // NUEVO: Estilos para elementos del menú de usuario
-            .menu-item-text {
-              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              color: inherit;
-            }
-            
-            .support-menu-item {
-              &:hover .menu-item-text {
-                color: var(--menu-color) !important;
-                font-weight: 700 !important;
-                text-shadow: 
-                  0 0 12px var(--menu-glow),
-                  0 2px 4px rgba(0,0,0,0.3) !important;
-                filter: drop-shadow(0 0 6px var(--menu-glow));
-              }
-              
-              &:hover i {
-                color: var(--menu-color) !important;
-                filter: drop-shadow(0 0 6px var(--menu-glow));
-                transform: scale(1.1);
-              }
-            }
-              
-              @include responsive(sm) {
-                font-size: 0.85rem;
-              }
-            }
-            
-            .active-underline {
-              width: 70px;
-              height: 3px;
-              background: linear-gradient(90deg, #00e5ff, #5B86E5);
-              border-radius: 3px;
-              position: absolute;
-              bottom: -8px;
-              animation: pulseWidth 2s infinite alternate;
-              box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-              
-              @include responsive(md) {
-                width: 50px;
-                height: 2px;
-                bottom: -6px;
-              }
-              
-              @include responsive(sm) {
-                width: 40px;
-                bottom: -4px;
-              }
-            }
-            
-            .option-glow {
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
-              filter: blur(8px);
-              z-index: -1;
-            }
-          }
-          
-          // Posicionamiento del carousel mejorado
-          &.left {
-            transform: translateX(-240px) translateZ(-20px) rotateY(10deg) scale(0.9);
-            
-            @include responsive(xl) {
-              transform: translateX(-180px) translateZ(-20px) rotateY(10deg) scale(0.9);
-            }
-            
-            @include responsive(lg) {
-              transform: translateX(-150px) translateZ(-20px) rotateY(10deg) scale(0.9);
-            }
-            
-            @include responsive(md) {
-              transform: translateX(-120px) translateZ(-20px) rotateY(10deg) scale(0.85);
-            }
-            
-            @include responsive(sm) {
-              transform: translateX(-90px) translateZ(-20px) rotateY(10deg) scale(0.8);
-            }
-          }
-          
-          &.right {
-            transform: translateX(240px) translateZ(-20px) rotateY(-10deg) scale(0.9);
-            
-            @include responsive(xl) {
-              transform: translateX(180px) translateZ(-20px) rotateY(-10deg) scale(0.9);
-            }
-            
-            @include responsive(lg) {
-              transform: translateX(150px) translateZ(-20px) rotateY(-10deg) scale(0.9);
-            }
-            
-            @include responsive(md) {
-              transform: translateX(120px) translateZ(-20px) rotateY(-10deg) scale(0.85);
-            }
-            
-            @include responsive(sm) {
-              transform: translateX(90px) translateZ(-20px) rotateY(-10deg) scale(0.8);
-            }
-          }
-          
-          &.far-left {
-            transform: translateX(-450px) translateZ(-50px) rotateY(25deg) scale(0.7);
-            
-            @include responsive(xl) {
-              transform: translateX(-320px) translateZ(-40px) rotateY(20deg) scale(0.75);
-            }
-            
-            @include responsive(lg) {
-              transform: translateX(-250px) translateZ(-40px) rotateY(15deg) scale(0.7);
-            }
-            
-            @include responsive(md) {
-              display: none;
-            }
-          }
-          
-          &.far-right {
-            transform: translateX(450px) translateZ(-50px) rotateY(-25deg) scale(0.7);
-            
-            @include responsive(xl) {
-              transform: translateX(320px) translateZ(-40px) rotateY(-20deg) scale(0.75);
-            }
-            
-            @include responsive(lg) {
-              transform: translateX(250px) translateZ(-40px) rotateY(-15deg) scale(0.7);
-            }
-            
-            @include responsive(md) {
-              display: none;
-            }
-          }
-          
-          span {
-            font-size: 1.25rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-            
-            @include responsive(lg) {
-              font-size: 1.1rem;
-            }
-            
-            @include responsive(md) {
-              font-size: 0.95rem;
-            }
-            
-            @include responsive(sm) {
-              font-size: 0.85rem;
-            }
-          }
-          
-          // Efectos hover mejorados
-          &:hover {
-            &:not(.center) {
-              opacity: 0.9;
-              
-              &.left, &.far-left {
-                transform: translateX(-240px) translateZ(-15px) rotateY(5deg) scale(0.92) translateY(-5px);
-                
-                @include responsive(xl) {
-                  transform: translateX(-180px) translateZ(-15px) rotateY(5deg) scale(0.92) translateY(-5px);
-                }
-                
-                @include responsive(lg) {
-                  transform: translateX(-150px) translateZ(-15px) rotateY(5deg) scale(0.92) translateY(-5px);
-                }
-                
-                @include responsive(md) {
-                  transform: translateX(-120px) translateZ(-15px) rotateY(5deg) scale(0.87) translateY(-3px);
-                }
-                
-                @include responsive(sm) {
-                  transform: translateX(-90px) translateZ(-15px) rotateY(5deg) scale(0.82) translateY(-2px);
-                }
-              }
-              
-              &.right, &.far-right {
-                transform: translateX(240px) translateZ(-15px) rotateY(-5deg) scale(0.92) translateY(-5px);
-                
-                @include responsive(xl) {
-                  transform: translateX(180px) translateZ(-15px) rotateY(-5deg) scale(0.92) translateY(-5px);
-                }
-                
-                @include responsive(lg) {
-                  transform: translateX(150px) translateZ(-15px) rotateY(-5deg) scale(0.92) translateY(-5px);
-                }
-                
-                @include responsive(md) {
-                  transform: translateX(120px) translateZ(-15px) rotateY(-5deg) scale(0.87) translateY(-3px);
-                }
-                
-                @include responsive(sm) {
-                  transform: translateX(90px) translateZ(-15px) rotateY(-5deg) scale(0.82) translateY(-2px);
-                }
-              }
-            }
-          }
-        }
+      .support-user-role {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.6);
+        display: block;
       }
     }
-
-    // User profile enhanced
-    .support-user-profile {
-      z-index: 20;
+    
+    i {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+      margin-left: 0.25rem;
       
-      @include responsive(lg) {
-        order: 2;
-        margin-left: auto;
+      @include responsive(xl) {
+        display: none;
       }
+    }
+    
+    &:hover {
+      background: rgba(0, 212, 255, 0.08);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       
-      @include responsive(md) {
-        margin-left: auto;
+      i {
+        color: white;
       }
+    }
+    
+    &.active {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       
-      .support-profile-button {
+      i {
+        color: $accent-color;
+        transform: rotate(180deg);
+      }
+    }
+  }
+  
+  // Menú desplegable desktop
+  .support-user-menu {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    width: 340px;
+    background: linear-gradient(135deg, rgba(12, 20, 40, 0.98), rgba(8, 15, 30, 0.98));
+    backdrop-filter: blur(25px);
+    border-radius: 16px;
+    box-shadow: 
+      0 30px 60px rgba(0, 0, 0, 0.4), 
+      0 0 30px rgba(0, 0, 0, 0.3), 
+      0 0 0 1px rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    overflow: hidden;
+    z-index: 100;
+    animation: slideInFromTop 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    
+    @include responsive(xl) {
+      width: 320px;
+    }
+    
+    @include responsive(lg) {
+      width: 300px;
+    }
+    
+    // Header del menú desplegable
+    .support-menu-header {
+      padding: 1.5rem;
+      background: linear-gradient(to bottom, rgba(15, 25, 45, 0.98), rgba(12, 20, 40, 0.97));
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      
+      .support-user-info {
         display: flex;
         align-items: center;
-        background: rgba(10, 20, 40, 0.8);
-        border: 1px solid rgba(0, 212, 255, 0.15);
-        border-radius: 12px;
-        padding: 0.5rem 0.75rem 0.5rem 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        position: relative;
+        gap: 1rem;
         
-        @include responsive(md) {
-          padding: 0.4rem;
-        }
-        
-        @include responsive(sm) {
-          padding: 0.3rem;
-        }
-        
-        .support-profile-info {
-          margin-right: 0.75rem;
-          
-          @include responsive(lg) {
-            display: none;
-          }
-          
-          .support-user-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 0.1rem;
-          }
-          
-          .support-user-role {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.6);
-            display: block;
-            
-            @include responsive(xl) {
-              display: none;
-            }
-          }
-        }
-        
-        // Avatar enhancado
-        .support-avatar {
-          position: relative;
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
+        .support-user-avatar {
+          width: 60px;
+          height: 60px;
+          border-radius: 14px;
           background: linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-right: 0.75rem;
+          font-size: 1.4rem;
+          font-weight: 600;
+          color: white;
           flex-shrink: 0;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 212, 255, 0.2);
+          position: relative;
+          box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3), 0 10px 20px rgba(0, 0, 0, 0.4);
           overflow: hidden;
-          
-          @include responsive(md) {
-            width: 36px;
-            height: 36px;
-            margin-right: 0;
-          }
-          
-          @include responsive(sm) {
-            width: 34px;
-            height: 34px;
-          }
           
           &:before {
             content: '';
@@ -957,37 +1210,21 @@ $warning-color: #FF9800;
             z-index: 1;
           }
           
-          .support-avatar-text {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: white;
+          span {
             position: relative;
             z-index: 2;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-            
-            @include responsive(sm) {
-              font-size: 0.85rem;
-            }
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           }
           
-          // Estado de conexión mejorado
-          .support-avatar-status {
+          .avatar-status {
             position: absolute;
-            bottom: -2px;
-            right: -2px;
-            width: 12px;
-            height: 12px;
+            bottom: -3px;
+            right: -3px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             border: 2px solid #0f172a;
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
             z-index: 3;
-            
-            @include responsive(sm) {
-              width: 10px;
-              height: 10px;
-              bottom: -1px;
-              right: -1px;
-            }
             
             &.online {
               background: $success-color;
@@ -1008,367 +1245,173 @@ $warning-color: #FF9800;
           }
         }
         
-        i {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.8rem;
-          transition: all 0.3s ease;
-          margin-left: 0.25rem;
-          
-          @include responsive(lg) {
-            display: none;
-          }
-        }
-        
-        &:hover {
-          background: rgba(0, 212, 255, 0.08);
-          transform: translateY(-3px);
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 212, 255, 0.2);
-          
-          i {
+        .support-user-details {
+          h4 {
+            margin: 0 0 0.3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
             color: white;
           }
-        }
-        
-        &.active {
-          background: rgba(0, 212, 255, 0.15);
-          border-color: rgba(0, 212, 255, 0.3);
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 212, 255, 0.25);
           
-          i {
-            color: $accent-color;
-            transform: rotate(180deg);
-          }
-        }
-      }
-      
-      // Menú desplegable del usuario mejorado
-      .support-user-menu {
-        position: absolute;
-        top: calc(100% + 0.75rem);
-        right: 0;
-        width: 340px;
-        background: linear-gradient(135deg, rgba(12, 20, 40, 0.98), rgba(8, 15, 30, 0.98));
-        backdrop-filter: blur(20px);
-        border-radius: 16px;
-        box-shadow: 
-          0 30px 60px rgba(0, 0, 0, 0.4), 
-          0 0 30px rgba(0, 0, 0, 0.3), 
-          0 0 0 1px rgba(0, 212, 255, 0.2);
-        border: 1px solid rgba(0, 212, 255, 0.15);
-        overflow: hidden;
-        z-index: 100;
-        animation: dropdownReveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        
-        @include responsive(lg) {
-          width: 320px;
-        }
-        
-        @include responsive(md) {
-          width: 300px;
-        }
-        
-        @include responsive(sm) {
-          width: 280px;
-          right: -10px;
-        }
-        
-        @include responsive(xs) {
-          width: calc(100vw - 30px);
-          right: -15px;
-        }
-        
-        // Encabezado del menú mejorado
-        .support-menu-header {
-          padding: 1.5rem;
-          background: linear-gradient(to bottom, rgba(15, 25, 45, 0.98), rgba(12, 20, 40, 0.97));
-          border-bottom: 1px solid rgba(0, 212, 255, 0.15);
-          
-          @include responsive(sm) {
-            padding: 1.2rem;
+          .support-user-email {
+            display: block;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
           }
           
-          .support-user-info {
+          .support-user-status {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.4rem;
+            font-size: 0.85rem;
             
-            @include responsive(sm) {
-              gap: 0.8rem;
+            &.online {
+              color: $success-color;
             }
             
-            .support-user-avatar {
-              width: 60px;
-              height: 60px;
-              border-radius: 14px;
-              background: linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 1.4rem;
-              font-weight: 600;
-              color: white;
-              flex-shrink: 0;
-              position: relative;
-              box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3), 0 10px 20px rgba(0, 0, 0, 0.4);
-              overflow: hidden;
-              
-              &:before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: linear-gradient(45deg, 
-                  rgba(255, 255, 255, 0) 0%, 
-                  rgba(255, 255, 255, 0.1) 50%, 
-                  rgba(255, 255, 255, 0) 100%);
-                transform: rotate(45deg);
-                animation: gradientPulse 3s infinite;
-                z-index: 1;
-              }
-              
-              @include responsive(sm) {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
-              }
-              
-              span {
-                position: relative;
-                z-index: 2;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-              }
-              
-              .avatar-status {
-                position: absolute;
-                bottom: -3px;
-                right: -3px;
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                border: 2px solid #0f172a;
-                z-index: 3;
-                
-                @include responsive(sm) {
-                  width: 12px;
-                  height: 12px;
-                  bottom: -2px;
-                  right: -2px;
-                }
-                
-                &.online {
-                  background: $success-color;
-                  animation: statusPulse 2s infinite;
-                }
-                
-                &.away {
-                  background: $warning-color;
-                }
-                
-                &.busy {
-                  background: $error-color;
-                }
-
-                &.offline {
-                  background: #9E9E9E;
-                }
-              }
+            &.away {
+              color: $warning-color;
             }
             
-            .support-user-details {
-              h4 {
-                margin: 0 0 0.3rem;
-                font-size: 1.1rem;
-                font-weight: 600;
-                color: white;
-                
-                @include responsive(sm) {
-                  font-size: 1rem;
-                  margin: 0 0 0.2rem;
-                }
-              }
-              
-              .support-user-email {
-                display: block;
-                font-size: 0.85rem;
-                color: rgba(255, 255, 255, 0.6);
-                margin-bottom: 0.5rem;
-
-                @include responsive(sm) {
-                  font-size: 0.75rem;
-                  margin-bottom: 0.4rem;
-                }
-              }
-              
-              .support-user-status {
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
-                font-size: 0.85rem;
-                
-                @include responsive(sm) {
-                  font-size: 0.75rem;
-                }
-                
-                &.online {
-                  color: $success-color;
-                }
-                
-                &.away {
-                  color: $warning-color;
-                }
-                
-                &.busy {
-                  color: $error-color;
-                }
-                
-                &.offline {
-                  color: #9E9E9E;
-                }
-                
-                i {
-                  font-size: 0.6rem;
-                  
-                  @include responsive(sm) {
-                    font-size: 0.55rem;
-                  }
-                }
-              }
-            }
-          }
-        }
-        
-        // Secciones del menú mejoradas
-        .support-menu-section {
-          background: rgba(15, 25, 45, 0.4);
-          padding: 0.75rem 0;
-          border-bottom: 1px solid rgba(0, 212, 255, 0.05);
-          
-          &:last-child {
-            border-bottom: none;
-          }
-          
-          .section-title {
-            padding: 0.5rem 1.5rem;
-            font-size: 0.8rem;
-            color: rgba(0, 212, 255, 0.7);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-            
-            @include responsive(sm) {
-              padding: 0.4rem 1.2rem;
-              font-size: 0.7rem;
-            }
-          }
-        }
-        
-        .support-menu-items {
-          padding: 0.25rem 0;
-        }
-        
-        // Items del menú mejorados
-        .support-menu-item {
-          padding: 0.75rem 1.5rem;
-          display: flex;
-          align-items: center;
-          transition: all 0.3s ease;
-          cursor: pointer;
-          
-          @include responsive(sm) {
-            padding: 0.8rem 1.2rem;
-          }
-          
-          &:hover {
-            background: linear-gradient(90deg, rgba(0, 212, 255, 0.08), transparent);
-            
-            i {
-              color: $accent-color;
-              text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-              transform: translateY(-2px);
-            }
-          }
-          
-          i {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            transition: all 0.3s ease;
-            
-            @include responsive(sm) {
-              margin-right: 0.8rem;
-              font-size: 0.9rem;
-            }
-          }
-          
-          span {
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
-            flex: 1;
-            font-size: 0.95rem;
-            color: white;
-            
-            @include responsive(sm) {
-              font-size: 0.85rem;
-            }
-          }
-          
-          &.logout {
-            color: $error-color;
-            
-            i {
+            &.busy {
               color: $error-color;
             }
             
-            &:hover {
-              background: rgba(244, 67, 54, 0.05);
-              
-              i {
-                text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
-              }
+            &.offline {
+              color: #9E9E9E;
             }
-          }
-        }
-        
-        // Footer del menú mejorado
-        .support-menu-footer {
-          background: linear-gradient(to top, rgba(10, 20, 40, 0.97), rgba(12, 20, 40, 0.9));
-          padding: 0.75rem 0;
-          
-          .version-info {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 1.5rem;
-            font-size: 0.75rem;
-            color: rgba(0, 212, 255, 0.5);
             
-            @include responsive(sm) {
-              padding: 0.5rem 1.2rem;
-              font-size: 0.7rem;
+            i {
+              font-size: 0.6rem;
             }
           }
-        }
-        
-        // Versión móvil completa
-        @include responsive(xs) {
-          width: 100vw;
-          position: fixed;
-          top: 70px;
-          left: 0;
-          right: 0;
-          border-radius: 0;
         }
       }
     }
+    
+    // Secciones del menú
+    .support-menu-section {
+      background: rgba(15, 25, 45, 0.4);
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.05);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .section-title {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.8rem;
+        color: rgba(0, 212, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+      }
+    }
+    
+    .support-menu-items {
+      padding: 0.25rem 0;
+    }
+    
+    .support-menu-item {
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      
+      &:hover {
+        background: linear-gradient(90deg, rgba(0, 212, 255, 0.08), transparent);
+        
+        .menu-item-text {
+          color: var(--menu-color, $accent-color) !important;
+          font-weight: 700 !important;
+          text-shadow: 
+            0 0 12px var(--menu-glow, $accent-glow),
+            0 2px 4px rgba(0,0,0,0.3) !important;
+          filter: drop-shadow(0 0 6px var(--menu-glow, $accent-glow));
+        }
+        
+        i {
+          color: var(--menu-color, $accent-color) !important;
+          filter: drop-shadow(0 0 6px var(--menu-glow, $accent-glow));
+          transform: scale(1.1);
+        }
+      }
+      
+      i {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s ease;
+      }
+      
+      .menu-item-text {
+        flex: 1;
+        font-size: 0.95rem;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      &.logout {
+        color: $error-color;
+        
+        i {
+          color: $error-color;
+        }
+        
+        &:hover {
+          background: rgba(244, 67, 54, 0.05);
+          
+          i {
+            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+          }
+        }
+      }
+    }
+    
+    .support-menu-footer {
+      background: linear-gradient(to top, rgba(10, 20, 40, 0.97), rgba(12, 20, 40, 0.9));
+      padding: 0.75rem 0;
+      
+      .version-info {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 1.5rem;
+        font-size: 0.75rem;
+        color: rgba(0, 212, 255, 0.5);
+      }
+    }
   }
+}
 
+// ===================================
+// NOTIFICACIONES DE SEGURIDAD
+// ===================================
 
-// Clase para el efecto global de cierre de sesión
+.security-notifications-container {
+  position: relative;
+  margin-right: 1rem;
+  
+  @include responsive(md) {
+    display: none; // Ocultar en móvil por ahora
+  }
+  
+  .security-notifications-panel {
+    z-index: 9999;
+  }
+}
+
+// ===================================
+// EFECTOS GLOBALES
+// ===================================
+
 body.logging-out {
   .parallax-background {
     transform: scale(1.2) !important;
@@ -1377,91 +1420,34 @@ body.logging-out {
   }
 }
 
-// Media queries para responsividad
-@media (max-width: 992px) {
-  .main-header .header-container {
-    .logo-container {
-      flex-direction: row;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      
-      .menu-navigation {
-        margin-left: 1rem;
-        
-        .nav-button {
-          padding: 0.4rem 0.8rem;
-          
-          span {
-            font-size: 0.8rem;
-          }
-          
-          @media (max-width: 576px) {
-            span {
-              display: none;
-            }
-            
-            i {
-              margin-right: 0;
-            }
-          }
-        }
-      }
+// ===================================
+// MEDIA QUERIES ESPECÍFICAS
+// ===================================
+
+@media (max-width: 480px) {
+  .mobile-menu {
+    width: 100vw !important;
+    right: -100vw;
+    
+    &.active {
+      right: 0;
     }
   }
 }
 
-top-carousel .carousel-options {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* Asegurar que los elementos ocupen el espacio correctamente */
-.carousel-option {
-  position: absolute;
-  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Posición central */
-.carousel-option.center {
-  z-index: 3;
-  transform: translateX(0) scale(1);
-  opacity: 1;
-}
-
-/* Posición izquierda siempre visible (sin espacio) */
-.carousel-option.left {
-  z-index: 2;
-  transform: translateX(-100%) scale(0.85);
-  opacity: 0.8;
-}
-
-/* Posición derecha siempre visible */
-.carousel-option.right {
-  z-index: 2;
-  transform: translateX(100%) scale(0.85);
-  opacity: 0.8;
-}
-
-/* Eliminar el uso de far-left y far-right para evitar espacios vacíos */
-.carousel-option.far-left,
-.carousel-option.far-right {
-  display: none;
-}
-
-/* En móvil, ajustar las posiciones para un mejor encaje */
-@media (max-width: 768px) {
-  .carousel-option.left {
-    transform: translateX(-80%) scale(0.8);
-    opacity: 0.7;
+// Ocultar elementos específicos en tablets y móvil
+@media (max-width: 992px) {
+  .top-carousel,
+  .security-notifications-container,
+  .support-user-profile {
+    display: none !important;
   }
   
-  .carousel-option.right {
-    transform: translateX(80%) scale(0.8);
-    opacity: 0.7;
+  .mobile-menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer !important;
+    pointer-events: auto !important;
   }
 }

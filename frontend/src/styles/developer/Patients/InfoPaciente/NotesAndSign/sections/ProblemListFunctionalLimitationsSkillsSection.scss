@@ -1,0 +1,659 @@
+// ============================================
+// Problem List / Functional Limitations Section Styles
+// Clinical assessment interface with color-coded problem categories
+// ============================================
+
+.problem-list-functional-limitations-skills-section {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+
+  // Section Header
+  .section-header {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+
+      i {
+        font-size: 28px;
+        color: #dc2626;
+        margin-right: 12px;
+        padding: 8px;
+        background: rgba(220, 38, 38, 0.1);
+        border-radius: 8px;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+    }
+
+    .section-description {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 0 0 20px 52px;
+    }
+
+    .assessment-summary {
+      .summary-stats {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .stat-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          color: white;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+
+          i {
+            font-size: 14px;
+          }
+
+          &:nth-child(2) {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+          }
+
+          &:nth-child(3) {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  // Assessment Groups
+  .assessment-group {
+    margin-bottom: 32px;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+
+    .group-header {
+      margin-bottom: 24px;
+      text-align: center;
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+
+        i {
+          font-size: 20px;
+          color: #dc2626;
+        }
+      }
+
+      .group-description {
+        color: #64748b;
+        font-size: 14px;
+        margin: 0;
+      }
+    }
+  }
+
+  // Problem List Selection
+  .problem-list-selection {
+    .problem-items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+
+      .problem-item-option {
+        display: block;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+          display: none;
+        }
+
+        .problem-item-card {
+          display: flex;
+          align-items: center;
+          padding: 16px;
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+          position: relative;
+
+          .problem-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+            background: #f1f5f9;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+          }
+
+          .problem-content {
+            flex-grow: 1;
+
+            .problem-label {
+              margin: 0 0 4px 0;
+              font-size: 15px;
+              font-weight: 600;
+              color: #1e293b;
+              line-height: 1.3;
+            }
+
+            .problem-description {
+              margin: 0;
+              font-size: 12px;
+              color: #64748b;
+              line-height: 1.4;
+            }
+          }
+
+          .selection-indicator {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            flex-shrink: 0;
+
+            i {
+              font-size: 12px;
+              color: transparent;
+              transition: color 0.3s ease;
+            }
+          }
+
+          // Hover effects
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        // Color-coded problem categories
+        input:checked + .problem-item-card {
+          transform: translateY(-2px);
+          color: white;
+
+          .problem-content .problem-label,
+          .problem-content .problem-description {
+            color: white;
+          }
+
+          .problem-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: var(--card-color);
+            }
+          }
+        }
+
+        // Red - Critical/Safety Issues
+        .problem-item-card.red {
+          &:hover {
+            border-color: #dc2626;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.red {
+          --card-color: #dc2626;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          border-color: #b91c1c;
+          box-shadow: 0 6px 20px rgba(220, 38, 38, 0.25);
+        }
+
+        // Orange - Safety Awareness
+        .problem-item-card.orange {
+          &:hover {
+            border-color: #ea580c;
+            box-shadow: 0 4px 16px rgba(234, 88, 12, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.orange {
+          --card-color: #ea580c;
+          background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+          border-color: #c2410c;
+          box-shadow: 0 6px 20px rgba(234, 88, 12, 0.25);
+        }
+
+        // Purple - Sensory Issues
+        .problem-item-card.purple {
+          &:hover {
+            border-color: #7c3aed;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.purple {
+          --card-color: #7c3aed;
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          border-color: #6d28d9;
+          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.25);
+        }
+
+        // Indigo - Cognitive Issues
+        .problem-item-card.indigo {
+          &:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.indigo {
+          --card-color: #4f46e5;
+          background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+          border-color: #3730a3;
+          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.25);
+        }
+
+        // Blue - ROM Issues
+        .problem-item-card.blue {
+          &:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.blue {
+          --card-color: #2563eb;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border-color: #1d4ed8;
+          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+        }
+
+        // Cyan - Movement Patterns
+        .problem-item-card.cyan {
+          &:hover {
+            border-color: #0891b2;
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.cyan {
+          --card-color: #0891b2;
+          background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+          border-color: #0e7490;
+          box-shadow: 0 6px 20px rgba(8, 145, 178, 0.25);
+        }
+
+        // Teal - Visual Issues
+        .problem-item-card.teal {
+          &:hover {
+            border-color: #0d9488;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.teal {
+          --card-color: #0d9488;
+          background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+          border-color: #0f766e;
+          box-shadow: 0 6px 20px rgba(13, 148, 136, 0.25);
+        }
+
+        // Green - Strength Issues
+        .problem-item-card.green {
+          &:hover {
+            border-color: #059669;
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.green {
+          --card-color: #059669;
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          border-color: #047857;
+          box-shadow: 0 6px 20px rgba(5, 150, 105, 0.25);
+        }
+
+        // Yellow - Mechanics Issues
+        .problem-item-card.yellow {
+          &:hover {
+            border-color: #eab308;
+            box-shadow: 0 4px 16px rgba(234, 179, 8, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.yellow {
+          --card-color: #eab308;
+          background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+          border-color: #ca8a04;
+          box-shadow: 0 6px 20px rgba(234, 179, 8, 0.25);
+        }
+
+        // Amber - Activity Tolerance
+        .problem-item-card.amber {
+          &:hover {
+            border-color: #d97706;
+            box-shadow: 0 4px 16px rgba(217, 119, 6, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.amber {
+          --card-color: #d97706;
+          background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+          border-color: #b45309;
+          box-shadow: 0 6px 20px rgba(217, 119, 6, 0.25);
+        }
+
+        // Brown - Joint Issues
+        .problem-item-card.brown {
+          &:hover {
+            border-color: #92400e;
+            box-shadow: 0 4px 16px rgba(146, 64, 14, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.brown {
+          --card-color: #92400e;
+          background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+          border-color: #78350f;
+          box-shadow: 0 6px 20px rgba(146, 64, 14, 0.25);
+        }
+
+        // Gray - Tissue Issues
+        .problem-item-card.gray {
+          &:hover {
+            border-color: #6b7280;
+            box-shadow: 0 4px 16px rgba(107, 114, 128, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.gray {
+          --card-color: #6b7280;
+          background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+          border-color: #4b5563;
+          box-shadow: 0 6px 20px rgba(107, 114, 128, 0.25);
+        }
+
+        // Pink - Sensitivity Issues
+        .problem-item-card.pink {
+          &:hover {
+            border-color: #be185d;
+            box-shadow: 0 4px 16px rgba(190, 24, 93, 0.15);
+          }
+        }
+
+        input:checked + .problem-item-card.pink {
+          --card-color: #be185d;
+          background: linear-gradient(135deg, #be185d 0%, #9f1239 100%);
+          border-color: #9f1239;
+          box-shadow: 0 6px 20px rgba(190, 24, 93, 0.25);
+        }
+      }
+    }
+  }
+
+  // Comments Section
+  .comments-section {
+    .comments-container {
+      position: relative;
+
+      .comments-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        line-height: 1.5;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: white;
+        color: #1e293b;
+
+        &:focus {
+          outline: none;
+          border-color: #dc2626;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+          font-style: italic;
+        }
+      }
+
+      .character-count {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 11px;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    }
+  }
+
+  // Selected Problems Summary
+  .selected-problems-summary {
+    margin-top: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+
+    .summary-header {
+      margin-bottom: 20px;
+      text-align: center;
+
+      .summary-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #991b1b;
+
+        i {
+          font-size: 20px;
+          color: #dc2626;
+        }
+      }
+    }
+
+    .selected-problems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+
+      .selected-problem-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        border: 1px solid rgba(220, 38, 38, 0.15);
+
+        .selected-problem-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          flex-shrink: 0;
+          background: rgba(220, 38, 38, 0.1);
+          color: #dc2626;
+        }
+
+        .selected-problem-content {
+          flex-grow: 1;
+
+          .selected-problem-name {
+            margin: 0 0 2px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #991b1b;
+          }
+
+          .selected-problem-desc {
+            margin: 0;
+            font-size: 11px;
+            color: #b91c1c;
+            line-height: 1.3;
+          }
+        }
+
+        .priority-indicator {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(220, 38, 38, 0.2);
+          color: #dc2626;
+          font-size: 10px;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .summary-recommendations {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(220, 38, 38, 0.15);
+
+      .recommendations-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #991b1b;
+
+        i {
+          color: #dc2626;
+        }
+      }
+
+      .recommendations-content {
+        .recommendation-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          font-size: 12px;
+          color: #b91c1c;
+          line-height: 1.4;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          i {
+            color: #dc2626;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .section-header {
+      padding: 16px;
+
+      .section-title {
+        h3 {
+          font-size: 20px;
+        }
+
+        i {
+          font-size: 24px;
+        }
+      }
+
+      .section-description {
+        font-size: 14px;
+        margin-left: 36px;
+      }
+
+      .assessment-summary .summary-stats {
+        flex-direction: column;
+        align-items: center;
+
+        .stat-item {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .problem-items-grid {
+      grid-template-columns: 1fr;
+
+      .problem-item-card {
+        flex-direction: column;
+        text-align: center;
+
+        .problem-icon {
+          margin-right: 0;
+          margin-bottom: 8px;
+        }
+      }
+    }
+
+    .selected-problems-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
