@@ -1,127 +1,190 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../login/AuthContext';
-import '../../../../../styles/developer/Patients/InfoPaciente/NotesComponent.scss';
+import '../../../../../styles/developer/Patients/InfoPaciente/CommunicationRecords.scss';
 
-const NotesComponent = ({ patient }) => {
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+const CommunicationRecords = ({ patient, currentCertPeriod }) => {
+  const [records, setRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [commentCategory, setCommentCategory] = useState('general');
+  const [commentCategory, setCommentCategory] = useState('therapy-order');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingComment, setEditingComment] = useState(null);
+  const [disciplineFilter, setDisciplineFilter] = useState('all');
+  const [filteredRecords, setFilteredRecords] = useState([]);
   
   const { currentUser } = useAuth();
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-  // Comment categories for clinical notes
-  const commentCategories = [
-    { value: 'general', label: 'General Comments', color: '#3b82f6', icon: 'fa-comment' },
-    { value: 'progress', label: 'Progress Notes', color: '#10b981', icon: 'fa-chart-line' },
-    { value: 'concerns', label: 'Clinical Concerns', color: '#f59e0b', icon: 'fa-exclamation-circle' },
-    { value: 'family', label: 'Family Communication', color: '#8b5cf6', icon: 'fa-users' },
-    { value: 'medication', label: 'Medication Notes', color: '#ef4444', icon: 'fa-pills' },
-    { value: 'discharge', label: 'Discharge Planning', color: '#6b7280', icon: 'fa-sign-out-alt' }
+  // Local state for certification periods
+  const [localCurrentCertPeriod, setLocalCurrentCertPeriod] = useState(null);
+  const [isLoadingCertPeriods, setIsLoadingCertPeriods] = useState(false);
+
+  // Fetch certification periods if not provided in props
+  useEffect(() => {
+    const fetchCertificationPeriods = async () => {
+      if (currentCertPeriod?.id || !patient?.id) {
+        setLocalCurrentCertPeriod(currentCertPeriod);
+        return;
+      }
+      
+      try {
+        setIsLoadingCertPeriods(true);
+        
+        const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/cert-periods`);
+        if (response.ok) {
+          const certData = await response.json();
+          const activePeriod = certData.find(period => period.is_active) || certData[0];
+          setLocalCurrentCertPeriod(activePeriod);
+        }
+      } catch (err) {
+        console.error('Error fetching certification periods:', err);
+      } finally {
+        setIsLoadingCertPeriods(false);
+      }
+    };
+
+    fetchCertificationPeriods();
+  }, [patient?.id, currentCertPeriod, API_BASE_URL]);
+
+  // Use local cert period or fallback to prop
+  const effectiveCertPeriod = localCurrentCertPeriod || currentCertPeriod;
+
+  // Communication types for clinical notes  
+  const COMMUNICATION_TYPES = [
+    { value: 'therapy-order', label: 'Therapy Order', icon: 'fa-clipboard-list', color: '#10b981' },
+    { value: 'nomnc', label: 'NOMNC', icon: 'fa-file-contract', color: '#64748b' },
+    { value: 'communication-note', label: 'Communication Note', icon: 'fa-comment-dots', color: '#8b5cf6' }
   ];
 
-  // Mock data - replace with actual API calls
+  // Fetch communication records from API
   useEffect(() => {
     const fetchComments = async () => {
-      if (!patient?.id) {
-        setComments([]);
-        setLoading(false);
+      const certPeriodId = effectiveCertPeriod?.id;
+      
+      if (!certPeriodId) {
+        setRecords([]);
+        setIsLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock comments data - replace with actual API endpoint
-        const mockComments = [
-          {
-            id: 1,
-            content: "Patient shows significant improvement in mobility and balance. Continues to be motivated and engaged during therapy sessions.",
-            category: 'progress',
-            author: 'Sarah Johnson',
-            userRole: 'PT',
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-            priority: 'normal'
+        const response = await fetch(`${API_BASE_URL}/communication-records/cert-period/${certPeriodId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          {
-            id: 2,
-            content: "Family expressed concerns about patient's pain levels during evening hours. Recommend reviewing current pain management protocol.",
-            category: 'family',
-            author: 'Michael Chen',
-            userRole: 'OT',
-            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-            priority: 'high'
-          },
-          {
-            id: 3,
-            content: "Patient completed all exercises today with minimal assistance. Ready to progress to next level of difficulty.",
-            category: 'general',
-            author: 'Lisa Rodriguez',
-            userRole: 'PTA',
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-            priority: 'normal'
-          }
-        ];
+        });
         
-        setComments(mockComments);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch communication records: ${response.status} ${response.statusText}`);
+        }
+        
+        const recordsData = await response.json();
+        setRecords(recordsData);
         
       } catch (err) {
-        console.error('Error fetching comments:', err);
-        setError('Failed to load clinical comments');
-        setComments([]);
+        console.error('Error fetching records:', err);
+        setError(err.message);
+        setRecords([]);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     
     fetchComments();
-  }, [patient?.id, API_BASE_URL]);
+  }, [effectiveCertPeriod?.id, API_BASE_URL, isLoadingCertPeriods]);
+
+  // Filter records by discipline
+  useEffect(() => {
+    let result = [...records];
+    
+    // Filter by discipline
+    if (disciplineFilter !== 'all') {
+      result = result.filter(record => {
+        const userRole = record.staff_role?.toLowerCase();
+        return userRole === disciplineFilter.toLowerCase();
+      });
+    }
+    
+    setFilteredRecords(result);
+  }, [records, disciplineFilter]);
 
   // Add new comment
   const handleAddComment = async (event) => {
     event.preventDefault();
     
-    if (saving || !newComment.trim()) return;
+    if (isSaving || !newComment.trim()) return;
     
     try {
-      setSaving(true);
+      setIsSaving(true);
       setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Try to find certification period ID
+      const certPeriodId = effectiveCertPeriod?.id;
       
-      const newCommentObj = {
-        id: Date.now(), // Mock ID
-        content: newComment.trim(),
-        category: commentCategory,
-        author: currentUser?.fullname || currentUser?.username || 'Current User',
-        userRole: currentUser?.role || 'Staff',
-        createdAt: new Date().toISOString(),
-        priority: 'normal'
-      };
+      if (!certPeriodId) {
+        setError('No active certification period found. Please ensure the patient has an active certification period.');
+        return;
+      }
+
+      // Get the label from the selected category
+      const selectedCategoryInfo = COMMUNICATION_TYPES.find(c => c.value === commentCategory);
+      const title = selectedCategoryInfo ? selectedCategoryInfo.label : 'Clinical Comment';
+
+      if (editingComment) {
+        // Update existing comment
+        const updateData = {
+          title,
+          content: newComment.trim()
+        };
+        
+        await updateComment(editingComment.id, updateData);
+        setEditingComment(null);
+      } else {
+        // Create new comment
+        const recordData = {
+          certification_period_id: certPeriodId,
+          title,
+          content: newComment.trim(),
+          created_by: currentUser?.id || 1 // Fallback to ID 1 if no current user
+        };
+        
+        const response = await fetch(`${API_BASE_URL}/communication-records`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(recordData),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to create record: ${response.status} ${response.statusText}`);
+        }
+        
+        const newRecord = await response.json();
+        
+        // Use the new record directly from API response
+        setRecords(prevRecords => [newRecord, ...prevRecords]);
+      }
       
-      setComments(prevComments => [newCommentObj, ...prevComments]);
       setNewComment('');
-      setCommentCategory('general');
+      setCommentCategory('therapy-order');
       setShowCommentModal(false);
       
     } catch (err) {
       console.error('Error adding comment:', err);
       setError('Failed to add comment: ' + err.message);
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
@@ -139,10 +202,18 @@ const NotesComponent = ({ patient }) => {
       setDeleting(true);
       setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await fetch(`${API_BASE_URL}/communication-records/${commentToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      setComments(prevComments => prevComments.filter(comment => comment.id !== commentToDelete.id));
+      if (!response.ok) {
+        throw new Error(`Failed to delete record: ${response.status} ${response.statusText}`);
+      }
+      
+      setRecords(prevRecords => prevRecords.filter(record => record.id !== commentToDelete.id));
       setSelectedComment(null); // Close view modal if open
       setShowDeleteModal(false);
       setCommentToDelete(null);
@@ -162,51 +233,115 @@ const NotesComponent = ({ patient }) => {
   };
 
   // Handle reply to comment
-  const handleReplyToComment = (comment) => {
+  const handleReplyToComment = (record) => {
     // Close view modal and open new comment modal with reply context
     setSelectedComment(null);
-    setCommentCategory('general'); // Default for replies
-    setNewComment(`@${comment.author}: `); // Pre-fill with mention
+    setCommentCategory('communication-note'); // Default for replies
+    setNewComment(`@${record.staff_name || 'Staff'}: `); // Pre-fill with mention
     setShowCommentModal(true);
   };
 
-  // Format date for display
+  // Handle edit comment
+  const handleEditComment = (record) => {
+    setEditingComment(record);
+    setNewComment(record.content);
+    // Find the category based on the record title
+    const typeInfo = COMMUNICATION_TYPES.find(t => t.label === record.title);
+    setCommentCategory(typeInfo ? typeInfo.value : 'therapy-order');
+    setSelectedComment(null); // Close view modal
+    setShowCommentModal(true);
+  };
+
+  // Update comment via API
+  const updateComment = async (commentId, updateData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communication-records/${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update record: ${response.status} ${response.statusText}`);
+      }
+      
+      const updatedRecord = await response.json();
+      
+      // Use the updated record directly from API response
+      setRecords(prevRecords => 
+        prevRecords.map(record => record.id === commentId ? updatedRecord : record)
+      );
+      
+      return updatedRecord;
+    } catch (err) {
+      console.error('Error updating record:', err);
+      throw err;
+    }
+  };
+
+  // Format date for display - Using local timezone only
   const formatDate = (dateString) => {
+    // Simple date parsing - treat everything as local time
     const date = new Date(dateString);
+    
+    // Verify date is valid
+    if (isNaN(date.getTime())) {
+      return {
+        relative: 'Invalid date',
+        time: '--:--',
+        full: 'Invalid date'
+      };
+    }
+    
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
+    // Simple time formatting - local timezone
+    const timeOptions = { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true
+    };
+    
+    const fullDateOptions = { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric'
+    };
+    
     if (diffDays === 0) {
       return {
         relative: 'Today',
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        time: date.toLocaleTimeString('en-US', timeOptions),
+        full: date.toLocaleDateString('en-US', fullDateOptions)
       };
     } else if (diffDays === 1) {
       return {
         relative: 'Yesterday',
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        time: date.toLocaleTimeString('en-US', timeOptions),
+        full: date.toLocaleDateString('en-US', fullDateOptions)
       };
     } else if (diffDays <= 7) {
       return {
         relative: `${diffDays} days ago`,
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        time: date.toLocaleTimeString('en-US', timeOptions),
+        full: date.toLocaleDateString('en-US', fullDateOptions)
       };
     } else {
       return {
         relative: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
-        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        time: date.toLocaleTimeString('en-US', timeOptions),
+        full: date.toLocaleDateString('en-US', fullDateOptions)
       };
     }
   };
 
-  // Get category info
-  const getCategoryInfo = (category) => {
-    return commentCategories.find(cat => cat.value === category) || commentCategories[0];
+  // Get category info using the backup's approach
+  const getCategoryInfo = (title) => {
+    return COMMUNICATION_TYPES.find(type => type.label === title) || COMMUNICATION_TYPES[0];
   };
 
   // Get role color
@@ -255,22 +390,44 @@ const NotesComponent = ({ patient }) => {
               <i className="fas fa-comments"></i>
             </div>
             <div className="title-text">
-              <h1>Clinical Notes</h1>
-              <p>Patient clinical comments and observations</p>
+              <h1>Communication Records</h1>
+              <p>Patient communication records and clinical notes</p>
             </div>
           </div>
           
           <div className="header-actions">
             <div className="comments-counter">
-              <span className="number">{comments.length}</span>
-              <span className="label">Comments</span>
+              <span className="number">{filteredRecords.length}</span>
+              <span className="label">Records</span>
             </div>
+            
+            <div className="filter-group">
+              <div className="discipline-filter">
+                <div className="filter-label">
+                  <i className="fas fa-filter"></i>
+                  <span>Filter by:</span>
+                </div>
+                <div className="select-wrapper">
+                  <select 
+                    value={disciplineFilter}
+                    onChange={(e) => setDisciplineFilter(e.target.value)}
+                    className="discipline-select"
+                  >
+                    <option value="all">🏥 All Disciplines</option>
+                    <option value="pt">🏃 Physical Therapy (PT)</option>
+                    <option value="ot">🖐️ Occupational Therapy (OT)</option>
+                    <option value="st">🗣️ Speech Therapy (ST)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
             <button 
               className="new-comment-btn"
               onClick={() => setShowCommentModal(true)}
             >
               <i className="fas fa-plus"></i>
-              <span>Add Comment</span>
+              <span>Add Record</span>
             </button>
           </div>
         </div>
@@ -278,43 +435,43 @@ const NotesComponent = ({ patient }) => {
 
       {/* Main content */}
       <div className="main-content">
-        {loading ? (
+        {isLoading ? (
           <div className="loading">
             <div className="spinner">
               <div className="circle"></div>
               <div className="circle"></div>
               <div className="circle"></div>
             </div>
-            <p>Loading clinical comments...</p>
+            <p>Loading clinical records...</p>
           </div>
-        ) : comments.length === 0 ? (
+        ) : filteredRecords.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">
               <i className="fas fa-comment-medical"></i>
             </div>
-            <h2>No comments available</h2>
-            <p>Start by adding the first clinical comment for this patient</p>
+            <h2>{disciplineFilter === 'all' ? 'No records available' : `No records from ${disciplineFilter.toUpperCase()}`}</h2>
+            <p>{disciplineFilter === 'all' ? 'Start by adding the first clinical record for this patient' : `No records found from ${disciplineFilter.toUpperCase()} discipline. Try changing the filter or add a new record.`}</p>
             <button 
               className="first-comment-btn"
               onClick={() => setShowCommentModal(true)}
             >
               <i className="fas fa-plus"></i>
-              <span>Add First Comment</span>
+              <span>Add First Record</span>
             </button>
           </div>
         ) : (
           <div className="comments-timeline">
-            {comments.map((comment) => {
-              const date = formatDate(comment.createdAt);
-              const categoryInfo = getCategoryInfo(comment.category);
-              const roleColor = getRoleColor(comment.userRole);
-              const priorityColor = getPriorityColor(comment.priority);
+            {filteredRecords.map((record) => {
+              const date = formatDate(record.created_at);
+              const categoryInfo = getCategoryInfo(record.title);
+              const roleColor = getRoleColor(record.staff_role);
+              const priorityColor = getPriorityColor('normal');
               
               return (
                 <div 
-                  key={comment.id} 
+                  key={record.id} 
                   className="comment-card"
-                  onClick={() => setSelectedComment(comment)}
+                  onClick={() => setSelectedComment(record)}
                 >
                   {/* Timeline connector */}
                   <div className="timeline-connector">
@@ -336,11 +493,11 @@ const NotesComponent = ({ patient }) => {
                             className="author-avatar"
                             style={{ backgroundColor: roleColor }}
                           >
-                            {comment.author ? comment.author.charAt(0).toUpperCase() : 'U'}
+                            {record.staff_name ? record.staff_name.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div className="author-details">
-                            <span className="author-name">{comment.author}</span>
-                            <span className="author-role">{comment.userRole}</span>
+                            <span className="author-name">{record.staff_name || 'Unknown'}</span>
+                            <span className="author-role">{record.staff_role || 'Staff'}</span>
                           </div>
                         </div>
                         
@@ -355,7 +512,7 @@ const NotesComponent = ({ patient }) => {
                             <i className={`fas ${categoryInfo.icon}`}></i>
                             <span>{categoryInfo.label}</span>
                           </div>
-                          {comment.priority === 'high' && (
+                          {false && (
                             <div 
                               className="priority-badge"
                               style={{ 
@@ -377,7 +534,7 @@ const NotesComponent = ({ patient }) => {
                     </div>
                     
                     <div className="comment-body">
-                      <p>{comment.content}</p>
+                      <p>{record.content}</p>
                     </div>
                     
                     <div className="comment-footer">
@@ -386,17 +543,27 @@ const NotesComponent = ({ patient }) => {
                           className="action-btn reply-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleReplyToComment(comment);
+                            handleReplyToComment(record);
                           }}
                         >
                           <i className="fas fa-reply"></i>
                           <span>Reply</span>
                         </button>
                         <button 
+                          className="action-btn edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditComment(record);
+                          }}
+                        >
+                          <i className="fas fa-edit"></i>
+                          <span>Edit</span>
+                        </button>
+                        <button 
                           className="action-btn delete-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteComment(comment);
+                            handleDeleteComment(record);
                           }}
                         >
                           <i className="fas fa-trash-alt"></i>
@@ -422,7 +589,7 @@ const NotesComponent = ({ patient }) => {
                 <div className="modal-icon">
                   <i className="fas fa-comment-plus"></i>
                 </div>
-                <h3>Add Clinical Comment</h3>
+                <h3>{editingComment ? 'Edit Clinical Comment' : 'Add Clinical Comment'}</h3>
               </div>
               <button 
                 className="close-btn"
@@ -442,7 +609,7 @@ const NotesComponent = ({ patient }) => {
                     onChange={(e) => setCommentCategory(e.target.value)}
                     className="clinical-select"
                   >
-                    {commentCategories.map(category => (
+                    {COMMUNICATION_TYPES.map(category => (
                       <option key={category.value} value={category.value}>
                         {category.label}
                       </option>
@@ -505,7 +672,7 @@ const NotesComponent = ({ patient }) => {
                   type="button" 
                   className="cancel-btn" 
                   onClick={() => setShowCommentModal(false)}
-                  disabled={saving}
+                  disabled={isSaving}
                 >
                   <i className="fas fa-times"></i>
                   <span>Cancel</span>
@@ -513,17 +680,17 @@ const NotesComponent = ({ patient }) => {
                 <button 
                   type="submit" 
                   className="save-btn"
-                  disabled={saving || !newComment.trim()}
+                  disabled={isSaving || !newComment.trim()}
                 >
-                  {saving ? (
+                  {isSaving ? (
                     <>
                       <i className="fas fa-spinner fa-spin"></i>
-                      <span>Adding...</span>
+                      <span>{editingComment ? 'Updating...' : 'Adding...'}</span>
                     </>
                   ) : (
                     <>
-                      <i className="fas fa-plus"></i>
-                      <span>Add Comment</span>
+                      <i className={`fas ${editingComment ? 'fa-save' : 'fa-plus'}`}></i>
+                      <span>{editingComment ? 'Update Comment' : 'Add Comment'}</span>
                     </>
                   )}
                 </button>
@@ -540,9 +707,9 @@ const NotesComponent = ({ patient }) => {
             <div className="modal-header">
               <div className="modal-title">
                 <div className="modal-icon">
-                  <i className={`fas ${getCategoryInfo(selectedComment.category).icon}`}></i>
+                  <i className={`fas ${getCategoryInfo(selectedComment.title).icon}`}></i>
                 </div>
-                <h3>{getCategoryInfo(selectedComment.category).label}</h3>
+                <h3>{getCategoryInfo(selectedComment.title).label}</h3>
               </div>
               <button 
                 className="close-btn"
@@ -557,15 +724,15 @@ const NotesComponent = ({ patient }) => {
                 <div className="comment-author-full">
                   <div 
                     className="large-avatar"
-                    style={{ backgroundColor: getRoleColor(selectedComment.userRole) }}
+                    style={{ backgroundColor: getRoleColor(selectedComment.staff_role) }}
                   >
-                    {selectedComment.author ? selectedComment.author.charAt(0).toUpperCase() : 'U'}
+                    {selectedComment.staff_name ? selectedComment.staff_name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="author-info-complete">
-                    <h4>{selectedComment.author}</h4>
-                    <p>{selectedComment.userRole}</p>
+                    <h4>{selectedComment.staff_name || 'Unknown'}</h4>
+                    <p>{selectedComment.staff_role || 'Staff'}</p>
                     <span className="full-date">
-                      {formatDate(selectedComment.createdAt).full} at {formatDate(selectedComment.createdAt).time}
+                      {formatDate(selectedComment.created_at).full} at {formatDate(selectedComment.created_at).time}
                     </span>
                   </div>
                 </div>
@@ -582,20 +749,20 @@ const NotesComponent = ({ patient }) => {
                     <span className="label">Category:</span>
                     <span 
                       className="value category-value"
-                      style={{ color: getCategoryInfo(selectedComment.category).color }}
+                      style={{ color: getCategoryInfo(selectedComment.title).color }}
                     >
-                      <i className={`fas ${getCategoryInfo(selectedComment.category).icon}`}></i>
-                      {getCategoryInfo(selectedComment.category).label}
+                      <i className={`fas ${getCategoryInfo(selectedComment.title).icon}`}></i>
+                      {getCategoryInfo(selectedComment.title).label}
                     </span>
                   </div>
                   <div className="metadata-item">
                     <span className="label">Priority:</span>
                     <span 
                       className="value priority-value"
-                      style={{ color: getPriorityColor(selectedComment.priority) }}
+                      style={{ color: getPriorityColor('normal') }}
                     >
                       <i className="fas fa-flag"></i>
-                      {selectedComment.priority.charAt(0).toUpperCase() + selectedComment.priority.slice(1)}
+                      Normal
                     </span>
                   </div>
                 </div>
@@ -609,6 +776,13 @@ const NotesComponent = ({ patient }) => {
               >
                 <i className="fas fa-reply"></i>
                 <span>Reply</span>
+              </button>
+              <button 
+                className="action-btn-modal edit-btn-modal"
+                onClick={() => handleEditComment(selectedComment)}
+              >
+                <i className="fas fa-edit"></i>
+                <span>Edit</span>
               </button>
               <button 
                 className="action-btn-modal delete-btn-modal"
@@ -656,31 +830,31 @@ const NotesComponent = ({ patient }) => {
                     <div className="preview-author">
                       <div 
                         className="preview-avatar"
-                        style={{ backgroundColor: getRoleColor(commentToDelete.userRole) }}
+                        style={{ backgroundColor: getRoleColor(commentToDelete.staff_role) }}
                       >
-                        {commentToDelete.author ? commentToDelete.author.charAt(0).toUpperCase() : 'U'}
+                        {commentToDelete.staff_name ? commentToDelete.staff_name.charAt(0).toUpperCase() : 'U'}
                       </div>
                       <div className="preview-details">
-                        <span className="author-name">{commentToDelete.author}</span>
-                        <span className="author-role">{commentToDelete.userRole}</span>
+                        <span className="author-name">{commentToDelete.staff_name || 'Unknown'}</span>
+                        <span className="author-role">{commentToDelete.staff_role || 'Staff'}</span>
                       </div>
                     </div>
                     <div 
                       className="preview-category"
                       style={{ 
-                        backgroundColor: `${getCategoryInfo(commentToDelete.category).color}20`,
-                        color: getCategoryInfo(commentToDelete.category).color 
+                        backgroundColor: `${getCategoryInfo(commentToDelete.title).color}20`,
+                        color: getCategoryInfo(commentToDelete.title).color 
                       }}
                     >
-                      <i className={`fas ${getCategoryInfo(commentToDelete.category).icon}`}></i>
-                      <span>{getCategoryInfo(commentToDelete.category).label}</span>
+                      <i className={`fas ${getCategoryInfo(commentToDelete.title).icon}`}></i>
+                      <span>{getCategoryInfo(commentToDelete.title).label}</span>
                     </div>
                   </div>
                   <div className="preview-content">
                     <p>{commentToDelete.content}</p>
                   </div>
                   <div className="preview-date">
-                    {formatDate(commentToDelete.createdAt).full}
+                    {formatDate(commentToDelete.created_at).full}
                   </div>
                 </div>
               </div>
@@ -720,4 +894,4 @@ const NotesComponent = ({ patient }) => {
   );
 };
 
-export default NotesComponent;
+export default CommunicationRecords;

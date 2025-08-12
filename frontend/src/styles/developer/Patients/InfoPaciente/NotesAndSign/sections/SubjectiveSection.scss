@@ -1,5 +1,8 @@
-// SubjectiveSection.scss - Beautiful and Bright
+// SubjectiveSection.scss
+@import 'common';
+
 .subjective-section {
+  @extend .section-common;
   background: #ffffff;
   border: 1px solid #e1f5fe;
   border-radius: 12px;
@@ -16,7 +19,36 @@
     transform: translateY(-2px);
   }
 
-  // Header
+  // Section Title (from main)
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      
+      i {
+        color: #3498db;
+      }
+    }
+  }
+
+  // Form Row (from main)
+  .form-row {
+    margin-bottom: 20px;
+  }
+
+  // Header (merged from Luis and main)
   .section-header {
     background: linear-gradient(135deg, #00a8e8 0%, #0077b6 100%);
     padding: 16px 20px;
@@ -44,9 +76,24 @@
       z-index: 1;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #ffffff; // Adjusted to match header's white text
+      position: relative;
+      z-index: 1;
+      
+      i {
+        color: rgba(255, 255, 255, 0.8); // Slightly lighter for contrast
+      }
+    }
   }
 
-  // Quick Templates
+  // Quick Templates (merged from Luis and main)
   .quick-templates {
     background: linear-gradient(to right, #f8f9fa, #ffffff);
     padding: 16px 20px;
@@ -100,6 +147,12 @@
         }
       }
 
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
       &:active {
         transform: translateY(0);
         box-shadow: 0 2px 6px rgba(0, 168, 232, 0.2);
@@ -107,7 +160,7 @@
     }
   }
 
-  // Content
+  // Content (from Luis, with main's textarea styles)
   .section-content {
     padding: 20px;
     background: linear-gradient(to bottom, #fcfcfc, #fefefe);
@@ -129,7 +182,7 @@
                   0 1px 2px rgba(0, 0, 0, 0.05);
 
       &::placeholder {
-        color: #90a4ae;
+        color: #90a4ae; // From Luis, overriding main's #6c757d for consistency
         font-style: italic;
       }
 
@@ -170,7 +223,7 @@
   }
 }
 
-// Animations
+// Animations (from Luis)
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -191,7 +244,7 @@
   }
 }
 
-// Responsive
+// Responsive (from Luis)
 @media (max-width: 768px) {
   .subjective-section {
     margin-bottom: 20px;
@@ -201,6 +254,10 @@
       
       h3 {
         font-size: 16px;
+      }
+
+      label {
+        font-size: 14px;
       }
     }
     

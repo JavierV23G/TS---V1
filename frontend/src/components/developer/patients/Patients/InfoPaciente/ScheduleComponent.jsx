@@ -291,7 +291,7 @@ const ScheduleComponent = ({
     if (!patient?.id) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/patients/${patient.id}/assigned-staff`, {
+      const response = await fetch(`${API_BASE_URL}/patient/${patient.id}/assigned-staff`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

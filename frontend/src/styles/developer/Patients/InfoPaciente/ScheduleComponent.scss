@@ -2338,8 +2338,8 @@
       
       .month-visits {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: var(--spacing-5);
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--spacing-4);
       }
     }
   }
@@ -2923,7 +2923,7 @@
     }
     
     .modal-body {
-      padding: var(--spacing-6);
+      padding: var(--spacing-4);
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;

@@ -188,3 +188,41 @@ class NoteTemplateSection(Base):
 
     template = relationship("NoteTemplate", back_populates="sections")
     section = relationship("NoteSection")
+
+class CommunicationRecord(Base):
+    __tablename__ = "communication_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certification_period_id = Column(Integer, ForeignKey("certification_periods.id"), nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    created_by = Column(Integer, ForeignKey("staff.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    certification_period = relationship("CertificationPeriod")
+    staff = relationship("Staff")
+
+class Signature(Base):
+    __tablename__ = "signatures"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    entity_type = Column(String(50), nullable=False) 
+    entity_name = Column(String(255), nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    
+    signable_type = Column(String(50), nullable=False)
+    signable_id = Column(Integer, nullable=False)
+    
+    signature_metadata = Column(JSON, nullable=False)
+    file_path = Column(String(500), nullable=False) 
+    svg_preview = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    signed_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    patient = relationship("Patient")
+
+    def __repr__(self):
+        return f"<Signature(id={self.id}, entity_type={self.entity_type}, patient_id={self.patient_id})>"
