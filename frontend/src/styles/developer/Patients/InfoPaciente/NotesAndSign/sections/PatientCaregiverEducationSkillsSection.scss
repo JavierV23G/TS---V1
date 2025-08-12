@@ -1,0 +1,1004 @@
+// ============================================
+// Patient & Caregiver Education Assessment Section Styles
+// Medical interface with psychology of color for each education area
+// ============================================
+
+.patient-caregiver-education-skills-section {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+
+  // Section Header
+  .section-header {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+
+      i {
+        font-size: 28px;
+        color: #059669;
+        margin-right: 12px;
+        padding: 8px;
+        background: rgba(5, 150, 105, 0.1);
+        border-radius: 8px;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+    }
+
+    .section-description {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 0 0 20px 52px;
+    }
+
+    .assessment-summary {
+      .summary-stats {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .stat-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          color: white;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+
+          i {
+            font-size: 14px;
+          }
+
+          &:nth-child(2) {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  // Assessment Groups
+  .assessment-group {
+    margin-bottom: 32px;
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+
+    .group-header {
+      margin-bottom: 24px;
+      text-align: center;
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+
+        i {
+          font-size: 20px;
+          color: #059669;
+        }
+      }
+
+      .group-description {
+        color: #64748b;
+        font-size: 14px;
+        margin: 0;
+      }
+    }
+  }
+
+  // Education Areas Grid with Psychology of Color
+  .education-areas {
+    .education-areas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+
+      .education-area-option {
+        display: block;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+          display: none;
+        }
+
+        .education-area-card {
+          display: flex;
+          align-items: center;
+          padding: 16px;
+          background: #ffffff;
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+          position: relative;
+
+          .area-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+            background: #f1f5f9;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+          }
+
+          .area-content {
+            flex-grow: 1;
+
+            .area-label {
+              margin: 0 0 4px 0;
+              font-size: 15px;
+              font-weight: 600;
+              color: #1e293b;
+              line-height: 1.3;
+            }
+
+            .area-description {
+              margin: 0;
+              font-size: 12px;
+              color: #64748b;
+              line-height: 1.4;
+            }
+          }
+
+          .selection-indicator {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            flex-shrink: 0;
+
+            i {
+              font-size: 12px;
+              color: transparent;
+              transition: color 0.3s ease;
+            }
+          }
+
+          // Hover effects with specific colors
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        // Psychology of Color - Specific colors for each education area
+
+        // Wound Care - Red (Emergency, attention, medical urgency)
+        &[for*="woundCare"] .education-area-card {
+          &:hover {
+            border-color: #dc2626;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.15);
+          }
+        }
+
+        &[for*="woundCare"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          border-color: #b91c1c;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(220, 38, 38, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #dc2626;
+            }
+          }
+        }
+
+        // Diabetic Care - Brown (Earth, stability, diabetes management)
+        &[for*="diabeticFootExamCare"] .education-area-card {
+          &:hover {
+            border-color: #92400e;
+            box-shadow: 0 4px 16px rgba(146, 64, 14, 0.15);
+          }
+        }
+
+        &[for*="diabeticFootExamCare"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+          border-color: #78350f;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(146, 64, 14, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #92400e;
+            }
+          }
+        }
+
+        // Insulin - Blue (Trust, medical precision, reliability)
+        &[for*="insulinAdministration"] .education-area-card {
+          &:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+          }
+        }
+
+        &[for*="insulinAdministration"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border-color: #1d4ed8;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #2563eb;
+            }
+          }
+        }
+
+        // Glucose Monitoring - Crimson (Blood, testing, monitoring)
+        &[for*="glucometerUse"] .education-area-card {
+          &:hover {
+            border-color: #b91c1c;
+            box-shadow: 0 4px 16px rgba(185, 28, 28, 0.15);
+          }
+        }
+
+        &[for*="glucometerUse"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+          border-color: #991b1b;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(185, 28, 28, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #b91c1c;
+            }
+          }
+        }
+
+        // Nutrition - Green (Health, growth, vitality)
+        &[for*="nutritionalManagement"] .education-area-card {
+          &:hover {
+            border-color: #059669;
+            box-shadow: 0 4px 16px rgba(5, 150, 105, 0.15);
+          }
+        }
+
+        &[for*="nutritionalManagement"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          border-color: #047857;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(5, 150, 105, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #059669;
+            }
+          }
+        }
+
+        // Medication - Purple (Pharmaceutical, precision, medicine)
+        &[for*="medicationAdministration"] .education-area-card {
+          &:hover {
+            border-color: #7c3aed;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15);
+          }
+        }
+
+        &[for*="medicationAdministration"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          border-color: #6d28d9;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #7c3aed;
+            }
+          }
+        }
+
+        // Pain Management - Orange (Comfort, warmth, relief)
+        &[for*="painManagement"] .education-area-card {
+          &:hover {
+            border-color: #ea580c;
+            box-shadow: 0 4px 16px rgba(234, 88, 12, 0.15);
+          }
+        }
+
+        &[for*="painManagement"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+          border-color: #c2410c;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(234, 88, 12, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #ea580c;
+            }
+          }
+        }
+
+        // Oxygen - Cyan (Air, breathing, clarity)
+        &[for*="oxygenUse"] .education-area-card {
+          &:hover {
+            border-color: #0891b2;
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.15);
+          }
+        }
+
+        &[for*="oxygenUse"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+          border-color: #0e7490;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(8, 145, 178, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #0891b2;
+            }
+          }
+        }
+
+        // Medical Devices - Dark Gray (Technology, equipment, precision)
+        &[for*="medicalDevicesUse"] .education-area-card {
+          &:hover {
+            border-color: #374151;
+            box-shadow: 0 4px 16px rgba(55, 65, 81, 0.15);
+          }
+        }
+
+        &[for*="medicalDevicesUse"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+          border-color: #1f2937;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(55, 65, 81, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #374151;
+            }
+          }
+        }
+
+        // Trach Care - Pink (Specialized care, delicate procedures)
+        &[for*="trachCare"] .education-area-card {
+          &:hover {
+            border-color: #be185d;
+            box-shadow: 0 4px 16px rgba(190, 24, 93, 0.15);
+          }
+        }
+
+        &[for*="trachCare"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #be185d 0%, #9f1239 100%);
+          border-color: #9f1239;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(190, 24, 93, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #be185d;
+            }
+          }
+        }
+
+        // Ostomy Care - Teal (Medical procedures, cleanliness)
+        &[for*="ostomyCare"] .education-area-card {
+          &:hover {
+            border-color: #0d9488;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.15);
+          }
+        }
+
+        &[for*="ostomyCare"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+          border-color: #0f766e;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(13, 148, 136, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #0d9488;
+            }
+          }
+        }
+
+        // Other Cares - Gray (Miscellaneous, flexibility)
+        &[for*="otherCares"] .education-area-card {
+          &:hover {
+            border-color: #6b7280;
+            box-shadow: 0 4px 16px rgba(107, 114, 128, 0.15);
+          }
+        }
+
+        &[for*="otherCares"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+          border-color: #4b5563;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(107, 114, 128, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #6b7280;
+            }
+          }
+        }
+
+        // Caregiver Present - Indigo (Support, people, presence)
+        &[for*="caregiverPresent"] .education-area-card {
+          &:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15);
+          }
+        }
+
+        &[for*="caregiverPresent"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+          border-color: #3730a3;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #4f46e5;
+            }
+          }
+        }
+
+        // Satisfactory Demo - Emerald (Success, achievement, competency)
+        &[for*="satisfactoryReturnDemo"] .education-area-card {
+          &:hover {
+            border-color: #10b981;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+          }
+        }
+
+        &[for*="satisfactoryReturnDemo"] input:checked + .education-area-card {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          border-color: #059669;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
+
+          .area-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+          }
+
+          .area-content .area-label,
+          .area-content .area-description {
+            color: white;
+          }
+
+          .selection-indicator {
+            background: white;
+            border-color: white;
+
+            i {
+              color: #10b981;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Assessment Questions
+  .assessment-questions {
+    .questions-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+
+      .question-item {
+        .question-header {
+          margin-bottom: 16px;
+
+          .question-text {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.4;
+          }
+        }
+
+        .radio-group {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .radio-option {
+            cursor: pointer;
+
+            input[type="radio"] {
+              display: none;
+            }
+
+            .radio-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 10px 20px;
+              background: white;
+              border: 2px solid #e2e8f0;
+              border-radius: 20px;
+              font-weight: 600;
+              color: #64748b;
+              transition: all 0.3s ease;
+              min-width: 80px;
+              justify-content: center;
+
+              i {
+                font-size: 14px;
+              }
+            }
+
+            &:hover .radio-label {
+              border-color: #0ea5e9;
+              color: #0ea5e9;
+            }
+
+            input:checked + .radio-label {
+              background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+              border-color: #0284c7;
+              color: white;
+              box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Comments Section
+  .comments-section {
+    .comments-container {
+      position: relative;
+
+      .comments-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        line-height: 1.5;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: white;
+        color: #1e293b;
+
+        &:focus {
+          outline: none;
+          border-color: #059669;
+          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+          font-style: italic;
+        }
+      }
+
+      .character-count {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 11px;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    }
+  }
+
+  // Assessment Progress
+  .assessment-progress {
+    margin-top: 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+
+    .progress-header {
+      margin-bottom: 20px;
+      text-align: center;
+
+      .progress-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #166534;
+
+        i {
+          font-size: 20px;
+          color: #059669;
+        }
+      }
+    }
+
+    .selected-areas-summary {
+      margin-bottom: 24px;
+
+      .summary-subtitle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #166534;
+
+        i {
+          font-size: 16px;
+          color: #059669;
+        }
+      }
+
+      .selected-areas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+
+        .selected-area {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #166534;
+          border: 1px solid rgba(34, 197, 94, 0.2);
+
+          i {
+            font-size: 12px;
+            color: #059669;
+          }
+        }
+      }
+    }
+
+    .assessment-results {
+      .results-subtitle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #166534;
+
+        i {
+          font-size: 16px;
+          color: #059669;
+        }
+      }
+
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+
+        .result-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 16px;
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 8px;
+          border: 1px solid rgba(34, 197, 94, 0.15);
+
+          .result-label {
+            font-weight: 600;
+            color: #166534;
+            font-size: 13px;
+          }
+
+          .result-value {
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+
+            &.positive {
+              background: rgba(34, 197, 94, 0.2);
+              color: #166534;
+            }
+
+            &.negative {
+              background: rgba(239, 68, 68, 0.2);
+              color: #dc2626;
+            }
+
+            &.pending {
+              background: rgba(245, 158, 11, 0.2);
+              color: #d97706;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .section-header {
+      padding: 16px;
+
+      .section-title {
+        h3 {
+          font-size: 20px;
+        }
+
+        i {
+          font-size: 24px;
+        }
+      }
+
+      .section-description {
+        font-size: 14px;
+        margin-left: 36px;
+      }
+
+      .assessment-summary .summary-stats {
+        flex-direction: column;
+        align-items: center;
+
+        .stat-item {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .education-areas-grid {
+      grid-template-columns: 1fr;
+
+      .education-area-card {
+        flex-direction: column;
+        text-align: center;
+
+        .area-icon {
+          margin-right: 0;
+          margin-bottom: 8px;
+        }
+      }
+    }
+
+    .radio-group {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .assessment-results .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

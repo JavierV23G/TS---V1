@@ -19,21 +19,63 @@ const TemplateRenderer = ({
   // Map backend section names to frontend components
   const getSectionComponent = (sectionName) => {
     const sectionMap = {
-      // Usar nombres consistentes con primera letra mayúscula
-      'Vitals': 'VitalsSection',
-      'Pain': 'PainSection', 
-      'Transfers / Functional Independence': 'TransfersFunctionalSection',
+      // Secciones existentes del backend - ahora con componente mejorado
+      'Transfers / Functional Independence': 'TransfersFunctionalIndependenceSkillsSection',
+      // Nuevas secciones - con componentes mejorados
+      'ADL / Self Care Skills': 'ADLSelfCareSkillsSection',
+      'Assessment / Justification': 'AssessmentJustificationSkillsSection',
+      'Balance': 'BalanceSkillsSection',
+      'Vitals': 'VitalsSkillsSection',
+      'Pain': 'PainSkillsSection',
+      'Living Arrangements': 'LivingArrangementsSkillsSection',
+      'Cognitive Status / Comprehension': 'CognitiveStatusSkillsSection',
+      'Sensory': 'SensorySkillsSection',
+      'Equipment': 'EquipmentSkillsSection',
+      'Gait / Mobility Training (Eval)': 'GaitMobilityTrainingSkillsSection',
+      'Muscle Strength/ROM': 'MuscleStrengthROMSkillsSection',
+      'Prosthetic And Orthotic': 'ProstheticOrthoticSkillsSection',
+      'Patient / Caregiver Education': 'PatientCaregiverEducationSkillsSection',
+      ' Patient / Caregiver Education  ': 'PatientCaregiverEducationSkillsSection',
+      'Skilled Care Provided This Visit': 'SkilledCareProvidedThisVisitSkillsSection',
+      'Problem List / Functional Limitations': 'ProblemListFunctionalLimitationsSkillsSection',
+      'Rehab Potential': 'RehabPotentialSkillsSection',
+      'Treatment as Tolerated/Basic POC': 'TreatmentAsToleratedBasicPOCSkillsSection',
+      'Short & Long Term Goals': 'ShortLongTermGoalsSkillsSection',
+      // Mapeo temporal para Initial Evaluation
+      'Initial Evaluation': 'SubjectiveSection',
+      // Sección Subjective agregada
+      'Subjective': 'SubjectiveSection',
     };
     
+    console.log('🔍 TemplateRenderer - Mapping section:', sectionName, '-> Component:', sectionMap[sectionName]);
     return sectionMap[sectionName] || null;
   };
 
   // Get icon for section
   const getIconForSection = (sectionName) => {
     const iconMap = {
-      'Vitals': 'fas fa-heartbeat',
       'Transfers / Functional Independence': 'fas fa-walking',
-      'Pain': 'fas fa-exclamation-triangle'
+      'ADL / Self Care Skills': 'fas fa-hand-holding-heart',
+      'Assessment / Justification': 'fas fa-clipboard-check',
+      'Balance': 'fas fa-balance-scale',
+      'Vitals': 'fas fa-heartbeat',
+      'Pain': 'fas fa-exclamation-triangle',
+      'Living Arrangements': 'fas fa-home',
+      'Cognitive Status / Comprehension': 'fas fa-brain',
+      'Sensory': 'fas fa-hand-paper',
+      'Equipment': 'fas fa-cog',
+      'Gait / Mobility Training (Eval)': 'fas fa-walking',
+      'Muscle Strength/ROM': 'fas fa-dumbbell',
+      'Prosthetic And Orthotic': 'fas fa-hand-holding-medical',
+      'Patient / Caregiver Education': 'fas fa-graduation-cap',
+      ' Patient / Caregiver Education  ': 'fas fa-graduation-cap',
+      'Skilled Care Provided This Visit': 'fas fa-stethoscope',
+      'Problem List / Functional Limitations': 'fas fa-list-ul',
+      'Rehab Potential': 'fas fa-chart-line',
+      'Treatment as Tolerated/Basic POC': 'fas fa-medical-kit',
+      'Short & Long Term Goals': 'fas fa-target',
+      'Initial Evaluation': 'fas fa-clipboard-list',
+      'Subjective': 'fas fa-comment-medical'
     };
     
     return iconMap[sectionName] || 'fas fa-file-alt';
@@ -47,10 +89,17 @@ const TemplateRenderer = ({
       setLoading(true);
       const sectionsMap = {};
 
+      console.log('🔄 TemplateRenderer - Loading sections from config:', templateConfig.sections);
+
       templateConfig.sections.forEach(sectionConfig => {
         // Get component name from section_name mapping
         const componentName = getSectionComponent(sectionConfig.section_name);
         const SectionComponent = componentName ? Sections[componentName] : null;
+        
+        console.log('📦 TemplateRenderer - Section:', sectionConfig.section_name);
+        console.log('   Component Name:', componentName);
+        console.log('   Component Found:', !!SectionComponent);
+        console.log('   Available Sections:', Object.keys(Sections));
         
         if (SectionComponent) {
           sectionsMap[sectionConfig.section_name] = {
@@ -63,6 +112,8 @@ const TemplateRenderer = ({
               required: sectionConfig.is_required || false
             }
           };
+        } else {
+          console.error('❌ TemplateRenderer - Component not found for:', sectionConfig.section_name, 'mapped to:', componentName);
         }
       });
 

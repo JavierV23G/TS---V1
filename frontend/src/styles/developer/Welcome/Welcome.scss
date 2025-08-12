@@ -255,10 +255,11 @@
   color: white;
   font-family: 'Poppins', sans-serif;
   
-  // Responsive height adjustments for mobile
-  @media (max-width: 768px) {
+  // Responsive height adjustments for mobile and tablets
+  @media (max-width: 992px) {
     height: auto;
     min-height: 100vh;
+    overflow-y: auto;
   }
   
   // Enhanced parallax background with better performance

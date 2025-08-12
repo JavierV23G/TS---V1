@@ -1,0 +1,755 @@
+// ============================================
+// Transfers & Functional Independence Assessment Section Styles
+// Professional Medical Interface for Transfer & Mobility Evaluation
+// ============================================
+
+// Enhanced Color Variables for Transfers & Functional Independence
+:root {
+  // Transfer & Independence Specific Colors (Mobility & Freedom Theme)
+  --transfer-primary: #0f766e;                  // Teal for independence & mobility
+  --transfer-primary-gradient: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  --transfer-primary-light: #ccfbf1;
+  --transfer-primary-ultra-light: #f0fdfa;
+  
+  --transfer-secondary: #1d4ed8;                // Blue for functional skills
+  --transfer-secondary-gradient: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  --transfer-secondary-light: #dbeafe;
+  --transfer-secondary-ultra-light: #eff6ff;
+  
+  --transfer-accent: #7c2d12;                   // Brown for wheelchair & equipment
+  --transfer-accent-gradient: linear-gradient(135deg, #7c2d12 0%, #a16207 100%);
+  --transfer-accent-light: #fef3c7;
+  --transfer-accent-ultra-light: #fffbeb;
+  
+  // Assistance Level Colors
+  --level-independent: #10b981;                 // Green for independent
+  --level-supervision: #f59e0b;                 // Orange for supervision
+  --level-assist: #ef4444;                      // Red for assistance needed
+  --level-dependent: #dc2626;                   // Dark red for dependent
+  
+  // Background and UI Colors
+  --transfer-bg-primary: linear-gradient(135deg, #f0fdfa 0%, #eff6ff 50%, #fffbeb 100%);
+  --transfer-bg-secondary: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+  --transfer-card-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --transfer-border: rgba(148, 163, 184, 0.15);
+  
+  // Text Colors
+  --transfer-text-primary: #1f2937;
+  --transfer-text-secondary: #6b7280;
+  --transfer-text-accent: #0f766e;
+}
+
+.transfers-functional-independence-skills-section {
+  padding: 32px;
+  background: var(--transfer-bg-primary);
+  border-radius: 24px;
+  box-shadow: var(--transfer-card-shadow);
+  border: 2px solid var(--transfer-border);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Transfer & independence-specific pattern overlay
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(15, 118, 110, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 85% 85%, rgba(29, 78, 216, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(124, 45, 18, 0.03) 0%, transparent 60%),
+      linear-gradient(45deg, transparent 48%, rgba(15, 118, 110, 0.02) 50%, transparent 52%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  // All content above the pattern
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  // Section Header
+  .section-header {
+    margin-bottom: 40px;
+    padding: 28px;
+    background: var(--transfer-bg-secondary);
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+
+      i {
+        font-size: 36px;
+        background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 50%, #7c2d12 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-right: 20px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        animation: transfer-motion 3s ease-in-out infinite;
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--transfer-text-primary);
+        letter-spacing: -0.8px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .section-description {
+      color: var(--transfer-text-secondary);
+      font-size: 17px;
+      line-height: 1.6;
+      margin: 0 0 24px 0;
+      padding-left: 56px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .assessment-summary {
+      .summary-stats {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .stat-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 20px;
+          background: var(--transfer-primary-gradient);
+          color: white;
+          border-radius: 25px;
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(15, 118, 110, 0.4);
+          }
+
+          i {
+            font-size: 16px;
+          }
+
+          &:nth-child(2) {
+            background: var(--transfer-accent-gradient);
+            box-shadow: 0 4px 15px rgba(124, 45, 18, 0.3);
+
+            &:hover {
+              box-shadow: 0 6px 20px rgba(124, 45, 18, 0.4);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Assessment Groups
+  .assessment-group {
+    margin-bottom: 48px;
+    background: var(--transfer-bg-secondary);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .group-header {
+      margin-bottom: 32px;
+      text-align: center;
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 16px;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--transfer-text-primary);
+
+        i {
+          font-size: 26px;
+          color: var(--transfer-primary);
+          padding: 12px;
+          background: var(--transfer-primary-ultra-light);
+          border-radius: 12px;
+          box-shadow: 0 4px 15px rgba(15, 118, 110, 0.2);
+        }
+      }
+
+      .group-description {
+        color: var(--transfer-text-secondary);
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  // Transfer Activities
+  .transfer-activities {
+    .activities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+
+      .activity-assessment {
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 2px solid transparent;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: var(--transfer-primary);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(15, 118, 110, 0.15);
+        }
+
+        .activity-header {
+          margin-bottom: 20px;
+
+          .activity-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+
+            i {
+              font-size: 20px;
+              color: var(--transfer-primary);
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: var(--transfer-primary-ultra-light);
+              border-radius: 8px;
+            }
+
+            h5 {
+              margin: 0;
+              font-size: 18px;
+              font-weight: 700;
+              color: var(--transfer-text-primary);
+            }
+          }
+
+          .activity-description {
+            margin: 0;
+            font-size: 14px;
+            color: var(--transfer-text-secondary);
+            padding-left: 44px;
+            font-weight: 500;
+          }
+        }
+
+        .assessment-options {
+          .assessment-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--transfer-border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #ffffff;
+            color: var(--transfer-text-primary);
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+
+            &:focus {
+              outline: none;
+              border-color: var(--transfer-primary);
+              box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
+            }
+
+            &:hover {
+              border-color: var(--transfer-primary);
+            }
+          }
+
+          .level-indicator {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  // Wheelchair Question
+  .wheelchair-question {
+    .wheelchair-inquiry {
+      .question-container {
+        text-align: center;
+
+        .question-label {
+          margin-bottom: 24px;
+          font-size: 20px;
+          font-weight: 700;
+          color: var(--transfer-text-primary);
+        }
+
+        .radio-group {
+          display: flex;
+          gap: 24px;
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .radio-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            input[type="radio"] {
+              display: none;
+            }
+
+            .radio-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 12px 24px;
+              background: #ffffff;
+              border: 2px solid var(--transfer-border);
+              border-radius: 25px;
+              font-weight: 600;
+              color: var(--transfer-text-secondary);
+              transition: all 0.3s ease;
+
+              i {
+                font-size: 16px;
+              }
+            }
+
+            &:hover .radio-label {
+              border-color: var(--transfer-primary);
+              color: var(--transfer-primary);
+            }
+
+            input:checked + .radio-label {
+              background: var(--transfer-primary-gradient);
+              border-color: var(--transfer-primary);
+              color: white;
+              box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Wheelchair Skills
+  .wheelchair-skills {
+    border-left: 4px solid var(--transfer-accent);
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+
+      .skill-assessment {
+        background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 2px solid transparent;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: var(--transfer-accent);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(124, 45, 18, 0.15);
+        }
+
+        .skill-header {
+          margin-bottom: 20px;
+
+          .skill-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+
+            i {
+              font-size: 20px;
+              color: var(--transfer-accent);
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: var(--transfer-accent-ultra-light);
+              border-radius: 8px;
+            }
+
+            h5 {
+              margin: 0;
+              font-size: 18px;
+              font-weight: 700;
+              color: var(--transfer-text-primary);
+            }
+          }
+
+          .skill-description {
+            margin: 0;
+            font-size: 14px;
+            color: var(--transfer-text-secondary);
+            padding-left: 44px;
+            font-weight: 500;
+          }
+        }
+
+        .assessment-options {
+          .assessment-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--transfer-border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #ffffff;
+            color: var(--transfer-text-primary);
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+
+            &:focus {
+              outline: none;
+              border-color: var(--transfer-accent);
+              box-shadow: 0 0 0 4px rgba(124, 45, 18, 0.1);
+            }
+
+            &:hover {
+              border-color: var(--transfer-accent);
+            }
+          }
+
+          .level-indicator {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  // Comments Section
+  .comments-section {
+    .comments-container {
+      position: relative;
+
+      .comments-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 18px;
+        border: 2px solid var(--transfer-border);
+        border-radius: 12px;
+        font-size: 15px;
+        font-family: inherit;
+        line-height: 1.6;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+        color: var(--transfer-text-primary);
+
+        &:focus {
+          outline: none;
+          border-color: var(--transfer-primary);
+          box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
+          background: #ffffff;
+        }
+
+        &::placeholder {
+          color: var(--transfer-text-secondary);
+          font-style: italic;
+          opacity: 0.8;
+        }
+      }
+
+      .character-count {
+        position: absolute;
+        bottom: 10px;
+        right: 14px;
+        font-size: 11px;
+        color: var(--transfer-text-secondary);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+        backdrop-filter: blur(4px);
+      }
+    }
+  }
+
+  // Assessment Progress
+  .assessment-progress {
+    margin-top: 40px;
+    padding: 32px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #eff6ff 100%);
+    border-radius: 20px;
+    border: 2px solid rgba(15, 118, 110, 0.2);
+    box-shadow: 0 8px 25px rgba(15, 118, 110, 0.1);
+
+    .progress-header {
+      margin-bottom: 28px;
+      text-align: center;
+
+      .progress-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #134e4a;
+
+        i {
+          font-size: 24px;
+          color: var(--transfer-primary);
+        }
+      }
+    }
+
+    .progress-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+
+      .progress-section {
+        .progress-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 12px;
+          font-weight: 600;
+          color: #134e4a;
+
+          i {
+            font-size: 16px;
+            color: var(--transfer-primary);
+          }
+        }
+
+        .progress-bar {
+          width: 100%;
+          height: 8px;
+          background: rgba(15, 118, 110, 0.2);
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 8px;
+
+          .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+
+            &.transfer-progress {
+              background: var(--transfer-primary-gradient);
+            }
+
+            &.wheelchair-progress {
+              background: var(--transfer-accent-gradient);
+            }
+          }
+        }
+
+        .progress-text {
+          font-size: 13px;
+          color: #134e4a;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  // Animations
+  @keyframes transfer-motion {
+    0%, 100% {
+      transform: translateX(0) rotate(0deg);
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+    25% {
+      transform: translateX(3px) rotate(5deg);
+    }
+    75% {
+      transform: translateX(-3px) rotate(-5deg);
+    }
+    50% {
+      filter: drop-shadow(0 4px 12px rgba(15, 118, 110, 0.3));
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 1024px) {
+    .activities-grid,
+    .skills-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 24px;
+
+    .section-header {
+      padding: 24px;
+
+      .section-title {
+        h3 {
+          font-size: 26px;
+        }
+
+        i {
+          font-size: 30px;
+        }
+      }
+
+      .section-description {
+        font-size: 15px;
+        padding-left: 50px;
+      }
+
+      .assessment-summary .summary-stats {
+        flex-direction: column;
+        align-items: center;
+
+        .stat-item {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .assessment-group {
+      padding: 24px;
+
+      .group-header .group-title {
+        flex-direction: column;
+        gap: 12px;
+        font-size: 20px;
+      }
+    }
+
+    .activities-grid,
+    .skills-grid {
+      .activity-assessment,
+      .skill-assessment {
+        padding: 20px;
+      }
+    }
+
+    .radio-group {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .progress-content {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Print Styles
+  @media print {
+    box-shadow: none;
+    border: 2px solid #333;
+    background: white !important;
+
+    &::before {
+      display: none;
+    }
+
+    .assessment-group,
+    .assessment-progress {
+      background: white !important;
+      border: 1px solid #666;
+      page-break-inside: avoid;
+      box-shadow: none;
+    }
+
+    .activity-assessment,
+    .skill-assessment {
+      background: white !important;
+      border: 1px solid #333 !important;
+      color: black !important;
+    }
+
+    .assessment-select,
+    .comments-textarea {
+      background: white !important;
+      border: 1px solid #333 !important;
+      color: black !important;
+    }
+  }
+
+  // High Contrast Mode
+  @media (prefers-contrast: high) {
+    border: 3px solid #000;
+    background: white !important;
+
+    .assessment-group {
+      border: 2px solid #000;
+      background: white !important;
+    }
+
+    .activity-assessment,
+    .skill-assessment {
+      border: 2px solid #000 !important;
+      background: white !important;
+    }
+
+    .assessment-select,
+    .comments-textarea {
+      border: 2px solid #000 !important;
+      background: white !important;
+    }
+  }
+}

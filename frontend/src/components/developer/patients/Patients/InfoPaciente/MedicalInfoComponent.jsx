@@ -325,7 +325,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
         <div className="header-content">
           <div className="title-section">
             <div className="medical-icon">
-              <i className="fas fa-stethoscope"></i>
+              <i className="fas fa-heartbeat"></i>
             </div>
             <div className="title-text">
               <h2>Medical Information</h2>
@@ -386,7 +386,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-weight"></i>
+                  <i className="fas fa-user-injured"></i>
                   Physical Information
                 </h3>
               </div>
@@ -395,7 +395,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Weight */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-weight-scale"></i>
+                    <i className="fas fa-balance-scale"></i>
                     Weight
                   </label>
                   <div className="input-wrapper">
@@ -454,7 +454,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-user-md"></i>
+                  <i className="fas fa-clinic-medical"></i>
                   Clinical Information
                 </h3>
               </div>
@@ -495,7 +495,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Urgency Level */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-exclamation-triangle"></i>
+                    <i className="fas fa-bell"></i>
                     Urgency Level
                   </label>
                   <select
@@ -515,7 +515,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Clinical Grouping */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-clipboard-list"></i>
+                    <i className="fas fa-layer-group"></i>
                     Clinical Grouping
                   </label>
                   <input
@@ -534,7 +534,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-notes-medical"></i>
+                  <i className="fas fa-file-medical-alt"></i>
                   Medical History
                 </h3>
               </div>
@@ -543,7 +543,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Nursing Diagnosis */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-stethoscope"></i>
+                    <i className="fas fa-diagnoses"></i>
                     Nursing Diagnosis
                   </label>
                   <textarea
@@ -559,7 +559,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Past Medical History */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-history"></i>
+                    <i className="fas fa-file-medical"></i>
                     Past Medical History
                   </label>
                   <textarea
@@ -575,7 +575,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Prior Level of Function */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-chart-line"></i>
+                    <i className="fas fa-chart-area"></i>
                     Prior Level of Function
                   </label>
                   <textarea
@@ -588,26 +588,10 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                   />
                 </div>
                 
-                {/* Insurance (Payor Type) */}
-                <div className="form-group">
-                  <label>
-                    <i className="fas fa-credit-card"></i>
-                    Insurance / Payor Type
-                  </label>
-                  <input
-                    type="text"
-                    name="insurance"
-                    value={medicalData.insurance}
-                    onChange={handleInputChange}
-                    placeholder="Insurance or payor type..."
-                    className="medical-input"
-                  />
-                </div>
-                
                 {/* Referral Reason */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-clipboard-list"></i>
+                    <i className="fas fa-share-alt"></i>
                     Referral Reasons
                   </label>
                   <textarea
@@ -633,7 +617,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-clipboard-check"></i>
+                  <i className="fas fa-procedures"></i>
                   Patient Status
                 </h3>
               </div>
@@ -642,7 +626,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Weight Bearing Status */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-walking"></i>
+                    <i className="fas fa-crutch"></i>
                     Weight Bearing Status
                   </label>
                   <input
@@ -658,7 +642,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 {/* Homebound Status */}
                 <div className="form-group">
                   <label>
-                    <i className="fas fa-home"></i>
+                    <i className="fas fa-house-user"></i>
                     Homebound Status
                   </label>
                   <input
@@ -707,7 +691,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-weight"></i>
+                  <i className="fas fa-user-injured"></i>
                   Physical Information
                 </h3>
               </div>
@@ -743,7 +727,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-user-md"></i>
+                  <i className="fas fa-clinic-medical"></i>
                   Clinical Information
                 </h3>
               </div>
@@ -775,7 +759,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 
                 <div className="info-card">
                   <div className="info-icon icon-clinical">
-                    <i className="fas fa-clipboard-list"></i>
+                    <i className="fas fa-layer-group"></i>
                   </div>
                   <div className="info-content">
                     <span className="info-label">Clinical Grouping</span>
@@ -787,7 +771,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 
                 <div className="info-card urgency-card">
                   <div className="info-icon icon-urgency">
-                    <i className="fas fa-exclamation-triangle"></i>
+                    <i className="fas fa-bell"></i>
                   </div>
                   <div className="info-content">
                     <span className="info-label">Urgency Level</span>
@@ -815,7 +799,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-notes-medical"></i>
+                  <i className="fas fa-file-medical-alt"></i>
                   Medical History
                 </h3>
               </div>
@@ -843,21 +827,11 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 
                 <div className="text-info-card">
                   <div className="text-info-header">
-                    <i className="fas fa-chart-line"></i>
+                    <i className="fas fa-chart-area"></i>
                     <span>Prior Level of Function</span>
                   </div>
                   <div className="text-info-content">
                     {medicalData.prior_level_of_function || 'Not recorded'}
-                  </div>
-                </div>
-                
-                <div className="text-info-card">
-                  <div className="text-info-header">
-                    <i className="fas fa-credit-card"></i>
-                    <span>Insurance / Payor Type</span>
-                  </div>
-                  <div className="text-info-content">
-                    {medicalData.insurance || 'Not recorded'}
                   </div>
                 </div>
                 
@@ -878,7 +852,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
             <div className="medical-section">
               <div className="section-header">
                 <h3>
-                  <i className="fas fa-clipboard-check"></i>
+                  <i className="fas fa-procedures"></i>
                   Patient Status
                 </h3>
               </div>
@@ -886,7 +860,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
               <div className="info-grid">
                 <div className="info-card">
                   <div className="info-icon icon-weight-bearing">
-                    <i className="fas fa-walking"></i>
+                    <i className="fas fa-crutch"></i>
                   </div>
                   <div className="info-content">
                     <span className="info-label">Weight Bearing</span>
@@ -898,7 +872,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
                 
                 <div className="info-card">
                   <div className="info-icon icon-homebound">
-                    <i className="fas fa-home"></i>
+                    <i className="fas fa-house-user"></i>
                   </div>
                   <div className="info-content">
                     <span className="info-label">Homebound Status</span>
@@ -916,7 +890,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
         <div className="approved-visits-section">
           <div className="section-header">
             <h3>
-              <i className="fas fa-calendar-check"></i>
+              <i className="fas fa-calendar-alt"></i>
               Approved Visits (Discipline Limits)
             </h3>
           </div>
@@ -926,7 +900,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
               { 
                 key: 'pt', 
                 name: 'Physical Therapy', 
-                icon: 'fas fa-walking', 
+                icon: 'fas fa-dumbbell', 
                 color: '#60a5fa',
                 bgColor: '#dbeafe',
                 shadowColor: 'rgba(96, 165, 250, 0.3)' 
@@ -934,7 +908,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
               { 
                 key: 'ot', 
                 name: 'Occupational Therapy', 
-                icon: 'fas fa-hand-paper', 
+                icon: 'fas fa-hands-helping', 
                 color: '#a78bfa',
                 bgColor: '#e9d5ff',
                 shadowColor: 'rgba(167, 139, 250, 0.3)' 
@@ -942,7 +916,7 @@ const MedicalInfoComponent = ({ patient, certPeriodId, onUpdateMedicalInfo }) =>
               { 
                 key: 'st', 
                 name: 'Speech Therapy', 
-                icon: 'fas fa-comments', 
+                icon: 'fas fa-microphone-alt', 
                 color: '#34d399',
                 bgColor: '#d1fae5',
                 shadowColor: 'rgba(52, 211, 153, 0.3)' 
