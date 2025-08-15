@@ -30,6 +30,25 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState('');
   const [confirmType, setConfirmType] = useState('danger');
+  const [staffDocuments, setStaffDocuments] = useState([]);
+  const [staffPatients, setStaffPatients] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+  
+  // Document Management States
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentModalMode, setDocumentModalMode] = useState('add'); // 'add' or 'edit'
+  const [currentDocument, setCurrentDocument] = useState(null);
+  const [documentForm, setDocumentForm] = useState({
+    document_type: '',
+    notes: '',
+    file: null,
+    fileName: ''
+  });
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [deletingDocument, setDeletingDocument] = useState(false);
 
   const roles = [
     { 
@@ -141,6 +160,39 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     ]
   };
 
+  const therapistDocuments = [
+    { id: 'covidVaccine', name: 'Proof of COVID Vaccine', icon: 'fa-syringe', description: 'Vaccination record or certificate' },
+    { id: 'tbTest', name: 'TB Test proof (PPD/X-Ray)', description: 'PPD Test (valid for 1 year) or X-Ray TB test (valid for 5 years)', icon: 'fa-lungs' },
+    { id: 'physicalExam', name: 'Annual Physical Exam Proof', icon: 'fa-stethoscope', description: 'Medical clearance for healthcare duties' },
+    { id: 'liabilityInsurance', name: 'Professional Liability Insurance', icon: 'fa-shield-alt', description: 'Malpractice insurance coverage document' },
+    { id: 'driversLicense', name: 'Driver\'s License', icon: 'fa-id-card', description: 'Valid state-issued driver\'s license' },
+    { id: 'autoInsurance', name: 'Auto Insurance', icon: 'fa-car-alt', description: 'Proof of current auto insurance coverage' },
+    { id: 'cprCertification', name: 'CPR/BLS Certification', icon: 'fa-heartbeat', description: 'Current CPR or Basic Life Support certification' },
+    { id: 'businessLicense', name: 'Copy of Business License or EIN', icon: 'fa-certificate', description: 'Business license or Employer Identification Number document' },
+  ];
+
+  const agencyDocuments = [
+    { id: 'businessLicense', name: 'Business License', icon: 'fa-building', description: 'Valid business operation license' },
+    { id: 'contractDocument', name: 'Contract with TherapySync', icon: 'fa-file-contract', description: 'Signed service agreement' },
+    { id: 'liabilityInsurance', name: 'Liability Insurance', icon: 'fa-shield-alt', description: 'Organization liability coverage documentation' },
+  ];
+
+  const getDocumentsForRole = (role) => {
+    switch(role) {
+      case 'agency':
+        return agencyDocuments;
+      case 'pt':
+      case 'pta':
+      case 'ot':
+      case 'cota':
+      case 'st':
+      case 'sta':
+        return therapistDocuments;
+      default:
+        return [];
+    }
+  };
+
   const formatPhoneNumber = (value) => {
     if (!value) return '';
     const phoneNumber = value.replace(/[^\d]/g, '');
@@ -238,6 +290,376 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     }
   };
 
+  const fetchStaffDocuments = async (staffId) => {
+    setLoadingDocuments(true);
+    try {
+      const response = await fetch(`http://localhost:8000/documents/?staff_id=${staffId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const documents = await response.json();
+        console.log('Staff documents fetched:', documents);
+        setStaffDocuments(documents);
+      } else {
+        console.error('Error al obtener documentos del staff');
+        setStaffDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error al obtener documentos:', error);
+      setStaffDocuments([]);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  const fetchStaffPatients = async (staffId) => {
+    setLoadingPatients(true);
+    try {
+      const response = await fetch(`http://localhost:8000/staff-assignments/?staff_id=${staffId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const assignments = await response.json();
+        setStaffPatients(assignments);
+      } else {
+        console.error('Error al obtener pacientes asignados');
+        setStaffPatients([]);
+      }
+    } catch (error) {
+      console.error('Error al obtener pacientes:', error);
+      setStaffPatients([]);
+    } finally {
+      setLoadingPatients(false);
+    }
+  };
+
+  // Document Management Functions
+  const handleAddDocument = (documentType = '') => {
+    setDocumentModalMode('add');
+    setCurrentDocument(null);
+    setDocumentForm({
+      document_type: documentType,
+      notes: '',
+      file: null,
+      fileName: ''
+    });
+    setShowDocumentModal(true);
+  };
+
+  const handleEditDocument = (document) => {
+    setDocumentModalMode('edit');
+    setCurrentDocument(document);
+    setDocumentForm({
+      document_type: document.document_type || '',
+      notes: document.notes || '',
+      file: null,
+      fileName: document.file_name || ''
+    });
+    setShowDocumentModal(true);
+  };
+
+  const handleDeleteDocument = (document) => {
+    setDocumentToDelete(document);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!documentToDelete) return;
+    
+    setDeletingDocument(true);
+    try {
+      const response = await fetch(`http://localhost:8000/documents/${documentToDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        // Refresh documents list
+        await fetchStaffDocuments(selectedStaff.id);
+        alert('✅ Document deleted successfully!');
+      } else {
+        throw new Error('Failed to delete document');
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      alert('❌ Error deleting document. Please try again.');
+    } finally {
+      setDeletingDocument(false);
+      setShowDeleteModal(false);
+      setDocumentToDelete(null);
+    }
+  };
+
+  const handleDocumentFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!documentForm.file && documentModalMode === 'add') {
+      alert('⚠️ Please select a file to upload');
+      return;
+    }
+
+    setUploadingDocument(true);
+    try {
+      const formData = new FormData();
+      
+      if (documentForm.file) {
+        formData.append('file', documentForm.file);
+      }
+      formData.append('staff_id', selectedStaff.id);
+      formData.append('document_type', documentForm.document_type);
+      formData.append('notes', documentForm.notes);
+
+      const response = await fetch('http://localhost:8000/documents/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        // Refresh documents list
+        await fetchStaffDocuments(selectedStaff.id);
+        setShowDocumentModal(false);
+        
+        // Get document name for success message
+        const docName = getDocumentsForRole(selectedStaff.role).find(doc => doc.id === documentForm.document_type)?.name || 'Document';
+        alert(`✅ ${docName} uploaded successfully! The document is now ready and updated.`);
+      } else {
+        throw new Error(`Failed to ${documentModalMode} document`);
+      }
+    } catch (error) {
+      console.error(`Error ${documentModalMode}ing document:`, error);
+      alert(`❌ Error uploading document. Please try again.`);
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleDocumentFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert('File is too large. Maximum size allowed is 10MB.');
+        return;
+      }
+
+      // Only PDF files are allowed according to backend
+      if (file.type !== 'application/pdf') {
+        alert('❌ Only PDF files are allowed. Please convert your document to PDF format.');
+        return;
+      }
+
+      setDocumentForm({
+        ...documentForm,
+        file: file,
+        fileName: file.name
+      });
+    }
+  };
+
+  const closeDocumentModal = () => {
+    setShowDocumentModal(false);
+    setCurrentDocument(null);
+    setDocumentForm({
+      document_type: '',
+      notes: '',
+      file: null,
+      fileName: ''
+    });
+  };
+
+  const handleDirectFileUpload = async (e, documentType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert('❌ File is too large. Maximum size allowed is 10MB.');
+      return;
+    }
+
+    // Only PDF files are allowed according to backend
+    if (file.type !== 'application/pdf') {
+      alert('❌ Only PDF files are allowed. Please convert your document to PDF format.');
+      return;
+    }
+
+    setUploadingDocument(true);
+    try {
+      // Create a new file with a descriptive name that includes document type
+      const fileExtension = file.name.split('.').pop();
+      const cleanStaffName = selectedStaff.fullName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      
+      // Use specific naming for problematic documents to ensure matching
+      let cleanDocName;
+      switch(documentType) {
+        case 'covidVaccine':
+          cleanDocName = 'Proof_of_COVID_Vaccine';
+          break;
+        case 'tbTest':
+          cleanDocName = 'TB_Test_proof';
+          break;
+        case 'driversLicense':
+          cleanDocName = 'Drivers_License';
+          break;
+        default:
+          const docName = getDocumentsForRole(selectedStaff.role).find(doc => doc.id === documentType)?.name || documentType;
+          cleanDocName = docName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      }
+      
+      const newFileName = `${cleanDocName}_${cleanStaffName}.${fileExtension}`;
+      
+      const renamedFile = new File([file], newFileName, { type: file.type });
+      
+      const formData = new FormData();
+      formData.append('file', renamedFile);
+      formData.append('staff_id', selectedStaff.id.toString());
+
+      console.log('Uploading document:', {
+        staff_id: selectedStaff.id,
+        document_type: documentType,
+        original_file_name: file.name,
+        new_file_name: newFileName
+      });
+
+      const response = await fetch('http://localhost:8000/documents/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const responseData = await response.json();
+      console.log('Upload response:', responseData);
+
+      if (response.ok) {
+        // Refresh documents list
+        await fetchStaffDocuments(selectedStaff.id);
+        
+        // Get document name for success message
+        const docName = getDocumentsForRole(selectedStaff.role).find(doc => doc.id === documentType)?.name || 'Document';
+        alert(`✅ ${docName} uploaded successfully! The document is now ready and updated.`);
+      } else {
+        throw new Error(responseData.detail || 'Failed to upload document');
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert(`❌ Error uploading document: ${error.message}`);
+    } finally {
+      setUploadingDocument(false);
+      // Clear the input
+      e.target.value = '';
+    }
+  };
+
+  const handleViewDocument = async (document) => {
+    try {
+      // Open document in new tab/window
+      const response = await fetch(`http://localhost:8000/documents/${document.id}/preview`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+        // Clean up the URL after a delay
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      } else {
+        alert('❌ Error opening document. The file may not exist.');
+      }
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert('❌ Error opening document. Please try again.');
+    }
+  };
+
+  const handleReplaceDocument = async (e, currentDoc, documentType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert('❌ File is too large. Maximum size allowed is 10MB.');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      alert('❌ Only PDF files are allowed. Please convert your document to PDF format.');
+      return;
+    }
+
+    // Confirm replacement
+    const docName = getDocumentsForRole(selectedStaff.role).find(doc => doc.id === documentType)?.name || 'document';
+    const confirmReplace = window.confirm(`Are you sure you want to replace the current ${docName}? This action cannot be undone.`);
+    
+    if (!confirmReplace) {
+      e.target.value = ''; // Clear the input
+      return;
+    }
+
+    setUploadingDocument(true);
+    try {
+      // First delete the old document
+      const deleteResponse = await fetch(`http://localhost:8000/documents/${currentDoc.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error('Failed to delete old document');
+      }
+
+      // Then upload the new document
+      const fileExtension = file.name.split('.').pop();
+      const cleanStaffName = selectedStaff.fullName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      
+      // Use specific naming for problematic documents to ensure matching
+      let cleanDocName;
+      switch(documentType) {
+        case 'covidVaccine':
+          cleanDocName = 'Proof_of_COVID_Vaccine';
+          break;
+        case 'tbTest':
+          cleanDocName = 'TB_Test_proof';
+          break;
+        case 'driversLicense':
+          cleanDocName = 'Drivers_License';
+          break;
+        default:
+          cleanDocName = docName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      }
+      
+      const newFileName = `${cleanDocName}_${cleanStaffName}.${fileExtension}`;
+      
+      const renamedFile = new File([file], newFileName, { type: file.type });
+      
+      const formData = new FormData();
+      formData.append('file', renamedFile);
+      formData.append('staff_id', selectedStaff.id.toString());
+
+      const uploadResponse = await fetch('http://localhost:8000/documents/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (uploadResponse.ok) {
+        // Refresh documents list
+        await fetchStaffDocuments(selectedStaff.id);
+        alert(`✅ ${docName} replaced successfully! The new document is now ready and updated.`);
+      } else {
+        throw new Error('Failed to upload new document');
+      }
+    } catch (error) {
+      console.error('Error replacing document:', error);
+      alert(`❌ Error replacing document: ${error.message}`);
+    } finally {
+      setUploadingDocument(false);
+      // Clear the input
+      e.target.value = '';
+    }
+  };
+
   useEffect(() => {
     let filtered = [...staffList];
     
@@ -270,6 +692,12 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setSelectedStaff(member);
     setShowProfileModal(true);
     setActiveTab('overview');
+    // Cargar documentos del staff
+    fetchStaffDocuments(member.id);
+    // Cargar pacientes asignados para terapeutas
+    if (['pt', 'pta', 'ot', 'cota', 'st', 'sta'].includes(member.role)) {
+      fetchStaffPatients(member.id);
+    }
   };
 
   const handleCloseProfile = () => {
@@ -287,6 +715,25 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     setConfirmAction(null);
     setConfirmMessage('');
     setConfirmType('danger');
+    setStaffDocuments([]);
+    setStaffPatients([]);
+    setLoadingDocuments(false);
+    setLoadingPatients(false);
+    
+    // Clean document management states
+    setShowDocumentModal(false);
+    setDocumentModalMode('add');
+    setCurrentDocument(null);
+    setDocumentForm({
+      document_type: '',
+      notes: '',
+      file: null,
+      fileName: ''
+    });
+    setUploadingDocument(false);
+    setShowDeleteModal(false);
+    setDocumentToDelete(null);
+    setDeletingDocument(false);
   };
 
   const renderRoleTabs = () => {
@@ -299,15 +746,36 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
     ];
 
     const roleSpecificTabs = {
-      pt: [{ id: 'patients', label: 'My Patients', icon: 'fa-user-injured' }],
-      pta: [{ id: 'assignments', label: 'Assignments', icon: 'fa-tasks' }],
-      ot: [{ id: 'assessments', label: 'Assessments', icon: 'fa-clipboard-check' }],
-      cota: [{ id: 'activities', label: 'Activities', icon: 'fa-puzzle-piece' }],
-      st: [{ id: 'evaluations', label: 'Evaluations', icon: 'fa-microphone' }],
-      sta: [{ id: 'sessions', label: 'Sessions', icon: 'fa-chalkboard-teacher' }],
+      pt: [
+        { id: 'patients', label: 'My Patients', icon: 'fa-user-injured' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
+      pta: [
+        { id: 'assignments', label: 'Assignments', icon: 'fa-tasks' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
+      ot: [
+        { id: 'assessments', label: 'Assessments', icon: 'fa-clipboard-check' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
+      cota: [
+        { id: 'activities', label: 'Activities', icon: 'fa-puzzle-piece' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
+      st: [
+        { id: 'evaluations', label: 'Evaluations', icon: 'fa-microphone' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
+      sta: [
+        { id: 'sessions', label: 'Sessions', icon: 'fa-chalkboard-teacher' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-medical-alt' }
+      ],
       administrator: [{ id: 'management', label: 'Management', icon: 'fa-users-cog' }],
       developer: [{ id: 'system', label: 'System', icon: 'fa-server' }],
-      agency: [{ id: 'operations', label: 'Operations', icon: 'fa-building' }]
+      agency: [
+        { id: 'operations', label: 'Operations', icon: 'fa-building' },
+        { id: 'documents', label: 'Documents', icon: 'fa-file-contract' }
+      ]
     };
 
     const tabs = [...commonTabs];
@@ -334,6 +802,8 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
       case 'sessions':
       case 'management':
         return renderRoleSpecificTab();
+      case 'documents':
+        return renderDocumentsTab();
       case 'system':
         return renderDeveloperSystemTab();
       case 'operations':
@@ -727,7 +1197,7 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
       assignments: 'My Assignments', 
       assessments: 'My Assessments',
       activities: 'My Activities',
-      evaluations: 'My Evaluations',
+      evaluations: 'My Speech Evaluations',
       sessions: 'My Sessions',
       management: 'Staff Management'
     };
@@ -739,20 +1209,261 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
         <div className="patients-overview">
           <div className="patients-header">
             <h3><i className={`fas ${selectedStaff.roleInfo?.icon}`} style={{ color: selectedStaff.roleInfo?.color }}></i> {currentTabLabel}</h3>
-            <p>Manage your assigned patients and their care plans</p>
+            <p>Manage assigned patients and their care plans</p>
           </div>
           
-          <div className="patients-placeholder">
-            <div className="placeholder-icon">
-              <i className="fas fa-user-injured" style={{ color: selectedStaff.roleInfo?.color }}></i>
+          {loadingPatients ? (
+            <div className="loading-patients">
+              <i className="fas fa-spinner fa-spin"></i>
+              <p>Loading assigned patients...</p>
             </div>
-            <h4>Patient Management System</h4>
-            <p>This section will display all patients assigned to {selectedStaff.fullName}</p>
-            <div className="placeholder-stats">
-              <div className="stat-box">
-                <span className="stat-number">{selectedStaff.stats[Object.keys(selectedStaff.stats)[0]] || 0}</span>
-                <span className="stat-label">Active Cases</span>
+          ) : staffPatients.length > 0 ? (
+            <div className="patients-grid">
+              {staffPatients.map((assignment, index) => (
+                <div key={index} className="patient-assignment-card">
+                  <div className="patient-header">
+                    <div className="patient-avatar">
+                      <i className="fas fa-user-circle"></i>
+                    </div>
+                    <div className="patient-info">
+                      <h4>{assignment.patient_name || 'Assigned Patient'}</h4>
+                      <span className="assignment-discipline" style={{ color: selectedStaff.roleInfo?.color }}>
+                        {assignment.discipline || selectedStaff.roleInfo?.label}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="assignment-details">
+                    <div className="detail-row">
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>Assigned: {assignment.assigned_date ? new Date(assignment.assigned_date).toLocaleDateString('en-US') : 'N/A'}</span>
+                    </div>
+                    <div className="detail-row">
+                      <i className="fas fa-heartbeat"></i>
+                      <span>Status: {assignment.is_active ? 'Active' : 'Inactive'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="patients-placeholder">
+              <div className="placeholder-icon">
+                <i className="fas fa-user-injured" style={{ color: selectedStaff.roleInfo?.color }}></i>
               </div>
+              <h4>No Assigned Patients</h4>
+              <p>Currently {selectedStaff.fullName} has no patients assigned in the system</p>
+              <div className="placeholder-stats">
+                <div className="stat-box">
+                  <span className="stat-number">0</span>
+                  <span className="stat-label">Active Cases</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDocumentsTab = () => {
+    const requiredDocs = getDocumentsForRole(selectedStaff.role);
+    
+    if (requiredDocs.length === 0) {
+      return (
+        <div className="documents-content clinical">
+          <div className="no-documents-required">
+            <div className="no-docs-icon">
+              <i className="fas fa-file-alt" style={{ color: selectedStaff.roleInfo?.color }}></i>
+            </div>
+            <h4>No Required Documents</h4>
+            <p>This role does not require specific documents in the system</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="documents-content clinical">
+        <div className="documents-header">
+          <h3><i className="fas fa-file-medical-alt" style={{ color: selectedStaff.roleInfo?.color }}></i> Required Documents</h3>
+          <p>Status of mandatory documents for {selectedStaff.roleInfo?.label}</p>
+        </div>
+
+        {loadingDocuments ? (
+          <div className="loading-documents">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Loading documents...</p>
+          </div>
+        ) : (
+          <div className="documents-grid">
+            {requiredDocs.map((requiredDoc) => {
+              const uploadedDoc = staffDocuments.find(doc => {
+                if (!doc.file_name) return false;
+                
+                const fileName = doc.file_name.toLowerCase();
+                const docId = requiredDoc.id.toLowerCase();
+                
+                // Debug logging
+                console.log(`Matching for ${docId}:`, {
+                  fileName,
+                  docId,
+                  requiredDocName: requiredDoc.name
+                });
+                
+                // Specific matching for problematic documents
+                if (docId === 'covidvaccine') {
+                  const matches = fileName.includes('covid') || fileName.includes('vaccine') || fileName.includes('proof_of_covid');
+                  console.log(`COVID match result: ${matches}`);
+                  return matches;
+                }
+                if (docId === 'tbtest') {
+                  const matches = fileName.includes('tb_test') || fileName.includes('ppd') || fileName.includes('tb') || fileName.includes('tuberculosis');
+                  console.log(`TB match result: ${matches}`);
+                  return matches;
+                }
+                if (docId === 'driverslicense') {
+                  const matches = fileName.includes('drivers_license') || fileName.includes('driver') || fileName.includes('license');
+                  console.log(`Driver's License match result: ${matches}`);
+                  return matches;
+                }
+                
+                // General matching for other documents
+                const generalMatch = fileName.includes(docId) || 
+                       fileName.includes(requiredDoc.name.toLowerCase().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_'));
+                console.log(`General match result for ${docId}: ${generalMatch}`);
+                return generalMatch;
+              });
+              
+              const status = uploadedDoc ? 'uploaded' : 'missing';
+              
+              return (
+                <div key={requiredDoc.id} className={`document-status-card ${status}`}>
+                  <div className="doc-header">
+                    <div className="doc-icon" style={{ color: selectedStaff.roleInfo?.color }}>
+                      <i className={`fas ${requiredDoc.icon}`}></i>
+                    </div>
+                    <div className="doc-info">
+                      <h4>{requiredDoc.name}</h4>
+                      <p className="doc-description">{requiredDoc.description}</p>
+                    </div>
+                    <div className={`doc-status-badge ${status}`}>
+                      {status === 'uploaded' ? (
+                        <>
+                          <i className="fas fa-check-circle"></i>
+                          <span>Uploaded</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-exclamation-triangle"></i>
+                          <span>Missing</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {uploadedDoc && (
+                    <div className="uploaded-doc-details">
+                      <div className="doc-detail-row">
+                        <i className="fas fa-file"></i>
+                        <span>{uploadedDoc.file_name}</span>
+                      </div>
+                      <div className="doc-detail-row">
+                        <i className="fas fa-calendar"></i>
+                        <span>Uploaded: {new Date(uploadedDoc.upload_date).toLocaleDateString('en-US')}</span>
+                      </div>
+                      {uploadedDoc.notes && (
+                        <div className="doc-detail-row">
+                          <i className="fas fa-sticky-note"></i>
+                          <span>{uploadedDoc.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="doc-actions">
+                    {uploadedDoc ? (
+                      <>
+                        <button
+                          className="doc-action-btn view"
+                          onClick={() => handleViewDocument(uploadedDoc)}
+                          title="View Document"
+                        >
+                          <i className="fas fa-eye"></i>
+                          <span>View</span>
+                        </button>
+                        <input
+                          type="file"
+                          id={`file-replace-${uploadedDoc.id}`}
+                          onChange={(e) => handleReplaceDocument(e, uploadedDoc, requiredDoc.id)}
+                          accept=".pdf"
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          className="doc-action-btn replace"
+                          onClick={() => document.getElementById(`file-replace-${uploadedDoc.id}`).click()}
+                          title="Replace Document"
+                        >
+                          <i className="fas fa-sync-alt"></i>
+                          <span>Replace</span>
+                        </button>
+                        <button
+                          className="doc-action-btn delete"
+                          onClick={() => handleDeleteDocument(uploadedDoc)}
+                          title="Delete Document"
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                          <span>Delete</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="file"
+                          id={`file-upload-${requiredDoc.id}`}
+                          onChange={(e) => handleDirectFileUpload(e, requiredDoc.id)}
+                          accept=".pdf"
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          className="doc-action-btn add"
+                          onClick={() => document.getElementById(`file-upload-${requiredDoc.id}`).click()}
+                          style={{ backgroundColor: selectedStaff.roleInfo?.color }}
+                          disabled={uploadingDocument}
+                        >
+                          {uploadingDocument ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin"></i>
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-plus"></i>
+                              <span>Upload Document</span>
+                            </>
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        <div className="documents-summary">
+          <div className="summary-stats">
+            <div className="stat-item uploaded">
+              <span className="stat-number">{staffDocuments.length}</span>
+              <span className="stat-label">Documents Uploaded</span>
+            </div>
+            <div className="stat-item required">
+              <span className="stat-number">{requiredDocs.length}</span>
+              <span className="stat-label">Documents Required</span>
+            </div>
+            <div className="stat-item missing">
+              <span className="stat-number">{Math.max(0, requiredDocs.length - staffDocuments.length)}</span>
+              <span className="stat-label">Documents Missing</span>
             </div>
           </div>
         </div>
@@ -1409,6 +2120,174 @@ const StaffManagementSystem = ({ onBackToOptions, onAddNewStaff }) => {
               >
                 <i className={`fas ${confirmType === 'danger' ? 'fa-user-slash' : 'fa-user-check'}`}></i>
                 {confirmType === 'danger' ? 'Desactivar' : 'Activar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Document Add/Edit Modal */}
+      {showDocumentModal && (
+        <div className="document-modal-overlay" onClick={closeDocumentModal}>
+          <div className="document-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="document-modal-header">
+              <h3>
+                <i className="fas fa-file-plus" style={{ color: selectedStaff.roleInfo?.color }}></i>
+                {documentModalMode === 'add' ? 'Add New Document' : 'Edit Document'}
+              </h3>
+              <button className="close-modal-btn" onClick={closeDocumentModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={handleDocumentFormSubmit} className="document-form">
+              {!documentForm.document_type && (
+                <div className="form-group">
+                  <label htmlFor="document_type">Document Type</label>
+                  <select
+                    id="document_type"
+                    value={documentForm.document_type}
+                    onChange={(e) => setDocumentForm({...documentForm, document_type: e.target.value})}
+                    required
+                    className="form-select"
+                  >
+                    <option value="">Select document type</option>
+                    {getDocumentsForRole(selectedStaff.role).map(doc => (
+                      <option key={doc.id} value={doc.id}>{doc.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {documentForm.document_type && (
+                <div className="document-type-display">
+                  <label>Document Type</label>
+                  <div className="selected-document-type">
+                    <i className="fas fa-file-alt" style={{ color: selectedStaff.roleInfo?.color }}></i>
+                    <span>{getDocumentsForRole(selectedStaff.role).find(doc => doc.id === documentForm.document_type)?.name}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="form-group">
+                <label htmlFor="document_file">Document File</label>
+                <div className="file-upload-area">
+                  <input
+                    type="file"
+                    id="document_file"
+                    onChange={handleDocumentFileChange}
+                    accept=".pdf"
+                    className="file-input"
+                    required={documentModalMode === 'add'}
+                  />
+                  <div className="file-upload-label">
+                    <i className="fas fa-cloud-upload-alt"></i>
+                    <span>
+                      {documentForm.fileName || 'Choose file or drag & drop'}
+                    </span>
+                  </div>
+                  <small className="file-info">
+                    Supported formats: PDF only (Max 10MB)
+                  </small>
+                </div>
+              </div>
+              
+              {!documentForm.document_type && (
+                <div className="form-group">
+                  <label htmlFor="notes">Notes (Optional)</label>
+                  <textarea
+                    id="notes"
+                    value={documentForm.notes}
+                    onChange={(e) => setDocumentForm({...documentForm, notes: e.target.value})}
+                    placeholder="Add any additional notes about this document..."
+                    rows="3"
+                    className="form-textarea"
+                  />
+                </div>
+              )}
+              
+              <div className="form-actions">
+                <button type="button" className="cancel-btn" onClick={closeDocumentModal}>
+                  <i className="fas fa-times"></i>
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="submit-btn" 
+                  disabled={uploadingDocument}
+                  style={{ backgroundColor: selectedStaff.roleInfo?.color }}
+                >
+                  {uploadingDocument ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      {documentModalMode === 'add' ? 'Uploading...' : 'Updating...'}
+                    </>
+                  ) : (
+                    <>
+                      <i className={`fas ${documentModalMode === 'add' ? 'fa-plus' : 'fa-save'}`}></i>
+                      {documentModalMode === 'add' ? 'Add Document' : 'Update Document'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && documentToDelete && (
+        <div className="delete-modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-header">
+              <div className="delete-icon">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <h3>Delete Document</h3>
+            </div>
+            
+            <div className="delete-modal-body">
+              <p>Are you sure you want to delete this document?</p>
+              <div className="document-info">
+                <div className="doc-preview">
+                  <i className="fas fa-file-alt"></i>
+                  <div className="doc-details">
+                    <span className="doc-name">{documentToDelete.file_name}</span>
+                    <span className="doc-type">{documentToDelete.document_type}</span>
+                  </div>
+                </div>
+              </div>
+              <p className="warning-text">
+                <i className="fas fa-warning"></i>
+                This action cannot be undone. The document file will be permanently deleted.
+              </p>
+            </div>
+            
+            <div className="delete-modal-footer">
+              <button 
+                className="cancel-delete-btn"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingDocument}
+              >
+                <i className="fas fa-times"></i>
+                Cancel
+              </button>
+              <button 
+                className="confirm-delete-btn"
+                onClick={confirmDeleteDocument}
+                disabled={deletingDocument}
+              >
+                {deletingDocument ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-trash-alt"></i>
+                    Delete Document
+                  </>
+                )}
               </button>
             </div>
           </div>
