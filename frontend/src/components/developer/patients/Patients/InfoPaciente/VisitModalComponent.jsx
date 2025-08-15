@@ -5,14 +5,6 @@ import NoteTemplateModal from './NotesAndSign/NoteTemplateModal';
 import { openNotePrintableView, getNormalizedUserRole } from '../../../../../utils/printableUtils';
 import '../../../../../styles/developer/Patients/InfoPaciente/VisitModalComponent.scss';
 
-/**
- * VisitModalComponent - Modal para gestionar detalles de visitas completadas
- * 
- * Reglas de estados:
- * 1. Save Changes: Mantiene el estado "Completed" sin cambios
- * 2. Return to Therapist: Cambia de "Completed" a "Pending"
- * 3. Save nota (después de edit): Cambia de "Pending" a "Completed" con indicador "Saved"
- */
 const VisitModalComponent = ({ 
   isOpen, 
   onClose, 

@@ -1,134 +1,152 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import '../../../../../../styles/developer/Patients/InfoPaciente/NotesAndSign/TemplateRenderer.scss';
-
-// Import all sections
-import * as Sections from './sections';
-
-const TemplateRenderer = ({ 
-  templateConfig, 
-  data, 
-  onChange,
-  onOpenTest,
-  onOpenDiagnosisModal,
-  autoSaveMessage 
-}) => {
-  const [loadedSections, setLoadedSections] = useState({});
-  const [activeSection, setActiveSection] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Map backend section names to frontend components
-  const getSectionComponent = (sectionName) => {
-    const sectionMap = {
-      // Secciones existentes del backend - ahora con componente mejorado
-      'Transfers / Functional Independence': 'TransfersFunctionalIndependenceSkillsSection',
-      // Nuevas secciones - con componentes mejorados
-      'ADL / Self Care Skills': 'ADLSelfCareSkillsSection',
-      'Assessment / Justification': 'AssessmentJustificationSkillsSection',
-      'Balance': 'BalanceSkillsSection',
-      'Vitals': 'VitalsSkillsSection',
-      'Pain': 'PainSkillsSection',
-      'Living Arrangements': 'LivingArrangementsSkillsSection',
-      'Cognitive Status / Comprehension': 'CognitiveStatusSkillsSection',
-      'Sensory': 'SensorySkillsSection',
-      'Equipment': 'EquipmentSkillsSection',
-      'Gait / Mobility Training (Eval)': 'GaitMobilityTrainingSkillsSection',
-      'Muscle Strength/ROM': 'MuscleStrengthROMSkillsSection',
-      'Prosthetic And Orthotic': 'ProstheticOrthoticSkillsSection',
-      'Patient / Caregiver Education': 'PatientCaregiverEducationSkillsSection',
-      ' Patient / Caregiver Education  ': 'PatientCaregiverEducationSkillsSection',
-      'Skilled Care Provided This Visit': 'SkilledCareProvidedThisVisitSkillsSection',
-      'Problem List / Functional Limitations': 'ProblemListFunctionalLimitationsSkillsSection',
-      'Rehab Potential': 'RehabPotentialSkillsSection',
-      'Treatment as Tolerated/Basic POC': 'TreatmentAsToleratedBasicPOCSkillsSection',
-      'Short & Long Term Goals': 'ShortLongTermGoalsSkillsSection',
-      // Mapeo temporal para Initial Evaluation
-      'Initial Evaluation': 'SubjectiveSection',
-      // Sección Subjective agregada
-      'Subjective': 'SubjectiveSection',
-    };
-    
-    console.log('🔍 TemplateRenderer - Mapping section:', sectionName, '-> Component:', sectionMap[sectionName]);
-    return sectionMap[sectionName] || null;
+// Auto-mapeo: el backend puede enviar nombres descriptivos o nombres de componentes exactos
+const getSectionComponent = (sectionName) => {
+  const sectionMap = {
+    // Secciones existentes del backend - mapeo a componentes
+    'Transfers / Functional Independence': 'TransfersFunctionalIndependenceSkillsSection',
+    'ADL / Self Care Skills': 'ADLSelfCareSkillsSection',
+    'Assessment / Justification': 'AssessmentJustificationSkillsSection',
+    'Balance': 'BalanceSkillsSection',
+    'Vitals': 'VitalsSkillsSection',
+    'Pain': 'PainSkillsSection',
+    'Living Arrangements': 'LivingArrangementsSkillsSection',
+    'Cognitive Status / Comprehension': 'CognitiveStatusSkillsSection',
+    'Sensory': 'SensorySkillsSection',
+    'Equipment': 'EquipmentSkillsSection',
+    'Gait / Mobility Training (Eval)': 'GaitMobilityTrainingSkillsSection',
+    'Muscle Strength/ROM': 'MuscleStrengthROMSkillsSection',
+    'Prosthetic And Orthotic': 'ProstheticOrthoticSkillsSection',
+    'Patient / Caregiver Education': 'PatientCaregiverEducationSkillsSection',
+    ' Patient / Caregiver Education  ': 'PatientCaregiverEducationSkillsSection', // Handle extra space
+    'Skilled Care Provided This Visit': 'SkilledCareProvidedThisVisitSkillsSection',
+    'Problem List / Functional Limitations': 'ProblemListFunctionalLimitationsSkillsSection',
+    'Rehab Potential': 'RehabPotentialSkillsSection',
+    'Treatment as Tolerated/Basic POC': 'TreatmentAsToleratedBasicPOCSkillsSection',
+    'Short & Long Term Goals': 'ShortLongTermGoalsSkillsSection',
+    'Initial Evaluation': 'SubjectiveSection',
+    'Subjective': 'SubjectiveSection',
+    // Mapeo para nombres de componentes directos (del main branch)
+    'TransfersFunctionalIndependence': 'TransfersFunctionalIndependenceSkillsSection',
+    'ADLSelfCare': 'ADLSelfCareSkillsSection',
+    'AssessmentJustificationSection': 'AssessmentJustificationSkillsSection',
+    'BalanceSection': 'BalanceSkillsSection',
+    'VitalsSection': 'VitalsSkillsSection',
+    'PainSection': 'PainSkillsSection',
+    'LivingArrangements': 'LivingArrangementsSkillsSection',
+    'GaitMobility': 'GaitMobilityTrainingSkillsSection',
+    'MuscleStrengthSection': 'MuscleStrengthROMSkillsSection',
+    'ProblemListSection': 'ProblemListFunctionalLimitationsSkillsSection',
+    'RehabPotentialSection': 'RehabPotentialSkillsSection',
+    'SkilledCareSection': 'SkilledCareProvidedThisVisitSkillsSection',
+    'Goals': 'ShortLongTermGoalsSkillsSection',
+    'Medication': 'MedicationSection',
+    'StandardizedTests': 'StandardizedTestsSection',
+    'TreatmentInterventions': 'TreatmentInterventionsSection',
+    'Signature': 'SignatureSection'
   };
 
-  // Get icon for section
-  const getIconForSection = (sectionName) => {
-    const iconMap = {
-      'Transfers / Functional Independence': 'fas fa-walking',
-      'ADL / Self Care Skills': 'fas fa-hand-holding-heart',
-      'Assessment / Justification': 'fas fa-clipboard-check',
-      'Balance': 'fas fa-balance-scale',
-      'Vitals': 'fas fa-heartbeat',
-      'Pain': 'fas fa-exclamation-triangle',
-      'Living Arrangements': 'fas fa-home',
-      'Cognitive Status / Comprehension': 'fas fa-brain',
-      'Sensory': 'fas fa-hand-paper',
-      'Equipment': 'fas fa-cog',
-      'Gait / Mobility Training (Eval)': 'fas fa-walking',
-      'Muscle Strength/ROM': 'fas fa-dumbbell',
-      'Prosthetic And Orthotic': 'fas fa-hand-holding-medical',
-      'Patient / Caregiver Education': 'fas fa-graduation-cap',
-      ' Patient / Caregiver Education  ': 'fas fa-graduation-cap',
-      'Skilled Care Provided This Visit': 'fas fa-stethoscope',
-      'Problem List / Functional Limitations': 'fas fa-list-ul',
-      'Rehab Potential': 'fas fa-chart-line',
-      'Treatment as Tolerated/Basic POC': 'fas fa-medical-kit',
-      'Short & Long Term Goals': 'fas fa-target',
-      'Initial Evaluation': 'fas fa-clipboard-list',
-      'Subjective': 'fas fa-comment-medical'
-    };
-    
-    return iconMap[sectionName] || 'fas fa-file-alt';
+  const componentName = sectionMap[sectionName] || sectionName; // Fallback to raw sectionName
+  console.log('🔍 TemplateRenderer - Mapping section:', sectionName, '-> Component:', componentName);
+  return componentName;
+};
+
+// Get icon for section - mapeo basado en nombres del backend o componentes
+const getIconForSection = (sectionName) => {
+  const iconMap = {
+    // Mapeo de nombres descriptivos del backend (Luis)
+    'Transfers / Functional Independence': 'fas fa-walking',
+    'ADL / Self Care Skills': 'fas fa-hand-holding-heart',
+    'Assessment / Justification': 'fas fa-clipboard-check',
+    'Balance': 'fas fa-balance-scale',
+    'Vitals': 'fas fa-heartbeat',
+    'Pain': 'fas fa-exclamation-triangle',
+    'Living Arrangements': 'fas fa-home',
+    'Cognitive Status / Comprehension': 'fas fa-brain',
+    'Sensory': 'fas fa-hand-paper',
+    'Equipment': 'fas fa-cog',
+    'Gait / Mobility Training (Eval)': 'fas fa-walking',
+    'Muscle Strength/ROM': 'fas fa-dumbbell',
+    'Prosthetic And Orthotic': 'fas fa-hand-holding-medical',
+    'Patient / Caregiver Education': 'fas fa-graduation-cap',
+    ' Patient / Caregiver Education  ': 'fas fa-graduation-cap',
+    'Skilled Care Provided This Visit': 'fas fa-stethoscope',
+    'Problem List / Functional Limitations': 'fas fa-list-ul',
+    'Rehab Potential': 'fas fa-chart-line',
+    'Treatment as Tolerated/Basic POC': 'fas fa-medical-kit',
+    'Short & Long Term Goals': 'fas fa-target',
+    'Initial Evaluation': 'fas fa-clipboard-list',
+    'Subjective': 'fas fa-comment-medical',
+    // Mapeo de nombres de componentes (main)
+    'VitalsSection': 'fas fa-heartbeat',
+    'TransfersFunctionalIndependence': 'fas fa-walking',
+    'PainSection': 'fas fa-exclamation-triangle',
+    'SubjectiveSection': 'fas fa-comment-medical',
+    'Medication': 'fas fa-pills',
+    'LivingArrangements': 'fas fa-home',
+    'GaitMobility': 'fas fa-walking',
+    'MuscleStrengthSection': 'fas fa-dumbbell',
+    'BalanceSection': 'fas fa-balance-scale',
+    'ADLSelfCare': 'fas fa-hands',
+    'StandardizedTests': 'fas fa-clipboard-check',
+    'ProblemListSection': 'fas fa-list-ul',
+    'AssessmentJustificationSection': 'fas fa-stethoscope',
+    'RehabPotentialSection': 'fas fa-chart-line',
+    'TreatmentInterventions': 'fas fa-therapy',
+    'SkilledCareSection': 'fas fa-user-nurse',
+    'Goals': 'fas fa-bullseye',
+    'Signature': 'fas fa-signature'
   };
 
-  // Load sections based on template configuration
-  useEffect(() => {
-    if (!templateConfig?.sections) return;
+  return iconMap[sectionName] || 'fas fa-file-alt';
+};
 
-    const loadSections = async () => {
-      setLoading(true);
-      const sectionsMap = {};
+// Load sections based on template configuration
+useEffect(() => {
+  if (!templateConfig?.sections) return;
 
-      console.log('🔄 TemplateRenderer - Loading sections from config:', templateConfig.sections);
+  const loadSections = async () => {
+    setLoading(true);
+    const sectionsMap = {};
 
-      templateConfig.sections.forEach(sectionConfig => {
-        // Get component name from section_name mapping
-        const componentName = getSectionComponent(sectionConfig.section_name);
-        const SectionComponent = componentName ? Sections[componentName] : null;
-        
-        console.log('📦 TemplateRenderer - Section:', sectionConfig.section_name);
-        console.log('   Component Name:', componentName);
-        console.log('   Component Found:', !!SectionComponent);
-        console.log('   Available Sections:', Object.keys(Sections));
-        
-        if (SectionComponent) {
-          sectionsMap[sectionConfig.section_name] = {
-            Component: SectionComponent,
-            config: {
-              ...sectionConfig,
-              component: componentName,
-              name: sectionConfig.section_name,
-              icon: getIconForSection(sectionConfig.section_name),
-              required: sectionConfig.is_required || false
-            }
-          };
-        } else {
-          console.error('❌ TemplateRenderer - Component not found for:', sectionConfig.section_name, 'mapped to:', componentName);
-        }
-      });
+    console.log('🔄 TemplateRenderer - Loading sections from config:', templateConfig.sections);
 
-      setLoadedSections(sectionsMap);
-      
-      // Set first section as active by default
-      if (templateConfig.sections.length > 0) {
-        setActiveSection(templateConfig.sections[0].section_name);
+    templateConfig.sections.forEach(sectionConfig => {
+      // Get component name from section_name mapping
+      const componentName = getSectionComponent(sectionConfig.section_name);
+      const SectionComponent = componentName ? Sections[componentName] : null;
+
+      console.log('📦 TemplateRenderer - Section:', sectionConfig.section_name);
+      console.log('   Component Name:', componentName);
+      console.log('   Component Found:', !!SectionComponent);
+      console.log('   Available Sections:', Object.keys(Sections));
+
+      if (SectionComponent) {
+        sectionsMap[sectionConfig.section_name] = {
+          Component: SectionComponent,
+          config: {
+            ...sectionConfig,
+            component: componentName,
+            name: sectionConfig.section_name,
+            icon: getIconForSection(sectionConfig.section_name),
+            required: sectionConfig.is_required || false
+          }
+        };
+      } else {
+        console.error('❌ TemplateRenderer - Component not found for:', sectionConfig.section_name, 'mapped to:', componentName);
       }
-      
-      setLoading(false);
-    };
+    });
 
-    loadSections();
-  }, [templateConfig]);
+    setLoadedSections(sectionsMap);
+
+    // Set first section as active by default
+    if (templateConfig.sections.length > 0) {
+      setActiveSection(templateConfig.sections[0].section_name);
+    }
+
+    setLoading(false);
+  };
+
+  loadSections();
+}, [templateConfig]);
 
   // Handle section data changes
   const handleSectionChange = (sectionId, sectionData) => {
@@ -240,25 +258,13 @@ const TemplateRenderer = ({
 
     return (
       <div className="active-section">
-        <div className="section-header">
-          <div className="section-info">
-            <h2>
-              <i className={config.icon || 'fas fa-file-alt'}></i>
-              {config.name || config.component.replace('Section', '')}
-            </h2>
-            {config.description && (
-              <p className="section-description">{config.description}</p>
-            )}
-          </div>
-          
-          <div className="section-actions">
-            {autoSaveMessage && (
-              <span className="autosave-indicator">
-                <i className="fas fa-check-circle"></i>
-                {autoSaveMessage}
-              </span>
-            )}
-          </div>
+        <div className="section-actions">
+          {autoSaveMessage && (
+            <span className="autosave-indicator">
+              <i className="fas fa-check-circle"></i>
+              {autoSaveMessage}
+            </span>
+          )}
         </div>
 
         <div className="section-content">

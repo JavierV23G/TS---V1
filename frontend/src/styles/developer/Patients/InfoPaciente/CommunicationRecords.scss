@@ -155,6 +155,90 @@ $medium-transition: all 0.3s ease-in-out;
           }
         }
 
+        .filter-group {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .discipline-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            .filter-label {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 14px;
+              font-weight: 500;
+              color: $secondary-text;
+
+              i {
+                font-size: 13px;
+                color: $primary-color;
+              }
+            }
+
+            .select-wrapper {
+              position: relative;
+
+              .discipline-select {
+                appearance: none;
+                background: $white;
+                border: 2px solid $border-color;
+                border-radius: 12px;
+                padding: 12px 40px 12px 16px;
+                font-size: 15px;
+                font-weight: 500;
+                color: $primary-text;
+                cursor: pointer;
+                transition: $medium-transition;
+                box-shadow: $soft-shadow;
+                min-width: 220px;
+
+                &:hover {
+                  border-color: $primary-color;
+                  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+                  transform: translateY(-1px);
+                }
+
+                &:focus {
+                  outline: none;
+                  border-color: $primary-color;
+                  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+                  transform: translateY(-1px);
+                }
+
+                option {
+                  padding: 8px 16px;
+                  background: $white;
+                  color: $primary-text;
+                  font-weight: 500;
+                }
+              }
+
+              // Custom dropdown arrow
+              &::after {
+                content: '\f107';
+                font-family: 'Font Awesome 5 Free';
+                font-weight: 900;
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: $secondary-text;
+                pointer-events: none;
+                transition: $fast-transition;
+                z-index: 1;
+              }
+
+              &:hover::after {
+                color: $primary-color;
+              }
+            }
+          }
+        }
+
         .new-comment-btn {
           background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
           color: $white;
@@ -559,8 +643,9 @@ $medium-transition: all 0.3s ease-in-out;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 20px;
+    padding: 40px 20px;
     animation: fadeIn 0.2s ease-out;
+    overflow-y: auto;
 
     .clinical-modal {
       background: $white;
@@ -568,11 +653,12 @@ $medium-transition: all 0.3s ease-in-out;
       box-shadow: $modal-shadow;
       max-width: 700px;
       width: 100%;
-      max-height: 90vh;
+      max-height: calc(100vh - 80px);
       overflow: hidden;
       display: flex;
       flex-direction: column;
       animation: slideUp 0.3s ease-out;
+      margin: auto;
 
       &.view-modal {
         max-width: 800px;
@@ -643,12 +729,16 @@ $medium-transition: all 0.3s ease-in-out;
       }
 
       .modal-body {
-        padding: 32px;
+        padding: 24px 32px;
         overflow-y: auto;
         flex: 1;
 
         .field-group {
-          margin-bottom: 24px;
+          margin-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
 
           &:last-child {
             margin-bottom: 0;
@@ -660,6 +750,8 @@ $medium-transition: all 0.3s ease-in-out;
             font-weight: 600;
             color: $primary-text;
             margin-bottom: 8px;
+            width: 100%;
+            text-align: left;
           }
 
           .clinical-select,
@@ -672,6 +764,7 @@ $medium-transition: all 0.3s ease-in-out;
             font-family: inherit;
             transition: $fast-transition;
             background-color: $white;
+            box-sizing: border-box;
 
             &:focus {
               outline: none;
@@ -686,7 +779,7 @@ $medium-transition: all 0.3s ease-in-out;
 
           .clinical-textarea {
             resize: vertical;
-            min-height: 140px;
+            min-height: 120px;
             line-height: 1.6;
           }
 
@@ -695,33 +788,41 @@ $medium-transition: all 0.3s ease-in-out;
             font-size: 12px;
             color: $secondary-text;
             margin-top: 4px;
+            width: 100%;
           }
         }
 
         // Comment preview
         .comment-preview {
-          margin-top: 24px;
-          padding-top: 24px;
+          margin-top: 20px;
+          padding-top: 20px;
           border-top: 1px solid $border-color;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
 
           h4 {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: $primary-text;
-            margin: 0 0 16px 0;
+            margin: 0 0 12px 0;
+            width: 100%;
+            text-align: left;
           }
 
           .preview-card {
             background: $very-light-blue;
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 10px;
+            padding: 12px;
             border: 1px solid $border-color;
+            width: 100%;
 
             .preview-meta {
               display: flex;
               align-items: center;
               justify-content: space-between;
-              margin-bottom: 12px;
+              margin-bottom: 8px;
 
               .preview-author {
                 display: flex;
@@ -729,15 +830,15 @@ $medium-transition: all 0.3s ease-in-out;
                 gap: 10px;
 
                 .preview-avatar {
-                  width: 32px;
-                  height: 32px;
-                  border-radius: 8px;
+                  width: 28px;
+                  height: 28px;
+                  border-radius: 6px;
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   color: $white;
                   font-weight: 600;
-                  font-size: 14px;
+                  font-size: 12px;
                 }
 
                 .preview-details {
@@ -746,13 +847,13 @@ $medium-transition: all 0.3s ease-in-out;
                   gap: 2px;
 
                   span:first-child {
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 600;
                     color: $primary-text;
                   }
 
                   span:last-child {
-                    font-size: 12px;
+                    font-size: 11px;
                     color: $secondary-text;
                     text-transform: uppercase;
                   }
@@ -775,10 +876,13 @@ $medium-transition: all 0.3s ease-in-out;
             }
 
             .preview-content {
-              font-size: 14px;
-              line-height: 1.5;
+              font-size: 13px;
+              line-height: 1.4;
               color: $primary-text;
               font-style: italic;
+              max-height: 60px;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
           }
         }
@@ -992,11 +1096,11 @@ $medium-transition: all 0.3s ease-in-out;
       }
 
       .modal-footer {
-        padding: 24px 32px 32px 32px;
+        padding: 20px 32px 24px 32px;
         border-top: 1px solid $border-color;
         background: $very-light-blue;
         display: flex;
-        gap: 16px;
+        gap: 12px;
         justify-content: flex-end;
 
         .cancel-btn,
@@ -1148,6 +1252,24 @@ $medium-transition: all 0.3s ease-in-out;
           flex-direction: column;
           width: 100%;
           gap: 16px;
+
+          .filter-group {
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            
+            .discipline-filter {
+              flex-direction: column;
+              gap: 8px;
+              align-items: center;
+              
+              .select-wrapper {
+                .discipline-select {
+                  min-width: 200px;
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -1184,16 +1306,22 @@ $medium-transition: all 0.3s ease-in-out;
     }
 
     .modal-overlay {
-      padding: 10px;
+      padding: 20px 10px;
 
       .clinical-modal {
         border-radius: 16px;
-        max-height: 95vh;
+        max-height: calc(100vh - 40px);
 
-        .modal-header,
-        .modal-body,
+        .modal-header {
+          padding: 24px 20px 20px 20px;
+        }
+        
+        .modal-body {
+          padding: 16px 20px;
+        }
+        
         .modal-footer {
-          padding: 20px;
+          padding: 16px 20px 20px 20px;
         }
 
         .modal-footer {

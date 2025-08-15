@@ -9,7 +9,7 @@ import DisciplinesComponent from './DisciplinesComponent';
 import ScheduleComponent from './ScheduleComponent';
 import ExercisesComponent from './ExercisesComponent';
 import DocumentsComponent from './DocumentsComponent';
-import NotesComponent from './NotesComponent';
+// import CommunicationRecords from '../../../../developer/patients/Patients/InfoPaciente/CommunicationRecords'; // TEMPORARILY COMMENTED
 import LogoutAnimation from '../../../../../components/LogOut/LogOut';
 import '../../../../../styles/developer/Patients/InfoPaciente/PatientInfoPage.scss';
 
@@ -448,14 +448,17 @@ const DocumentsSection = ({ patient }) => {
 };
 
 // Notes Section Component
-const NotesSection = ({ patient }) => {
+const NotesSection = ({ patient, currentCertPeriod }) => {
   const handleUpdateNotes = (updatedNotes) => {
     console.log('Notes updated:', updatedNotes);
   };
   
   return (
-    <div className="notes-section">
-      <NotesComponent patient={patient} onUpdateNotes={handleUpdateNotes} />
+    <div className="communication-records-section">
+      {/* <CommunicationRecords patient={patient} currentCertPeriod={currentCertPeriod} /> */}
+      <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>
+        Communication Records temporarily disabled
+      </div>
     </div>
   );
 };
@@ -1011,7 +1014,7 @@ const PatientInfoPage = () => {
               <DocumentsSection patient={patient} />
             )}
             {activeTab === 'notes' && (
-              <NotesSection patient={patient} />
+              <NotesSection patient={patient} currentCertPeriod={currentCertPeriod} />
             )}
           </div>
         </div>

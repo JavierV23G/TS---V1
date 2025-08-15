@@ -1,116 +1,169 @@
 // ADLSelfCareSection.scss
+@import 'common';
+
 .adl-self-care-section {
+  @extend .section-common;
+
   .section-title {
-    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 20px;
+    color: #2c3e50;
+    margin-bottom: 25px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid #3498db;
+    
+    i {
+      color: #3498db;
+    }
   }
 
-  .activity-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+  .form-section {
     margin-bottom: 20px;
+  }
 
-    .activity-item {
+  .adl-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+
+    .adl-category {
       background: #f8f9fa;
-      padding: 15px;
-      border-radius: 6px;
+      padding: 20px;
+      border-radius: 8px;
       border: 1px solid #dee2e6;
 
-      .activity-name {
-        font-weight: 500;
-        margin-bottom: 10px;
+      .category-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
         color: #495057;
+        margin-bottom: 15px;
+        
+        i {
+          color: #6c757d;
+        }
       }
 
-      .assistance-levels {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+      .adl-skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
 
-        .level-option {
-          flex: 1;
-          min-width: 120px;
-          
-          input[type="radio"] {
-            margin-right: 5px;
+        .adl-skill {
+          background: white;
+          padding: 15px;
+          border-radius: 6px;
+          border: 1px solid #e9ecef;
+
+          .skill-header {
+            margin-bottom: 10px;
+
+            .skill-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-weight: 500;
+              color: #495057;
+              margin-bottom: 8px;
+              
+              i {
+                color: #6c757d;
+                width: 16px;
+              }
+            }
+
+            select {
+              width: 100%;
+              padding: 8px 12px;
+              border: 1px solid #ced4da;
+              border-radius: 4px;
+              font-size: 14px;
+              background: white;
+              
+              &:focus {
+                outline: none;
+                border-color: #3498db;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+              }
+              
+              &.selected {
+                border-color: #28a745;
+                background-color: #f8fff9;
+              }
+            }
           }
 
-          label {
-            font-size: 0.9rem;
-            cursor: pointer;
+          textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            margin-top: 8px;
+
+            &:focus {
+              outline: none;
+              border-color: #3498db;
+              box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
           }
         }
       }
     }
   }
 
-  .notes-section {
+  .form-row {
     margin-top: 25px;
     
-    label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 8px;
-      color: #333;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 12px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 14px;
-      resize: vertical;
-
-      &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    .form-group {
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #495057;
+        
+        i {
+          color: #6c757d;
+        }
       }
-    }
-  }
 
-  .summary-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #e7f3ff;
-    border-radius: 6px;
-    border-left: 4px solid #007bff;
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
 
-    .summary-title {
-      font-weight: 500;
-      color: #0056b3;
-      margin-bottom: 10px;
-    }
-
-    .summary-content {
-      font-size: 0.9rem;
-      color: #333;
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+      }
     }
   }
 }
 
 @media (max-width: 768px) {
   .adl-self-care-section {
-    .activity-grid {
-      grid-template-columns: 1fr;
-      gap: 15px;
-
-      .activity-item {
-        .assistance-levels {
-          flex-direction: column;
-          gap: 8px;
-
-          .level-option {
-            min-width: auto;
-          }
+    .adl-categories {
+      .adl-category {
+        .adl-skills-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
         }
       }
     }

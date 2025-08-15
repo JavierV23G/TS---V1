@@ -199,8 +199,8 @@ const ClinicalAccounting = () => {
             if (agencyStaff) {
               realAgencies.push({
                 id: agencyStaff.id,
-                name: agencyStaff.name, // Use the real staff name
-                email: agencyStaff.email, // Use the real staff email
+                name: agencyStaff.name,
+                email: agencyStaff.email, 
                 role: agencyStaff.role || 'Agency',
                 is_active: agencyStaff.is_active
               });

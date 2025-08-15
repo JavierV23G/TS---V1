@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 
-// Map backend section names to frontend components
+// Auto-mapeo: el backend puede enviar nombres descriptivos o nombres de componentes exactos
 const mapSectionNameToComponent = (sectionName) => {
   const sectionMap = {
-    // Secciones existentes del backend
-    'Transfers / Functional Independence': 'TransfersFunctionalSection',
-    // Nuevas secciones - con componentes mejorados
+    // Secciones descriptivas del backend
+    'Transfers / Functional Independence': 'TransfersFunctionalIndependenceSkillsSection',
     'ADL / Self Care Skills': 'ADLSelfCareSkillsSection',
     'Assessment / Justification': 'AssessmentJustificationSkillsSection',
     'Balance': 'BalanceSkillsSection',
@@ -17,26 +16,40 @@ const mapSectionNameToComponent = (sectionName) => {
     'Equipment': 'EquipmentSkillsSection',
     'Gait / Mobility Training (Eval)': 'GaitMobilityTrainingSkillsSection',
     'Muscle Strength/ROM': 'MuscleStrengthROMSkillsSection',
-    'Transfers / Functional Independence': 'TransfersFunctionalIndependenceSkillsSection',
     'Prosthetic And Orthotic': 'ProstheticOrthoticSkillsSection',
     'Patient / Caregiver Education': 'PatientCaregiverEducationSkillsSection',
-    ' Patient / Caregiver Education  ': 'PatientCaregiverEducationSkillsSection',
+    ' Patient / Caregiver Education  ': 'PatientCaregiverEducationSkillsSection', // Handle extra space
     'Skilled Care Provided This Visit': 'SkilledCareProvidedThisVisitSkillsSection',
     'Problem List / Functional Limitations': 'ProblemListFunctionalLimitationsSkillsSection',
     'Rehab Potential': 'RehabPotentialSkillsSection',
     'Treatment as Tolerated/Basic POC': 'TreatmentAsToleratedBasicPOCSkillsSection',
     'Short & Long Term Goals': 'ShortLongTermGoalsSkillsSection',
-    // Mapeo temporal para Initial Evaluation (usar SubjectiveSection como fallback)
     'Initial Evaluation': 'SubjectiveSection',
-    // Sección Subjective agregada
     'Subjective': 'SubjectiveSection',
+    // Mapeo para nombres de componentes directos (del main branch)
+    'Subjective': 'SubjectiveSection',
+    'Vitals': 'VitalsSkillsSection',
+    'Pain': 'PainSkillsSection',
+    'Medication': 'MedicationSection',
+    'LivingArrangements': 'LivingArrangementsSkillsSection',
+    'GaitMobility': 'GaitMobilityTrainingSkillsSection',
+    'MuscleStrengthSection': 'MuscleStrengthROMSkillsSection',
+    'BalanceSection': 'BalanceSkillsSection',
+    'TransfersFunctionalIndependence': 'TransfersFunctionalIndependenceSkillsSection',
+    'ADLSelfCare': 'ADLSelfCareSkillsSection',
+    'StandardizedTests': 'StandardizedTestsSection',
+    'ProblemListSection': 'ProblemListFunctionalLimitationsSkillsSection',
+    'AssessmentJustificationSection': 'AssessmentJustificationSkillsSection',
+    'RehabPotentialSection': 'RehabPotentialSkillsSection',
+    'TreatmentInterventions': 'TreatmentInterventionsSection',
+    'SkilledCareSection': 'SkilledCareProvidedThisVisitSkillsSection',
+    'Goals': 'ShortLongTermGoalsSkillsSection',
+    'Signature': 'SignatureSection'
   };
-  
-  console.log('🗺️ useTemplateConfig - Mapping section:', sectionName, '-> Component:', sectionMap[sectionName]);
-  console.log('🔍 Debug - Available section keys:', Object.keys(sectionMap));
-  console.log('🔍 Debug - Looking for exact match:', JSON.stringify(sectionName));
-  console.log('🔍 Debug - Available exact keys:', Object.keys(sectionMap).map(k => JSON.stringify(k)));
-  return sectionMap[sectionName] || null;
+
+  const componentName = sectionMap[sectionName] || sectionName; // Fallback to raw sectionName
+  console.log('🗺️ useTemplateConfig - Mapping section:', sectionName, '-> Component:', componentName);
+  return componentName;
 };
 
 // Hook para manejar configuración de templates - 100% dependiente del backend
@@ -53,7 +66,8 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     setError(null);
 
     try {
-      const templateUrl = `http://localhost:8000/templates/${disciplina}/${tipoNota}`;
+      const templateUrl = `http://localhost:8000/templates/${disciplina}/${encodeURIComponent(tipoNota)}`;
+      console.log('🔍 Fetching template from:', templateUrl);
       const response = await fetch(templateUrl);
       
       if (!response.ok) {
@@ -68,6 +82,7 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
         name: `${config.discipline} ${config.note_type}`,
         sections: config.sections.map(section => {
           const component = mapSectionNameToComponent(section.section_name);
+          console.log(`🔄 Mapeo: "${section.section_name}" → "${component}"`);
           return {
             id: section.id,
             section_name: section.section_name,
@@ -81,6 +96,8 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
         note_type: config.note_type,
         is_active: config.is_active
       };
+      
+      console.log('📋 Template transformado:', transformedConfig);
       
       // Validar que el template tenga la estructura esperada
       if (!validateTemplateStructure(transformedConfig)) {
@@ -163,45 +180,32 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     return true;
   };
 
-  // Validar que el component existe en nuestras 18 sections disponibles
+  // Validar que el component existe en nuestras sections disponibles
   const isValidSectionComponent = (componentName) => {
     const validComponents = [
       'SubjectiveSection',
-      'VitalsSection', 
-      'PainSection',
+      'VitalsSkillsSection',
+      'PainSkillsSection',
       'MedicationSection',
-      'LivingArrangementsSection',
-      'GaitMobilitySection',
-      'MuscleStrengthSection',
-      'BalanceSection',
-      'TransfersFunctionalSection',
-      'ADLSelfCareSection',
-      'ADLSelfCareSkillsSection', // Nueva sección ADL / Self Care Skills
-      'AssessmentJustificationSkillsSection', // Nueva sección Assessment / Justification
-      'BalanceSkillsSection', // Nueva sección Balance
-      'VitalsSkillsSection', // Nueva sección Vitals
-      'PainSkillsSection', // Nueva sección Pain
-      'LivingArrangementsSkillsSection', // Nueva sección Living Arrangements
-      'CognitiveStatusSkillsSection', // Nueva sección Cognitive Status / Comprehension
-      'SensorySkillsSection', // Nueva sección Sensory
-      'EquipmentSkillsSection', // Nueva sección Equipment
-      'GaitMobilityTrainingSkillsSection', // Nueva sección Gait / Mobility Training
-      'MuscleStrengthROMSkillsSection', // Nueva sección Muscle Strength/ROM
-      'TransfersFunctionalIndependenceSkillsSection', // Nueva sección Transfers / Functional Independence
-      'ProstheticOrthoticSkillsSection', // Nueva sección Prosthetic And Orthotic
-      'PatientCaregiverEducationSkillsSection', // Nueva sección Patient / Caregiver Education
-      'SkilledCareProvidedThisVisitSkillsSection', // Nueva sección Skilled Care Provided This Visit
-      'ProblemListFunctionalLimitationsSkillsSection', // Nueva sección Problem List / Functional Limitations
-      'RehabPotentialSkillsSection', // Nueva sección Rehab Potential
-      'TreatmentAsToleratedBasicPOCSkillsSection', // Nueva sección Treatment as Tolerated/Basic POC
-      'ShortLongTermGoalsSkillsSection', // Nueva sección Short & Long Term Goals - LA MÁS IMPORTANTE
+      'LivingArrangementsSkillsSection',
+      'GaitMobilityTrainingSkillsSection',
+      'MuscleStrengthROMSkillsSection',
+      'BalanceSkillsSection',
+      'TransfersFunctionalIndependenceSkillsSection',
+      'ADLSelfCareSkillsSection',
+      'AssessmentJustificationSkillsSection',
+      'CognitiveStatusSkillsSection',
+      'SensorySkillsSection',
+      'EquipmentSkillsSection',
+      'ProstheticOrthoticSkillsSection',
+      'PatientCaregiverEducationSkillsSection',
+      'SkilledCareProvidedThisVisitSkillsSection',
+      'ProblemListFunctionalLimitationsSkillsSection',
+      'RehabPotentialSkillsSection',
+      'TreatmentAsToleratedBasicPOCSkillsSection',
+      'ShortLongTermGoalsSkillsSection',
       'StandardizedTestsSection',
-      'ProblemListSection',
-      'AssessmentJustificationSection',
-      'RehabPotentialSection',
       'TreatmentInterventionsSection',
-      'SkilledCareSection',
-      'GoalsSection',
       'SignatureSection'
     ];
 
@@ -227,12 +231,30 @@ const useTemplateConfig = (disciplina, tipoNota, isEnabled = true) => {
     refreshConfig,
     isValid: templateConfig ? validateTemplateStructure(templateConfig) : false,
     availableComponents: [
-      'SubjectiveSection', 'VitalsSection', 'PainSection', 'MedicationSection',
-      'LivingArrangementsSection', 'GaitMobilitySection', 'MuscleStrengthSection',
-      'BalanceSection', 'TransfersFunctionalSection', 'ADLSelfCareSection',
-      'ADLSelfCareSkillsSection', 'AssessmentJustificationSkillsSection', 'BalanceSkillsSection', 'VitalsSkillsSection', 'PainSkillsSection', 'LivingArrangementsSkillsSection', 'CognitiveStatusSkillsSection', 'SensorySkillsSection', 'EquipmentSkillsSection', 'GaitMobilityTrainingSkillsSection', 'MuscleStrengthROMSkillsSection', 'TransfersFunctionalIndependenceSkillsSection', 'ProstheticOrthoticSkillsSection', 'PatientCaregiverEducationSkillsSection', 'SkilledCareProvidedThisVisitSkillsSection', 'ProblemListFunctionalLimitationsSkillsSection', 'RehabPotentialSkillsSection', 'TreatmentAsToleratedBasicPOCSkillsSection', 'ShortLongTermGoalsSkillsSection', 'StandardizedTestsSection', 
-      'ProblemListSection', 'AssessmentJustificationSection', 'RehabPotentialSection', 
-      'TreatmentInterventionsSection', 'SkilledCareSection', 'GoalsSection', 'SignatureSection'
+      'SubjectiveSection',
+      'VitalsSkillsSection',
+      'PainSkillsSection',
+      'MedicationSection',
+      'LivingArrangementsSkillsSection',
+      'GaitMobilityTrainingSkillsSection',
+      'MuscleStrengthROMSkillsSection',
+      'BalanceSkillsSection',
+      'TransfersFunctionalIndependenceSkillsSection',
+      'ADLSelfCareSkillsSection',
+      'AssessmentJustificationSkillsSection',
+      'CognitiveStatusSkillsSection',
+      'SensorySkillsSection',
+      'EquipmentSkillsSection',
+      'ProstheticOrthoticSkillsSection',
+      'PatientCaregiverEducationSkillsSection',
+      'SkilledCareProvidedThisVisitSkillsSection',
+      'ProblemListFunctionalLimitationsSkillsSection',
+      'RehabPotentialSkillsSection',
+      'TreatmentAsToleratedBasicPOCSkillsSection',
+      'ShortLongTermGoalsSkillsSection',
+      'StandardizedTestsSection',
+      'TreatmentInterventionsSection',
+      'SignatureSection'
     ]
   };
 };

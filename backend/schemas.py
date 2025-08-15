@@ -101,7 +101,7 @@ class PatientResponse(BaseModel):
     gender: str
     address: str
     contact_info: Optional[Dict[str, str]]
-    primary_phone: Optional[str] = None  # Formatted primary phone from backend
+    primary_phone: Optional[str] = None 
     insurance: Optional[str] = None
     physician: Optional[str]
     nurse: Optional[str] = None
@@ -326,3 +326,76 @@ class NoteTemplateWithSectionsResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+#========================= COMMUNICATION RECORDS =========================#
+
+class CommunicationRecordCreate(BaseModel):
+    certification_period_id: int
+    title: str
+    content: str
+    created_by: int
+
+class CommunicationRecordUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class CommunicationRecordResponse(BaseModel):
+    id: int
+    certification_period_id: int
+    title: str
+    content: str
+    created_by: int
+    created_at: datetime
+    staff_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+#========================= SIGNATURES =========================#
+
+class SignatureCreate(BaseModel):
+    patient_id: int
+    entity_type: str 
+    entity_name: str
+    entity_id: int  
+    signable_type: str  
+    signable_id: int  
+    signature_metadata: Dict 
+
+class SignatureUpdate(BaseModel):
+    entity_name: Optional[str] = None
+    signature_metadata: Optional[Dict] = None
+    svg_preview: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class SignatureResponse(BaseModel):
+    id: int
+    patient_id: int
+    entity_type: str
+    entity_name: str
+    entity_id: int
+    signable_type: str
+    signable_id: int
+    signature_metadata: Dict
+    file_path: str
+    svg_preview: Optional[str] = None
+    created_at: datetime
+    signed_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SignatureSearchParams(BaseModel):
+    patient_id: Optional[int] = None
+    entity_type: Optional[str] = None
+    entity_id: Optional[int] = None
+    signable_type: Optional[str] = None
+    signable_id: Optional[int] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None

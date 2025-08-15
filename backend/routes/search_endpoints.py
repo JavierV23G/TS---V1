@@ -12,7 +12,8 @@ from database.models import (
     Visit, VisitNote,
     CertificationPeriod,
     Document,
-    NoteSection, NoteTemplate, NoteTemplateSection)
+    NoteSection, NoteTemplate, NoteTemplateSection,
+    CommunicationRecord, Signature)
 from schemas import (
     StaffResponse, StaffAssignmentResponse,
     PatientResponse,
@@ -22,7 +23,9 @@ from schemas import (
     NoteSectionResponse,
     CertificationPeriodResponse,
     DocumentResponse,
-    NoteTemplateWithSectionsResponse)
+    NoteTemplateWithSectionsResponse,
+    CommunicationRecordResponse, SignatureResponse)
+from auth.auth_middleware import get_current_user
 
 router = APIRouter()
 
@@ -451,3 +454,136 @@ def get_cert_periods_by_patient(patient_id: int, db: Session = Depends(get_db)):
     return db.query(CertificationPeriod).filter(
         CertificationPeriod.patient_id == patient_id
     ).order_by(CertificationPeriod.start_date.desc()).all()
+
+@router.get("/communication-records/cert-period/{cert_period_id}", response_model=List[CommunicationRecordResponse])
+def get_communication_records_by_cert_period(cert_period_id: int, db: Session = Depends(get_db)):
+    records = db.query(CommunicationRecord).filter(
+        CommunicationRecord.certification_period_id == cert_period_id
+    ).order_by(CommunicationRecord.created_at.desc()).all()
+    
+    results = []
+    for record in records:
+        staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+        response_data = record.__dict__.copy()
+        response_data["staff_name"] = staff.name if staff else None
+        results.append(response_data)
+    
+    return results
+
+@router.get("/communication-records/{record_id}", response_model=CommunicationRecordResponse)
+def get_communication_record(record_id: int, db: Session = Depends(get_db)):
+    record = db.query(CommunicationRecord).filter(CommunicationRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Communication record not found")
+    
+    staff = db.query(Staff).filter(Staff.id == record.created_by).first()
+    response_data = record.__dict__.copy()
+    response_data["staff_name"] = staff.name if staff else None
+    
+    return response_data
+
+#====================== SIGNATURES ======================#
+
+@router.get("/signatures/search", response_model=List[SignatureResponse])
+def search_signatures(
+    patient_id: Optional[int] = Query(None),
+    entity_type: Optional[str] = Query(None),
+    entity_id: Optional[int] = Query(None),
+    signable_type: Optional[str] = Query(None),
+    signable_id: Optional[int] = Query(None),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Search signatures with filters"""
+    
+    query = db.query(Signature)
+    
+    # Apply filters
+    if patient_id:
+        query = query.filter(Signature.patient_id == patient_id)
+    
+    if entity_type:
+        query = query.filter(Signature.entity_type == entity_type)
+    
+    if entity_id:
+        query = query.filter(Signature.entity_id == entity_id)
+    
+    if signable_type:
+        query = query.filter(Signature.signable_type == signable_type)
+    
+    if signable_id:
+        query = query.filter(Signature.signable_id == signable_id)
+    
+    # Order by creation date (most recent first)
+    query = query.order_by(Signature.created_at.desc())
+    
+    # Apply pagination
+    signatures = query.offset(offset).limit(limit).all()
+    
+    return signatures
+
+@router.get("/signatures/{signature_id}", response_model=SignatureResponse)
+def get_signature(signature_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """Get signature by ID"""
+    
+    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+    
+    return signature
+
+@router.get("/patients/{patient_id}/signatures", response_model=List[SignatureResponse])
+def get_patient_signatures(
+    patient_id: int,
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all signatures for a specific patient"""
+    
+    # Verify patient exists
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    signatures = (db.query(Signature)
+                 .filter(Signature.patient_id == patient_id)
+                 .order_by(Signature.created_at.desc())
+                 .offset(offset)
+                 .limit(limit)
+                 .all())
+    
+    return signatures
+
+@router.get("/signatures/{signature_id}/files")
+def get_signature_files(
+    signature_id: int,
+    file_type: str = Query(..., regex="^(json|svg)$"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get signature file content (JSON or SVG)"""
+    
+    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+    
+    file_path = f"{signature.file_path}.{file_type}"
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"{file_type.upper()} file not found")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if file_type == "json":
+            return {"content": json.loads(content)}
+        else:  # svg
+            return {"content": content, "content_type": "image/svg+xml"}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading {file_type} file: {str(e)}")
